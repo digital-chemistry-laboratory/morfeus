@@ -1,5 +1,5 @@
 # Steriplus
-A Python package for calculation of Sterimol parameters.
+A Python package for calculation of Sterimol parameters. Steriplus can be run either as a command line script or imported a module.
 
 ## Example
 #### Input
@@ -8,10 +8,10 @@ steriplus isobutane.xyz 2 1
 ```
 
 #### Output
+| L    | B\_1 | B\_5 |
+|------|------|------|
+| 4.17 | 2.87 | 3.28 |
 
-|L      |B\_1      | B\_5 |
-|-|-|-|
-|4.17     |2.87      |3.28|
 ## Installation
 ```
 pip install steriplus
@@ -67,12 +67,16 @@ from steriplus import Sterimol
 ```
 >>> sterimol.plot_2D(plane="xy")
 ```
+
 ![](doc/xy.png)
 
 ##### Plotting in 3D
+Axes cannot currently be equally scaled with Matplotlib, so the perpsective is
+flawed.
 ```
 >>> sterimol.plot_3D()
 ```
+
 ![](doc/3D.png)
 
 #### More info
