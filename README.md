@@ -1,5 +1,5 @@
 # Steriplus
-A Python package for calculation of Sterimol parameters. Steriplus can be run either as a command line script or imported a module.
+A Python package for calculation of Sterimol parameters. Steriplus can be run either as a command line script or imported as a module.
 
 ## Example
 #### Input
@@ -87,7 +87,7 @@ help(Sterimol)
 ```
 
 ## Background
-The Sterimool parameters were developed by Verloop to describe the steric size
+The Sterimol parameters were developed by Verloop to describe the steric size
 of substituents. L can be described as the depth of the substituent and is
 defined as the distance between the dummy atom 1 (by definition H) and its
 neighbor in substituent. For historical reasons, L is corrected by adding 0.40
