@@ -32,7 +32,7 @@ or
 python -m steriplus <input file> <atom1> <atom2> --radii <radii-type> --density <density> -v/--verbose
 ```
 
- ? |Argument   | Description                                                    |
+|Argument   | Description                                                    |
 |-----------|----------------------------------------------------------------|
 |input file | .xyz or Gaussian .gjf or .com                                  |
 |atom1      | Index of dummy atom                                            |
