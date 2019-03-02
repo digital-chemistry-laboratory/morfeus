@@ -52,6 +52,7 @@ class Sterimol:
         L_value_uncorrected (float) :   Sterimol L value minus 0.40 Å
         radii (list)                :   List of radii
         vector (ndarray)            :   Vector between atom 1 and atom 2
+        volume (float)              :   Volume contained by vdW surface
     """
     def __init__(self, element_ids, coordinates, atom_1, atom_2, radii=[], radii_type="crc", density=0.005, n_rot_vectors=360):
         # Converting element ids to atomic numbers if the are symbols
