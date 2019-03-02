@@ -56,6 +56,20 @@ from steriplus import Sterimol
 4.1692354497110005
 ```
 
+Plotting in 2D
+```
+>>> sterimol.plot_2D()
+```
+
+![](doc/yz.png)
+
+```
+>>> sterimol.plot_2D(plane="xy")
+```
+![](doc/xy.png)
+
+Plotting in 3D
+
 #### More info
 ```
 help(Sterimol)
