@@ -25,11 +25,13 @@ pip install steriplus
 ## Usage
 ### Command line
 ```
-steriplus <input file> <atom1> <atom2> --radii <radii-type> --density <density> -v/--verbose
+steriplus <input file> <atom1> <atom2> --radii <radii-type> --density <density>
+-v/--verbose
 ```  
 or  
 ```
-python -m steriplus <input file> <atom1> <atom2> --radii <radii-type> --density <density> -v/--verbose
+python -m steriplus <input file> <atom1> <atom2> --radii <radii-type> --density
+<density> -v/--verbose
 ```
 
 |Argument   | Description                                                    |
@@ -101,5 +103,15 @@ vdW surface of the molecule and then projecting these points onto a set of
 vectors. L is determined by projection onto the vector between atoms 1 and 2.
 B<sub>1</sub> and B<sub>5</sub> are obtained by projection onto vectors
 perpendicular to L.
+
+Steriplus has been benchmarked against Paton's Sterimol package. Using the same
+radii (Paton's modified Bondi), almost identical results are obtained. Note that
+the Sterimol package uses 1.09 Å as the vdW radius for H, while Steriplus uses
+1.10 Å as default (CRC radii).
+![](doc/benchmark.png)
+
+### References
+Verloop, A., Hoogenstraaten, W., Tipker, J. In Drug Design Vol. VII; Ariens, E. J., Ed.; Academic Press, 1976; pp 165-206.  
+Verloop, A. In Pesticide Chemistry: Human Welfare and Environment: Synthesis and Structure-Activity Relationships; Doyle, P., Fujita, T., Eds.; Pergamon, 1983; pp 339–344.
 
 ## Change log
