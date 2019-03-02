@@ -49,6 +49,7 @@ from steriplus import Sterimol
 ```
 
 #### Usage
+##### Getting parameters
 ```
 >>> elements, coordinates = read_xyz("isobutane.xyz")
 >>> sterimol = Sterimol(elements, coordinates, 2, 1)
@@ -56,7 +57,7 @@ from steriplus import Sterimol
 4.1692354497110005
 ```
 
-Plotting in 2D
+##### Plotting in 2D
 ```
 >>> sterimol.plot_2D()
 ```
@@ -68,7 +69,11 @@ Plotting in 2D
 ```
 ![](doc/xy.png)
 
-Plotting in 3D
+##### Plotting in 3D
+```
+>>> sterimol.plot_3D()
+```
+![](doc/3D.png)
 
 #### More info
 ```
