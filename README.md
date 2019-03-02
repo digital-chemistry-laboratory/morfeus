@@ -2,16 +2,21 @@
 A Python package for calculation of Sterimol parameters.
 
 ## Example
-**Input**  
-``steriplus isobutane.xyz 2 1``
+#### Input
+```
+steriplus isobutane.xyz 2 1
+```
 
-**Output**
+#### Output
 
 |L      |B\_1      | B\_5 |
 |-|-|-|
 |4.17     |2.87      |3.28|
 ## Installation
-``pip install steriplus``
+```
+pip install steriplus
+```
+
 ### Dependencies
 * matplotlib
 * numpy
@@ -19,11 +24,15 @@ A Python package for calculation of Sterimol parameters.
 
 ## Usage
 ### Command line
-``steriplus <input file> <atom1> <atom2> --radii <radii-type> --density <density> -v/--verbose``  
+```
+steriplus <input file> <atom1> <atom2> --radii <radii-type> --density <density> -v/--verbose
+```  
 or  
-``python -m steriplus <input file> <atom1> <atom2> --radii <radii-type> --density <density> -v/--verbose``
+```
+python -m steriplus <input file> <atom1> <atom2> --radii <radii-type> --density <density> -v/--verbose
+```
 
-|Argument   | Description                                                    |
+ ? |Argument   | Description                                                    |
 |-----------|----------------------------------------------------------------|
 |input file | .xyz or Gaussian .gjf or .com                                  |
 |atom1      | Index of dummy atom                                            |
@@ -33,9 +42,24 @@ or
 |v/verbose  | Print uncorrected L and bond length between atom 1 and atom 2  |
 
 ### Module
-``from steriplus import Sterimol``
+#### Imports
+```
+from steriplus import read_gjf, read_xyz
+from steriplus import Sterimol
+```
 
-``from steriplus import read_xyz, read_gjf``
+#### Usage
+```
+>>> elements, coordinates = read_xyz("isobutane.xyz")
+>>> sterimol = Sterimol(elements, coordinates, 2, 1)
+>>> sterimol.L_value
+4.1692354497110005
+```
+
+#### More info
+```
+help(Sterimol)
+```
 
 ## Background
 The Sterimool parameters were developed by Verloop to describe the steric size
