@@ -1,0 +1,10 @@
+__pycache__/
+
+# data files
+done.txt
+todo.txt
+
+# Distribution/packaging
+build/
+dist/
+*.egg-info/
