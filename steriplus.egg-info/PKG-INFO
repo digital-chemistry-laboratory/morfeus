@@ -1,0 +1,14 @@
+Metadata-Version: 2.1
+Name: steriplus
+Version: 0.1.0
+Summary: A package to calculate Sterimol values.
+Home-page: UNKNOWN
+Author: Kjell Jorner
+Author-email: kjell.jorner@gmail.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Description-Content-Type: text/markdown

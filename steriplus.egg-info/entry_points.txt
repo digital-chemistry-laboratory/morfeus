@@ -1,0 +1,3 @@
+[console_scripts]
+steriplus = steriplus.__main__:main
+
