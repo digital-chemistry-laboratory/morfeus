@@ -78,7 +78,7 @@ class Sterimol:
         x_axis = np.array([1, 0, 0])
         real = np.dot(vector_2_to_1, x_axis).reshape(1) + 1
 
-        #  Handle case of parallel vectors
+        #  Handle case of antiparallel vectors
         if real < 1e-6:
             w = np.cross(vector_2_to_1, np.array([0, 0, 1]))
             if np.linalg.norm(w) < 1e-6:
@@ -119,6 +119,7 @@ class Sterimol:
         hull = ConvexHull(coordinates)
         coordinates = coordinates[hull.vertices]
         self.area = hull.area
+        self.volume = hull.volume
 
         # Get vector from atom 1 to atom 2
         vector = atom_list[atom_2 - 1].coordinates - atom_list[atom_1 - 1].coordinates
