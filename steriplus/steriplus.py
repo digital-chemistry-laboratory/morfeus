@@ -10,7 +10,7 @@ from scipy.spatial.transform import Rotation
 
 from steriplus.data import atomic_numbers, bondi_radii, crc_radii, jmol_colors
 from steriplus.io import read_gjf, read_xyz
-from steriplus.plotting import ax_3D
+from steriplus.plotting import ax_3D, set_axes_equal
 
 class Sterimol:
     """Performs and stores results of Sterimol calculation.
@@ -31,7 +31,8 @@ class Sterimol:
                                         "bondi"
 
     Attributes:
-        area (float)                :   Area of vdW surface
+        hull_area (float)           :   Area of the convex hull enclosing the
+                                        vdW surface in Å^2
         atom_1 (int)                :   Index of atom 1 (dummy atom)
         atom_2 (int)                :   Index of atom 2 (connected atom of
                                         substituent)
@@ -52,9 +53,10 @@ class Sterimol:
         L_value_uncorrected (float) :   Sterimol L value minus 0.40 Å
         radii (list)                :   List of radii
         vector (ndarray)            :   Vector between atom 1 and atom 2
-        volume (float)              :   Volume contained by vdW surface
+        hull_volume (float)         :   Hull volume containing the vdW surface
+                                        in Å^3
     """
-    def __init__(self, element_ids, coordinates, atom_1, atom_2, radii=[], radii_type="crc", density=0.005, n_rot_vectors=360):
+    def __init__(self, element_ids, coordinates, atom_1, atom_2, radii=[], radii_type="crc", density=0.005, n_rot_vectors=360, radii_scale=1):
         # Converting element ids to atomic numbers if the are symbols
         if type(element_ids[0]) == str:
             element_ids = [atomic_numbers[element_id] for element_id in element_ids]
@@ -62,7 +64,7 @@ class Sterimol:
 
         # Getting radii if they are not supplied
         if not radii:
-            radii = get_radii(element_ids, radii_type=radii_type)
+            radii = get_radii(element_ids, radii_type=radii_type, scale=radii_scale)
         self.radii = radii
 
         # Setting up coordinate array
@@ -119,8 +121,8 @@ class Sterimol:
         # for determining Sterimol parameters.
         hull = ConvexHull(coordinates)
         coordinates = coordinates[hull.vertices]
-        self.area = hull.area
-        self.volume = hull.volume
+        self.hull_area = hull.area
+        self.hull_volume = hull.volume
 
         # Get vector from atom 1 to atom 2
         vector = atom_list[atom_2 - 1].coordinates - atom_list[atom_1 - 1].coordinates
@@ -196,6 +198,7 @@ class Sterimol:
             filename (str)  :   Filename for saving the plot to file.
         """
         with ax_3D() as ax:
+            ax.set_aspect('equal')
             # Setting up
             atom_1 = self.atom_1
             atom_2 = self.atom_2
@@ -207,7 +210,7 @@ class Sterimol:
             coordinates = self.coordinates
 
             # Set the density of points for plotting with input factor
-            n_points = self.area / self.density / density
+            n_points = self.hull_area / self.density / density
             step = round(n_points / len(coordinates))
 
             # Set up dictionary for coloring atomic centers
@@ -253,7 +256,7 @@ class Sterimol:
             filename (str)  :   Filename for saving the plot to file
             plane (str)     :   Plotting plane ("xy", "xz" or "yz")
         """
-        plt.figure()
+        plt.figure(figsize=(15,10))
 
         # Set equal aspects for axes
         plt.axes().set_aspect('equal', 'datalim')
@@ -286,7 +289,7 @@ class Sterimol:
         atom_coordinates = np.vstack(atom_coordinates_list)
 
         # Set the density of points for plotting with input factor
-        n_points = self.area / self.density / density
+        n_points = self.hull_area / self.density / density
         step = max(round(n_points / len(coordinates)), 1)
 
         # Set up dictionary for coloring atomic centers
@@ -315,6 +318,8 @@ class Sterimol:
             plt.arrow(coord_1[0], coord_2[0], L[0], L[1], fc="k", ec="k", head_width=0.1, head_length=0.2, length_includes_head=True)
             L_pos = L + atom_1_coordinates
             plt.text(L_pos[:,0][0], L_pos[:,1][0], "L")
+
+        set_axes_equal(ax)
 
         if filename:
             plt.savefig(filename)
@@ -346,12 +351,64 @@ class Sphere:
         radius (list)           :   Radius in Å
     """
 
-    def __init__(self, center, radius, density=0.005):
+    def __init__(self, center, radius, density=0.005, method="fibonacci", filled=False):
         self.center = center
         self.radius = radius
         self.circumference = math.pi * radius * 2
         self.area = 4 * radius**2 * math.pi
-        self.points = self.get_points_polar(density=density)
+        self.volume = 4 * radius**3 * math.pi / 3
+
+        if filled:
+            self.points = self.get_points_projected(density=density, filled=True)
+
+        if method == "polar":
+            self.points = self.get_points_polar(density=density)
+        elif method =="projection":
+            self.points = self.get_points_projected(density=density)
+        elif method == "fibonacci":
+            self.points = self.get_points_fibonacci(density=density)
+
+    def get_points_fibonacci(self, density):
+        rnd = 1
+        n = round((self.area / density))
+        point_list = []
+        offset = 2.0 / n
+        increment = math.pi * (3.0 - math.sqrt(5.0));
+
+        for i in range(n):
+            y = ((i * offset) - 1) + (offset / 2);
+            r = math.sqrt(1 - pow(y, 2))
+
+            phi = ((i + rnd) % n) * increment
+
+            x = math.cos(phi) * r
+            z = math.sin(phi) * r
+
+            point_list.append([x,y,z])
+
+        points = np.array(point_list)
+        points = points / np.linalg.norm(points, axis=1).reshape(-1,1) * self.radius
+        points = points + self.center
+
+        return points
+
+    def get_points_projected(self, density, filled=True):
+        if not filled:
+            n = round((self.area / density * 6 / math.pi)**(1 / 3))
+        else:
+            n = round((self.volume / density * 6 / math.pi)**(1 / 3))
+        r = self.radius
+        x = np.linspace(-r, r, n)
+        y = np.linspace(-r, r, n)
+        z = np.linspace(-r, r, n)
+        points = np.stack(np.meshgrid(x, y, z), -1).reshape(-1, 3)
+        numpoints = len(points)
+        lengths = np.linalg.norm(points, axis=1)
+        points = points[lengths <= r]
+        if not filled:
+            points = points / np.linalg.norm(points, axis=1).reshape(-1,1) * r
+        points = points + self.center
+        return points
 
     def get_points_polar(self, density):
         """Calculates points on the vdW surface of the sphere.
@@ -405,7 +462,7 @@ class Sphere:
     def __repr__(self):
         return f"{self.__class__.__name__}(center: {self.center}, radius: {self.radius})"
 
-def get_radii(element_id_list, radii_type="crc"):
+def get_radii(element_id_list, radii_type="crc", scale=1):
     """Gets radii for list of element ids
 
     Args:
@@ -423,7 +480,7 @@ def get_radii(element_id_list, radii_type="crc"):
     elif radii_type == "crc":
         radii_dict = {element_id: crc_radii.get(element_id) for element_id in element_set}
 
-    # Get radii for elements in the element id list
-    radii_list = [radii_dict[element_id] for element_id in element_id_list]
+    # Get radii for elements in the element id list. Set 2 as default if does not exist
+    radii_list = [radii_dict.get(element_id) * scale if radii_dict.get(element_id, 2.0) else 2.0 * scale for element_id in element_id_list ]
 
     return radii_list
