@@ -9,9 +9,14 @@ from scipy.spatial import ConvexHull
 from scipy.spatial.transform import Rotation
 
 from steriplus.data import atomic_numbers, bondi_radii, crc_radii, jmol_colors
-from steriplus.io import read_gjf, read_xyz
+from steriplus.io import read_gjf, read_xyz, create_rdkit_mol
 from steriplus.plotting import ax_3D, coordinate_axes, set_axes_equal
 from steriplus.geometry import rotate_coordinates
+try:
+    from rdkit.Chem import rdFreeSASA
+except:
+    rdFreeSASA = None
+    print("SASA calculations not available on Windows.")
 
 class Sterimol:
     """Performs and stores results of Sterimol calculation.
@@ -57,7 +62,7 @@ class Sterimol:
         hull_volume (float)         :   Hull volume containing the vdW surface
                                         in Å^3
     """
-    def __init__(self, element_ids, coordinates, atom_1, atom_2, radii=[], radii_type="crc", density=0.005, n_rot_vectors=360, radii_scale=1):
+    def __init__(self, element_ids, coordinates, atom_1, atom_2, radii=[], radii_type="crc", density=0.005, n_rot_vectors=360):
         # Converting element ids to atomic numbers if the are symbols
         if type(element_ids[0]) == str:
             element_ids = [atomic_numbers[element_id] for element_id in element_ids]
@@ -65,7 +70,7 @@ class Sterimol:
 
         # Getting radii if they are not supplied
         if not radii:
-            radii = get_radii(element_ids, radii_type=radii_type, scale=radii_scale)
+            radii = get_radii(element_ids, radii_type=radii_type)
         self.radii = radii
 
         # Setting up coordinate array
@@ -565,6 +570,53 @@ class BuriedVolume:
             plt.savefig(filename)
         else:
             plt.show()
+
+class SASA:
+    """Calculates the solvent accesible surface area (SASA) with RDKit from a
+    list of element ids and coordinates.
+    def __init__(self, , center, exclude_list=[],
+                 radii=[], include_hs=False, radius=3.5, radii_type="bondi",
+                 radii_scale=1.17, density=0.001):
+    Args:
+        mol                     :    rdkit mol object
+        atom_index_list (list)  :    List of atom indices (starting at 1)
+    """
+    def __init__(self, element_ids, coordinates, radii=None, radii_type="crc"):
+        # Check if rdFreeSASA is loaded
+    #    if not rdFreeSASA:
+    #        raise Exception("rdFreeSASA not loaded")
+
+        # Converting element ids to atomic numbers if the are symbols
+        if type(element_ids[0]) == str:
+            element_ids = [atomic_numbers[element_id] for element_id in element_ids]
+        self.element_ids = element_ids
+
+        # Getting radii if they are not supplied
+        if not radii:
+            radii = get_radii(element_ids, radii_type=radii_type)
+        self.radii = radii
+
+        # Create rdkit mol object from the element_ids and coordinates
+        self.mol = create_rdkit_mol(element_ids, coordinates)
+
+        # Calculate total area
+        self.total_area = rdFreeSASA.CalcSASA(mol, radii=radii)
+
+        atom_areas = {}
+        # Calculate area for each atom
+        for atom in mol.GetAtoms():
+            atom.SetProp("SASAClassName", "Polar")
+            atom.SetProp("SASAClass", "2")
+            q_atom = rdFreeSASA.MakeFreeSasaPolarAtomQuery()
+            atom_area = rdFreeSASA.CalcSASA(mol, radii=radii, query=q_atom)
+            atom_areas[atom.GetIdx()] = atom_area
+            atom.ClearProp("SASAClassName")
+            atom.ClearProp("SASAClass")
+
+        self.atom_areas = atom_areas
+
+    def print_report(self):
+        pass
 
 class Atom(NamedTuple):
     """Atom class"""

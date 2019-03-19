@@ -1,3 +1,34 @@
+from steriplus.data import atomic_symbols
+from rdkit import Chem
+
+def create_rdkit_mol(element_ids, coordinates):
+    """
+    Args:
+        coordinates (list)  :   List of atomic coordinates in Å
+        element_ids (list)  :   List of zero-indexed atomic numbers
+
+    Returns:
+        mol (object)        :   RDkit Mol object.
+    """
+
+    rdkit_string = f"""\
+
+
+
+{len(element_ids):>3d}  0  0  0  0  0  0  0  0  0999 V2000
+"""
+    for coordinate, element_id in zip(coordinates, element_ids):
+        element_id = atomic_symbols[element_id]
+        x = coordinate[0]
+        y = coordinate[1]
+        z = coordinate[2]
+        rdkit_string += f"{x:>10.4f}{y:>10.4f}{z:>10.4f} {element_id}   0  0  0  0  0  0  0  0  0  0  0  0\n"
+    rdkit_string += "M  END"
+
+    mol = Chem.MolFromMolBlock(rdkit_string)
+
+    return mol
+
 def read_xyz(filename):
     """Reads xyz file and returns element_ids as they are written in the xyz
     file (either atomic numbers or symbols).
