@@ -21,6 +21,7 @@ setuptools.setup(
     ],
     entry_points={
         "console_scripts": [
-            "steriplus=steriplus.__main__:main",
+            "steriplus_sterimol=steriplus.script_sterimol:main",
+            "steriplus_sasa=steriplus.script_sasa:main",
         ]}
 )
