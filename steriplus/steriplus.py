@@ -666,25 +666,52 @@ class Sphere:
         elif method == "fibonacci":
             self.points = self.get_points_fibonacci(density=density)
 
+class Sphere:
+    """Sphere class for creating and holding points on vdW surface.
+
+    Args:
+        center (list)      :    Center of sphere
+        density (float)    :    Density of points in Å^-2
+        radius (float)     :    Radius in Å
+
+    Attributes:
+        area (float)            :   Area of sphere in Å^2
+        center (list)           :   Center of sphere
+        circumference (float)   :   Circumference in Å
+        points (ndarray)        :   Points on vdW surface of sphere
+        radius (list)           :   Radius in Å
+    """
+
+    def __init__(self, center, radius, density=0.005, method="fibonacci", filled=False):
+        self.center = center
+        self.radius = radius
+        self.circumference = math.pi * radius * 2
+        self.area = 4 * radius**2 * math.pi
+        self.volume = 4 * radius**3 * math.pi / 3
+
+        if filled:
+            self.points = self.get_points_projected(density=density, filled=True)
+
+        if method == "polar":
+            self.points = self.get_points_polar(density=density)
+        elif method =="projection":
+            self.points = self.get_points_projected(density=density)
+        elif method == "fibonacci":
+            self.points = self.get_points_fibonacci(density=density)
+
     def get_points_fibonacci(self, density):
         rnd = 1
         n = round((self.area / density))
-        point_list = []
         offset = 2.0 / n
         increment = math.pi * (3.0 - math.sqrt(5.0));
 
-        for i in range(n):
-            y = ((i * offset) - 1) + (offset / 2);
-            r = math.sqrt(1 - pow(y, 2))
-
-            phi = ((i + rnd) % n) * increment
-
-            x = math.cos(phi) * r
-            z = math.sin(phi) * r
-
-            point_list.append([x,y,z])
-
-        points = np.array(point_list)
+        i = np.arange(n)
+        y = ((i * offset) - 1) + (offset / 2)
+        r = np.sqrt(1 - np.square(y))
+        phi = np.mod((i + rnd), n) * increment
+        x = np.cos(phi) * r
+        z = np.sin(phi) * r
+        points = np.column_stack((x, y, z))
         points = points / np.linalg.norm(points, axis=1).reshape(-1,1) * self.radius
         points = points + self.center
 
