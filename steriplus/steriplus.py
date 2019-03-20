@@ -597,7 +597,7 @@ class SASA:
         self.radii = radii
 
         # Create rdkit mol object from the element_ids and coordinates
-        self.mol = create_rdkit_mol(element_ids, coordinates)
+        mol = create_rdkit_mol(element_ids, coordinates)
 
         # Calculate total area
         self.total_area = rdFreeSASA.CalcSASA(mol, radii=radii)
