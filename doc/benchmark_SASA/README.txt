@@ -1,0 +1,2 @@
+The GEPOL93 program was downloaded 2019-03-20 from http://www.ccl.net/cca/software/SOURCES/FORTRAN/molecular_surface/gepol93/index.shtml
+The same CRC radii where used both for Steriplus and GEPOL93, which was used with the default settings.

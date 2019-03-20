@@ -12,6 +12,8 @@ from steriplus.data import atomic_numbers, bondi_radii, crc_radii, jmol_colors
 from steriplus.io import read_gjf, read_xyz, create_rdkit_mol
 from steriplus.plotting import ax_3D, coordinate_axes, set_axes_equal
 from steriplus.geometry import rotate_coordinates
+
+from rdkit import RDLogger
 try:
     from rdkit.Chem import rdFreeSASA
 except:
@@ -583,8 +585,11 @@ class SASA:
     """
     def __init__(self, element_ids, coordinates, radii=None, radii_type="crc"):
         # Check if rdFreeSASA is loaded
-    #    if not rdFreeSASA:
-    #        raise Exception("rdFreeSASA not loaded")
+        if not rdFreeSASA:
+            raise Exception("rdFreeSASA not loaded")
+
+        lg = RDLogger.logger()
+        lg.setLevel(RDLogger.ERROR)
 
         # Converting element ids to atomic numbers if the are symbols
         if type(element_ids[0]) == str:
