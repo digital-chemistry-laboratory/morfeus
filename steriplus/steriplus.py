@@ -622,10 +622,10 @@ class SASA:
 
     def print_report(self):
         print(f"Total SASA (Å^2): {self.total_area:.3f}")
+        print(f"Sum of atom areas (Å^2): {sum(self.atom_areas.values()):.3f}")
         print("Atom areas (Å^2):")
         for atom, area in self.atom_areas.items():
             print(f"{atom + 1:5d}{area:10.3f}")
-        print(f"Sum of atom areas (Å^2): {sum(self.atom_areas.values()):.3f}")
 
 class Atom(NamedTuple):
     """Atom class"""
