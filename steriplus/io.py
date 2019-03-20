@@ -2,7 +2,10 @@ from steriplus.data import atomic_symbols
 from rdkit import Chem
 
 def create_rdkit_mol(element_ids, coordinates):
-    """
+    """Creates a RDKit Mol object from element_ids and coordinates. This object
+    has no bonding information so cannot be used for much else than computing
+    solvent accesible surface areas.
+
     Args:
         coordinates (list)  :   List of atomic coordinates in Å
         element_ids (list)  :   List of zero-indexed atomic numbers

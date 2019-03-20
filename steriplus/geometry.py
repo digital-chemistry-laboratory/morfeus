@@ -2,6 +2,16 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 def rotate_coordinates(coordinates, vector, axis):
+    """Rotates coordinates with the rotation that aligns vector with axis.
+
+    Args:
+        axis (ndarray)                  :   Vector to align vector to
+        coordinates (ndarray)           :   Coordinates to rotate
+        vector (ndarray)                :   Vector to align
+
+    Returns:
+        rotated_coordinates (ndarray)   :   Rotated coordinates.
+    """
     # Get rotation quaternion that overlays vector with x-asis
     real = np.dot(vector, axis).reshape(1) + 1
     #  Handle case of antiparallel vectors
