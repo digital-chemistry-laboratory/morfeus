@@ -1,8 +1,9 @@
 from steriplus.data import atomic_symbols
 try:
     from rdkit import Chem
+    rdkit = True
 except:
-    rdkit = None
+    rdkit = False
 
 def create_rdkit_mol(element_ids, coordinates):
     """Creates a RDKit Mol object from element_ids and coordinates. This object
