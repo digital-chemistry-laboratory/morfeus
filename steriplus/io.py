@@ -22,7 +22,7 @@ def create_rdkit_mol(element_ids, coordinates):
 
     rdkit_string = f"""\
 
-    
+
 
 {len(element_ids):>3d}  0  0  0  0  0  0  0  0  0999 V2000
 """
@@ -34,9 +34,7 @@ def create_rdkit_mol(element_ids, coordinates):
         z = coordinate[2]
         rdkit_string += f"{x:>10.4f}{y:>10.4f}{z:>10.4f} {element_id}   0  0  0  0  0  0  0  0  0  0  0  0\n"
     rdkit_string += "M  END"
-    print(rdkit_string)
     mol = Chem.MolFromMolBlock(rdkit_string)
-    print(mol)
 
     return mol
 
