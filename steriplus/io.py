@@ -22,6 +22,8 @@ def create_rdkit_mol(element_ids, coordinates):
 
     rdkit_string = f"""\
 
+    
+
 {len(element_ids):>3d}  0  0  0  0  0  0  0  0  0999 V2000
 """
     for coordinate, element_id in zip(coordinates, element_ids):
