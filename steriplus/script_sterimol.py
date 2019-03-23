@@ -22,12 +22,12 @@ def main():
         print("No valid input file. Use .xyz or .gjf/.com")
         return
 
-    radii_type = str(args.radii)
-    density = float(args.density)
+    radii_type = args.radii
+    density = args.density
     verbose = args.verbose
 
-    atom_1 = int(args.atom1)
-    atom_2 = int(args.atom2)
+    atom_1 = args.atom1
+    atom_2 = args.atom2
 
     sterimol = Sterimol(elements, coordinates, atom_1, atom_2, radii_type=radii_type, density=density)
     sterimol.print_report(verbose=verbose)

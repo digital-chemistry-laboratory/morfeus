@@ -22,7 +22,6 @@ try:
     from rdkit.Chem import rdFreeSASA
 except:
     rdFreeSASA = None
-    print("SASA calculations not available on Windows.")
 
 class Sterimol:
     """Performs and stores results of Sterimol calculation.
@@ -345,8 +344,7 @@ class BuriedVolume:
     """Performs and stores the results of a buried volume calculation.
 
     Args:
-        center (list)               :   List of x, y, z coordinates in Å for the
-                                        metal center
+        atom_1 (int)                :   Atom index of metal (starting from 1)
         coordinates (list)          :   List of coordinates in Å
         density (float)             :   Density of points on the vdW surface in
                                         Å^-2
@@ -373,17 +371,21 @@ class BuriedVolume:
         sphere (object)             :   Sphere object at the metal center
 
     """
-    def __init__(self, element_ids, coordinates, center, exclude_list=[],
+    def __init__(self, element_ids, coordinates, atom_1, exclude_list=[],
                  radii=[], include_hs=False, radius=3.5, radii_type="bondi",
                  radii_scale=1.17, density=0.001):
+
+        # Get the coordinates for the central atom
+        center = np.array(coordinates[atom_1 - 1])
 
         # Construct sphere at metal center
         s = Sphere(center, radius, method="projection", density=density,
                    filled=True)
 
         # Save all coordinates before deleting some atoms
-        self.all_coordinates = np.array(coordinates)
         self.density = density
+        self.excluded_atoms = exclude_list
+        self._all_coordinates = np.array(coordinates)
 
         # Make copies of lists to avoid deleting originals
         coordinates = list(coordinates)
@@ -416,7 +418,6 @@ class BuriedVolume:
 
         # Setting up coordinate array and center array
         atom_coordinates = np.array(coordinates)
-        center = np.array(center)
 
         # Get list of atoms as Atom objects
         atom_list = []
@@ -452,7 +453,7 @@ class BuriedVolume:
         """Prints a report of the buried volume for use in shell scripts"""
         print("%V_bur:", round(self.buried_volume * 100, 1))
 
-    def plot_steric_map(self, z_axis_atoms, filename=None, levels=30, grid=100, all_positive=True, cmap="jet"):
+    def plot_steric_map(self, z_axis_atoms, filename=None, levels=150, grid=100, all_positive=True, cmap="viridis"):
         """Plots a steric map as in the original article.
 
         Args:
@@ -465,29 +466,32 @@ class BuriedVolume:
             z_axis_atoms (list)     :   Atom indices for determining the
                                         orientation of the z axis (one-indexed)
         """
-        buried_points = self.buried_points
+        # Set up coordinates
+        atoms = self.atoms
         center = np.array(self.sphere.center)
-        coordinates = self.all_coordinates
-        atom_coordinates = self.atom_coordinates
+        all_coordinates = np.array(self._all_coordinates)
+        coordinates = np.array(self.atom_coordinates)
 
-        z_axis_atom_coordinates = coordinates[np.array(z_axis_atoms) - 1]
-        point = np.mean(z_axis_atom_coordinates)
+        # Translate coordinates
+        all_coordinates -= center
+        coordinates -= center
+        center -= center
+
+        # Get vector to midpoint of z-axis atoms
+        z_axis_coordinates = all_coordinates[np.array(z_axis_atoms) - 1]
+        point = np.mean(z_axis_coordinates, axis=0)
         vector = point - center
         vector = vector / np.linalg.norm(vector)
 
-        # Translate coordinates
-        atom_coordinates -= center
-        center -= center
-
         #Rotate coordinate system
-        atoms = self.atoms
-        atom_coordinates = rotate_coordinates(atom_coordinates, vector, np.array([0, 0, -1]))
+        coordinates = rotate_coordinates(coordinates, vector, np.array([0, 0, -1]))
 
-        # Determine z_values
+        # Make grid
         r = self.sphere.radius
         x_ = np.linspace(-r, r, grid)
         y_ = np.linspace(-r, r, grid)
 
+        # Calculate z values
         z = []
         for line in np.dstack(np.meshgrid(x_, y_)).reshape(-1, 2):
             if np.linalg.norm(line) > r:
@@ -498,9 +502,9 @@ class BuriedVolume:
             z_list = []
             for i, atom in enumerate(atoms):
                 # Check if point is within reach of atom.
-                x_s = atom_coordinates[i, 0]
-                y_s = atom_coordinates[i, 1]
-                z_s = atom_coordinates[i, 2]
+                x_s = coordinates[i, 0]
+                y_s = coordinates[i, 1]
+                z_s = coordinates[i, 2]
                 thingy = atom.radius**2 - (x - x_s)**2 - (y - y_s)**2
                 if thingy >= 0:
                     z_atom = math.sqrt(thingy) + z_s
@@ -512,10 +516,10 @@ class BuriedVolume:
                 # values are included by default anyway in accordance to article
                 if all_positive:
                     if z_max < 0:
-                        if np.linalg.norm(np.array([x, y, z_max])) > r:
+                        if np.linalg.norm(np.array([x, y, z_max])) >= r:
                             z_max = np.nan
                 else:
-                        if np.linalg.norm(np.array([x, y, z_max])) > r:
+                        if np.linalg.norm(np.array([x, y, z_max])) >= r:
                             z_max = np.nan
             else:
                 z_max = np.nan
@@ -523,9 +527,6 @@ class BuriedVolume:
 
         # Create interaction surface
         z = np.array(z).reshape(len(x_), len(y_))
-        self.interaction_surface_x = x_
-        self.interaction_surface_y = y_
-        self.interaction_surface_z = z
 
         # Plot surface
         fig, ax = plt.subplots()
@@ -590,7 +591,7 @@ class SASA:
     def __init__(self, element_ids, coordinates, radii=None, radii_type="crc"):
         # Check if rdFreeSASA is loaded
         if not rdFreeSASA:
-            raise Exception("rdFreeSASA not loaded")
+            raise Exception("rdFreeSASA not loaded (not available on Windows)")
 
         lg = RDLogger.logger()
         lg.setLevel(RDLogger.ERROR)

@@ -18,7 +18,7 @@ def main():
         print("No valid input file. Use .xyz or .gjf/.com")
         return
 
-    radii_type = str(args.radii)
+    radii_type = args.radii
 
     sasa = SASA(elements, coordinates, radii_type=radii_type)
     sasa.print_report()

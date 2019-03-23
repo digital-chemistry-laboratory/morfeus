@@ -23,9 +23,8 @@ def main():
         print("No valid input file. Use .xyz or .gjf/.com")
         return
 
-    radii_type = str(args.radii)
-
-    atom_1 = int(args.atom1)
+    radii_type = args.radii
+    atom_1 = args.atom1
 
     cone_angle = ConeAngle(elements, coordinates, atom_1, radii_type=radii_type)
     cone_angle.print_report()
