@@ -1,10 +1,13 @@
+#README IS OUT OF DATE
+
 # Steriplus
-A Python package for calculation of Sterimol parameters. Steriplus can be run either as a command line script or imported as a module.
+A Python package for calculation of steric descriptors. Steriplus can be run
+either as a command line script or imported as a module.
 
 ## Example
 #### Input
 ```
-steriplus isobutane.xyz 2 1
+steriplus_sterimol isobutane.xyz 2 1
 ```
 
 #### Output

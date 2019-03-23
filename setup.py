@@ -5,10 +5,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="steriplus",
-    version="0.1.0",
+    version="0.2.0",
     author="Kjell Jorner",
     author_email="kjell.jorner@gmail.com",
-    description="A package to calculate Sterimol values.",
+    description="A package to calculate steric descriptors.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="",
