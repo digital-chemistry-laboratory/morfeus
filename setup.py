@@ -23,5 +23,7 @@ setuptools.setup(
         "console_scripts": [
             "steriplus_sterimol=steriplus.script_sterimol:main",
             "steriplus_sasa=steriplus.script_sasa:main",
+            "steriplus_buried_volume=steriplus.script_buried_volume:main",
+            "steriplus_cone_angle=steriplus.script_cone_angle:main"
         ]}
 )

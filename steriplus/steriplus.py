@@ -1,8 +1,12 @@
 import math
 from typing import NamedTuple
+import time
+import itertools
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.tri import Triangulation
+
 import scipy.linalg
 import scipy.spatial
 from scipy.spatial import ConvexHull
@@ -11,7 +15,7 @@ from scipy.spatial.transform import Rotation
 from steriplus.data import atomic_numbers, bondi_radii, crc_radii, jmol_colors
 from steriplus.io import read_gjf, read_xyz, create_rdkit_mol
 from steriplus.plotting import ax_3D, coordinate_axes, set_axes_equal
-from steriplus.geometry import rotate_coordinates
+from steriplus.geometry import rotate_coordinates, Sphere, Cone, ConeAngleCone, ConeAngleAtom
 
 from rdkit import RDLogger
 try:
@@ -627,165 +631,381 @@ class SASA:
         for atom, area in self.atom_areas.items():
             print(f"{atom + 1:5d}{area:10.3f}")
 
+class ConeAngle:
+    """Calculates and stores the results of exact cone angle calculation as
+    described in J. Comput. Chem. 2013, 34, 1189.
+
+    Args:
+        atom_1 (int)            :   Index of central atom (starting from 1)
+        coordinates (list)      :   List of atom coordinates (Å)
+        element_ids (list)      :   Element ids as atomic numbers or symbols
+        radii (list)            :   vdW radii (Å) (optional)
+        radii_type (str)        :   Type of radii, "crc" or "bondi"
+
+    Attributes:
+        atoms (list)            :   List of atoms objects
+        cone (object)           :   Smallest cone encompassing all atoms
+        cone_angle (float)      :   Exact cone angle (degrees)
+        element_ids (list)      :   Element ids as atomic numbers or symbols
+        radii (list)            :   vdW radii (Å) (optional)
+        tangent_atoms (list)    :   Atoms tangent to cone
+    """
+    def __init__(self, element_ids, coordinates, atom_1, radii=[], radii_type="crc"):
+        #Removing central atom
+        center_coordinates = np.array(coordinates[0])
+        del coordinates[atom_1 - 1]
+        del element_ids[atom_1 - 1]
+
+        # Converting element ids to atomic numbers if the are symbols
+        if type(element_ids[0]) == str:
+            element_ids = [atomic_numbers[element_id] for element_id in element_ids]
+        self.element_ids = element_ids
+
+        # Getting radii if they are not supplied
+        if not radii:
+            radii = get_radii(element_ids, radii_type=radii_type)
+        self.radii = radii
+
+        # Setting up coordinate array
+        atom_coordinates = np.array(coordinates)
+
+        # Translate coordinates so origin is at atom 1
+        atom_coordinates -= center_coordinates
+
+        # Get list of atoms as Atom objects
+        atoms = []
+        for i, (coord, radius, element_id) in enumerate(zip(atom_coordinates, radii, element_ids), start=1):
+            coord = np.array(coord)
+            atom = ConeAngleAtom(coord, radius, i, element_id)
+            atoms.append(atom)
+            atom.get_cone()
+
+        self.atoms = atoms
+
+        # Search for cone over single atoms
+        cone = self._search_one_cones()
+        if cone:
+            self.cone = cone
+            self.cone_angle = math.degrees(cone.angle * 2)
+            self.tangent_atoms = cone.atoms
+        else:
+            # Prune out atoms that lie in the shadow of another atom's cone
+            loop_list = list(atoms)
+            remove_set = set()
+            for cone_atom in loop_list:
+                for test_atom in loop_list:
+                    if cone_atom != test_atom:
+                        if cone_atom.cone.is_inside(test_atom):
+                            remove_set.add(test_atom)
+            for i in remove_set:
+                loop_list.remove(i)
+            self._loop_list = loop_list
+
+        # Search for cone over pairs of atoms
+        if not cone:
+            cone = self._search_two_cones()
+            if cone:
+                self.cone = cone
+                self.cone_angle = math.degrees(cone.angle * 2)
+                self.tangent_atoms = cone.atoms
+
+        # Search for cones over triples of atoms
+        if not cone:
+            cone = self._search_three_cones()
+            if cone:
+                self.cone = cone
+                self.cone_angle = math.degrees(cone.angle * 2)
+                self.tangent_atoms = cone.atoms
+
+    def _search_one_cones(self):
+        """Searches over cones tangent to one atom
+
+        Returns:
+            max_1_cone (object)     :   Largest cone tangent to one atom
+        """
+        # Get the largest cone
+        atoms = self.atoms
+        alphas = np.array([atom.cone.angle for atom in atoms])
+        max_alpha = np.max(alphas)
+        max_1_cone = atoms[np.argmax(alphas)].cone
+        self._max_1_cone = max_1_cone
+
+        # Check if all atoms are contained in cone. If yes, return cone,
+        # otherwise, return None.
+        in_list = []
+        for atom in atoms:
+            in_list.append(max_1_cone.is_inside(atom))
+        if all(in_list):
+            return max_1_cone
+        else:
+            return None
+
+    def _search_two_cones(self):
+        """Search over cones tangent to two atoms
+
+        Returns:
+            max_2_cone (object)     :   Largest cone tangent to two atoms
+        """
+        # Create two-atom cones
+        loop_list = self._loop_list
+        cone_list = []
+        for atom_i, atom_j in itertools.combinations(loop_list, r=2):
+            cone = self._get_two_atom_cone(atom_i, atom_j)
+            cone_list.append(cone)
+
+        # Select largest two-atom cone
+        angles = np.array([cone.angle for cone in cone_list])
+        max_2_cone = cone_list[np.argmax(angles)]
+        self._max_2_cone = max_2_cone
+
+        # Check if all atoms are contained in cone. If yes, return cone,
+        # otherwise, return None
+        in_list = []
+        for atom in loop_list:
+            in_list.append(max_2_cone.is_inside(atom))
+
+        if all(in_list):
+            return max_2_cone
+        else:
+            return None
+
+    def _search_three_cones(self):
+        """Search over cones tangent to three atoms
+
+        Returns:
+            min_3_cone (object)     :   Smallest cone tangent to three atoms
+                                        encompassing all atoms
+        """
+        # Create three-atom cones
+        loop_list = self._loop_list
+        cone_list = []
+        for atom_i, atom_j, atom_k in itertools.combinations(loop_list, r=3):
+            cones = self._get_three_atom_cones(atom_i, atom_j, atom_k)
+            cone_list.extend(cones)
+
+        # Get upper and lower bound to apex angle
+        upper_bound = self._get_upper_bound()
+        lower_bound = self._max_2_cone.angle
+
+        # Remove cones from consideration which are outside the bounds
+        remove_list = []
+        for cone in cone_list:
+            if cone.angle < lower_bound or cone.angle > upper_bound:
+                remove_list.append(cone)
+
+        for cone in reversed(remove_list):
+            cone_list.remove(cone)
+
+        # Keep cones that encompass all atoms
+        keep_list = []
+        for cone in cone_list:
+            in_list = []
+            for atom in loop_list:
+                in_list.append(cone.is_inside(atom))
+            if all(in_list):
+                keep_list.append(cone)
+
+        # Take the smallest cone that encompasses all atoms
+        cone_angles = np.array([cone.angle for cone in keep_list])
+        min_3_cone = keep_list[np.argmin(cone_angles)]
+
+        return min_3_cone
+
+    def _get_upper_bound(self):
+        """Calculates upper bound for apex angle
+
+        Returns:
+            upper_bound (float)     :   Upper bound to apex angle in radians
+        """
+        loop_list = self._loop_list
+
+        # Calculate unit vector to centroid
+        coordinates = np.array([atom.coordinates for atom in self.atoms])
+        centroid_vector = np.mean(coordinates, axis=0)
+        centroid_unit_vector = centroid_vector / np.linalg.norm(centroid_vector)
+
+        # Getting sums of angle to centroid and vertex angle.
+        angle_sum_list = []
+        for atom in loop_list:
+            cone = atom.cone
+            cos_angle = np.dot(centroid_unit_vector, cone.normal)
+            angle = math.acos(cos_angle)
+            angle_sum = cone.angle + angle
+            angle_sum_list.append(angle_sum)
+
+        # Select upper bound as the maximum angle
+        upper_bound = max(angle_sum_list)
+
+        return upper_bound
+
+    @staticmethod
+    def _get_two_atom_cone(atom_i, atom_j):
+        """Creates a cone tangent to two atoms
+
+        Args:
+            atom_i (object) :   First tangent atom object
+            atom_j (object) :   Second tangent atom object
+
+        Returns:
+            cones (object)  :   Cone tangent to the two atoms
+        """
+        # Get the cone angle
+        cone_i = atom_i.cone
+        cone_j = atom_j.cone
+        beta_i = cone_i.angle
+        beta_j = cone_j.angle
+        beta_ij = math.acos(np.dot(atom_i.cone.normal, atom_j.cone.normal))
+        alpha_ij = (beta_ij + beta_i + beta_j) / 2
+
+        # Get the cone normal
+        a_ij = (1 / math.sin(beta_ij)) * (0.5 * (beta_ij + beta_i - beta_j))
+        b_ij = (1 / math.sin(beta_ij)) * (0.5 * (beta_ij - beta_i + beta_j))
+        c_ij = 0
+
+        n = a_ij * cone_i.normal + b_ij * cone_j.normal + 0
+        n = n / np.linalg.norm(n)
+
+        # Create cone
+        angle = alpha_ij
+        normal = n
+        cone = ConeAngleCone(angle, [atom_i, atom_j], normal)
+
+        return cone
+
+    @staticmethod
+    def _get_three_atom_cones(atom_i, atom_j, atom_k):
+        """Creates a list of cones tangent to three atoms
+
+        Args:
+            atom_i (object)     :   First tangent atom object
+            atom_j (object)     :   Second tangent atom object
+            atom_k (object)     :   Third tangent atom object
+
+        Returns:
+            cone_list (list)    :   List of cones tangent to the three atoms
+
+        """
+        # Set up vertex angles
+        beta_i = atom_i.cone.angle
+        beta_j = atom_j.cone.angle
+        beta_k = atom_k.cone.angle
+
+        # Set up angles between atom vectors
+        beta_ij = math.acos(np.dot(atom_i.cone.normal, atom_j.cone.normal))
+        beta_ik = math.acos(np.dot(atom_i.cone.normal, atom_k.cone.normal))
+        beta_jk = math.acos(np.dot(atom_j.cone.normal, atom_k.cone.normal))
+
+        # Set up normal vectors to atoms
+        m_i = atom_i.cone.normal
+        m_j = atom_j.cone.normal
+        m_k = atom_k.cone.normal
+
+        # Setup matrices
+        u = np.array([math.cos(beta_i), math.cos(beta_j), math.cos(beta_k)])
+        v = np.array([math.sin(beta_i), math.sin(beta_j), math.sin(beta_k)])
+        N = np.array([np.cross(m_j, m_k), np.cross(m_k, m_i), np.cross(m_i, m_j)]).T
+        P = N.T @ N
+        gamma = np.dot(m_i, np.cross(m_j, m_k))
+
+        # Set up coefficients of quadratic equation
+        A = u @ P @ u
+        B = v.T @ P @ v
+        C = u.T @ P @ v
+        D = gamma**2
+
+        # Solve quadratic equation
+        p2 = (A - B)**2 + 4 * C**2
+        p1 = 2 * (A - B) * (A + B - 2 * D)
+        p0 = (A + B - 2 * D)**2 - 4 * C**2
+        roots = np.roots([p2, p1, p0])
+        cos_roots = [math.acos(roots[0]), 2 * np.pi - math.acos(roots[0]), math.acos(roots[1]), 2 * np.pi - math.acos(roots[1])]
+
+        # Test roots and keep only those that are physical
+        test_list = []
+        angle_list = []
+        for root in cos_roots:
+            if not np.isnan(root) and not np.iscomplex(root):
+                alpha = root / 2
+                test = A * math.cos(alpha)**2 + B * math.sin(alpha)**2 + 2 * C * math.sin(alpha) * math.cos(alpha)
+                test_D = abs(test - D)
+                if abs(test_D) < 1e-3:
+                    angle_list.append(alpha)
+                    test_list.append(test_D)
+        if not any(angle_list):
+            return None
+        angles = np.array(angle_list)
+        tests = np.array(test_list)
+
+        # Create cones for physical angles
+        cone_list = []
+        for alpha in angles:
+            # Calculate normal vector
+            a_ij = (math.cos(alpha - beta_i) - math.cos(alpha - beta_j) * math.cos(beta_ij)) / math.sin(beta_ij)**2
+            b_ij = (math.cos(alpha - beta_j) - math.cos(alpha - beta_i) * math.cos(beta_ij)) / math.sin(beta_ij)**2
+            c_ij_squared = 1 - a_ij**2 - b_ij**2 - 2 * a_ij * b_ij * math.cos(beta_ij)
+            # Set c_ij_squared to 0 if negative due to numerical precision.
+            if c_ij_squared < 0:
+                c_ij_squared = 0
+            c_ij = math.sqrt(c_ij_squared)
+            p = N @ (u * math.cos(alpha) + v * math.sin(alpha)).reshape(-1)
+            sign = np.sign(gamma) * np.sign(np.dot(p, np.cross(m_i, m_j)))
+            if np.sign(c_ij) != sign:
+                c_ij = -c_ij
+            n = a_ij * m_i + b_ij * m_j + c_ij * 1 / math.sin(beta_ij) * np.cross(m_i, m_j)
+
+            # Create cone
+            cone = ConeAngleCone(alpha, [atom_i, atom_j, atom_k], n)
+            cone_list.append(cone)
+
+        return cone_list
+
+    def print_report(self):
+        """Prints report of results"""
+        print(f"Cone angle: {self.cone_angle:.1f}")
+        print(f"No. tangent atoms: {len(self.tangent_atoms)}")
+
+    def plot_3D(self, height=5, plot_cone=True):
+        """Plot 3D representation of points on convex hull together with cone
+
+        Args:
+            height (float)      :   Height of the cone in Å
+            plot_cone (bool)    :   Whether to plot the cone or just the points
+        """
+        # Set up dictionary for coloring atomic centers
+        element_list = [atom.element_id for atom in self.atoms]
+        color_dict = {element_id: jmol_colors[element_id] for element_id in set(element_list)}
+
+        # Construct cone and set direction
+        angle = np.degrees(self.cone.angle)
+        if angle * 2 > 180:
+            angle = 180 - angle
+            normal = -self.cone.normal
+        else:
+            angle = angle
+            normal = self.cone.normal
+
+        cone = Cone(angle, height, normal, spacing=0.1)
+
+        with coordinate_axes() as ax:
+            ax.set_aspect('equal')
+            # Plot vdW surface of atoms
+            for atom in self.atoms:
+                sphere = Sphere(atom.coordinates, atom.radius, density=0.5)
+                cvx = ConvexHull(sphere.points)
+                x, y, z = sphere.points.T
+                tri = Triangulation(x, y, triangles=cvx.simplices)
+                ax.plot_trisurf(tri, z, color=color_dict[atom.element_id])
+            # Plot cone
+            if plot_cone:
+                ax.plot_trisurf(cone.points[:,0], cone.points[:,1], cone.points[:,2], alpha=0.1)
+                ax.quiver(0, 0, 0, *normal, color="r")
+            set_axes_equal(ax)
+
 class Atom(NamedTuple):
     """Atom class"""
     element_id: int
     radius: float
     coordinates: list
-
-class Sphere:
-    """Sphere class for creating and holding points on vdW surface.
-
-    Args:
-        center (list)      :    Center of sphere
-        density (float)    :    Density of points in Å^-2
-        radius (float)     :    Radius in Å
-
-    Attributes:
-        area (float)            :   Area of sphere in Å^2
-        center (list)           :   Center of sphere
-        circumference (float)   :   Circumference in Å
-        points (ndarray)        :   Points on vdW surface of sphere
-        radius (list)           :   Radius in Å
-    """
-
-    def __init__(self, center, radius, density=0.005, method="fibonacci", filled=False):
-        self.center = center
-        self.radius = radius
-        self.circumference = math.pi * radius * 2
-        self.area = 4 * radius**2 * math.pi
-        self.volume = 4 * radius**3 * math.pi / 3
-
-        if filled:
-            self.points = self.get_points_projected(density=density, filled=True)
-
-        if method == "polar":
-            self.points = self.get_points_polar(density=density)
-        elif method =="projection":
-            self.points = self.get_points_projected(density=density)
-        elif method == "fibonacci":
-            self.points = self.get_points_fibonacci(density=density)
-
-class Sphere:
-    """Sphere class for creating and holding points on vdW surface.
-
-    Args:
-        center (list)      :    Center of sphere
-        density (float)    :    Density of points in Å^-2
-        radius (float)     :    Radius in Å
-
-    Attributes:
-        area (float)            :   Area of sphere in Å^2
-        center (list)           :   Center of sphere
-        circumference (float)   :   Circumference in Å
-        points (ndarray)        :   Points on vdW surface of sphere
-        radius (list)           :   Radius in Å
-    """
-
-    def __init__(self, center, radius, density=0.005, method="fibonacci", filled=False):
-        self.center = center
-        self.radius = radius
-        self.circumference = math.pi * radius * 2
-        self.area = 4 * radius**2 * math.pi
-        self.volume = 4 * radius**3 * math.pi / 3
-
-        if filled:
-            self.points = self.get_points_projected(density=density, filled=True)
-
-        if method == "polar":
-            self.points = self.get_points_polar(density=density)
-        elif method =="projection":
-            self.points = self.get_points_projected(density=density)
-        elif method == "fibonacci":
-            self.points = self.get_points_fibonacci(density=density)
-
-    def get_points_fibonacci(self, density):
-        rnd = 1
-        n = round((self.area / density))
-        offset = 2.0 / n
-        increment = math.pi * (3.0 - math.sqrt(5.0));
-
-        i = np.arange(n)
-        y = ((i * offset) - 1) + (offset / 2)
-        r = np.sqrt(1 - np.square(y))
-        phi = np.mod((i + rnd), n) * increment
-        x = np.cos(phi) * r
-        z = np.sin(phi) * r
-        points = np.column_stack((x, y, z))
-        points = points / np.linalg.norm(points, axis=1).reshape(-1,1) * self.radius
-        points = points + self.center
-
-        return points
-
-    def get_points_projected(self, density, filled=True):
-        if not filled:
-            n = round((self.area / density * 6 / math.pi)**(1 / 3))
-        else:
-            n = round((self.volume / density * 6 / math.pi)**(1 / 3))
-        r = self.radius
-        x = np.linspace(-r, r, n)
-        y = np.linspace(-r, r, n)
-        z = np.linspace(-r, r, n)
-        points = np.stack(np.meshgrid(x, y, z), -1).reshape(-1, 3)
-        numpoints = len(points)
-        lengths = np.linalg.norm(points, axis=1)
-        points = points[lengths <= r]
-        if not filled:
-            points = points / np.linalg.norm(points, axis=1).reshape(-1,1) * r
-        points = points + self.center
-        return points
-
-    def get_points_polar(self, density):
-        """Calculates points on the vdW surface of the sphere.
-
-        Args:
-            density (float)     :   Density of points on the vdW surface in Å^-2
-
-        Returns:
-            points (ndarray)    :   Points on vdW surface of sphere
-        """
-        # Calculate number of points
-        n = round((self.area / density / 2)**(1 / 2))
-
-        # Get the range of theta and phi
-        theta = np.linspace(0, math.pi, n)
-        phi = np.linspace(0, 2 * math.pi, 2 * n)
-
-        # Combine together all the possible combinations of theta and phi
-        combied_theta_phi = np.dstack(np.meshgrid(theta, phi)).reshape(-1, 2)
-
-        # Get the Cartesian coordinates
-        theta = combied_theta_phi[:,0]
-        phi = combied_theta_phi[:,1]
-        points = self.get_cartesian_coordinates(self.radius, theta, phi)
-        points = points + self.center
-
-        return points
-
-    @staticmethod
-    def get_cartesian_coordinates(r, theta, phi):
-        """Converts polar to Cartesian coordinates.
-
-        Args:
-            r (float)           :   Radius in Å
-            theta (ndarray)     :   Array of theta angles in radians
-            phi (ndarray)       :   Array of phi angles in radians
-
-        Returns:
-            points (ndarray)    :   Array of xyz points
-        """
-        # Calculate x, y and z coordinates
-        x = r * np.sin(theta) * np.cos(phi)
-        y = r * np.sin(theta) * np.sin(phi)
-        z = r * np.cos(theta)
-
-        # Stack coordinates as columns
-        points = np.column_stack((x, y, z))
-
-        return points
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(center: {self.center}, radius: {self.radius})"
 
 def get_radii(element_id_list, radii_type="crc", scale=1):
     """Gets radii for list of element ids

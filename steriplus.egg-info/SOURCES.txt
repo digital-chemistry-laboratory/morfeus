@@ -1,10 +1,13 @@
 README.md
 setup.py
 steriplus/__init__.py
-steriplus/__main__.py
+steriplus/data.py
+steriplus/geometry.py
 steriplus/io.py
 steriplus/plotting.py
-steriplus/radii.py
+steriplus/script_cone_angle.py
+steriplus/script_sasa.py
+steriplus/script_sterimol.py
 steriplus/steriplus.py
 steriplus.egg-info/PKG-INFO
 steriplus.egg-info/SOURCES.txt
