@@ -6,7 +6,11 @@ import itertools
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.tri import Triangulation
-
+try:
+    from rdkit.Chem import rdFreeSASA
+    from rdkit import RDLogger
+except:
+    rdFreeSASA = None
 import scipy.linalg
 import scipy.spatial
 from scipy.spatial import ConvexHull
@@ -16,12 +20,6 @@ from steriplus.data import atomic_numbers, bondi_radii, crc_radii, jmol_colors
 from steriplus.io import read_gjf, read_xyz, create_rdkit_mol
 from steriplus.plotting import ax_3D, coordinate_axes, set_axes_equal
 from steriplus.geometry import rotate_coordinates, Sphere, Cone, ConeAngleCone, ConeAngleAtom
-
-from rdkit import RDLogger
-try:
-    from rdkit.Chem import rdFreeSASA
-except:
-    rdFreeSASA = None
 
 class Sterimol:
     """Performs and stores results of Sterimol calculation.
@@ -67,7 +65,7 @@ class Sterimol:
         hull_volume (float)         :   Hull volume containing the vdW surface
                                         in Å^3
     """
-    def __init__(self, element_ids, coordinates, atom_1, atom_2, radii=[], radii_type="crc", density=0.005, n_rot_vectors=360):
+    def __init__(self, element_ids, coordinates, atom_1, atom_2, radii=[], radii_type="crc", density=0.01, n_rot_vectors=360):
         # Converting element ids to atomic numbers if the are symbols
         if type(element_ids[0]) == str:
             element_ids = [atomic_numbers[element_id] for element_id in element_ids]
@@ -581,12 +579,18 @@ class BuriedVolume:
 class SASA:
     """Calculates the solvent accesible surface area (SASA) with RDKit from a
     list of element ids and coordinates.
-    def __init__(self, , center, exclude_list=[],
-                 radii=[], include_hs=False, radius=3.5, radii_type="bondi",
-                 radii_scale=1.17, density=0.001):
+
     Args:
-        mol                     :    rdkit mol object
-        atom_index_list (list)  :    List of atom indices (starting at 1)
+        element_ids (list)      :   Elements as atomic numbers or symbols
+        coordinates (list)      :   List of atomic coordinates (Å)
+        radii (list)            :   List of radii (Å)
+        radii_type (str)        :   Type of radii ("crc" or "bondi")
+
+    Attributes:
+        atom_areas (dict)       :   Dictionary of atom areas (Å^2)
+        element_ids (list)      :   Elements as atomic numbers or symbols
+        radii (list)            :   List of radii (Å)
+        total_area (float)      :   Total area (Å^2)
     """
     def __init__(self, element_ids, coordinates, radii=None, radii_type="crc"):
         # Check if rdFreeSASA is loaded
@@ -626,6 +630,7 @@ class SASA:
         self.atom_areas = atom_areas
 
     def print_report(self):
+        """Prints a report of the solvent accesible surface area"""
         print(f"Total SASA (Å^2): {self.total_area:.3f}")
         print(f"Sum of atom areas (Å^2): {sum(self.atom_areas.values()):.3f}")
         print("Atom areas (Å^2):")
@@ -639,7 +644,7 @@ class ConeAngle:
     Args:
         atom_1 (int)            :   Index of central atom (starting from 1)
         coordinates (list)      :   List of atom coordinates (Å)
-        element_ids (list)      :   Element ids as atomic numbers or symbols
+        element_ids (list)      :   Elements as atomic numbers or symbols
         radii (list)            :   vdW radii (Å) (optional)
         radii_type (str)        :   Type of radii, "crc" or "bondi"
 
