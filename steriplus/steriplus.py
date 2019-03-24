@@ -693,7 +693,7 @@ class ConeAngle:
         if cone:
             self.cone = cone
             self.cone_angle = math.degrees(cone.angle * 2)
-            self.tangent_atoms = cone.atoms
+            self.tangent_atoms = [atom.index for atom in cone.atoms]
         else:
             # Prune out atoms that lie in the shadow of another atom's cone
             loop_list = list(atoms)
@@ -713,7 +713,7 @@ class ConeAngle:
             if cone:
                 self.cone = cone
                 self.cone_angle = math.degrees(cone.angle * 2)
-                self.tangent_atoms = cone.atoms
+                self.tangent_atoms = [atom.index for atom in cone.atoms]
 
         # Search for cones over triples of atoms
         if not cone:
@@ -721,7 +721,7 @@ class ConeAngle:
             if cone:
                 self.cone = cone
                 self.cone_angle = math.degrees(cone.angle * 2)
-                self.tangent_atoms = cone.atoms
+                self.tangent_atoms = [atom.index for atom in cone.atoms]
 
     def _search_one_cones(self):
         """Searches over cones tangent to one atom
@@ -992,7 +992,7 @@ class ConeAngle:
 
         cone = Cone(angle, height, normal, spacing=0.1)
 
-        with coordinate_axes() as ax:
+        with ax_3D() as ax:
             ax.set_aspect('equal')
             # Plot vdW surface of atoms
             for atom in self.atoms:
@@ -1006,6 +1006,8 @@ class ConeAngle:
                 ax.plot_trisurf(cone.points[:,0], cone.points[:,1], cone.points[:,2], alpha=0.1)
                 ax.quiver(0, 0, 0, *normal, color="r")
             set_axes_equal(ax)
+        
+        plt.show()
 
 class Atom(NamedTuple):
     """Atom class"""
