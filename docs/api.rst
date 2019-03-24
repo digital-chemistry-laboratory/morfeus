@@ -6,7 +6,7 @@ API
 steriplus.data
 **************
 
-.. automodule:: steriplus.data
+.. autodata:: steriplus.data
    :members:
 
 ******************
