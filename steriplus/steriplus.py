@@ -623,7 +623,7 @@ class SASA:
             atom.SetProp("SASAClass", "2")
             q_atom = rdFreeSASA.MakeFreeSasaPolarAtomQuery()
             atom_area = rdFreeSASA.CalcSASA(mol, radii=radii, query=q_atom)
-            atom_areas[atom.GetIdx()] = atom_area
+            atom_areas[atom.GetIdx() + 1] = atom_area
             atom.ClearProp("SASAClassName")
             atom.ClearProp("SASAClass")
 

@@ -77,6 +77,5 @@ and agree within numerical accuracy.
 **********
 References
 **********
-.. [1] Bilbrey, J. A.; Kazez, A. H.; Locklin, J.; Allen, W. D. J. Comput.
-  _Chem. 2013, 34, 1189.
+.. [1] Bilbrey, J. A.; Kazez, A. H.; Locklin, J.; Allen, W. D. J. Comput. Chem. 2013, 34, 1189.
 .. [2] Tolman, C. A. Chem. Rev. 1977, 77, 313.

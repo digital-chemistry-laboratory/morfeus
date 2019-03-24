@@ -3,9 +3,13 @@ from steriplus import SASA, read_gjf, read_xyz
 
 def main():
     # Parse the arguments
-    parser = argparse.ArgumentParser("Steriplus program to calcaulate SASA values")
-    parser.add_argument('file', type=str, help='Input file, either .xyz, .gjf or .com')
-    parser.add_argument('--radii', type=str, help='Type of radii, either "crc" or "bondi"', choices=["bondi", "crc"], default="crc")
+    parser = argparse.ArgumentParser(
+        "Steriplus program to calcaulate SASA values")
+    parser.add_argument(
+        'file', type=str, help='Input file, either .xyz, .gjf or .com')
+    parser.add_argument(
+        '--radii', type=str, help='Type of radii, either "crc" or "bondi"',
+        choices=["bondi", "crc"], default="crc")
 
     args = parser.parse_args()
 
