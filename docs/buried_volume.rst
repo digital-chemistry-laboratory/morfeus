@@ -39,12 +39,12 @@ The BuriedVolume class calculates the BV. Steric maps can also be plotted.
   >>> print(bv.buried_volume)
   0.2962110976518822
   >>> bv.print_report()
-  %V_bur: 29.6
+  V_bur (%): 29.6
   >>> bv.plot_steric_map([14])
 
 .. image:: images/steric_map.png
 
-``bv.plot_3D()`` gives a three-dimensional representation of the buried volume
+``bv.plot_3D()`` gives a three-dimensional representation of the buried volume.
 Plots can be saved by passing the ``filename={filename}`` keyword argument.
 
 By default, hydrogen atoms are excluded in the calculation. They can be added
@@ -58,13 +58,13 @@ and ``radii_scale={radii_scale}``. Custom radii can be supplied as a list with
 Background
 **********
 
-The percent of buried volume (%BV) is a steric measure of the steric hindrance
-induced by a ligand of a transtion metal complex [1]_. A web tool, SambVca was
-made available for scientific purposes by Cavallo and co-workers, first in 2009
-[2]_ and then with version 2 in 2016 [1]_.
+The percent of buried volume is a measure of the steric hindrance induced by a 
+ligand of a transtion metal complex [1]_. A web tool to calculate buried 
+volumes, SambVca was made available for scientific purposes by Cavallo and 
+co-workers in 2009 [2]_ with version 2 in 2016 [1]_.
 
 The approach of Steriplus differs somewhat from that in ref. [1]_ in that points
-are generated uniformly in the test shere rather than considering voxels. The 
+are generated uniformly in the test sphere rather than considering voxels. The 
 numerical results with standard settings are the same though as shown by
 benchmarks on complexes 1-18 from ref. [1]_. Steric maps also match those in 
 ref. [1]_.

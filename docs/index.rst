@@ -14,7 +14,20 @@ Welcome to steriplus's documentation!
    cone_angles
    sasa
 
+.. automodule:: data
+   :members:
 
+.. automodule:: geometry
+   :members:
+
+.. automodule:: io
+   :members:
+
+.. automodule:: plotting
+   :members:
+
+.. automodule:: steriplus
+   :members:
 
 Indices and tables
 ==================
