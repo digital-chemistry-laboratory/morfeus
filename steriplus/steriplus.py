@@ -230,7 +230,7 @@ class Sterimol:
             ax.scatter(coordinates[::step,0], coordinates[::step,1], coordinates[::step,2], alpha=0.1)
 
             # Plot the atomic centers
-            for i, atom in enumerate(atom_list, start=1):
+            for atom in atom_list:
                 x, y, z = atom.coordinates[:,0], atom.coordinates[:,1], atom.coordinates[:,2]
                 ax.scatter(x, y, z, color=color_dict[atom.element_id], s=50, edgecolors="k",)
 
@@ -286,11 +286,10 @@ class Sterimol:
             i_2 = 2
 
         # Get coordinates according to plotting plane
-        coodinates = self.coordinates[:, [i_1, i_2]]
+        coordinates = self.coordinates[:, [i_1, i_2]]
         B_1 = self.B_1[[i_1, i_2]]
         B_5 = self.B_5[[i_1, i_2]]
         L = self.L[[i_1, i_2]]
-        vector = self.vector[[i_1, i_2]]
         coordinates = self.coordinates[:, [i_1, i_2]]
         atom_coordinates_list = [atom.coordinates[:, [i_1, i_2]] for atom in atom_list]
         atom_2_coordinates = atom_list[atom_2 - 1].coordinates[:,[i_1, i_2]]
@@ -327,9 +326,7 @@ class Sterimol:
             plt.arrow(coord_1[0], coord_2[0], L[0], L[1], fc="k", ec="k", head_width=0.1, head_length=0.2, length_includes_head=True)
             L_pos = L + atom_1_coordinates
             plt.text(L_pos[:,0][0], L_pos[:,1][0], "L")
-
-        set_axes_equal(ax)
-
+        
         if filename:
             plt.savefig(filename)
         else:
@@ -569,7 +566,7 @@ class BuriedVolume:
             ax.scatter(free_points[::step,0], free_points[::step,1], free_points[::step,2], s=1, c="b")
 
             # Plot the atomic centers
-            for i, atom in enumerate(atom_list, start=1):
+            for atom in atom_list:
                 x, y, z = atom.coordinates[:,0], atom.coordinates[:,1], atom.coordinates[:,2]
                 ax.scatter(x, y, z, color=color_dict[atom.element_id], s=50, edgecolors="k",)
 
@@ -734,7 +731,6 @@ class ConeAngle:
         # Get the largest cone
         atoms = self.atoms
         alphas = np.array([atom.cone.angle for atom in atoms])
-        max_alpha = np.max(alphas)
         max_1_cone = atoms[np.argmax(alphas)].cone
         self._max_1_cone = max_1_cone
 
@@ -870,7 +866,7 @@ class ConeAngle:
         b_ij = (1 / math.sin(beta_ij)) * (0.5 * (beta_ij - beta_i + beta_j))
         c_ij = 0
 
-        n = a_ij * cone_i.normal + b_ij * cone_j.normal + 0
+        n = a_ij * cone_i.normal + b_ij * cone_j.normal + c_ij
         n = n / np.linalg.norm(n)
 
         # Create cone
@@ -900,8 +896,6 @@ class ConeAngle:
 
         # Set up angles between atom vectors
         beta_ij = math.acos(np.dot(atom_i.cone.normal, atom_j.cone.normal))
-        beta_ik = math.acos(np.dot(atom_i.cone.normal, atom_k.cone.normal))
-        beta_jk = math.acos(np.dot(atom_j.cone.normal, atom_k.cone.normal))
 
         # Set up normal vectors to atoms
         m_i = atom_i.cone.normal
@@ -929,7 +923,6 @@ class ConeAngle:
         cos_roots = [math.acos(roots[0]), 2 * np.pi - math.acos(roots[0]), math.acos(roots[1]), 2 * np.pi - math.acos(roots[1])]
 
         # Test roots and keep only those that are physical
-        test_list = []
         angle_list = []
         for root in cos_roots:
             if not np.isnan(root) and not np.iscomplex(root):
@@ -938,11 +931,9 @@ class ConeAngle:
                 test_D = abs(test - D)
                 if abs(test_D) < 1e-3:
                     angle_list.append(alpha)
-                    test_list.append(test_D)
         if not any(angle_list):
             return None
         angles = np.array(angle_list)
-        tests = np.array(test_list)
 
         # Create cones for physical angles
         cone_list = []
