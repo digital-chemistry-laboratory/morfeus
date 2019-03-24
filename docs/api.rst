@@ -6,23 +6,19 @@ API
 steriplus.data
 **************
 
-.. automodule:: steriplus.data
-   :members:
-
-   .. autodata:: atomic_symbols
-      :annotation:
-    
-   .. autodata:: atomic_numbers
-      :annotation:
-    
-   .. autodata:: bondi_radii
-      :annotation:
-
-   .. autodata:: crc_radii
-      :annotation:
-    
-   .. autodata:: jmol_colors
-      :annotation:
+.. autodata:: atomic_symbols
+   :annotation:
+ 
+.. autodata:: atomic_numbers
+   :annotation:
+ 
+.. autodata:: bondi_radii
+   :annotation:
+.. autodata:: crc_radii
+   :annotation:
+ 
+.. autodata:: jmol_colors
+   :annotation:
     
 ******************
 steriplus.geometry
