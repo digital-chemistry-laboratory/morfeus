@@ -13,21 +13,7 @@ Welcome to steriplus's documentation!
    buried_volume
    cone_angles
    sasa
-
-.. automodule:: steriplus.data
-   :members:
-
-.. automodule:: steriplus.geometry
-   :members:
-
-.. automodule:: steriplus.io
-   :members:
-
-.. automodule:: steriplus.plotting
-   :members:
-
-.. automodule:: steriplus.steriplus
-   :members:
+   api
 
 Indices and tables
 ==================
