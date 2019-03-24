@@ -78,7 +78,7 @@ Solvent accessible surface area is a measure of how much of the area of a
 molecule is available to the solvent [2]_. The atomic SASA can be used as a
 measure of the steric availability of an atom.
 
-SASA is computed using RDKit based on the FreeSASA program by Mitternacht [2]_.
+SASA is computed using RDKit based on the FreeSASA program by Mitternacht [1]_.
 The algorithm is the one by Lee and Richards with the default probe radius of
 1.4 Å.
 

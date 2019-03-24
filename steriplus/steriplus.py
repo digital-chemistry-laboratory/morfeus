@@ -403,7 +403,7 @@ class BuriedVolume:
         # Exclude Hs if option set
         exclude_H_list = []
         for i, element in enumerate(element_ids):
-            if element == 0:
+            if element == 1:
                 exclude_H_list.append(i)
         for i in reversed(exclude_H_list):
             del element_ids[i]
@@ -449,7 +449,7 @@ class BuriedVolume:
 
     def print_report(self):
         """Prints a report of the buried volume for use in shell scripts"""
-        print("%V_bur:", round(self.buried_volume * 100, 1))
+        print("V_bur (%):", round(self.buried_volume * 100, 1))
 
     def plot_steric_map(self, z_axis_atoms, filename=None, levels=150, grid=100, all_positive=True, cmap="viridis"):
         """Plots a steric map as in the original article.
@@ -550,14 +550,16 @@ class BuriedVolume:
                                     sphere
             filename (str)     :    Name of file for saving the plot.
         """
-        buried_points = self.buried_points
-        free_points = self.free_points
+        buried_points = np.array(self.buried_points)
+        np.random.shuffle(buried_points)
+        free_points = np.array(self.free_points)
+        np.random.shuffle(free_points)
         atom_list = self.atoms
 
         # Set the density of points for plotting with input factor
         n_points = self.sphere.volume / self.density / density * 100
         step = round(n_points / (len(free_points) + len(buried_points)))
-
+        
         # Set up dictionary for coloring atomic centers
         element_list = [atom.element_id for atom in atom_list]
         color_dict = {element_id: jmol_colors[element_id] for element_id in set(element_list)}

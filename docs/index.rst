@@ -10,6 +10,7 @@ Welcome to steriplus's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   buried_volume
    cone_angles
    sasa
 
