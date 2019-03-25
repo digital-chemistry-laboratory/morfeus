@@ -19,7 +19,7 @@ Clone this repository. Then install with pip.
 Documentation
 *************
 
-https://steriplus.readthedocs.io/en/latest/sterimol.html
+https://steriplus.readthedocs.io/en/latest/index.html
 
 ************
 Dependencies
