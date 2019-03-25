@@ -9,7 +9,15 @@ Command line script
 
 .. code-block:: console
   :caption: Example
+  
+  $ steriplus_sterimol tBu.xyz 1 2
+  L         B_1       B_5
+  4.21      2.87      3.27
 
+
+``--radii``  Type of van der Waals radii: ``bondi`` or ``crc`` (default)
+``--density``  Density of points on spheres (default: 0.005 points/Å\ :sup:`2`)
+``-v/--verbose``  Print uncorrected L and bond length between atom 1 and atom 2.|
 
 ******
 Module
@@ -64,7 +72,7 @@ can also be obtained.
 
 .. figure:: images/sterimol_3D.png
 
-More information can be found with `help(Sterimol)` or in
+More information can be found with `help(Sterimol)` or in the API:
 :py:class:`steriplus.steriplus.Sterimol`
 
 **********
