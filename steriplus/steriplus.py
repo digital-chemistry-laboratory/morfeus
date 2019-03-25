@@ -230,7 +230,7 @@ class Sterimol:
             ax.scatter(coordinates[::step,0], coordinates[::step,1], coordinates[::step,2], alpha=0.1)
 
             # Plot the atomic centers
-            for i, atom in enumerate(atom_list, start=1):
+            for atom in atom_list:
                 x, y, z = atom.coordinates[:,0], atom.coordinates[:,1], atom.coordinates[:,2]
                 ax.scatter(x, y, z, color=color_dict[atom.element_id], s=50, edgecolors="k",)
 
@@ -286,11 +286,10 @@ class Sterimol:
             i_2 = 2
 
         # Get coordinates according to plotting plane
-        coodinates = self.coordinates[:, [i_1, i_2]]
+        coordinates = self.coordinates[:, [i_1, i_2]]
         B_1 = self.B_1[[i_1, i_2]]
         B_5 = self.B_5[[i_1, i_2]]
         L = self.L[[i_1, i_2]]
-        vector = self.vector[[i_1, i_2]]
         coordinates = self.coordinates[:, [i_1, i_2]]
         atom_coordinates_list = [atom.coordinates[:, [i_1, i_2]] for atom in atom_list]
         atom_2_coordinates = atom_list[atom_2 - 1].coordinates[:,[i_1, i_2]]
@@ -327,9 +326,7 @@ class Sterimol:
             plt.arrow(coord_1[0], coord_2[0], L[0], L[1], fc="k", ec="k", head_width=0.1, head_length=0.2, length_includes_head=True)
             L_pos = L + atom_1_coordinates
             plt.text(L_pos[:,0][0], L_pos[:,1][0], "L")
-
-        set_axes_equal(ax)
-
+        
         if filename:
             plt.savefig(filename)
         else:
@@ -403,7 +400,7 @@ class BuriedVolume:
         # Exclude Hs if option set
         exclude_H_list = []
         for i, element in enumerate(element_ids):
-            if element == 0:
+            if element == 1:
                 exclude_H_list.append(i)
         for i in reversed(exclude_H_list):
             del element_ids[i]
@@ -449,7 +446,7 @@ class BuriedVolume:
 
     def print_report(self):
         """Prints a report of the buried volume for use in shell scripts"""
-        print("%V_bur:", round(self.buried_volume * 100, 1))
+        print("V_bur (%):", round(self.buried_volume * 100, 1))
 
     def plot_steric_map(self, z_axis_atoms, filename=None, levels=150, grid=100, all_positive=True, cmap="viridis"):
         """Plots a steric map as in the original article.
@@ -550,14 +547,16 @@ class BuriedVolume:
                                     sphere
             filename (str)     :    Name of file for saving the plot.
         """
-        buried_points = self.buried_points
-        free_points = self.free_points
+        buried_points = np.array(self.buried_points)
+        np.random.shuffle(buried_points)
+        free_points = np.array(self.free_points)
+        np.random.shuffle(free_points)
         atom_list = self.atoms
 
         # Set the density of points for plotting with input factor
         n_points = self.sphere.volume / self.density / density * 100
         step = round(n_points / (len(free_points) + len(buried_points)))
-
+        
         # Set up dictionary for coloring atomic centers
         element_list = [atom.element_id for atom in atom_list]
         color_dict = {element_id: jmol_colors[element_id] for element_id in set(element_list)}
@@ -567,7 +566,7 @@ class BuriedVolume:
             ax.scatter(free_points[::step,0], free_points[::step,1], free_points[::step,2], s=1, c="b")
 
             # Plot the atomic centers
-            for i, atom in enumerate(atom_list, start=1):
+            for atom in atom_list:
                 x, y, z = atom.coordinates[:,0], atom.coordinates[:,1], atom.coordinates[:,2]
                 ax.scatter(x, y, z, color=color_dict[atom.element_id], s=50, edgecolors="k",)
 
@@ -623,7 +622,7 @@ class SASA:
             atom.SetProp("SASAClass", "2")
             q_atom = rdFreeSASA.MakeFreeSasaPolarAtomQuery()
             atom_area = rdFreeSASA.CalcSASA(mol, radii=radii, query=q_atom)
-            atom_areas[atom.GetIdx()] = atom_area
+            atom_areas[atom.GetIdx() + 1] = atom_area
             atom.ClearProp("SASAClassName")
             atom.ClearProp("SASAClass")
 
@@ -693,7 +692,7 @@ class ConeAngle:
         if cone:
             self.cone = cone
             self.cone_angle = math.degrees(cone.angle * 2)
-            self.tangent_atoms = cone.atoms
+            self.tangent_atoms = [atom.index for atom in cone.atoms]
         else:
             # Prune out atoms that lie in the shadow of another atom's cone
             loop_list = list(atoms)
@@ -713,7 +712,7 @@ class ConeAngle:
             if cone:
                 self.cone = cone
                 self.cone_angle = math.degrees(cone.angle * 2)
-                self.tangent_atoms = cone.atoms
+                self.tangent_atoms = [atom.index for atom in cone.atoms]
 
         # Search for cones over triples of atoms
         if not cone:
@@ -721,7 +720,7 @@ class ConeAngle:
             if cone:
                 self.cone = cone
                 self.cone_angle = math.degrees(cone.angle * 2)
-                self.tangent_atoms = cone.atoms
+                self.tangent_atoms = [atom.index for atom in cone.atoms]
 
     def _search_one_cones(self):
         """Searches over cones tangent to one atom
@@ -732,7 +731,6 @@ class ConeAngle:
         # Get the largest cone
         atoms = self.atoms
         alphas = np.array([atom.cone.angle for atom in atoms])
-        max_alpha = np.max(alphas)
         max_1_cone = atoms[np.argmax(alphas)].cone
         self._max_1_cone = max_1_cone
 
@@ -868,7 +866,7 @@ class ConeAngle:
         b_ij = (1 / math.sin(beta_ij)) * (0.5 * (beta_ij - beta_i + beta_j))
         c_ij = 0
 
-        n = a_ij * cone_i.normal + b_ij * cone_j.normal + 0
+        n = a_ij * cone_i.normal + b_ij * cone_j.normal + c_ij
         n = n / np.linalg.norm(n)
 
         # Create cone
@@ -898,8 +896,6 @@ class ConeAngle:
 
         # Set up angles between atom vectors
         beta_ij = math.acos(np.dot(atom_i.cone.normal, atom_j.cone.normal))
-        beta_ik = math.acos(np.dot(atom_i.cone.normal, atom_k.cone.normal))
-        beta_jk = math.acos(np.dot(atom_j.cone.normal, atom_k.cone.normal))
 
         # Set up normal vectors to atoms
         m_i = atom_i.cone.normal
@@ -927,7 +923,6 @@ class ConeAngle:
         cos_roots = [math.acos(roots[0]), 2 * np.pi - math.acos(roots[0]), math.acos(roots[1]), 2 * np.pi - math.acos(roots[1])]
 
         # Test roots and keep only those that are physical
-        test_list = []
         angle_list = []
         for root in cos_roots:
             if not np.isnan(root) and not np.iscomplex(root):
@@ -936,11 +931,9 @@ class ConeAngle:
                 test_D = abs(test - D)
                 if abs(test_D) < 1e-3:
                     angle_list.append(alpha)
-                    test_list.append(test_D)
         if not any(angle_list):
             return None
         angles = np.array(angle_list)
-        tests = np.array(test_list)
 
         # Create cones for physical angles
         cone_list = []
@@ -992,7 +985,7 @@ class ConeAngle:
 
         cone = Cone(angle, height, normal, spacing=0.1)
 
-        with coordinate_axes() as ax:
+        with ax_3D() as ax:
             ax.set_aspect('equal')
             # Plot vdW surface of atoms
             for atom in self.atoms:
@@ -1006,6 +999,8 @@ class ConeAngle:
                 ax.plot_trisurf(cone.points[:,0], cone.points[:,1], cone.points[:,2], alpha=0.1)
                 ax.quiver(0, 0, 0, *normal, color="r")
             set_axes_equal(ax)
+        
+        plt.show()
 
 class Atom(NamedTuple):
     """Atom class"""
