@@ -46,8 +46,7 @@ the sum of the atom areas should be the same as the total.
      25    13.237
      26    13.231
 
-Default radii are CRC but Bondi can also be chosen with the argument
-``--radii bondi`` 
+--radii <str>  Choice of vdW radii: ``crc`` (default) or ``bondi``
 
 ******
 Module
@@ -67,9 +66,12 @@ The SASA class calculates and stores the total and atomic SASA.
   327.8990380394403
 
 The ``atom_areas`` dictionary contains the atomic SASAs indexed from 1.Default
-radii can be changed with the keyword argument ``radii={"crc", "bondi"}``.
-Custom radii can be supplied as a list with ``radii=radii_list`` for more 
-information, use ``help(SASA)`` or consult the documentation.
+radii can be changed with the keyword argument ``radii=<str>`` with either 
+``crc`` (default) or ``bondi``. Custom radii can be supplied with 
+``radii=<list>``.
+
+For more information, use ``help(SASA)`` or consult the API:
+:py:class:`steriplus.steriplus.SASA`
 
 **********
 Background
@@ -98,6 +100,7 @@ metal complexes with results that correlate well [3]_.
 References
 **********
 
-.. [1] Mitternacht, S. F1000Research 2016, 5.
-.. [2] Lee, B.; Richards, F. M. J. Mol. Biol. 1971, 55, 379.
-.. [3] Pascual-Ahuir, J. L.; Silla, E.; Tuñon, I. J. Comput. Chem. 1994, 15, 1127.
+.. [1] Mitternacht, S. *F1000Research* **2016**, *5*.
+.. [2] Lee, B.; Richards, F. M. *J. Mol. Biol.* **1971**, *55*, 379.
+.. [3] Pascual-Ahuir, J. L.; Silla, E.; Tuñon, I.
+       *J. Comput. Chem.* **1994**, *15*, 1127.

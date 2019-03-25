@@ -25,8 +25,8 @@ Here the second argument is the dummy atom (called atom 1 below) and the third
 argument is the atom of the substituent to which atom 1 is connected (called 
 atom 2 below).
 
---radii <radii>  Type of van der Waals radii: ``bondi`` or ``crc`` (default)
---density <density>  Density of points on spheres (default: ``0.005`` points/Å\ :sup:`2`)
+--radii <list>  Type of van der Waals radii: ``bondi`` or ``crc`` (default)
+--density <str>  Density of points on spheres (default: ``0.005`` points/Å\ :sup:`2`)
 -v, --verbose  Print uncorrected L and bond length between atom 1 and atom 2.
 
 ******
@@ -51,7 +51,7 @@ The Sterimol class calculates and stores Sterimol parameters.
   L         B_1       B_5
   4.21      2.87      3.27
 
-Radii can be changed with the argument ``radii_type=<type>`` with the choices
+Radii can be changed with the argument ``radii_type=<str>`` with the choices
 ``crc`` (default) or ``bondi``. Custom radii can be supplied as a list with 
 ``radii=<list>``. 
 
@@ -129,11 +129,11 @@ maximum projection for the set of vectors.
 References
 **********
 
-.. [1] Verloop, A., Hoogenstraaten, W., Tipker, J. In Drug Design Vol. VII;
-       Ariens, E. J., Ed.; Academic Press, 1976; pp 165-206.  
-.. [2] Verloop, A. In Pesticide Chemistry: Human Welfare and Environment:
-       Synthesis and Structure-Activity Relationships;
-       Doyle, P., Fujita, T., Eds.; Pergamon, 1983; pp 339–344.
+.. [1] Verloop, A., Hoogenstraaten, W., Tipker, J. In *Drug Design* Vol. VII;
+       Ariens, E. J., Ed.; Academic Press, **1976**; pp 165-206.  
+.. [2] Verloop, A. In *Pesticide Chemistry: Human Welfare and Environment:
+       Synthesis and Structure-Activity Relationships*;
+       Doyle, P., Fujita, T., Eds.; Pergamon, **1983**; pp 339–344.
 
 .. _`convex hull`: https://en.wikipedia.org/wiki/Convex_hull
 .. _Sterimol: https://github.com/bobbypaton/Sterimol
