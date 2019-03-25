@@ -65,7 +65,7 @@ can also be obtained.
 .. figure:: images/sterimol_3D.png
 
 More information can be found with `help(Sterimol)` or in
-:py:class:`steriplus.Sterimol`
+:py:class:`steriplus.steriplus.Sterimol`
 
 **********
 Background
