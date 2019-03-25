@@ -20,7 +20,8 @@ The basic functionality is available through the command line script.
 --radii  Type of radii, "crc" or "bondi" (default: "crc")
 --radii_scale  Scaling of the vdW radii (default: 1.17)
 -r  Radius of sphere (default: 3.5)
---steric_map  Plots a steric map with the supplied atoms to define the z axis. Map is saved as "steric_map.png"
+--steric_map  Plots a steric map with the supplied atoms to define the z axis.
+  Map is saved as "steric_map.png"
 
 More information can be found with ``steriplus_buried_volume --help``
 
@@ -82,5 +83,7 @@ ref. [1]_.
 References
 **********
 
-.. [1] Falivene, L.; Credendino, R.; Poater, A.; Petta, A.; Serra, L.; Oliva, R.; Scarano, V.; Cavallo, L. Organometallics 2016, 35, 2286.
-.. [2] Poater, A.; Cosenza, B.; Correa, A.; Giudice, S.; Ragone, F.; Scarano, V.; Cavallo, L. Eur. J. Inorg. Chem. 2009, 2009, 1759.
+.. [1] Falivene, L.; Credendino, R.; Poater, A.; Petta, A.; Serra, L.;
+       Oliva, R.; Scarano, V.; Cavallo, L. Organometallics 2016, 35, 2286.
+.. [2] Poater, A.; Cosenza, B.; Correa, A.; Giudice, S.; Ragone, F.;
+       Scarano, V.; Cavallo, L. Eur. J. Inorg. Chem. 2009, 2009, 1759.

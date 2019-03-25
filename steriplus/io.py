@@ -50,7 +50,7 @@ def read_xyz(filename):
         coord_list (list)       :     List of atomic coordinates in Å
     """
     lines = open(filename).readlines()[2:]
-    lines = [line.strip().split() for line in lines]
+    lines = [line.strip().split() for line in lines if line.strip().split()]
     element_id_list = []
     coord_list = []
     for line in lines:
