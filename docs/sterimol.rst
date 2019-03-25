@@ -25,9 +25,12 @@ Here the second argument is the dummy atom (called atom 1 below) and the third
 argument is the atom of the substituent to which atom 1 is connected (called 
 atom 2 below).
 
---radii <list>  Type of van der Waals radii: ``bondi`` or ``crc`` (default)
---density <str>  Density of points on spheres (default: ``0.005`` points/Å\ :sup:`2`)
--v, --verbose  Print uncorrected L and bond length between atom 1 and atom 2.
+--radii <list>
+  Type of van der Waals radii: ``bondi`` or ``crc`` (default)
+--density <str>
+  Density of points on spheres (default: ``0.005`` points/Å\ :sup:`2`)
+-v, --verbose
+  Print uncorrected L and bond length between atom 1 and atom 2.
 
 ******
 Module
@@ -106,7 +109,7 @@ atom.
 B\ :sub:`1` and B\ :sub:`5` can be described as the minimum and maximum
 rotational size of the substituent. They are defined as the shortest and longest
 vectors from atom 2 to a tangent plane of the vdW surface which are
-perpendicular to the L vector.
+perpendicular to the L vector, respectively.
 
 Steriplus has been benchmarked against Paton's Sterimol_ package. Using exactly
 the same radii (Paton's modified Bondi), almost identical results are obtained.

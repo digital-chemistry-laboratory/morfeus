@@ -16,11 +16,16 @@ The basic functionality is available through the command line script.
   $ steriplus_buried_volume 1.xyz 1 --exclude 1 2 3 4 5 6 7
   V_bur (%): 29.6
 
---include_hs <True/False>  Whether to include H atoms in the calculations (default: ``False``)
---radii <str>  Type of radii, ``crc`` or ``bondi`` (default)
---radii_scale <float>  Scaling of the vdW radii (default: ``1.17``)
--r <float>  Radius of sphere (default: ``3.5``)
---steric_map <list>  Plots a steric map with the supplied atoms to define the z axis.
+--include_hs <True/False>
+  Include H atoms (default: ``False``)
+--radii <str>  
+  Type of radii, ``crc`` or ``bondi`` (default)
+--radii_scale <float>
+  Scaling of the radii (default: ``1.17``)
+-r <float>
+  Radius of sphere (default: ``3.5``)
+--steric_map <list>
+  Save steric map with supplied atoms to define z axis.
   Map is saved as "steric_map.png"
 
 More information can be found with ``steriplus_buried_volume --help``
@@ -64,7 +69,7 @@ Background
 **********
 
 The percent of buried volume is a measure of the steric hindrance induced by a 
-ligand of a transtion metal complex [1]_. A web tool to calculate buried 
+ligand of a transition metal complex [1]_. A web tool to calculate buried 
 volumes, SambVca, was made available for scientific purposes by Cavallo and 
 co-workers in 2009 [2]_ with version 2 in 2016 [1]_.
 

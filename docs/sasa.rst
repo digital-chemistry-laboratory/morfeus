@@ -65,7 +65,7 @@ The SASA class calculates and stores the total and atomic SASA.
   >>> print(sasa.total_area)                                                                           
   327.8990380394403
 
-The ``atom_areas`` dictionary contains the atomic SASAs indexed from 1.Default
+The ``atom_areas`` dictionary contains the atomic SASAs indexed from 1. Type of
 radii can be changed with the keyword argument ``radii=<str>`` with either 
 ``crc`` (default) or ``bondi``. Custom radii can be supplied with 
 ``radii=<list>``.

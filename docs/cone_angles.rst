@@ -20,7 +20,8 @@ terminal.
 
 The index of the metal atom is given as the second argument.
 
---radii <str>  Choice of vdW radii: ``bondi`` or ``crc`` (default)
+--radii <str>
+  Choice of vdW radii: ``bondi`` or ``crc`` (default)
 
 More information is given with ``steriplus_cone_angle --help``
 
