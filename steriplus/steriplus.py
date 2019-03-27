@@ -657,7 +657,7 @@ class ConeAngle:
     """
     def __init__(self, element_ids, coordinates, atom_1, radii=[], radii_type="crc"):
         #Removing central atom
-        center_coordinates = np.array(coordinates[0])
+        center_coordinates = np.array(coordinates[atom_1 - 1])
         del coordinates[atom_1 - 1]
         del element_ids[atom_1 - 1]
 
@@ -681,6 +681,8 @@ class ConeAngle:
         atoms = []
         for i, (coord, radius, element_id) in enumerate(zip(atom_coordinates, radii, element_ids), start=1):
             coord = np.array(coord)
+            if np.linalg.norm(coord) < radius:
+                raise Exception(f"Center within vdW surface of atom {i}")
             atom = ConeAngleAtom(coord, radius, i, element_id)
             atoms.append(atom)
             atom.get_cone()
