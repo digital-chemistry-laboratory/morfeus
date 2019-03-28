@@ -656,7 +656,11 @@ class ConeAngle:
         tangent_atoms (list)    :   Atoms tangent to cone
     """
     def __init__(self, element_ids, coordinates, atom_1, radii=[], radii_type="crc"):
-        #Removing central atom
+        # Make copies to avoid deletion
+        coordinates = list(coordinates)
+        element_ids = list(element_ids)
+        
+        # Removing central atom
         center_coordinates = np.array(coordinates[atom_1 - 1])
         del coordinates[atom_1 - 1]
         del element_ids[atom_1 - 1]
