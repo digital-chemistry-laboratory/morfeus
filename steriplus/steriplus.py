@@ -6,11 +6,7 @@ import itertools
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.tri import Triangulation
-try:
-    from rdkit.Chem import rdFreeSASA
-    from rdkit import RDLogger
-except:
-    rdFreeSASA = None
+
 import scipy.linalg
 import scipy.spatial
 from scipy.spatial import ConvexHull
@@ -18,7 +14,7 @@ from scipy.spatial.distance import cdist
 from scipy.spatial.transform import Rotation
 
 from steriplus.data import atomic_numbers, bondi_radii, crc_radii, jmol_colors
-from steriplus.io import read_gjf, read_xyz, create_rdkit_mol
+from steriplus.io import read_gjf, read_xyz
 from steriplus.plotting import ax_3D, coordinate_axes, set_axes_equal
 from steriplus.geometry import rotate_coordinates, Sphere, Cone, ConeAngleCone, ConeAngleAtom, SASAAtom
 
@@ -577,76 +573,6 @@ class BuriedVolume:
             plt.show()
 
 class SASA:
-    """Calculates the solvent accesible surface area (SASA) with RDKit from a
-    list of element ids and coordinates.
-
-    Args:
-        element_ids (list)      :   Elements as atomic numbers or symbols
-        coordinates (list)      :   List of atomic coordinates (Å)
-        radii (list)            :   List of radii (Å)
-        radii_type (str)        :   Type of radii ("crc" or "bondi")
-
-    Attributes:
-        atom_areas (dict)       :   Dictionary of atom areas (Å^2)
-        element_ids (list)      :   Elements as atomic numbers or symbols
-        radii (list)            :   List of radii (Å)
-        total_area (float)      :   Total area (Å^2)
-    """
-    def __init__(self, element_ids, coordinates, radii=None, radii_type="crc", algorithm="LeeRichards"):
-        # Check if rdFreeSASA is loaded
-        if not rdFreeSASA:
-            raise Exception("rdFreeSASA not loaded (not available on Windows)")
-
-        lg = RDLogger.logger()
-        lg.setLevel(RDLogger.ERROR)
-
-        # Converting element ids to atomic numbers if the are symbols
-        if type(element_ids[0]) == str:
-            element_ids = [atomic_numbers[element_id] for element_id in element_ids]
-        self.element_ids = element_ids
-
-        # Getting radii if they are not supplied
-        if not radii:
-            radii = get_radii(element_ids, radii_type=radii_type)
-        self.radii = radii
-
-        # Create rdkit mol object from the element_ids and coordinates
-        mol = create_rdkit_mol(element_ids, coordinates)
-
-        # Set up algorithm
-        options = rdFreeSASA.SASAOpts
-        if algorithm == "LeeRichards":
-            options.algorithm = rdFreeSASA.SASAAlgorithm.LeeRichards
-        elif algorithm == "ShrakeRupley":
-            options.algorithm = rdFreeSASA.SASAAlgorithm.ShrakeRupley
-        else:
-            raise Exception("Choose 'ShrakeRupley' or 'LeeRichards' as algorithm")
-
-        # Calculate total area
-        self.total_area = rdFreeSASA.CalcSASA(mol, radii=radii, opts=options)
-
-        atom_areas = {}
-        # Calculate area for each atom
-        for atom in mol.GetAtoms():
-            atom.SetProp("SASAClassName", "Polar")
-            atom.SetProp("SASAClass", "2")
-            q_atom = rdFreeSASA.MakeFreeSasaPolarAtomQuery()
-            atom_area = rdFreeSASA.CalcSASA(mol, radii=radii, query=q_atom, opts=options)
-            atom_areas[atom.GetIdx() + 1] = atom_area
-            atom.ClearProp("SASAClassName")
-            atom.ClearProp("SASAClass")
-
-        self.atom_areas = atom_areas
-
-    def print_report(self):
-        """Prints a report of the solvent accesible surface area"""
-        print(f"Total SASA (Å^2): {self.total_area:.3f}")
-        print(f"Sum of atom areas (Å^2): {sum(self.atom_areas.values()):.3f}")
-        print("Atom areas (Å^2):")
-        for atom, area in self.atom_areas.items():
-            print(f"{atom + 1:5d}{area:10.3f}")
-
-class NewSASA:
     def __init__(self, element_ids, coordinates, radii=[], radii_type="crc", 
                  probe_radius=1.4, density=0.01):
         # Converting element ids to atomic numbers if the are symbols

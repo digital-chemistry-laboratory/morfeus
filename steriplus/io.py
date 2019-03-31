@@ -1,42 +1,4 @@
 from steriplus.data import atomic_symbols
-try:
-    from rdkit import Chem
-    rdkit = True
-except:
-    rdkit = False
-
-def create_rdkit_mol(element_ids, coordinates):
-    """Creates a RDKit Mol object from element_ids and coordinates. This object
-    has no bonding information so cannot be used for much else than computing
-    solvent accesible surface areas.
-
-    Args:
-        coordinates (list)  :   List of atomic coordinates (Å)
-        element_ids (list)  :   List of atomic numbers or symbols
-
-    Returns:
-        mol (object)        :   RDkit Mol object.
-    """
-    if not rdkit:
-        raise Exception("RDKit not available.")
-
-    rdkit_string = f"""\
-
-
-
-{len(element_ids):>3d}  0  0  0  0  0  0  0  0  0999 V2000
-"""
-    for coordinate, element_id in zip(coordinates, element_ids):
-        if type(element_id) == int:
-            element_id = atomic_symbols[element_id]
-        x = coordinate[0]
-        y = coordinate[1]
-        z = coordinate[2]
-        rdkit_string += f"{x:>10.4f}{y:>10.4f}{z:>10.4f} {element_id}   0  0  0  0  0  0  0  0  0  0  0  0\n"
-    rdkit_string += "M  END"
-    mol = Chem.MolFromMolBlock(rdkit_string)
-
-    return mol
 
 def read_xyz(filename):
     """Reads xyz file and returns element_ids as they are written in the xyz
