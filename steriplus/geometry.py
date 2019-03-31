@@ -47,7 +47,8 @@ class ConeAngleCone:
             return False
 
 class ConeAngleAtom:
-    """
+    """Class for supporting cone angle calculations.
+
     Args:
         coordinates (ndarray)   :   Atomic coordinates in Å
         element_id (int)        :   Atomic number (0-indexed)
@@ -76,6 +77,36 @@ class ConeAngleAtom:
         alpha = math.asin(sin_alpha)
         cone = ConeAngleCone(alpha, [self], n)
         self.cone = cone
+
+class SASAAtom:
+    """Class for supporting SASA calculations.
+
+    Args:
+        coordinates (ndarray)   :
+        element_id (int)        :
+        index (int)             :
+        radius (float)          :
+
+    Attributes:
+        accessible_points (list)    :   Points accessible to solvent 
+        area (float)                :   Solvent-accessible surface area (Å^2)
+        coordinates (ndarray)       :   Coordinates (Å)
+        element_id (int)            :   Element id as atomic number
+        index (int)                 :   Atomic index (1-indexed)
+        occluded_points (list)      :   Points occluded by other atoms
+        radius (float)              :   Radius (Å)
+        volume (float)              :   Volume inside solvent-accessible surface
+                                        area (Å^3)
+    """
+    def __init__(self, element_id, radius, coordinates, index):
+        self.coordinates = coordinates
+        self.radius = radius
+        self.index = index
+        self.element_id = element_id
+        self.occluded_points = None
+        self.accessible_points = None
+        self.area = None
+        self.volume = None
 
 class Cone:
     def __init__(self, angle, height, direction, spacing=0.1):

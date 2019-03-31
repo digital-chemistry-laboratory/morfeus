@@ -14,12 +14,13 @@ except:
 import scipy.linalg
 import scipy.spatial
 from scipy.spatial import ConvexHull
+from scipy.spatial.distance import cdist
 from scipy.spatial.transform import Rotation
 
 from steriplus.data import atomic_numbers, bondi_radii, crc_radii, jmol_colors
 from steriplus.io import read_gjf, read_xyz, create_rdkit_mol
 from steriplus.plotting import ax_3D, coordinate_axes, set_axes_equal
-from steriplus.geometry import rotate_coordinates, Sphere, Cone, ConeAngleCone, ConeAngleAtom
+from steriplus.geometry import rotate_coordinates, Sphere, Cone, ConeAngleCone, ConeAngleAtom, SASAAtom
 
 class Sterimol:
     """Performs and stores results of Sterimol calculation.
@@ -635,6 +636,124 @@ class SASA:
         print("Atom areas (Å^2):")
         for atom, area in self.atom_areas.items():
             print(f"{atom + 1:5d}{area:10.3f}")
+
+class NewSASA:
+    def __init__(self, element_ids, coordinates, radii=[], radii_type="crc", 
+                 probe_radius=1.4, density=0.01):
+        # Converting element ids to atomic numbers if the are symbols
+        if type(element_ids[0]) == str:
+            element_ids = [atomic_numbers[element_id] for
+                           element_id in element_ids]
+        self._element_ids = element_ids
+
+        # Getting radii if they are not supplied
+        if not radii:
+            radii = get_radii(element_ids, radii_type=radii_type)
+        
+        # Increment the radii with the probe radius
+        radii = np.array(radii)
+        radii = radii + probe_radius
+        
+        # Center coordinate system at geometric center
+        coordinates = np.array(coordinates)
+        center = np.mean(coordinates, axis=0)
+        coordinates -= center
+        
+        # Construct list of atoms
+        atoms = []
+        for i, (coordinate, radius, element_id) in enumerate(zip(coordinates, radii, element_ids), start=1):
+            atom = SASAAtom(element_id, radius, coordinate, i)
+            atoms.append(atom)
+        
+        # Determine occluded and accesible points of each atom based on
+        # distances to all other atoms (brute force)
+        for atom in atoms:
+            # Construct sphere for atom
+            sphere = Sphere(atom.coordinates, atom.radius, density=density)
+            
+            # Select coordinates and radii for other atoms
+            other_coordinates = [test_atom.coordinates for test_atom 
+                                 in atoms if test_atom is not atom]
+            other_radii = [test_atom.radius for test_atom 
+                           in atoms if test_atom is not atom]
+            other_radii = np.array(other_radii).reshape(-1, 1)
+
+            # Get distances to other atoms and subtract radii
+            distances = cdist(other_coordinates, sphere.points)
+            distances -= other_radii
+
+            # Take smallest distance and perform check
+            min_distances = np.min(distances, axis=0)
+            atom.occluded_points = sphere.points[min_distances < 0]
+            atom.accessible_points = sphere.points[min_distances > 0]
+        
+        # Calculate atom areas and volumes
+        for atom in atoms:
+            # Get number of points of eache type
+            n_accesible = len(atom.accessible_points)
+            n_occluded = len(atom.occluded_points)
+            n_points = len(atom.accessible_points) + len(atom.occluded_points)
+
+            # Calculate part occluded and accessible
+            ratio_occluded = n_occluded / n_points
+            ratio_accesible = 1 - ratio_occluded
+            
+            # Calculate area
+            area = 4 * np.pi * atom.radius ** 2 * ratio_accesible
+            atom.area = area
+            
+            # Center accessible points around origin
+            centered_points = np.array(atom.accessible_points) \
+                              - atom.coordinates
+
+            # Add accessible points
+            accessible_summed = np.sum(centered_points, axis=0)
+            
+            # Calculate volume
+            volume = (4 * np.pi / 3 / n_points) * (atom.radius * 
+                      np.dot(atom.coordinates, accessible_summed)
+                      + atom.radius ** 3 * n_accesible)
+            atom.volume = volume
+        
+        # Set up attributes
+        self.probe_radius = probe_radius 
+        self.atom_areas = {atom.index: atom.area for atom in atoms}
+        self.atom_volumes = {atom.index: atom.volume for atom in atoms}
+        self.area = sum([atom.area for atom in atoms])
+        self.volume = sum([atom.volume for atom in atoms])
+        self._atoms = atoms
+        self._density = density
+    
+    def plot_3D(self, highlight=[]):
+
+        # Set up dictionary for coloring atomic centers
+        element_list = [atom.element_id for atom in self._atoms]
+        color_dict = {element_id: jmol_colors[element_id] 
+                      for element_id in set(element_list)}
+        
+        with ax_3D() as ax:
+            for atom in self._atoms:
+                step = int(max(round(1 / self._density / 20), 1))
+                accessible_points = np.array(atom.accessible_points)
+                np.random.shuffle(accessible_points)
+                x = accessible_points[::step, 0]
+                y = accessible_points[::step, 1]
+                z = accessible_points[::step, 2]
+                if atom.index in highlight:
+                    ax.scatter(x, y, z, c=color_dict[atom.element_id], 
+                               alpha=1, edgecolors="k", linewidths=0.5)
+                else:
+                    ax.scatter(x, y, z, c=color_dict[atom.element_id],
+                               alpha=0.3, edgecolor="k", linewidths=0.2)
+    
+    def print_report(self, verbose=False):
+        print(f"Solvent-accessible surface area (Å^2): {self.area:.1f}")
+        print("Volume inside solvent-accessible surface (Å^3): ",  
+              f"{self.volume:.1f}")
+        if verbose:
+            print("Areas per atom (Å^2):")
+            for i, area in self.atom_areas.items():
+                print(f"{i:5d}: {area:5.1f}")
 
 class ConeAngle:
     """Calculates and stores the results of exact cone angle calculation as
