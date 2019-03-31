@@ -592,7 +592,7 @@ class SASA:
         radii (list)            :   List of radii (Å)
         total_area (float)      :   Total area (Å^2)
     """
-    def __init__(self, element_ids, coordinates, radii=None, radii_type="crc"):
+    def __init__(self, element_ids, coordinates, radii=None, radii_type="crc", algorithm="LeeRichards"):
         # Check if rdFreeSASA is loaded
         if not rdFreeSASA:
             raise Exception("rdFreeSASA not loaded (not available on Windows)")
@@ -613,8 +613,17 @@ class SASA:
         # Create rdkit mol object from the element_ids and coordinates
         mol = create_rdkit_mol(element_ids, coordinates)
 
+        # Set up algorithm
+        options = rdFreeSASA.SASAOpts
+        if algorithm == "LeeRichards":
+            options.algorithm = rdFreeSASA.SASAAlgorithm.LeeRichards
+        elif algorithm == "ShrakeRupley":
+            options.algorithm = rdFreeSASA.SASAAlgorithm.ShrakeRupley
+        else:
+            raise Exception("Choose 'ShrakeRupley' or 'LeeRichards' as algorithm")
+
         # Calculate total area
-        self.total_area = rdFreeSASA.CalcSASA(mol, radii=radii)
+        self.total_area = rdFreeSASA.CalcSASA(mol, radii=radii, opts=options)
 
         atom_areas = {}
         # Calculate area for each atom
@@ -622,7 +631,7 @@ class SASA:
             atom.SetProp("SASAClassName", "Polar")
             atom.SetProp("SASAClass", "2")
             q_atom = rdFreeSASA.MakeFreeSasaPolarAtomQuery()
-            atom_area = rdFreeSASA.CalcSASA(mol, radii=radii, query=q_atom)
+            atom_area = rdFreeSASA.CalcSASA(mol, radii=radii, query=q_atom, opts=options)
             atom_areas[atom.GetIdx() + 1] = atom_area
             atom.ClearProp("SASAClassName")
             atom.ClearProp("SASAClass")
