@@ -41,7 +41,7 @@ class ConeAngleCone:
 
         # Check if atom lies inside cone, within numerical reason
         diff = self.angle - (beta + angle)
-        if diff > -1e-4:
+        if diff > -1e-6:
             return True
         else:
             return False

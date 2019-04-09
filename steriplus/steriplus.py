@@ -797,7 +797,8 @@ class ConeAngle:
         # Check if all atoms are contained in cone. If yes, return cone,
         # otherwise, return None.
         in_list = []
-        for atom in atoms:
+        test_list = [atom for atom in atoms if atom not in max_1_cone.atoms]
+        for atom in test_list:
             in_list.append(max_1_cone.is_inside(atom))
         if all(in_list):
             return max_1_cone
@@ -825,7 +826,8 @@ class ConeAngle:
         # Check if all atoms are contained in cone. If yes, return cone,
         # otherwise, return None
         in_list = []
-        for atom in loop_list:
+        test_list = [atom for atom in loop_list if atom not in max_2_cone.atoms]
+        for atom in test_list:
             in_list.append(max_2_cone.is_inside(atom))
 
         if all(in_list):
@@ -864,7 +866,8 @@ class ConeAngle:
         keep_list = []
         for cone in cone_list:
             in_list = []
-            for atom in loop_list:
+            test_list = [atom for atom in loop_list]
+            for atom in test_list:
                 in_list.append(cone.is_inside(atom))
             if all(in_list):
                 keep_list.append(cone)
@@ -984,20 +987,20 @@ class ConeAngle:
 
         # Test roots and keep only those that are physical
         angle_list = []
+        test_list = []
         for root in cos_roots:
-            if not np.isnan(root) and not np.iscomplex(root):
-                alpha = root / 2
-                test = A * math.cos(alpha)**2 + B * math.sin(alpha)**2 + 2 * C * math.sin(alpha) * math.cos(alpha)
-                test_D = abs(test - D)
-                if abs(test_D) < 1e-3:
-                    angle_list.append(alpha)
-        if not any(angle_list):
-            return None
-        angles = np.array(angle_list)
+            alpha = root / 2
+            test = A * math.cos(alpha)**2 + B * math.sin(alpha)**2 + 2 * C * math.sin(alpha) * math.cos(alpha)
+            test_D = abs(test - D)
+            angle_list.append(alpha)
+            test_list.append(test_D)
+        angles = np.array(angle_list)                
+        tests = np.array(test_list)
+        physical_angles = angles[np.argsort(tests)]
 
         # Create cones for physical angles
         cone_list = []
-        for alpha in angles:
+        for alpha in physical_angles:
             # Calculate normal vector
             a_ij = (math.cos(alpha - beta_i) - math.cos(alpha - beta_j) * math.cos(beta_ij)) / math.sin(beta_ij)**2
             b_ij = (math.cos(alpha - beta_j) - math.cos(alpha - beta_i) * math.cos(beta_ij)) / math.sin(beta_ij)**2
