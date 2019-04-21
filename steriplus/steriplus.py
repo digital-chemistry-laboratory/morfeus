@@ -1,3 +1,18 @@
+"""This module contains classes for performing calculations of steric
+descriptors of molecules.
+
+Classes:
+    Atom: Atom class.
+    BuriedVolume: Calculates buried volumes
+    ConeAngle: Calculates exact cone angles.
+    SASA: Calculates solvent accessible surface area.
+    Sterimol: Calculates Sterimol parameters
+
+Functions:
+    check_distances: Controls distances for steric clashes.
+    get_radii: Helper function to get radii from list of elements.
+"""
+
 import math
 from typing import NamedTuple
 import time
@@ -13,7 +28,8 @@ from scipy.spatial import ConvexHull
 from scipy.spatial.distance import cdist
 from scipy.spatial.transform import Rotation
 
-from steriplus.data import atomic_numbers, bondi_radii, crc_radii, jmol_colors
+from steriplus.data import atomic_numbers, atomic_symbols, \
+    bondi_radii, crc_radii, jmol_colors
 from steriplus.io import read_gjf, read_xyz
 from steriplus.plotting import ax_3D, coordinate_axes, set_axes_equal
 from steriplus.geometry import rotate_coordinates, Sphere, Cone, ConeAngleCone, ConeAngleAtom, SASAAtom
@@ -26,8 +42,6 @@ class Sterimol:
         atom_2 (int)                :   Index of atom 2 (connected atom of
                                         substituent)
         coordinates (list)          :   List of coordinates in Å
-        density (float)             :   Density of points on the vdW surface in
-                                        Å^-2
         element_ids (list)          :   List of element_ids, either as atomic
                                         numbers or symbols
         n_rot_vectors (int)         :   Number of rotational vectors for
@@ -37,53 +51,46 @@ class Sterimol:
                                         "bondi"
 
     Attributes:
-        hull_area (float)           :   Area of the convex hull enclosing the
-                                        vdW surface in Å^2
         atom_1 (int)                :   Index of atom 1 (dummy atom)
         atom_2 (int)                :   Index of atom 2 (connected atom of
                                         substituent)
-        atoms (list)                :   List of atoms objects
         B_1 (ndarray)               :   Sterimol B_1 vector
         B_1_value (float)           :   Sterimol B_1 value in Å
         B_5 (ndarray)               :   Sterimol B_5 vector
         B_5_value (float)           :   Sterimol B_5 value in Å
         bond length (float)         :   Bond length between atom 1 and atom 2 in
                                         Å
-        coordinates (ndarray)       :   List of coordinates on vdW surface
-        density (float)             :   Density of points on the vdW surface in
-                                        Å^-2
-        element_ids (list)          :   List of element_ids, either as atomic
-                                        numbers
         L (ndarray)                 :   Sterimol L vector
         L_value (float)             :   Sterimol L value in Å
         L_value_uncorrected (float) :   Sterimol L value minus 0.40 Å
-        radii (list)                :   List of radii
         vector (ndarray)            :   Vector between atom 1 and atom 2
-        hull_volume (float)         :   Hull volume containing the vdW surface
-                                        in Å^3
     """
-    def __init__(self, element_ids, coordinates, atom_1, atom_2, radii=[], radii_type="crc", density=0.01, n_rot_vectors=360):
+    def __init__(self, element_ids, coordinates, atom_1, atom_2, radii=[],
+                 radii_type="crc", n_rot_vectors=3600):
         # Converting element ids to atomic numbers if the are symbols
         if type(element_ids[0]) == str:
-            element_ids = [atomic_numbers[element_id] for element_id in element_ids]
-        self.element_ids = element_ids
+            element_ids = [element.capitalize() for element in element_ids]
+            element_ids = [atomic_numbers[element_id] for element_id 
+                           in element_ids]
+        self._element_ids = element_ids
 
         # Getting radii if they are not supplied
         if not radii:
             radii = get_radii(element_ids, radii_type=radii_type)
-        self.radii = radii
+        self._radii = radii
 
         # Setting up coordinate array
         atom_coordinates = np.array(coordinates)
 
-        # Translate coordinates so origin is at atom 1
+        # Translate coordinates so origin is at atom 2
         atom_coordinates -= atom_coordinates[atom_1 - 1]
 
         # Get vector pointing from atom 2 to atom 1
-        vector_2_to_1 = atom_coordinates[atom_2 - 1] - atom_coordinates[atom_1 - 1]
+        vector_2_to_1 = atom_coordinates[atom_2 - 1] \
+                        - atom_coordinates[atom_1 - 1]
         vector_2_to_1 = vector_2_to_1 / np.linalg.norm(vector_2_to_1)
 
-        # Get rotation quaternion that overlays vector with x-asis
+        # Get rotation quaternion that overlays vector with x-axis
         x_axis = np.array([1, 0, 0])
         real = np.dot(vector_2_to_1, x_axis).reshape(1) + 1
 
@@ -104,41 +111,26 @@ class Sterimol:
 
         # Get list of atoms as Atom objects
         atom_list = []
-        for element_id, radius, coord in zip(element_ids, radii, atom_coordinates):
-            coord = np.array(coord).reshape(1,-1)
+        coord_list = []
+        radii_list = []
+        for i, (element_id, radius, coord) in enumerate(zip(element_ids, radii, atom_coordinates), start=1):
+            coord = np.array(coord)
             atom = Atom(element_id, radius, coord)
             atom_list.append(atom)
+            if i != atom_1:
+                coord_list.append(coord)
+                radii_list.append(radius)
+        coordinates = np.array(coord_list)
+        radii = np.array(radii_list)
 
-        # Get list of spheres as Sphere objects
-        sphere_list = []
-        for i, atom in enumerate(atom_list, start=1):
-            if not i == atom_1:
-                sphere = Sphere(atom.coordinates, atom.radius, density=density)
-                sphere_list.append(sphere)
-
-        # Construct array of coordinates on the vdW surface of the spheres.
-        coordinate_list = []
-        for sphere in sphere_list:
-            coordinate_list.append(sphere.points)
-        coordinates = np.vstack(coordinate_list)
-
-        # Prune coordinates that are not on the molecular vdW surface
-        # Hull algorithm also removes more points that are note important
-        # for determining Sterimol parameters.
-        hull = ConvexHull(coordinates)
-        coordinates = coordinates[hull.vertices]
-        self.hull_area = hull.area
-        self.hull_volume = hull.volume
-
-        # Get vector from atom 1 to atom 2
-        vector = atom_list[atom_2 - 1].coordinates - atom_list[atom_1 - 1].coordinates
+        # Project coordinates onto vector between atoms 1 and 2
+        vector = atom_coordinates[atom_2 - 1, :] - atom_coordinates[atom_1 - 1, :]
         vector = vector / np.linalg.norm(vector)
-
-        # Project coordinates onto vector
-        c_values = vector.dot(coordinates.T)
+        c_values = np.dot(vector, coordinates.T)
+        projected = c_values + radii
 
         # Get L as largest projection along the vector
-        L_value = np.max(c_values)
+        L_value = np.max(projected)
         L = vector * L_value
 
         # Get rotation vectors in yz plane
@@ -148,32 +140,32 @@ class Sterimol:
         y = r * np.cos(theta)
         z = r * np.sin(theta)
         rot_vectors = np.column_stack((x, y, z))
-
+    
         # Project coordinates onto rotation vectors
         c_values = np.dot(rot_vectors, coordinates.T)
-        max_c_values = np.max(c_values, axis=1)
-
+        projected = c_values + radii
+        max_c_values = np.max(projected, axis=1)
+    
         # Determine B1 and B5 from the smallest and largest scalar projections
         B_1_value = np.min(max_c_values)
         B_1 = rot_vectors[np.argmin(max_c_values)] * B_1_value
-
+    
         B_5_value = np.max(max_c_values)
         B_5 = rot_vectors[np.argmax(max_c_values)] * B_5_value
 
         # Set up attributes
-        self.atoms = atom_list
+        self._atoms = atom_list
         self.coordinates = coordinates
-        self.density = density
         self.vector = vector.reshape(-1)
-
+        
         self.atom_1 = atom_1
         self.atom_2 = atom_2
-
+        
         self.L = L.reshape(-1)
         self.L_value = L_value + 0.40
         self.L_value_uncorrected = L_value
         self.bond_length = np.linalg.norm(atom_list[atom_2 - 1].coordinates - atom_list[atom_1 - 1].coordinates)
-
+        
         self.B_1 = B_1
         self.B_1_value = B_1_value
 
@@ -391,6 +383,7 @@ class BuriedVolume:
 
         # Converting element ids to atomic numbers if the are symbols
         if type(element_ids[0]) == str:
+            element_ids = [element.capitalize() for element in element_ids]
             element_ids = [atomic_numbers[element_id] for element_id in
                            element_ids]
 
@@ -573,9 +566,29 @@ class BuriedVolume:
             plt.show()
 
 class SASA:
+    """Performs and stores results of solvent accessible surface area 
+    calculations.
+
+    Args:
+        coordinates (list):     List of coordinates in Å.
+        density (float):        Density of points on the vdW atomic
+                                spheres in Å^-2
+        element_ids (list):     List of element identifiers, either as symbols
+                                or numbers.
+        probe_radius (float):   Radius of probe atom in Å.
+        radii (list):           List of radii (optional)
+        radii_type (str):       Choice of vdW radii, either "crc" or "bondi"
+
+    Attributes:
+        area (float):           Area of the solvent accessible surface.
+        atom_areas (dict):      Dictionary of atom areas (1-indexed)
+        atom_volumes (dict):    Dictionary of atom volumes (1-indexed)
+        volume (float):         Volume of the solvent accessible surface.
+    """
     def __init__(self, element_ids, coordinates, radii=[], radii_type="crc", 
                  probe_radius=1.4, density=0.01):
         # Converting element ids to atomic numbers if the are symbols
+        element_ids = [element.capitalize() for element in element_ids]
         if type(element_ids[0]) == str:
             element_ids = [atomic_numbers[element_id] for
                            element_id in element_ids]
@@ -596,7 +609,8 @@ class SASA:
         
         # Construct list of atoms
         atoms = []
-        for i, (coordinate, radius, element_id) in enumerate(zip(coordinates, radii, element_ids), start=1):
+        for i, (coordinate, radius, element_id) in \
+                enumerate(zip(coordinates, radii, element_ids), start=1):
             atom = SASAAtom(element_id, radius, coordinate, i)
             atoms.append(atom)
         
@@ -651,7 +665,7 @@ class SASA:
             atom.volume = volume
         
         # Set up attributes
-        self.probe_radius = probe_radius 
+        self._probe_radius = probe_radius 
         self.atom_areas = {atom.index: atom.area for atom in atoms}
         self.atom_volumes = {atom.index: atom.volume for atom in atoms}
         self.area = sum([atom.area for atom in atoms])
@@ -660,6 +674,11 @@ class SASA:
         self._density = density
     
     def plot_3D(self, highlight=[]):
+        """Plot the solvent accessible surface area.
+
+        Args:
+            highlight (list):   List of atoms to highligt (1-index)
+        """
 
         # Set up dictionary for coloring atomic centers
         element_list = [atom.element_id for atom in self._atoms]
@@ -682,13 +701,19 @@ class SASA:
                                alpha=0.3, edgecolor="k", linewidths=0.2)
     
     def print_report(self, verbose=False):
-        print(f"Solvent-accessible surface area (Å^2): {self.area:.1f}")
-        print("Volume inside solvent-accessible surface (Å^3): ",  
+        """Print report of results
+
+        Args:
+            verbose(bool):  Prints areas per atom if set to True.
+        """
+        print(f"Solvent accessible surface area (Å^2): {self.area:.1f}")
+        print("Volume inside solvent accessible surface (Å^3): ",  
               f"{self.volume:.1f}")
         if verbose:
-            print("Areas per atom (Å^2):")
-            for i, area in self.atom_areas.items():
-                print(f"{i:5d}: {area:5.1f}")
+            print(f"{'Atom':<10s}{'Index':<10s}{'Area (Å^2)':<10s}")
+            for atom, (i, area) in zip(self._atoms, self.atom_areas.items()):
+                symbol = atomic_symbols[atom.element_id]
+                print(f"{symbol:<10s}{i:<10d}{area:<10.1f}")
 
 class ConeAngle:
     """Calculates and stores the results of exact cone angle calculation as
@@ -710,49 +735,41 @@ class ConeAngle:
         tangent_atoms (list)    :   Atoms tangent to cone
     """
     def __init__(self, element_ids, coordinates, atom_1, radii=[], radii_type="crc"):
-        # Make copies to avoid deletion
-        coordinates = list(coordinates)
-        element_ids = list(element_ids)
-        
-        # Removing central atom
-        center_coordinates = np.array(coordinates[atom_1 - 1])
-        del coordinates[atom_1 - 1]
-        del element_ids[atom_1 - 1]
-
         # Converting element ids to atomic numbers if the are symbols
         if type(element_ids[0]) == str:
+            element_ids = [element.capitalize() for element in element_ids]
             element_ids = [atomic_numbers[element_id] for element_id in element_ids]
-        self.element_ids = element_ids
 
         # Getting radii if they are not supplied
         if not radii:
             radii = get_radii(element_ids, radii_type=radii_type)
-        self.radii = radii
 
-        # Setting up coordinate array
+        # Check distances to atom_1 so that it is not within their vdW radii
+        within = check_distances(element_ids, coordinates, atom_1, radii=radii)
+        if within:
+            atom_string = ' '.join([str(i) for i in within])
+            raise Exception("Atoms within vdW radius of atom 1:", atom_string)
+
+        # Setting up coordinate array and translate coordinates
         atom_coordinates = np.array(coordinates)
-
-        # Translate coordinates so origin is at atom 1
-        atom_coordinates -= center_coordinates
+        atom_coordinates -= coordinates[atom_1 - 1]
 
         # Get list of atoms as Atom objects
         atoms = []
         for i, (coord, radius, element_id) in enumerate(zip(atom_coordinates, radii, element_ids), start=1):
-            coord = np.array(coord)
-            if np.linalg.norm(coord) < radius:
-                raise Exception(f"Center within vdW surface of atom {i}")
-            atom = ConeAngleAtom(coord, radius, i, element_id)
-            atoms.append(atom)
-            atom.get_cone()
-
-        self.atoms = atoms
+            if i != atom_1:
+                coord = np.array(coord)
+                atom = ConeAngleAtom(coord, radius, i, element_id)
+                atoms.append(atom)
+                atom.get_cone()
+        self._atoms = atoms
 
         # Search for cone over single atoms
         cone = self._search_one_cones()
         if cone:
             self.cone = cone
             self.cone_angle = math.degrees(cone.angle * 2)
-            self.tangent_atoms = [atom.index for atom in cone.atoms]
+            self.tangent_atoms = [atom for atom in cone.atoms]
         else:
             # Prune out atoms that lie in the shadow of another atom's cone
             loop_list = list(atoms)
@@ -772,7 +789,7 @@ class ConeAngle:
             if cone:
                 self.cone = cone
                 self.cone_angle = math.degrees(cone.angle * 2)
-                self.tangent_atoms = [atom.index for atom in cone.atoms]
+                self.tangent_atoms = [atom for atom in cone.atoms]
 
         # Search for cones over triples of atoms
         if not cone:
@@ -780,7 +797,7 @@ class ConeAngle:
             if cone:
                 self.cone = cone
                 self.cone_angle = math.degrees(cone.angle * 2)
-                self.tangent_atoms = [atom.index for atom in cone.atoms]
+                self.tangent_atoms = [atom for atom in cone.atoms]
 
     def _search_one_cones(self):
         """Searches over cones tangent to one atom
@@ -789,7 +806,7 @@ class ConeAngle:
             max_1_cone (object)     :   Largest cone tangent to one atom
         """
         # Get the largest cone
-        atoms = self.atoms
+        atoms = self._atoms
         alphas = np.array([atom.cone.angle for atom in atoms])
         max_1_cone = atoms[np.argmax(alphas)].cone
         self._max_1_cone = max_1_cone
@@ -826,8 +843,7 @@ class ConeAngle:
         # Check if all atoms are contained in cone. If yes, return cone,
         # otherwise, return None
         in_list = []
-        test_list = [atom for atom in loop_list if atom not in max_2_cone.atoms]
-        for atom in test_list:
+        for atom in loop_list:
             in_list.append(max_2_cone.is_inside(atom))
 
         if all(in_list):
@@ -856,7 +872,7 @@ class ConeAngle:
         # Remove cones from consideration which are outside the bounds
         remove_list = []
         for cone in cone_list:
-            if cone.angle < lower_bound or cone.angle > upper_bound:
+            if cone.angle - lower_bound < -1e-5 or upper_bound - cone.angle < -1e-5:
                 remove_list.append(cone)
 
         for cone in reversed(remove_list):
@@ -866,8 +882,7 @@ class ConeAngle:
         keep_list = []
         for cone in cone_list:
             in_list = []
-            test_list = [atom for atom in loop_list]
-            for atom in test_list:
+            for atom in loop_list:
                 in_list.append(cone.is_inside(atom))
             if all(in_list):
                 keep_list.append(cone)
@@ -887,13 +902,13 @@ class ConeAngle:
         loop_list = self._loop_list
 
         # Calculate unit vector to centroid
-        coordinates = np.array([atom.coordinates for atom in self.atoms])
+        coordinates = np.array([atom.coordinates for atom in self._atoms])
         centroid_vector = np.mean(coordinates, axis=0)
         centroid_unit_vector = centroid_vector / np.linalg.norm(centroid_vector)
 
         # Getting sums of angle to centroid and vertex angle.
         angle_sum_list = []
-        for atom in loop_list:
+        for atom in self._atoms:
             cone = atom.cone
             cos_angle = np.dot(centroid_unit_vector, cone.normal)
             angle = math.acos(cos_angle)
@@ -925,8 +940,8 @@ class ConeAngle:
         alpha_ij = (beta_ij + beta_i + beta_j) / 2
 
         # Get the cone normal
-        a_ij = (1 / math.sin(beta_ij)) * (0.5 * (beta_ij + beta_i - beta_j))
-        b_ij = (1 / math.sin(beta_ij)) * (0.5 * (beta_ij - beta_i + beta_j))
+        a_ij = (1 / math.sin(beta_ij)) * math.sin(0.5 * (beta_ij + beta_i - beta_j))
+        b_ij = (1 / math.sin(beta_ij)) * math.sin(0.5 * (beta_ij - beta_i + beta_j))
         c_ij = 0
 
         n = a_ij * cone_i.normal + b_ij * cone_j.normal + c_ij
@@ -982,7 +997,9 @@ class ConeAngle:
         p2 = (A - B)**2 + 4 * C**2
         p1 = 2 * (A - B) * (A + B - 2 * D)
         p0 = (A + B - 2 * D)**2 - 4 * C**2
+        
         roots = np.roots([p2, p1, p0])
+        roots = np.real_if_close(roots, tol=1e10)
         cos_roots = [math.acos(roots[0]), 2 * np.pi - math.acos(roots[0]), math.acos(roots[1]), 2 * np.pi - math.acos(roots[1])]
 
         # Test roots and keep only those that are physical
@@ -996,7 +1013,7 @@ class ConeAngle:
             test_list.append(test_D)
         angles = np.array(angle_list)                
         tests = np.array(test_list)
-        physical_angles = angles[np.argsort(tests)]
+        physical_angles = angles[np.argsort(tests)][:2]
 
         # Create cones for physical angles
         cone_list = []
@@ -1023,8 +1040,12 @@ class ConeAngle:
 
     def print_report(self):
         """Prints report of results"""
+        tangent_list = [f'{atomic_symbols[atom.element_id]}{atom.index}' \
+                        for atom in self.tangent_atoms]
+        tangent_string = ' '.join(tangent_list)
         print(f"Cone angle: {self.cone_angle:.1f}")
         print(f"No. tangent atoms: {len(self.tangent_atoms)}")
+        print(f"Tangent to: {tangent_string}")
 
     def plot_3D(self, height=5, plot_cone=True):
         """Plot 3D representation of points on convex hull together with cone
@@ -1034,7 +1055,7 @@ class ConeAngle:
             plot_cone (bool)    :   Whether to plot the cone or just the points
         """
         # Set up dictionary for coloring atomic centers
-        element_list = [atom.element_id for atom in self.atoms]
+        element_list = [atom.element_id for atom in self._atoms]
         color_dict = {element_id: jmol_colors[element_id] for element_id in set(element_list)}
 
         # Construct cone and set direction
@@ -1051,7 +1072,7 @@ class ConeAngle:
         with ax_3D() as ax:
             ax.set_aspect('equal')
             # Plot vdW surface of atoms
-            for atom in self.atoms:
+            for atom in self._atoms:
                 sphere = Sphere(atom.coordinates, atom.radius, density=0.5)
                 cvx = ConvexHull(sphere.points)
                 x, y, z = sphere.points.T
@@ -1070,6 +1091,33 @@ class Atom(NamedTuple):
     element_id: int
     radius: float
     coordinates: list
+
+def check_distances(element_ids, coordinates, dummy_atom, exclude_list=[], dummy_radius=0, epsilon=0, radii=[], radii_type="crc"):
+    # Converting element ids to atomic numbers if the are symbols
+    if type(element_ids[0]) == str:
+        element_ids = [element.capitalize() for element in element_ids]
+        element_ids = [atomic_numbers[element_id] for element_id in element_ids]
+    
+    # Getting radii if they are not supplied
+    if not radii:
+        radii = get_radii(element_ids, radii_type=radii_type)
+    
+    radii = np.array(radii)
+    atom_coordinates = np.array(coordinates)
+    dummy_coordinates = np.array(coordinates[dummy_atom - 1]).reshape(-1, 3)
+
+    distances = cdist(atom_coordinates, dummy_coordinates) - radii.reshape(-1, 1) - dummy_radius - epsilon
+    distances = distances.reshape(-1)
+
+    within_distance = list(np.argwhere(distances < 0).reshape(-1))
+    within_distance.remove(dummy_atom - 1)
+    within_distance = [i for i in within_distance if i not in exclude_list]
+    
+    if any(within_distance):
+        within_list = [i + 1 for i in within_distance]
+        return within_list
+    else:
+        return None
 
 def get_radii(element_id_list, radii_type="crc", scale=1):
     """Gets radii for list of element ids

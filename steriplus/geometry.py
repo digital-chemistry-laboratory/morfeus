@@ -1,3 +1,15 @@
+"""This module contains help classes and funcitons related to geometry
+
+Classes:
+    ConeAngleAtom: Atom used in cone angle calculations.
+    ConeAngleCone: Cone used in cone angle calculations.
+    Cone: Cone class.
+    Sphere: Sphere class.
+
+Functions:
+    rotatate_coordinates: Rotate coordinates given a vector and an axis
+"""
+
 import numpy as np
 from scipy.spatial.transform import Rotation
 import math
@@ -35,13 +47,13 @@ class ConeAngleCone:
 
         # Take into account numerical problems that sometimes gives a value
         # somewhat above 1
-        if abs(cos - 1) < 1e-5:
+        if 1 - cos > 0 and 1 - cos < 1e-5:
             cos = 1
         angle = math.acos(cos)
 
         # Check if atom lies inside cone, within numerical reason
         diff = self.angle - (beta + angle)
-        if diff > -1e-6:
+        if diff > -1e-5:
             return True
         else:
             return False

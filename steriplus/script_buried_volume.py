@@ -1,16 +1,19 @@
+"""Command line script to calculate buried volumes"""
+
 import argparse
 from steriplus import BuriedVolume, read_gjf, read_xyz
 
 def main():
     # Parse the arguments
     parser = argparse.ArgumentParser(
-        "Steriplus program to calculate buried volume")
+        "Steriplus script to calculate buried volumes")
     parser.add_argument(
         'file', type=str, help='Input file, either .xyz, .gjf or .com')
     parser.add_argument(
         'atom1', type=int, help='Index of central metal atom (starting from 1)')
     parser.add_argument(
-        '--density', type=float, help='Density of sphere grid', default=0.001)
+        '--density', type=float, help='Density of sphere grid (default 0.001)',
+        default=0.001)
     parser.add_argument(
         '--exclude', type=int, nargs="+",
         help='List of atoms to exclude from the calculation', required=True)
@@ -25,13 +28,21 @@ def main():
         help='Radii scale factor (default 1.17)', default=1.17)
     parser.add_argument(
         '-r', '--radius', type=float,
-        help='Radius of probe sphere', default=3.5)
+        help='Radius of probe sphere (default 3.5)', default=3.5)
     parser.add_argument(
         "--steric_map", type=int, nargs="+",
         help="Draw steric map with specified atoms to define z axis",)
 
     args = parser.parse_args()
+    radii_type = args.radii
+    radii_scale = args.radii_scale
+    radius = args.radius
+    density = args.density
+    include_hs = args.include_hs
+    exclude = args.exclude
+    atom_1 = args.atom1
 
+    # Parse the geometry file
     file = args.file
     if file[-4:] == ".xyz":
         elements, coordinates = read_xyz(file)
@@ -41,15 +52,7 @@ def main():
         print("No valid input file. Use .xyz or .gjf/.com")
         return
 
-    radii_type = args.radii
-    radii_scale = args.radii_scale
-    radius = args.radius
-    density = args.density
-    include_hs = args.include_hs
-    exclude = args.exclude
-
-    atom_1 = args.atom1
-
+    # Perform the calculations and print the results.
     bv = BuriedVolume(elements, coordinates, atom_1, exclude_list=exclude,
                       include_hs=include_hs, radius=radius,
                       radii_type=radii_type, radii_scale=radii_scale,

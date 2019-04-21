@@ -1,3 +1,10 @@
+"""This module contains geometry file parsing functions.
+
+Functions:
+    read_gjf: Parses Gaussian input files.
+    read_xyz: Parses xyz files.
+"""
+
 from steriplus.data import atomic_symbols
 
 def read_xyz(filename):

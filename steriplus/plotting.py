@@ -1,3 +1,11 @@
+"""This module contains functions related to 3D plotting.
+
+Functions:
+    ax_3D: Yields axis object for 3D plotting.
+    coordinate_axis: Yield axis object for 3D plotting with coordinate axes.
+    set_axes_equal: Sets equal perspective for 3D plot.
+"""
+
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 from contextlib import contextmanager
@@ -72,4 +80,4 @@ def coordinate_axes():
 
         yield ax
     finally:
-        pass
+        set_axes_equal(ax)
