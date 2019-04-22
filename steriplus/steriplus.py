@@ -602,6 +602,8 @@ class SASA:
         
         # Determine occluded and accesible points of each atom based on
         # distances to all other atoms (brute force)
+        accessible_points = []
+        occluded_points = []
         for atom in atoms:
             # Construct sphere for atom
             sphere = Sphere(atom.coordinates, atom.radius, density=density)
@@ -621,6 +623,10 @@ class SASA:
             min_distances = np.min(distances, axis=0)
             atom.occluded_points = sphere.points[min_distances < 0]
             atom.accessible_points = sphere.points[min_distances > 0]
+            accessible_points.extend(atom.accessible_points)
+            occluded_points.extend(atom.occluded_points)
+        accessible_points = np.vstack(accessible_points)
+        occluded_points = np.vstack(occluded_points)
         
         # Calculate atom areas and volumes
         for atom in atoms:
@@ -658,6 +664,8 @@ class SASA:
         self.volume = sum([atom.volume for atom in atoms])
         self._atoms = atoms
         self._density = density
+        self._accessible_points = accessible_points
+        self._occluded_points = occluded_points
     
     def plot_3D(self, highlight=[]):
         """Plot the solvent accessible surface area.
