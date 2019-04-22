@@ -68,16 +68,11 @@ class Sterimol:
     def __init__(self, element_ids, coordinates, atom_1, atom_2, radii=[],
                  radii_type="crc", n_rot_vectors=3600):
         # Converting element ids to atomic numbers if the are symbols
-        if type(element_ids[0]) == str:
-            element_ids = [element.capitalize() for element in element_ids]
-            element_ids = [atomic_numbers[element_id] for element_id 
-                           in element_ids]
-        self._element_ids = element_ids
+        element_ids = convert_element_ids(element_ids)
 
         # Getting radii if they are not supplied
         if not radii:
             radii = get_radii(element_ids, radii_type=radii_type)
-        self._radii = radii
 
         # Setting up coordinate array
         atom_coordinates = np.array(coordinates)
@@ -155,7 +150,6 @@ class Sterimol:
 
         # Set up attributes
         self._atoms = atom_list
-        self.coordinates = coordinates
         self.vector = vector.reshape(-1)
         
         self.atom_1 = atom_1
@@ -322,7 +316,7 @@ class Sterimol:
             plt.show()
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({len(self.element_ids)!r} atoms)"
+        return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
 
 class BuriedVolume:
     """Performs and stores the results of a buried volume calculation.
@@ -358,7 +352,6 @@ class BuriedVolume:
     def __init__(self, element_ids, coordinates, atom_1, exclude_list=[],
                  radii=[], include_hs=False, radius=3.5, radii_type="bondi",
                  radii_scale=1.17, density=0.001):
-
         # Get the coordinates for the central atom
         center = np.array(coordinates[atom_1 - 1])
 
@@ -382,10 +375,7 @@ class BuriedVolume:
                 del coordinates[entry - 1]
 
         # Converting element ids to atomic numbers if the are symbols
-        if type(element_ids[0]) == str:
-            element_ids = [element.capitalize() for element in element_ids]
-            element_ids = [atomic_numbers[element_id] for element_id in
-                           element_ids]
+        element_ids = convert_element_ids(element_ids)
 
         # Exclude Hs if option set
         exclude_H_list = []
@@ -588,11 +578,7 @@ class SASA:
     def __init__(self, element_ids, coordinates, radii=[], radii_type="crc", 
                  probe_radius=1.4, density=0.01):
         # Converting element ids to atomic numbers if the are symbols
-        element_ids = [element.capitalize() for element in element_ids]
-        if type(element_ids[0]) == str:
-            element_ids = [atomic_numbers[element_id] for
-                           element_id in element_ids]
-        self._element_ids = element_ids
+        element_ids = convert_element_ids(element_ids)
 
         # Getting radii if they are not supplied
         if not radii:
@@ -736,9 +722,7 @@ class ConeAngle:
     """
     def __init__(self, element_ids, coordinates, atom_1, radii=[], radii_type="crc"):
         # Converting element ids to atomic numbers if the are symbols
-        if type(element_ids[0]) == str:
-            element_ids = [element.capitalize() for element in element_ids]
-            element_ids = [atomic_numbers[element_id] for element_id in element_ids]
+        element_ids = convert_element_ids(element_ids)
 
         # Getting radii if they are not supplied
         if not radii:
@@ -1119,7 +1103,14 @@ def check_distances(element_ids, coordinates, dummy_atom, exclude_list=[], dummy
     else:
         return None
 
-def get_radii(element_id_list, radii_type="crc", scale=1):
+def convert_element_ids(element_ids):
+        if type(element_ids[0]) == str:
+            element_ids = [element.capitalize() for element in element_ids]
+            element_ids = [atomic_numbers[element_id] for
+                           element_id in element_ids]
+        return element_ids
+
+def get_radii(element_ids, radii_type="crc", scale=1):
     """Gets radii for list of element ids
 
     Args:
@@ -1130,14 +1121,16 @@ def get_radii(element_id_list, radii_type="crc", scale=1):
     Returns:
         radii_list (list)       :   List of atomic radii
     """
+    element_ids = convert_element_ids(element_ids)
+
     # Set up dictionary of atomic radii for all elements present in the list
-    element_set = set(element_id_list)
+    element_set = set(element_ids)
     if radii_type == "bondi":
         radii_dict = {element_id: bondi_radii.get(element_id) for element_id in element_set}
     elif radii_type == "crc":
         radii_dict = {element_id: crc_radii.get(element_id) for element_id in element_set}
 
     # Get radii for elements in the element id list. Set 2 as default if does not exist
-    radii_list = [radii_dict.get(element_id) * scale if radii_dict.get(element_id, 2.0) else 2.0 * scale for element_id in element_id_list ]
+    radii = [radii_dict.get(element_id) * scale if radii_dict.get(element_id, 2.0) else 2.0 * scale for element_id in element_ids]
 
-    return radii_list
+    return radii
