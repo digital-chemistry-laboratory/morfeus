@@ -7,10 +7,6 @@ Classes:
     ConeAngle: Calculates exact cone angles.
     SASA: Calculates solvent accessible surface area.
     Sterimol: Calculates Sterimol parameters
-
-Functions:
-    check_distances: Controls distances for steric clashes.
-    get_radii: Helper function to get radii from list of elements.
 """
 
 import math
@@ -28,10 +24,11 @@ from scipy.spatial import ConvexHull
 from scipy.spatial.distance import cdist
 from scipy.spatial.transform import Rotation
 
+from steriplus.helpers import convert_element_ids, check_distances, get_radii
 from steriplus.data import atomic_numbers, atomic_symbols, \
     bondi_radii, crc_radii, jmol_colors
 from steriplus.io import read_gjf, read_xyz
-from steriplus.plotting import ax_3D, coordinate_axes, set_axes_equal
+from steriplus.plotting import ax_3D, coordinate_axes, set_axes_equal, MoleculeScene
 from steriplus.geometry import rotate_coordinates, Sphere, Cone, ConeAngleCone, ConeAngleAtom, SASAAtom
 
 class Sterimol:
@@ -110,7 +107,7 @@ class Sterimol:
         radii_list = []
         for i, (element_id, radius, coord) in enumerate(zip(element_ids, radii, atom_coordinates), start=1):
             coord = np.array(coord)
-            atom = Atom(element_id, radius, coord)
+            atom = Atom(element_id, radius, coord, i)
             atom_list.append(atom)
             if i != atom_1:
                 coord_list.append(coord)
@@ -144,9 +141,11 @@ class Sterimol:
         # Determine B1 and B5 from the smallest and largest scalar projections
         B_1_value = np.min(max_c_values)
         B_1 = rot_vectors[np.argmin(max_c_values)] * B_1_value
+        B_1 += np.array([atom_coordinates[atom_2 - 1, 0], 0, 0])
     
         B_5_value = np.max(max_c_values)
         B_5 = rot_vectors[np.argmax(max_c_values)] * B_5_value
+        B_5 += np.array([atom_coordinates[atom_2 - 1, 0], 0, 0])
 
         # Set up attributes
         self._atoms = atom_list
@@ -180,140 +179,42 @@ class Sterimol:
             print(f"{'L':10s}{'B_1':10s}{'B_5':10s}")
             print(f"{self.L_value:<10.2f}{self.B_1_value:<10.2f}{self.B_5_value:<10.2f}")
 
-    def plot_3D(self, density=1, filename=None):
-        """Plots a 3D representation of the molecule, vdW surface and Sterimol
-        vectors.
-
-        Args:
-            density (float) :   Factor for adjusting the density of points in the
-                                plot.
-            filename (str)  :   Filename for saving the plot to file.
-        """
-        with ax_3D() as ax:
-            ax.set_aspect('equal')
-            # Setting up
-            atom_1 = self.atom_1
-            atom_2 = self.atom_2
-            B_1 = self.B_1
-            B_5 = self.B_5
-            L = self.L
-            atom_list = self.atoms
-            vector = self.vector
-            coordinates = self.coordinates
-
-            # Set the density of points for plotting with input factor
-            n_points = self.hull_area / self.density / density
-            step = round(n_points / len(coordinates))
-
-            # Set up dictionary for coloring atomic centers
-            element_list = [atom.element_id for atom in atom_list]
-            color_dict = {element_id: jmol_colors[element_id] for element_id in set(element_list)}
-
-            # Plot the coordinates on the vdW surface
-            ax.scatter(coordinates[::step,0], coordinates[::step,1], coordinates[::step,2], alpha=0.1)
-
-            # Plot the atomic centers
-            for atom in atom_list:
-                x, y, z = atom.coordinates[:,0], atom.coordinates[:,1], atom.coordinates[:,2]
-                ax.scatter(x, y, z, color=color_dict[atom.element_id], s=50, edgecolors="k",)
-
-            # Plot the B_1 and B_5 vectors
-            x, y, z = atom_list[atom_2 - 1].coordinates[:,0], atom_list[atom_2 - 1].coordinates[:,1], atom_list[atom_2 - 1].coordinates[:,2]
-            ax.quiver(x, y, z, *vector)
-            ax.quiver(x, y, z, *B_1)
-            ax.quiver(x, y, z, *B_5)
-            B_1_pos = B_1 + atom_list[atom_2 - 1].coordinates
-            ax.text(*B_1_pos[0], "B1")
-            B_5_pos = B_5 + atom_list[atom_2 - 1].coordinates
-            ax.text(*B_5_pos[0], "B5")
-
-            # Plot the L vector
-            x, y, z = atom_list[atom_1 - 1].coordinates[:,0], atom_list[atom_1 - 1].coordinates[:,1], atom_list[atom_1 - 1].coordinates[:,2]
-            ax.quiver(x, y, z, *L)
-            L_pos = L + atom_list[atom_1 - 1].coordinates
-            ax.text(*L_pos[0], "L")
-
-            if filename:
-                plt.savefig(filename)
-            else:
-                plt.show()
-
-    def plot_2D(self, plane="yz", density=1, filename=None):
-        """Plots a 2D representation of the molecule, vdW surface and Sterimol
-        vectors.
-
-        Args:
-            density (float) :   Factor for adjusting the density of points in the
-                                plot
-            filename (str)  :   Filename for saving the plot to file
-            plane (str)     :   Plotting plane ("xy", "xz" or "yz")
-        """
-        plt.figure(figsize=(15,10))
-
-        # Set equal aspects for axes
-        plt.axes().set_aspect('equal', 'datalim')
-
-        atom_1 = self.atom_1
-        atom_2 = self.atom_2
-        atom_list = self.atoms
-
-        # Select coordinates for plotting
-        if plane == "yz":
-            i_1 = 1
-            i_2 = 2
-        if plane == "xy":
-            i_1 = 0
-            i_2 = 1
-        if plane == "xz":
-            i_1 = 0
-            i_2 = 2
-
-        # Get coordinates according to plotting plane
-        coordinates = self.coordinates[:, [i_1, i_2]]
-        B_1 = self.B_1[[i_1, i_2]]
-        B_5 = self.B_5[[i_1, i_2]]
-        L = self.L[[i_1, i_2]]
-        coordinates = self.coordinates[:, [i_1, i_2]]
-        atom_coordinates_list = [atom.coordinates[:, [i_1, i_2]] for atom in atom_list]
-        atom_2_coordinates = atom_list[atom_2 - 1].coordinates[:,[i_1, i_2]]
-        atom_1_coordinates = atom_list[atom_1 - 1].coordinates[:,[i_1, i_2]]
-        atom_coordinates = np.vstack(atom_coordinates_list)
-
-        # Set the density of points for plotting with input factor
-        n_points = self.hull_area / self.density / density
-        step = max(round(n_points / len(coordinates)), 1)
-
-        # Set up dictionary for coloring atomic centers
-        element_list = [atom.element_id for atom in atom_list]
-        color_dict = {element_id: jmol_colors[element_id] for element_id in set(element_list)}
-
-        # Plot the coordinates on the vdW surface
-        plt.scatter(coordinates[::step,0], coordinates[::step,1], alpha=0.1)
-
-        # Plot the atomic centers
-        for i, atom in enumerate(atom_list, start=0):
-            plt.scatter(atom_coordinates[i,0], atom_coordinates[i,1], color=color_dict[atom.element_id], s=50, edgecolors="k",)
-
-        # Plot the B_1 and B_5 vectors
-        coord_1, coord_2 = atom_2_coordinates[:,0], atom_2_coordinates[:,1]
-        plt.arrow(coord_1[0], coord_2[0], B_1[0], B_1[1], fc="k", ec="k", head_width=0.1, head_length=0.2, length_includes_head=True)
-        plt.arrow(coord_1[0], coord_2[0], B_5[0], B_5[1], fc="k", ec="k", head_width=0.1, head_length=0.2, length_includes_head=True)
-        B_1_pos = B_1 + atom_2_coordinates
-        plt.text(B_1_pos[:,0][0], B_1_pos[:,1][0], "B_1")
-        B_5_pos = B_5 + atom_2_coordinates
-        plt.text(B_5_pos[:,0][0], B_5_pos[:,1][0], "B_5")
-
-        # Plot the L vector in the case of xy or xz plotting plane
-        if plane != "yz":
-            coord_1, coord_2 = atom_1_coordinates[:,0], atom_2_coordinates[:,1]
-            plt.arrow(coord_1[0], coord_2[0], L[0], L[1], fc="k", ec="k", head_width=0.1, head_length=0.2, length_includes_head=True)
-            L_pos = L + atom_1_coordinates
-            plt.text(L_pos[:,0][0], L_pos[:,1][0], "L")
+    def draw_3D(self):
+        """Draw a 3D representation of the molecule with the Sterimol vectors"""
+        # Set up lists for drawing
+        elements = []
+        coordinates = []
+        radii = []
+        indices = []
+        for atom in self._atoms:
+            elements.append(atom.element_id)
+            coordinates.append(atom.coordinates)
+            radii.append(atom.radius)
+            indices.append(atom.index)
         
-        if filename:
-            plt.savefig(filename)
-        else:
-            plt.show()
+        # Draw molecule scene
+        scene = MoleculeScene(elements, coordinates, radii, indices)
+
+        # Set the size of the atoms
+        scene.set_scale(0.3)
+
+        # Draw L vector
+        L_start = coordinates[self.atom_1 - 1]
+        L_stop = self.L
+        L_length = self.L_value 
+        scene.add_arrow(L_start, L_stop, L_length, "L")
+
+        # Draw B_1 vector
+        B_1_start = coordinates[self.atom_2 - 1]
+        B_1_stop = self.B_1
+        B_1_length = self.B_1_value
+        scene.add_arrow(B_1_start, B_1_stop, B_1_length, "B_1")
+
+        # Draw B_5 vector
+        B_5_start = coordinates[self.atom_2 - 1]
+        B_5_stop = self.B_5
+        B_5_length = self.B_5_value
+        scene.add_arrow(B_5_start, B_5_stop, B_5_length, "B_5")       
 
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
@@ -396,10 +297,10 @@ class BuriedVolume:
 
         # Get list of atoms as Atom objects
         atom_list = []
-        for element_id, radius, coord in zip(element_ids, radii,
-                                             atom_coordinates):
+        for i, (element_id, radius, coord) in enumerate(zip(element_ids, radii,
+                                             atom_coordinates), start=1):
             coord = np.array(coord).reshape(1,-1)
-            atom = Atom(element_id, radius, coord)
+            atom = Atom(element_id, radius, coord, i)
             atom_list.append(atom)
 
         # Prune sphere points which are within vdW radius of other atoms.
@@ -1083,62 +984,4 @@ class Atom(NamedTuple):
     element_id: int
     radius: float
     coordinates: list
-
-def check_distances(element_ids, coordinates, dummy_atom, exclude_list=[], dummy_radius=0, epsilon=0, radii=[], radii_type="crc"):
-    # Converting element ids to atomic numbers if the are symbols
-    if type(element_ids[0]) == str:
-        element_ids = [element.capitalize() for element in element_ids]
-        element_ids = [atomic_numbers[element_id] for element_id in element_ids]
-    
-    # Getting radii if they are not supplied
-    if not radii:
-        radii = get_radii(element_ids, radii_type=radii_type)
-    
-    radii = np.array(radii)
-    atom_coordinates = np.array(coordinates)
-    dummy_coordinates = np.array(coordinates[dummy_atom - 1]).reshape(-1, 3)
-
-    distances = cdist(atom_coordinates, dummy_coordinates) - radii.reshape(-1, 1) - dummy_radius - epsilon
-    distances = distances.reshape(-1)
-
-    within_distance = list(np.argwhere(distances < 0).reshape(-1))
-    within_distance.remove(dummy_atom - 1)
-    within_distance = [i for i in within_distance if i not in exclude_list]
-    
-    if any(within_distance):
-        within_list = [i + 1 for i in within_distance]
-        return within_list
-    else:
-        return None
-
-def convert_element_ids(element_ids):
-        if type(element_ids[0]) == str:
-            element_ids = [element.capitalize() for element in element_ids]
-            element_ids = [atomic_numbers[element_id] for
-                           element_id in element_ids]
-        return element_ids
-
-def get_radii(element_ids, radii_type="crc", scale=1):
-    """Gets radii for list of element ids
-
-    Args:
-        element_id_list (list)  :   List of element ids as atomic numbers or
-                                    symbols
-        radii_type (str)        :   Type of vdW radius, "bondi" or "crc"
-
-    Returns:
-        radii_list (list)       :   List of atomic radii
-    """
-    element_ids = convert_element_ids(element_ids)
-
-    # Set up dictionary of atomic radii for all elements present in the list
-    element_set = set(element_ids)
-    if radii_type == "bondi":
-        radii_dict = {element_id: bondi_radii.get(element_id) for element_id in element_set}
-    elif radii_type == "crc":
-        radii_dict = {element_id: crc_radii.get(element_id) for element_id in element_set}
-
-    # Get radii for elements in the element id list. Set 2 as default if does not exist
-    radii = [radii_dict.get(element_id) * scale if radii_dict.get(element_id, 2.0) else 2.0 * scale for element_id in element_ids]
-
-    return radii
+    index: int

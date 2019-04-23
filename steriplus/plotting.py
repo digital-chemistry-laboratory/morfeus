@@ -9,7 +9,96 @@ Functions:
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 from contextlib import contextmanager
+from matplotlib.colors import hex2color
 import numpy as np
+import vpython as vp
+from steriplus.data import jmol_colors, atomic_symbols
+from steriplus.helpers import convert_element_ids
+
+class MoleculeScene:
+    def __init__(self, elements, coordinates, radii, indices=[]):
+        elements = convert_element_ids(elements)
+        symbols = [atomic_symbols[element] for element in elements]
+        hex_colors = [jmol_colors[i] for i in elements]
+        colors = [hex2color(color) for color in hex_colors]
+    
+        if not indices:
+            indices = range(1, len(coordinates) + 1)
+        
+        # Create scene
+        scene = vp.canvas(background=vp.color.white)
+
+        # Center camera on geometric center
+        center = np.mean(np.array(coordinates), axis=0)
+        scene.center = vp.vector(*center)
+
+        spheres = []
+        labels_symbols = []
+        labels_numbers = []
+    
+        for coordinate, radius, color, index, symbol in zip(coordinates, radii, colors, indices, symbols):
+            pos = vp.vector(*coordinate)
+            sphere = vp.sphere(pos=pos, radius=radius, color=vp.vector(*color))
+            spheres.append(sphere)
+    
+            label_symbol = vp.label(pos=pos, text=symbol, opacity=0, box=False, visible=False)
+            labels_symbols.append(label_symbol)
+            
+            label_number = vp.label(pos=pos, text=str(index), opacity=0, box=False, visible=False)
+            labels_numbers.append(label_number)
+    
+        slider_size = vp.slider(pos=scene.title_anchor, bind=lambda x: self._scale_size(spheres, radii, slider_size.value), min=0, max=1,value=1)
+        scene.append_to_title('    ')
+        vp.wtext(pos=scene.title_anchor, text="Size")
+
+        scene.append_to_title('\n')
+
+        slider_opacity = vp.slider(pos=scene.title_anchor, bind=lambda x: self._change_opacity(spheres, slider_opacity.value), min=0, max=1,value=1)
+        scene.append_to_title('    ')
+        vp.wtext(pos=scene.title_anchor, text="Opacity")
+
+        checkbox_symbols = vp.checkbox(pos=scene.caption_anchor, bind=lambda x: self._switch_visibility(labels_symbols), text='Display symbols')
+        scene.append_to_caption('    ')
+        checkbox_numbers = vp.checkbox(pos=scene.caption_anchor, bind=lambda x: self._switch_visibility(labels_numbers), text='Display numbers')
+    
+        self.scene = scene
+        self.spheres = spheres
+        self.radii = radii
+        self.labels_symbols = labels_symbols
+        self.labels_numbers = labels_numbers
+        self.slider_size = slider_size
+        self.checkbox_symbols = checkbox_symbols
+        self.checkbox_numbers = checkbox_numbers
+        self.arrows = []
+        self.arrow_labels = []
+    
+    def add_arrow(self, start, stop, length, text=""):
+        direction = np.array(stop) - np.array(start)
+        arrow = vp.arrow(pos=vp.vector(*start), axis=vp.vector(*direction), shaftwidth=0.1, length=length, color=vp.color.red)
+        self.arrows.append(arrow)
+
+        if text:
+            arrow_label = vp.label(pos=vp.vector(*stop), text=text, yoffset=10, opacity=0, line=False, box=False, color=vp.color.red)
+            self.arrow_labels.append(arrow_label)
+    
+    def set_scale(self, value):
+        self.slider_size.value = value
+        self._scale_size(self.spheres, self.radii, value)
+
+    @staticmethod
+    def _switch_visibility(objects):
+        for obj in objects:
+            obj.visible = not obj.visible
+    
+    @staticmethod
+    def _change_opacity(spheres, value):
+        for sphere in spheres:
+            sphere.opacity = value
+
+    @staticmethod
+    def _scale_size(spheres, radii, value):
+        for sphere, radius in zip(spheres, radii):
+            sphere.radius = radius * value
 
 # Code taken from stackexchange
 def set_axes_equal(ax):
