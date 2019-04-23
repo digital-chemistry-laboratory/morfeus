@@ -14,6 +14,7 @@ import numpy as np
 import vpython as vp
 from steriplus.data import jmol_colors, atomic_symbols
 from steriplus.helpers import convert_element_ids
+import math
 
 class MoleculeScene:
     def __init__(self, elements, coordinates, radii, indices=[]):
@@ -71,16 +72,29 @@ class MoleculeScene:
         self.checkbox_numbers = checkbox_numbers
         self.arrows = []
         self.arrow_labels = []
+        self.points = []
     
     def add_arrow(self, start, stop, length, text=""):
         direction = np.array(stop) - np.array(start)
-        arrow = vp.arrow(pos=vp.vector(*start), axis=vp.vector(*direction), shaftwidth=0.1, length=length, color=vp.color.red)
+        color = vp.vector(0.12156862745098039, 0.4666666666666667, 0.7058823529411765)
+        arrow = vp.arrow(pos=vp.vector(*start), axis=vp.vector(*direction), shaftwidth=0.1, length=length, color=color)
         self.arrows.append(arrow)
 
         if text:
             arrow_label = vp.label(pos=vp.vector(*stop), text=text, yoffset=10, opacity=0, line=False, box=False, color=vp.color.red)
             self.arrow_labels.append(arrow_label)
     
+    def add_cone(self, start, normal, angle, length):
+        r = math.tan(angle) * length
+        axis = vp.vector(*(-normal))
+        pos = vp.vector(*(start + normal * length))
+        color = vp.vector(0.12156862745098039, 0.4666666666666667, 0.7058823529411765)
+        self.cone = vp.cone(pos=pos, axis=axis, length=length, radius=r, color=color, opacity=0.15)
+    
+    def add_points(self, points, color):
+        color = vp.vector(*hex2color(color))
+        vp.points(pos=[vp.vector(*point) for point in points], radius=2, color=color)
+
     def set_scale(self, value):
         self.slider_size.value = value
         self._scale_size(self.spheres, self.radii, value)

@@ -261,8 +261,8 @@ class BuriedVolume:
                    filled=True)
 
         # Save all coordinates before deleting some atoms
-        self.density = density
-        self.excluded_atoms = exclude_list
+        self._density = density
+        self._excluded_atoms = exclude_list
         self._all_coordinates = np.array(coordinates)
 
         # Make copies of lists to avoid deleting originals
@@ -299,7 +299,7 @@ class BuriedVolume:
         atom_list = []
         for i, (element_id, radius, coord) in enumerate(zip(element_ids, radii,
                                              atom_coordinates), start=1):
-            coord = np.array(coord).reshape(1,-1)
+            coord = np.array(coord)
             atom = Atom(element_id, radius, coord, i)
             atom_list.append(atom)
 
@@ -310,7 +310,7 @@ class BuriedVolume:
         for atom in atom_list:
             if atom.radius + s.radius > np.linalg.norm(atom.coordinates):
                 to_prune = tree.query_ball_point(atom.coordinates,
-                                                 atom.radius)[0]
+                                                 atom.radius)
                 mask[to_prune] = True
         buried_points = s.points[mask,:]
         free_points = s.points[np.invert(mask),:]
@@ -319,11 +319,43 @@ class BuriedVolume:
         self.buried_volume = len(buried_points) / len(s.points)
 
         # Set variables for outside access and function access.
-        self.atoms = atom_list
-        self.atom_coordinates = atom_coordinates
-        self.sphere = s
-        self.buried_points = buried_points
-        self.free_points = free_points
+        self._atoms = atom_list
+        self._atom_coordinates = atom_coordinates
+        self._sphere = s
+        self._buried_points = buried_points
+        self._free_points = free_points
+
+    def draw_3D(self):
+        """Draw a 3D representation of the molecule with buried and free 
+        points"""
+        # Set up lists for drawing
+        elements = []
+        coordinates = []
+        radii = []
+        indices = []
+        for atom in self._atoms:
+            elements.append(atom.element_id)
+            coordinates.append(atom.coordinates)
+            radii.append(atom.radius)
+            indices.append(atom.index)
+        
+        # Draw molecule scene
+        scene = MoleculeScene(elements, coordinates, radii, indices)
+
+        # Take out reasonable amount of points
+        step = math.ceil(1 / self._density / 25)  
+
+        buried_points = np.array(self._buried_points)
+        np.random.shuffle(buried_points)
+        buried_points = buried_points[::step, :]
+
+        free_points = np.array(self._free_points)
+        np.random.shuffle(free_points)
+        free_points = free_points[::step, :]
+
+        # Add points
+        scene.add_points(buried_points, color='#1f77b4')
+        scene.add_points(free_points, color='#ff7f0e')
 
     def print_report(self):
         """Prints a report of the buried volume for use in shell scripts"""
@@ -343,10 +375,10 @@ class BuriedVolume:
                                         orientation of the z axis (one-indexed)
         """
         # Set up coordinates
-        atoms = self.atoms
-        center = np.array(self.sphere.center)
+        atoms = self._atoms
+        center = np.array(self._sphere.center)
         all_coordinates = np.array(self._all_coordinates)
-        coordinates = np.array(self.atom_coordinates)
+        coordinates = np.array(self._atom_coordinates)
 
         # Translate coordinates
         all_coordinates -= center
@@ -363,7 +395,7 @@ class BuriedVolume:
         coordinates = rotate_coordinates(coordinates, vector, np.array([0, 0, -1]))
 
         # Make grid
-        r = self.sphere.radius
+        r = self._sphere.radius
         x_ = np.linspace(-r, r, grid)
         y_ = np.linspace(-r, r, grid)
 
@@ -415,41 +447,6 @@ class BuriedVolume:
         c_bar = fig.colorbar(cf)
         c_bar.set_label("Z(Å)")
         ax.set_aspect('equal', 'box')
-
-        if filename:
-            plt.savefig(filename)
-        else:
-            plt.show()
-
-    def plot_3D(self, filename=None, density=1):
-        """Plots a 3D view of the sphere volume that is free
-        Args:
-            density (float)    :    Parameter that regulates the density of points of the
-                                    sphere
-            filename (str)     :    Name of file for saving the plot.
-        """
-        buried_points = np.array(self.buried_points)
-        np.random.shuffle(buried_points)
-        free_points = np.array(self.free_points)
-        np.random.shuffle(free_points)
-        atom_list = self.atoms
-
-        # Set the density of points for plotting with input factor
-        n_points = self.sphere.volume / self.density / density * 100
-        step = round(n_points / (len(free_points) + len(buried_points)))
-        
-        # Set up dictionary for coloring atomic centers
-        element_list = [atom.element_id for atom in atom_list]
-        color_dict = {element_id: jmol_colors[element_id] for element_id in set(element_list)}
-
-        with ax_3D() as ax:
-            ax.scatter(buried_points[::step,0], buried_points[::step,1], buried_points[::step,2], s=1, c="r")
-            ax.scatter(free_points[::step,0], free_points[::step,1], free_points[::step,2], s=1, c="b")
-
-            # Plot the atomic centers
-            for atom in atom_list:
-                x, y, z = atom.coordinates[:,0], atom.coordinates[:,1], atom.coordinates[:,2]
-                ax.scatter(x, y, z, color=color_dict[atom.element_id], s=50, edgecolors="k",)
 
         if filename:
             plt.savefig(filename)
@@ -691,6 +688,36 @@ class ConeAngle:
                 self.cone = cone
                 self.cone_angle = math.degrees(cone.angle * 2)
                 self.tangent_atoms = [atom for atom in cone.atoms]
+    
+    def draw_3D(self):
+        """Draw a 3D representation of the molecule with the cone"""
+        # Set up lists for drawing
+        elements = []
+        coordinates = []
+        radii = []
+        indices = []
+        for atom in self._atoms:
+            elements.append(atom.element_id)
+            coordinates.append(atom.coordinates)
+            radii.append(atom.radius)
+            indices.append(atom.index)
+        
+        # Draw molecule scene
+        scene = MoleculeScene(elements, coordinates, radii, indices)
+
+        # Determine direction and extension of cone
+        if self.cone_angle > 180:
+            normal = - self.cone.normal 
+        else:
+            normal = self.cone.normal
+        projected = np.dot(normal, np.array(coordinates).T) + np.array(radii)
+
+        max_extension = np.max(projected)
+        if self.cone_angle > 180:
+            max_extension += 1
+        
+        # Add cone
+        scene.add_cone([0, 0, 0], normal, self.cone.angle, max_extension)
 
     def _search_one_cones(self):
         """Searches over cones tangent to one atom
@@ -939,45 +966,6 @@ class ConeAngle:
         print(f"Cone angle: {self.cone_angle:.1f}")
         print(f"No. tangent atoms: {len(self.tangent_atoms)}")
         print(f"Tangent to: {tangent_string}")
-
-    def plot_3D(self, height=5, plot_cone=True):
-        """Plot 3D representation of points on convex hull together with cone
-
-        Args:
-            height (float)      :   Height of the cone in Å
-            plot_cone (bool)    :   Whether to plot the cone or just the points
-        """
-        # Set up dictionary for coloring atomic centers
-        element_list = [atom.element_id for atom in self._atoms]
-        color_dict = {element_id: jmol_colors[element_id] for element_id in set(element_list)}
-
-        # Construct cone and set direction
-        angle = np.degrees(self.cone.angle)
-        if angle * 2 > 180:
-            angle = 180 - angle
-            normal = -self.cone.normal
-        else:
-            angle = angle
-            normal = self.cone.normal
-
-        cone = Cone(angle, height, normal, spacing=0.1)
-
-        with ax_3D() as ax:
-            ax.set_aspect('equal')
-            # Plot vdW surface of atoms
-            for atom in self._atoms:
-                sphere = Sphere(atom.coordinates, atom.radius, density=0.5)
-                cvx = ConvexHull(sphere.points)
-                x, y, z = sphere.points.T
-                tri = Triangulation(x, y, triangles=cvx.simplices)
-                ax.plot_trisurf(tri, z, color=color_dict[atom.element_id])
-            # Plot cone
-            if plot_cone:
-                ax.plot_trisurf(cone.points[:,0], cone.points[:,1], cone.points[:,2], alpha=0.1)
-                ax.quiver(0, 0, 0, *normal, color="r")
-            set_axes_equal(ax)
-        
-        plt.show()
 
 class Atom(NamedTuple):
     """Atom class"""

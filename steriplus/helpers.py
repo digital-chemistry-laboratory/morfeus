@@ -8,6 +8,8 @@ Functions:
 
 from steriplus.data import atomic_numbers, atomic_symbols, \
     bondi_radii, crc_radii, jmol_colors
+import numpy as np
+from scipy.spatial.distance import cdist
 
 def check_distances(element_ids, coordinates, dummy_atom, exclude_list=[], dummy_radius=0, epsilon=0, radii=[], radii_type="crc"):
     # Converting element ids to atomic numbers if the are symbols
