@@ -325,9 +325,13 @@ class BuriedVolume:
         self._buried_points = buried_points
         self._free_points = free_points
 
-    def draw_3D(self):
+    def draw_3D(self, full_density=False):
         """Draw a 3D representation of the molecule with buried and free 
-        points"""
+        points
+        
+        Args:
+            full_density (bool): Requests drawing of all points (slow).
+        """
         # Set up lists for drawing
         elements = []
         coordinates = []
@@ -339,11 +343,16 @@ class BuriedVolume:
             radii.append(atom.radius)
             indices.append(atom.index)
         
+        coordinates = np.vstack(coordinates)
+        
         # Draw molecule scene
         scene = MoleculeScene(elements, coordinates, radii, indices)
 
         # Take out reasonable amount of points
-        step = math.ceil(1 / self._density / 25)  
+        if full_density:
+            step = 1
+        else:
+            step = math.ceil(1 / self._density / 25)  
 
         buried_points = np.array(self._buried_points)
         np.random.shuffle(buried_points)
@@ -483,8 +492,8 @@ class SASA:
             radii = get_radii(element_ids, radii_type=radii_type)
         
         # Increment the radii with the probe radius
-        radii = np.array(radii)
-        radii = radii + probe_radius
+        orig_radii = np.array(radii)
+        radii = orig_radii + probe_radius
         
         # Center coordinate system at geometric center
         coordinates = np.array(coordinates)
@@ -493,10 +502,13 @@ class SASA:
         
         # Construct list of atoms
         atoms = []
-        for i, (coordinate, radius, element_id) in \
-                enumerate(zip(coordinates, radii, element_ids), start=1):
-            atom = SASAAtom(element_id, radius, coordinate, i)
-            atoms.append(atom)
+        orig_atoms = []
+        for i, (coordinate, radius, orig_radius, element_id) in \
+                enumerate(zip(coordinates, radii, orig_radii, element_ids), start=1):
+            sasa_atom = SASAAtom(element_id, radius, coordinate, i)
+            orig_atom = Atom(element_id, orig_radius, coordinate, i)
+            atoms.append(sasa_atom)
+            orig_atoms.append(orig_atom)
         
         # Determine occluded and accesible points of each atom based on
         # distances to all other atoms (brute force)
@@ -561,9 +573,51 @@ class SASA:
         self.area = sum([atom.area for atom in atoms])
         self.volume = sum([atom.volume for atom in atoms])
         self._atoms = atoms
+        self._orig_atoms = orig_atoms
         self._density = density
         self._accessible_points = accessible_points
         self._occluded_points = occluded_points
+
+    def draw_3D(self, full_density=False, highlight=[]):
+        """Draw a 3D representation of the molecule with the cone
+        
+        Args:
+            full_density (bool) : Requests drawing of all points (slow)
+            highlight (list)    : List of atom indices for highlighting surface
+        """
+        # Set up lists for drawing
+        elements = []
+        coordinates = []
+        radii = []
+        indices = []
+        for atom in self._orig_atoms:
+            elements.append(atom.element_id)
+            coordinates.append(atom.coordinates)
+            radii.append(atom.radius)
+            indices.append(atom.index)
+        
+        coordinates = np.vstack(coordinates)
+        
+        # Draw molecule scene
+        scene = MoleculeScene(elements, coordinates, radii, indices)
+
+        # Take out a reasonable amount of points
+        for atom in self._atoms:
+            points = np.array(atom.accessible_points)
+            if full_density:
+                step = 1
+            else:
+                step = math.ceil(1 / self._density / 25)
+            np.random.shuffle(points)
+            points = points[::step, :]
+        
+            # Add points
+            if atom.index in highlight:
+                color = '#ff7f0e'
+            else:
+                color = '#1f77b4'
+            if np.any(points):
+                scene.add_points(points, color=color)
     
     def plot_3D(self, highlight=[]):
         """Plot the solvent accessible surface area.
@@ -702,6 +756,8 @@ class ConeAngle:
             radii.append(atom.radius)
             indices.append(atom.index)
         
+        coordinates = np.vstack(coordinates)
+        
         # Draw molecule scene
         scene = MoleculeScene(elements, coordinates, radii, indices)
 
@@ -710,7 +766,7 @@ class ConeAngle:
             normal = - self.cone.normal 
         else:
             normal = self.cone.normal
-        projected = np.dot(normal, np.array(coordinates).T) + np.array(radii)
+        projected = np.dot(normal, coordinates).T + np.array(radii)
 
         max_extension = np.max(projected)
         if self.cone_angle > 180:

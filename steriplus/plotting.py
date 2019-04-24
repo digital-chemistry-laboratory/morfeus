@@ -73,6 +73,7 @@ class MoleculeScene:
         self.arrows = []
         self.arrow_labels = []
         self.points = []
+        self.triangles = []
     
     def add_arrow(self, start, stop, length, text=""):
         direction = np.array(stop) - np.array(start)
