@@ -766,7 +766,7 @@ class ConeAngle:
             normal = - self.cone.normal 
         else:
             normal = self.cone.normal
-        projected = np.dot(normal, coordinates).T + np.array(radii)
+        projected = np.dot(normal, coordinates.T) + np.array(radii)
 
         max_extension = np.max(projected)
         if self.cone_angle > 180:
