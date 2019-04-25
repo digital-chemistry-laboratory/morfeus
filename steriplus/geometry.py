@@ -188,13 +188,10 @@ class Sphere:
         self.area = 4 * radius**2 * math.pi
         self.volume = 4 * radius**3 * math.pi / 3
 
-        if filled:
-            self.points = self.get_points_projected(density=density, filled=True)
-
         if method == "polar":
             self.points = self.get_points_polar(density=density)
         elif method =="projection":
-            self.points = self.get_points_projected(density=density)
+            self.points = self.get_points_projected(density=density, filled=filled)
         elif method == "fibonacci":
             self.points = self.get_points_fibonacci(density=density)
 
@@ -216,17 +213,19 @@ class Sphere:
 
         return points
 
-    def get_points_projected(self, density, filled=True):
-        if not filled:
-            n = round((self.area / density * 6 / math.pi)**(1 / 3))
-        else:
+    def get_points_projected(self, density, filled=False):
+        if filled:
+            print("filled")
             n = round((self.volume / density * 6 / math.pi)**(1 / 3))
+        else:
+            n = round((self.area / density * 6 / math.pi)**(1 / 3))
+        print(n)
+
         r = self.radius
         x = np.linspace(-r, r, n)
         y = np.linspace(-r, r, n)
         z = np.linspace(-r, r, n)
         points = np.stack(np.meshgrid(x, y, z), -1).reshape(-1, 3)
-        numpoints = len(points)
         lengths = np.linalg.norm(points, axis=1)
         points = points[lengths <= r]
         if not filled:
