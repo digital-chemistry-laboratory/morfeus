@@ -510,24 +510,26 @@ class SASA:
             atoms.append(sasa_atom)
             orig_atoms.append(orig_atom)
         
-        # Determine occluded and accesible points of each atom based on
+        # Determine occluded and accessible points of each atom based on
         # distances to all other atoms (brute force)
         accessible_points = []
         occluded_points = []
         for atom in atoms:
             # Construct sphere for atom
             sphere = Sphere(atom.coordinates, atom.radius, density=density)
-            
+
+            # Select atoms to test against
+            test_atoms = [test_atom for test_atom in atoms 
+                if test_atom is not atom and np.linalg.norm(atom.coordinates - test_atom.coordinates) < atom.radius + test_atom.radius]
+
             # Select coordinates and radii for other atoms
-            other_coordinates = [test_atom.coordinates for test_atom 
-                                 in atoms if test_atom is not atom]
-            other_radii = [test_atom.radius for test_atom 
-                           in atoms if test_atom is not atom]
-            other_radii = np.array(other_radii).reshape(-1, 1)
+            test_coordinates = [test_atom.coordinates for test_atom in test_atoms]
+            test_radii = [test_atom.radius for test_atom in test_atoms]
+            test_radii = np.array(test_radii).reshape(-1, 1)
 
             # Get distances to other atoms and subtract radii
-            distances = cdist(other_coordinates, sphere.points)
-            distances -= other_radii
+            distances = cdist(test_coordinates, sphere.points)
+            distances -= test_radii
 
             # Take smallest distance and perform check
             min_distances = np.min(distances, axis=0)
@@ -547,10 +549,10 @@ class SASA:
 
             # Calculate part occluded and accessible
             ratio_occluded = n_occluded / n_points
-            ratio_accesible = 1 - ratio_occluded
+            ratio_accessible = 1 - ratio_occluded
             
             # Calculate area
-            area = 4 * np.pi * atom.radius ** 2 * ratio_accesible
+            area = 4 * np.pi * atom.radius ** 2 * ratio_accessible
             atom.area = area
             
             # Center accessible points around origin
