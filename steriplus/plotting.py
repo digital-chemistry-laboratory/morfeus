@@ -48,15 +48,15 @@ class MoleculeScene:
             label_number = vp.label(pos=pos, text=str(index), opacity=0, box=False, visible=False)
             labels_numbers.append(label_number)
     
-        slider_size = vp.slider(pos=scene.title_anchor, bind=lambda x: self._scale_size(spheres, radii, slider_size.value), min=0, max=1,value=1)
+        slider_size = vp.slider(pos=scene.title_anchor, bind=self._scale_size, min=0, max=1,value=1)
         scene.append_to_title('    ')
         vp.wtext(pos=scene.title_anchor, text="Size")
 
         scene.append_to_title('\n')
 
-        slider_opacity = vp.slider(pos=scene.title_anchor, bind=lambda x: self._change_opacity(spheres, slider_opacity.value), min=0, max=1,value=1)
+        slider_sphere_opacity = vp.slider(pos=scene.title_anchor, bind=self._change_sphere_opacity, min=0, max=1,value=1)
         scene.append_to_title('    ')
-        vp.wtext(pos=scene.title_anchor, text="Opacity")
+        vp.wtext(pos=scene.title_anchor, text="Atom opacity")
 
         checkbox_symbols = vp.checkbox(pos=scene.caption_anchor, bind=lambda x: self._switch_visibility(labels_symbols), text='Display symbols')
         scene.append_to_caption('    ')
@@ -68,6 +68,7 @@ class MoleculeScene:
         self.labels_symbols = labels_symbols
         self.labels_numbers = labels_numbers
         self.slider_size = slider_size
+        self.slider_sphere_opacity = slider_sphere_opacity
         self.checkbox_symbols = checkbox_symbols
         self.checkbox_numbers = checkbox_numbers
         self.arrows = []
@@ -94,7 +95,8 @@ class MoleculeScene:
     
     def add_points(self, points, color):
         color = vp.vector(*hex2color(color))
-        vp.points(pos=[vp.vector(*point) for point in points], radius=2, color=color)
+        points = vp.points(pos=[vp.vector(*point) for point in points], color=color, radius=2)
+        self.points.append(points)
 
     def set_scale(self, value):
         self.slider_size.value = value
@@ -104,16 +106,14 @@ class MoleculeScene:
     def _switch_visibility(objects):
         for obj in objects:
             obj.visible = not obj.visible
-    
-    @staticmethod
-    def _change_opacity(spheres, value):
-        for sphere in spheres:
-            sphere.opacity = value
 
-    @staticmethod
-    def _scale_size(spheres, radii, value):
-        for sphere, radius in zip(spheres, radii):
-            sphere.radius = radius * value
+    def _change_sphere_opacity(self):
+        for sphere in self.spheres:
+            sphere.opacity = self.slider_sphere_opacity.value
+
+    def _scale_size(self):
+        for sphere, radius in zip(self.spheres, self.radii):
+            sphere.radius = radius * self.slider_size.value
 
 # Code taken from stackexchange
 def set_axes_equal(ax):
