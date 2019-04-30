@@ -512,8 +512,6 @@ class SASA:
         
         # Determine occluded and accessible points of each atom based on
         # distances to all other atoms (brute force)
-        accessible_points = []
-        occluded_points = []
         for atom in atoms:
             # Construct sphere for atom
             sphere = Sphere(atom.coordinates, atom.radius, density=density)
@@ -533,13 +531,10 @@ class SASA:
 
             # Take smallest distance and perform check
             min_distances = np.min(distances, axis=0)
-            atom.occluded_points = sphere.points[min_distances < 0]
+
+            atom.occluded_points = sphere.points[min_distances <= 0]
             atom.accessible_points = sphere.points[min_distances > 0]
-            accessible_points.extend(atom.accessible_points)
-            occluded_points.extend(atom.occluded_points)
-        accessible_points = np.vstack(accessible_points)
-        occluded_points = np.vstack(occluded_points)
-        
+
         # Calculate atom areas and volumes
         for atom in atoms:
             # Get number of points of eache type
@@ -561,13 +556,13 @@ class SASA:
 
             # Add accessible points
             accessible_summed = np.sum(centered_points, axis=0)
-            
+
             # Calculate volume
             volume = (4 * np.pi / 3 / n_points) * (atom.radius * 
                       np.dot(atom.coordinates, accessible_summed)
                       + atom.radius ** 3 * n_accesible)
             atom.volume = volume
-        
+
         # Set up attributes
         self._probe_radius = probe_radius 
         self.atom_areas = {atom.index: atom.area for atom in atoms}
@@ -577,8 +572,6 @@ class SASA:
         self._atoms = atoms
         self._orig_atoms = orig_atoms
         self._density = density
-        self._accessible_points = accessible_points
-        self._occluded_points = occluded_points
 
     def draw_3D(self, full_density=False, highlight=[]):
         """Draw a 3D representation of the molecule with the cone
