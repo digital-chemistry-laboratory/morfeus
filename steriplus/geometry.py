@@ -215,11 +215,9 @@ class Sphere:
 
     def get_points_projected(self, density, filled=False):
         if filled:
-            print("filled")
             n = round((self.volume / density * 6 / math.pi)**(1 / 3))
         else:
             n = round((self.area / density * 6 / math.pi)**(1 / 3))
-        print(n)
 
         r = self.radius
         x = np.linspace(-r, r, n)
