@@ -17,12 +17,38 @@ from steriplus.helpers import convert_element_ids
 import math
 
 class MoleculeScene:
+    """Class for drawing molecules and visualizing steric descriptors.
+
+    Args:
+        elements (list)     : List of elements as symbols or atomic numbers.
+        coordinates (list)  : List of atomic coordinates in Å
+        radii (list)        : List of atomic radii in Å
+        indices (list)      : List of atomic indices
+    
+    Attributes:
+        scene (obj)                 : Main scene for displaying objects
+        spheres (list)              : List of sphere objects
+        radii (list)                : List of sphere radii
+        labels_symbols (list)       : List of atomic symbol labels 
+        labels_numbers (list)       : List of atomic number labels
+        slider_size (obj)           : Slider object controlling sphere size
+        slider_sphere_opacity (obj) : Slider object controlling sphere opacity
+        checkbox_symbols (obj)      : Checkbox controlling atomic symbol
+                                      visilibity.
+        checkbox_numbers (obj)      : Checkbox controlling atomic number
+                                      visibility. 
+        arrows (list)               : List of arrows objects
+        arrow_labels (list)         : List of arrow labels
+        points (list)               : List of points objects
+    """
     def __init__(self, elements, coordinates, radii, indices=[]):
+        # Set up atomic numbers, symbols and colors
         elements = convert_element_ids(elements)
         symbols = [atomic_symbols[element] for element in elements]
         hex_colors = [jmol_colors[i] for i in elements]
         colors = [hex2color(color) for color in hex_colors]
-    
+
+        # Create indices if these are not supplied
         if not indices:
             indices = range(1, len(coordinates) + 1)
         
@@ -33,6 +59,7 @@ class MoleculeScene:
         center = np.mean(np.array(coordinates), axis=0)
         scene.center = vp.vector(*center)
 
+        # Draw atomic spheres and set up labels and numbers
         spheres = []
         labels_symbols = []
         labels_numbers = []
@@ -47,7 +74,8 @@ class MoleculeScene:
             
             label_number = vp.label(pos=pos, text=str(index), opacity=0, box=False, visible=False)
             labels_numbers.append(label_number)
-    
+
+        # Draw sliders and checkboxes
         slider_size = vp.slider(pos=scene.title_anchor, bind=self._scale_size, min=0, max=1,value=1)
         scene.append_to_title('    ')
         vp.wtext(pos=scene.title_anchor, text="Size")
@@ -62,6 +90,7 @@ class MoleculeScene:
         scene.append_to_caption('    ')
         checkbox_numbers = vp.checkbox(pos=scene.caption_anchor, bind=lambda x: self._switch_visibility(labels_numbers), text='Display numbers')
     
+        # Set up attributes
         self.scene = scene
         self.spheres = spheres
         self.radii = radii
@@ -74,9 +103,16 @@ class MoleculeScene:
         self.arrows = []
         self.arrow_labels = []
         self.points = []
-        self.triangles = []
     
     def add_arrow(self, start, stop, length, text=""):
+        """Adds an arrow with optional text.
+
+        Args:
+            length (float)  :   Length of arrow in Å.
+            start (list)    :   Coordinates for start of arrow.
+            stop (list)     :   Coordinates for end of arrow.
+            test (str)      :   Text to display at end of arrow
+        """
         direction = np.array(stop) - np.array(start)
         color = vp.vector(0.12156862745098039, 0.4666666666666667, 0.7058823529411765)
         arrow = vp.arrow(pos=vp.vector(*start), axis=vp.vector(*direction), shaftwidth=0.1, length=length, color=color)
@@ -87,6 +123,14 @@ class MoleculeScene:
             self.arrow_labels.append(arrow_label)
     
     def add_cone(self, start, normal, angle, length):
+        """Adds cone with apex at starting point.
+
+        Args:
+            angle (float)   :   Cone angle in degrees
+            length (float)  :   Cone length in Å
+            normal (list)   :   Direction vector of cone
+            start (list)    :   Starting coordinates for cone
+        """
         r = math.tan(angle) * length
         axis = vp.vector(*(-normal))
         pos = vp.vector(*(start + normal * length))
@@ -94,24 +138,43 @@ class MoleculeScene:
         self.cone = vp.cone(pos=pos, axis=axis, length=length, radius=r, color=color, opacity=0.15)
     
     def add_points(self, points, color):
+        """Add points of certain color.
+
+        Args:
+            color (str)     : Color in hexademical code
+            points (list)   : List of coordinates
+        """
         color = vp.vector(*hex2color(color))
         points = vp.points(pos=[vp.vector(*point) for point in points], color=color, radius=2)
         self.points.append(points)
 
     def set_scale(self, value):
+        """Set the scale of the atomic spheres.
+        
+        Args:
+            value (float)  : Value between 0 and 1 to scale atom sizes to
+        """
         self.slider_size.value = value
         self._scale_size(self.spheres, self.radii, value)
 
     @staticmethod
     def _switch_visibility(objects):
+        """Switch the visibility of supplied objects.
+        Helper function for slider.
+
+        Args:
+            objects (list): List of objects
+        """
         for obj in objects:
             obj.visible = not obj.visible
 
     def _change_sphere_opacity(self):
+        """Change the sphere opacity according to the slider."""
         for sphere in self.spheres:
             sphere.opacity = self.slider_sphere_opacity.value
 
     def _scale_size(self):
+        """Scale the sphere sizes according to the slider."""
         for sphere, radius in zip(self.spheres, self.radii):
             sphere.radius = radius * self.slider_size.value
 

@@ -16,10 +16,13 @@ def main():
     parser.add_argument(
         '-d', '--density', type=float,
         help='Density of points on sphere vdW surface', default=0.01)
+    parser.add_argument(
+        '-p', '--probe', type=float, help='Probe radius', default=1.4)
 
     args = parser.parse_args()
     radii_type = args.radii
     density = args.density
+    probe_radius = args.probe
 
     # Parse the geometry file
     file = args.file
@@ -32,7 +35,8 @@ def main():
         return
 
     # Run calculation and print results
-    sasa = SASA(elements, coordinates, radii_type=radii_type, density=density)
+    sasa = SASA(elements, coordinates, radii_type=radii_type, density=density,
+                probe_radius=probe_radius)
     sasa.print_report(verbose=True)
 
 if __name__ == "__main__":

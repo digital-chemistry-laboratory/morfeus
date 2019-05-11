@@ -647,8 +647,9 @@ class SASA:
         Args:
             verbose(bool):  Prints areas per atom if set to True.
         """
+        print(f"Probe radius (Å): {self._probe_radius}")
         print(f"Solvent accessible surface area (Å^2): {self.area:.1f}")
-        print("Volume inside solvent accessible surface (Å^3): ",  
+        print("Volume inside solvent accessible surface (Å^3): "
               f"{self.volume:.1f}")
         if verbose:
             print(f"{'Atom':<10s}{'Index':<10s}{'Area (Å^2)':<10s}")
