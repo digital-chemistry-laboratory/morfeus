@@ -16,7 +16,7 @@ Scripts:
 """
 
 # Version of the Steriplus package
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 from steriplus.steriplus import Sterimol, BuriedVolume, SASA, ConeAngle
 from steriplus.io import read_gjf, read_xyz

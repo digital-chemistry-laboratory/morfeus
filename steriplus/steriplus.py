@@ -29,7 +29,7 @@ from steriplus.data import atomic_numbers, atomic_symbols, \
     bondi_radii, crc_radii, jmol_colors
 from steriplus.io import read_gjf, read_xyz
 from steriplus.plotting import ax_3D, coordinate_axes, set_axes_equal, MoleculeScene
-from steriplus.geometry import rotate_coordinates, Sphere, Cone, ConeAngleCone, ConeAngleAtom, SASAAtom
+from steriplus.geometry import rotate_coordinates, Atom, Sphere, Cone
 
 class Sterimol:
     """Performs and stores results of Sterimol calculation.
@@ -1018,10 +1018,3 @@ class ConeAngle:
         print(f"Cone angle: {self.cone_angle:.1f}")
         print(f"No. tangent atoms: {len(self.tangent_atoms)}")
         print(f"Tangent to: {tangent_string}")
-
-class Atom(NamedTuple):
-    """Atom class"""
-    element_id: int
-    radius: float
-    coordinates: list
-    index: int
