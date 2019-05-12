@@ -1,49 +1,43 @@
-"""This module contains functions related to 3D plotting.
+"""3D plotting
 
-Functions:
-    ax_3D: Yields axis object for 3D plotting.
-    coordinate_axis: Yield axis object for 3D plotting with coordinate axes.
-    set_axes_equal: Sets equal perspective for 3D plot.
+Classes:
+    MoleculeScene: Draw molecules and visualize steric descriptors.
 """
+import math
 
-import matplotlib.pyplot as plt
-from mpl_toolkits import mplot3d
-from contextlib import contextmanager
 from matplotlib.colors import hex2color
 import numpy as np
 import vpython as vp
-from steriplus.data import jmol_colors, atomic_symbols
-from steriplus.helpers import convert_element_ids
-import math
+
+from steriplus.data import  atomic_symbols, jmol_colors
+from steriplus.helpers import convert_elements
 
 class MoleculeScene:
-    """Class for drawing molecules and visualizing steric descriptors.
+    """Draw molecules and visualize steric descriptors.
 
     Args:
-        elements (list)     : List of elements as symbols or atomic numbers.
-        coordinates (list)  : List of atomic coordinates in Å
-        radii (list)        : List of atomic radii in Å
-        indices (list)      : List of atomic indices
+        coordinates (list): Coordinates (Å)
+        elements (list): Elements as atomic symbols or numbers
+        indices (list): Atomic indices (starting from 1)
+        radii (list): Sphere radii (Å)
     
     Attributes:
-        scene (obj)                 : Main scene for displaying objects
-        spheres (list)              : List of sphere objects
-        radii (list)                : List of sphere radii
-        labels_symbols (list)       : List of atomic symbol labels 
-        labels_numbers (list)       : List of atomic number labels
-        slider_size (obj)           : Slider object controlling sphere size
-        slider_sphere_opacity (obj) : Slider object controlling sphere opacity
-        checkbox_symbols (obj)      : Checkbox controlling atomic symbol
-                                      visilibity.
-        checkbox_numbers (obj)      : Checkbox controlling atomic number
-                                      visibility. 
-        arrows (list)               : List of arrows objects
-        arrow_labels (list)         : List of arrow labels
-        points (list)               : List of points objects
+        arrow_labels (list): Arrow labels
+        arrows (list): Arrows objects
+        checkbox_numbers (obj): Checkbox controlling atomic number visibility. 
+        checkbox_symbols (obj): Checkbox controlling atomic symbol visilibity.
+        labels_numbers (list): Atomic number labels
+        labels_symbols (list): Atomic symbol labels 
+        points (list): Points objects
+        radii (list): Sphere radii (Å)
+        scene (obj): Main scene for display
+        slider_opacity (obj): Slider controlling sphere opacity
+        slider_size (obj): Slider controlling sphere size
+        spheres (list): Sphere objects
     """
     def __init__(self, elements, coordinates, radii, indices=[]):
         # Set up atomic numbers, symbols and colors
-        elements = convert_element_ids(elements)
+        elements = convert_elements(elements)
         symbols = [atomic_symbols[element] for element in elements]
         hex_colors = [jmol_colors[i] for i in elements]
         colors = [hex2color(color) for color in hex_colors]
@@ -64,60 +58,76 @@ class MoleculeScene:
         labels_symbols = []
         labels_numbers = []
     
-        for coordinate, radius, color, index, symbol in zip(coordinates, radii, colors, indices, symbols):
+        for coordinate, radius, color, index, symbol in \
+                zip(coordinates, radii, colors, indices, symbols):
             pos = vp.vector(*coordinate)
             sphere = vp.sphere(pos=pos, radius=radius, color=vp.vector(*color))
             spheres.append(sphere)
     
-            label_symbol = vp.label(pos=pos, text=symbol, opacity=0, box=False, visible=False)
+            label_symbol = vp.label(pos=pos, text=symbol, opacity=0, box=False,
+                                    visible=False)
             labels_symbols.append(label_symbol)
             
-            label_number = vp.label(pos=pos, text=str(index), opacity=0, box=False, visible=False)
+            label_number = vp.label(pos=pos, text=str(index), opacity=0, 
+                                    box=False, visible=False)
             labels_numbers.append(label_number)
 
         # Draw sliders and checkboxes
-        slider_size = vp.slider(pos=scene.title_anchor, bind=self._scale_size, min=0, max=1,value=1)
+        slider_size = vp.slider(pos=scene.title_anchor, bind=self._scale_size,
+                                min=0, max=1,value=1)
         scene.append_to_title('    ')
         vp.wtext(pos=scene.title_anchor, text="Size")
 
         scene.append_to_title('\n')
 
-        slider_sphere_opacity = vp.slider(pos=scene.title_anchor, bind=self._change_sphere_opacity, min=0, max=1,value=1)
+        slider_opacity = vp.slider(pos=scene.title_anchor,
+                                   bind=self._change_opacity,
+                                   min=0, max=1,value=1)
         scene.append_to_title('    ')
         vp.wtext(pos=scene.title_anchor, text="Atom opacity")
 
-        checkbox_symbols = vp.checkbox(pos=scene.caption_anchor, bind=lambda x: self._switch_visibility(labels_symbols), text='Display symbols')
+        checkbox_symbols = vp.checkbox(
+            pos=scene.caption_anchor,
+            bind=lambda x: self._switch_visibility(labels_symbols),
+            text='Display symbols')
+        
         scene.append_to_caption('    ')
-        checkbox_numbers = vp.checkbox(pos=scene.caption_anchor, bind=lambda x: self._switch_visibility(labels_numbers), text='Display numbers')
+
+        checkbox_numbers = vp.checkbox(
+            pos=scene.caption_anchor,
+            bind=lambda x: self._switch_visibility(labels_numbers),
+            text='Display numbers')
     
         # Set up attributes
-        self.scene = scene
-        self.spheres = spheres
-        self.radii = radii
-        self.labels_symbols = labels_symbols
-        self.labels_numbers = labels_numbers
-        self.slider_size = slider_size
-        self.slider_sphere_opacity = slider_sphere_opacity
-        self.checkbox_symbols = checkbox_symbols
-        self.checkbox_numbers = checkbox_numbers
-        self.arrows = []
         self.arrow_labels = []
+        self.arrows = []
+        self.checkbox_numbers = checkbox_numbers
+        self.checkbox_symbols = checkbox_symbols
+        self.labels_numbers = labels_numbers
+        self.labels_symbols = labels_symbols
         self.points = []
+        self.radii = radii
+        self.scene = scene
+        self.slider_size = slider_size
+        self.slider_opacity = slider_opacity
+        self.spheres = spheres
     
     def add_arrow(self, start, stop, length, text=""):
         """Adds an arrow with optional text.
 
         Args:
-            length (float)  :   Length of arrow in Å.
-            start (list)    :   Coordinates for start of arrow.
-            stop (list)     :   Coordinates for end of arrow.
-            test (str)      :   Text to display at end of arrow
+            length (float): Length of arrow (Å).
+            start (list): Coordinates for start of arrow (Å)
+            stop (list): Coordinates for end of arrow (Å)
+            text (str): Text to display at end of arrow
         """
+        # Draw arrow
         direction = np.array(stop) - np.array(start)
         color = vp.vector(0.12156862745098039, 0.4666666666666667, 0.7058823529411765)
         arrow = vp.arrow(pos=vp.vector(*start), axis=vp.vector(*direction), shaftwidth=0.1, length=length, color=color)
         self.arrows.append(arrow)
 
+        # Draw text if given
         if text:
             arrow_label = vp.label(pos=vp.vector(*stop), text=text, yoffset=10, opacity=0, line=False, box=False, color=vp.color.red)
             self.arrow_labels.append(arrow_label)
@@ -126,10 +136,10 @@ class MoleculeScene:
         """Adds cone with apex at starting point.
 
         Args:
-            angle (float)   :   Cone angle in degrees
-            length (float)  :   Cone length in Å
-            normal (list)   :   Direction vector of cone
-            start (list)    :   Starting coordinates for cone
+            angle (float): Cone angle (deg)
+            length (float): Cone length (Å)
+            normal (list): Direction vector of cone (Å)
+            start (list): Starting coordinates for cone (Å)
         """
         r = math.tan(angle) * length
         axis = vp.vector(*(-normal))
@@ -141,8 +151,8 @@ class MoleculeScene:
         """Add points of certain color.
 
         Args:
-            color (str)     : Color in hexademical code
-            points (list)   : List of coordinates
+            color (str): Color in hexademical code
+            points (list): Coordinates of points (Å)
         """
         color = vp.vector(*hex2color(color))
         points = vp.points(pos=[vp.vector(*point) for point in points], color=color, radius=2)
@@ -152,99 +162,27 @@ class MoleculeScene:
         """Set the scale of the atomic spheres.
         
         Args:
-            value (float)  : Value between 0 and 1 to scale atom sizes to
+            value (float): Atom size factor (between 0 and 1) 
         """
         self.slider_size.value = value
         self._scale_size(self.spheres, self.radii, value)
-
-    @staticmethod
-    def _switch_visibility(objects):
-        """Switch the visibility of supplied objects.
-        Helper function for slider.
-
-        Args:
-            objects (list): List of objects
-        """
-        for obj in objects:
-            obj.visible = not obj.visible
-
+    
     def _change_sphere_opacity(self):
         """Change the sphere opacity according to the slider."""
         for sphere in self.spheres:
-            sphere.opacity = self.slider_sphere_opacity.value
+            sphere.opacity = self.slider_opacity.value
 
     def _scale_size(self):
         """Scale the sphere sizes according to the slider."""
         for sphere, radius in zip(self.spheres, self.radii):
             sphere.radius = radius * self.slider_size.value
 
-# Code taken from stackexchange
-def set_axes_equal(ax):
-    '''Make axes of 3D plot have equal scale so that spheres appear as spheres,
-    cubes as cubes, etc..  This is one possible solution to Matplotlib's
-    ax.set_aspect('equal') and ax.axis('equal') not working for 3D.
+    @staticmethod
+    def _switch_visibility(objects):
+        """Switch visibility of supplied objects. Helper function for slider.
 
-    Input
-      ax: a matplotlib axis, e.g., as output from plt.gca().
-    '''
-
-    x_limits = ax.get_xlim3d()
-    y_limits = ax.get_ylim3d()
-    z_limits = ax.get_zlim3d()
-
-    x_range = abs(x_limits[1] - x_limits[0])
-    x_middle = np.mean(x_limits)
-    y_range = abs(y_limits[1] - y_limits[0])
-    y_middle = np.mean(y_limits)
-    z_range = abs(z_limits[1] - z_limits[0])
-    z_middle = np.mean(z_limits)
-
-    # The plot bounding box is a sphere in the sense of the infinity
-    # norm, hence I call half the max range the plot radius.
-    plot_radius = 0.25 * np.max([x_range, y_range, z_range])
-
-    ax.set_xlim3d([x_middle - plot_radius, x_middle + plot_radius])
-    ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])
-    ax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])
-
-@contextmanager
-def ax_3D():
-    """Context manager for providing 3D axes with Matplotlib.
-
-    Yields:
-        ax (object): Axes for Matplotlib plotting
-    """
-    try:
-        fig = plt.figure()
-        ax = plt.axes(projection='3d')
-        ax.set_aspect('equal')
-        yield ax
-    finally:
-        set_axes_equal(ax)
-
-@contextmanager
-def coordinate_axes():
-    """Context manager for providing 3D axes with xyz Cartesian vectors
-    with Matplotlib.
-
-    Yields:
-        ax (object): Axes for Matplotlib plotting
-    """
-    try:
-        fig = plt.figure()
-        ax = plt.axes(projection='3d')
-        x, y, z = np.zeros((3,3))
-        u, v, w = np.array([[1,0,0],[0,1,0],[0,0,1]])
-
-        # Draw arrows for the Cartesian axes
-        ax.quiver(x,y,z,u,v,w,arrow_length_ratio=0.1)
-
-        # Print out the text labels for origin, x, y and z
-        ax.text(0, 0, 0, "O")
-        ax.text(1, 0, 0, "X")
-        ax.text(0, 1, 0, "Y")
-        ax.text(0, 0, 1, "Z")
-
-        yield ax
-    finally:
-        set_axes_equal(ax)
+        Args:
+            objects (list): Objects to switch
+        """
+        for obj in objects:
+            obj.visible = not obj.visible
