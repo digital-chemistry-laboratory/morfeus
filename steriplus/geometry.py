@@ -9,7 +9,6 @@ Classes:
 Functions:
     rotatate_coordinates: Rotate coordinates given a vector and an axis
 """
-
 import math
 
 import numpy as np

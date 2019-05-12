@@ -1,76 +1,103 @@
-"""Module containing helper functions
+"""Helper functions
 
 Functions:
     check_distances: Controls distances for steric clashes.
-    convert_elements: Converts elements to atomic numbers.
-    get_radii: Helper function to get radii from list of elements.
+    convert_elements: Converts atomic symbols to atomic numbers.
+    get_radii: Returns radii for list of elements.
 """
-
-from steriplus.data import atomic_numbers, atomic_symbols, \
-    bondi_radii, crc_radii, jmol_colors
 import numpy as np
 from scipy.spatial.distance import cdist
 
-def check_distances(element_ids, coordinates, dummy_atom, exclude_list=[], dummy_radius=0, epsilon=0, radii=[], radii_type="crc"):
-    # Converting element ids to atomic numbers if the are symbols
-    if type(element_ids[0]) == str:
-        element_ids = [element.capitalize() for element in element_ids]
-        element_ids = [atomic_numbers[element_id] for element_id in element_ids]
+from steriplus.data import atomic_numbers, atomic_symbols, \
+    bondi_radii, crc_radii, jmol_colors
+
+def check_distances(elements, coordinates, check_atom, radii=[], check_radius=0,
+                    exclude_list=[], epsilon=0, radii_type="crc"):
+    """
+    Args:
+        elements (list): Elements as atomic symbols or numbers
+        check_atom (int): Index of atom to check against (starting from 1)
+        check_radius (float): Radius to use for check_atom (Å)
+        coordinates (list): Coordinates (Å)
+        epsilon (float): Numeric term to adjust distance check (Å). Positive
+                         values add to the radii to make the test more
+                         discriminatory.
+        exclude_list (list): Indices of atoms to exclude from check (starting at
+                             1)
+        radii (list): vdW radii (Å)
+        radii_type (str): Type of radii to use: 'bondi' or 'crc' (default)
     
-    # Getting radii if they are not supplied
+    Returns:
+        within_list (list): List of atoms within vdW distance of check atom.
+                            Returns none if list is empty.
+    """
+    # Convert elements to atomic numbers if the are symbols
+    elements = convert_elements(elements)
+
+    # Get radii if they are not supplied
     if not radii:
-        radii = get_radii(element_ids, radii_type=radii_type)
-    
+        radii = get_radii(elements, radii_type=radii_type)
     radii = np.array(radii)
+
     atom_coordinates = np.array(coordinates)
-    dummy_coordinates = np.array(coordinates[dummy_atom - 1]).reshape(-1, 3)
+    check_coordinates = np.array(coordinates[check_atom - 1]).reshape(-1, 3)
 
-    distances = cdist(atom_coordinates, dummy_coordinates) - radii.reshape(-1, 1) - dummy_radius - epsilon
+    # Calculate distances between check atom and all atoms
+    distances = cdist(atom_coordinates, check_coordinates) - radii.reshape(-1, 1) - check_radius - epsilon
     distances = distances.reshape(-1)
-
+    
+    # Determine atoms which are within a vdW distance from the check atom
     within_distance = list(np.argwhere(distances < 0).reshape(-1))
-    within_distance.remove(dummy_atom - 1)
+    
+    # Remove check atom and atoms in the exclude list
+    within_distance.remove(check_atom - 1)
     within_distance = [i for i in within_distance if i not in exclude_list]
     
+    # Return atoms which are within vdW distance from check atom
     if any(within_distance):
         within_list = [i + 1 for i in within_distance]
         return within_list
     else:
         return None
 
-def convert_element_ids(element_ids):
-    """Converts elements to list of atomic numbers.
+def convert_elements(elements):
+    """Converts elements to atomic numbers.
 
     Args:
-        element_ids (list): List of element identifiers
+        elements (list): Elements as atomic symbols or numbers
+    
+    Returns:
+        converted_elements (list): Elements as atomic numbers
     """
-    if type(element_ids[0]) == str:
-        element_ids = [element.capitalize() for element in element_ids]
-        element_ids = [atomic_numbers[element_id] for
-                       element_id in element_ids]
-    return element_ids
+    if type(elements[0]) == str:
+        cap_elements = [element.capitalize() for element in elements]
+        converted_elements = [atomic_numbers[element] for 
+                              element in cap_elements]
+    else:
+        converted_elements = elements
 
-def get_radii(element_ids, radii_type="crc", scale=1):
-    """Gets radii for list of element ids
+    return converted_elements
+
+def get_radii(elements, radii_type="crc", scale=1):
+    """Gets radii from element identifiers
 
     Args:
-        element_id_list (list)  :   List of element ids as atomic numbers or
-                                    symbols
-        radii_type (str)        :   Type of vdW radius, "bondi" or "crc"
+        elements (list): Elements as atomic symbols or numbers
+        radii_type (str): Type of vdW radius, 'bondi' or 'crc' (default)
 
     Returns:
-        radii_list (list)       :   List of atomic radii
+        radii (list): vdW radii (Å)
     """
-    element_ids = convert_element_ids(element_ids)
+    elements = convert_elements(elements)
 
     # Set up dictionary of atomic radii for all elements present in the list
-    element_set = set(element_ids)
+    element_set = set(elements)
     if radii_type == "bondi":
-        radii_dict = {element_id: bondi_radii.get(element_id) for element_id in element_set}
+        radii_dict = {element: bondi_radii.get(element) for element in element_set}
     elif radii_type == "crc":
-        radii_dict = {element_id: crc_radii.get(element_id) for element_id in element_set}
+        radii_dict = {element: crc_radii.get(element) for element in element_set}
 
     # Get radii for elements in the element id list. Set 2 as default if does not exist
-    radii = [radii_dict.get(element_id) * scale if radii_dict.get(element_id, 2.0) else 2.0 * scale for element_id in element_ids]
+    radii = [radii_dict.get(element) * scale if radii_dict.get(element, 2.0) else 2.0 * scale for element in elements]
 
     return radii
