@@ -165,9 +165,9 @@ class MoleculeScene:
             value (float): Atom size factor (between 0 and 1) 
         """
         self.slider_size.value = value
-        self._scale_size(self.spheres, self.radii, value)
+        self._scale_size()
     
-    def _change_sphere_opacity(self):
+    def _change_opacity(self):
         """Change the sphere opacity according to the slider."""
         for sphere in self.spheres:
             sphere.opacity = self.slider_opacity.value

@@ -63,6 +63,6 @@ def read_xyz(filename):
         if atom.isdigit():
             atom = int(atom)
         elements.append(atom)
-        coordinatess.append([float(line[1]), float(line[2]), float(line[3])])
+        coordinates.append([float(line[1]), float(line[2]), float(line[3])])
     
     return elements, coordinates

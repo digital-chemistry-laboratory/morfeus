@@ -10,9 +10,8 @@ Classes:
 """
 
 import math
-from typing import NamedTuple
-import time
 import itertools
+import time
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -24,105 +23,87 @@ from scipy.spatial import ConvexHull
 from scipy.spatial.distance import cdist
 from scipy.spatial.transform import Rotation
 
-from steriplus.helpers import convert_element_ids, check_distances, get_radii
 from steriplus.data import atomic_numbers, atomic_symbols, \
     bondi_radii, crc_radii, jmol_colors
-from steriplus.io import read_gjf, read_xyz
-from steriplus.plotting import ax_3D, coordinate_axes, set_axes_equal, MoleculeScene
 from steriplus.geometry import rotate_coordinates, Atom, Sphere, Cone
+from steriplus.helpers import convert_elements, check_distances, get_radii
+from steriplus.io import read_gjf, read_xyz
+from steriplus.plotting import MoleculeScene
 
 class Sterimol:
     """Performs and stores results of Sterimol calculation.
 
     Args:
-        atom_1 (int)                :   Index of atom 1 (dummy atom)
-        atom_2 (int)                :   Index of atom 2 (connected atom of
-                                        substituent)
-        coordinates (list)          :   List of coordinates in Å
-        element_ids (list)          :   List of element_ids, either as atomic
-                                        numbers or symbols
-        n_rot_vectors (int)         :   Number of rotational vectors for
-                                        determining B_1 and B_5
-        radii (list)                :   List of radii (optional)
-        radii_type (str)            :   Type of radii to use, either "crc" or
-                                        "bondi"
+        atom_1 (int): Index of atom 1 (dummy atom, starting at 1)
+        atom_2 (int): Index of atom 2 (connected atom of substituent, starting
+                      at 1)
+        coordinates (list): Coordinates (Å)
+        elements (list): Elements as atomic symbols or numbers
+        n_rot_vectors (int): Number of rotational vectors for determining B_1
+                             and B_5
+        radii (list): List of radii (Å, optional)
+        radii_type (str): Type of radii to use: 'bondi' or 'crc'
 
     Attributes:
-        atom_1 (int)                :   Index of atom 1 (dummy atom)
-        atom_2 (int)                :   Index of atom 2 (connected atom of
-                                        substituent)
-        B_1 (ndarray)               :   Sterimol B_1 vector
-        B_1_value (float)           :   Sterimol B_1 value in Å
-        B_5 (ndarray)               :   Sterimol B_5 vector
-        B_5_value (float)           :   Sterimol B_5 value in Å
-        bond length (float)         :   Bond length between atom 1 and atom 2 in
-                                        Å
-        L (ndarray)                 :   Sterimol L vector
-        L_value (float)             :   Sterimol L value in Å
-        L_value_uncorrected (float) :   Sterimol L value minus 0.40 Å
-        vector (ndarray)            :   Vector between atom 1 and atom 2
+        atom_1 (int): Index of atom 1 (dummy atom, starting at 1)
+        atom_2 (int): Index of atom 2 (connected atom of substituent, starting
+                      at 1)
+        B_1 (ndarray): Sterimol B_1 vector (Å)
+        B_1_value (float): Sterimol B_1 value (Å)
+        B_5 (ndarray): Sterimol B_5 vector (Å)
+        B_5_value (float): Sterimol B_5 value (Å)
+        bond_length (float): Bond length between atom 1 and atom 2 (Å)
+        L (ndarray): Sterimol L vector (Å)
+        L_value (float): Sterimol L value (Å)
+        L_value_uncorrected (float): Sterimol L value minus 0.40 Å
+        vector (ndarray): Vector between atom 1 and atom 2 (Å)
     """
-    def __init__(self, element_ids, coordinates, atom_1, atom_2, radii=[],
+    def __init__(self, elements, coordinates, atom_1, atom_2, radii=[],
                  radii_type="crc", n_rot_vectors=3600):
-        # Converting element ids to atomic numbers if the are symbols
-        element_ids = convert_element_ids(element_ids)
+        # Convert elements to atomic numbers if the are symbols
+        element_ids = convert_elements(elements)
 
-        # Getting radii if they are not supplied
+        # Get radii if they are not supplied
         if not radii:
             radii = get_radii(element_ids, radii_type=radii_type)
+        radii = np.array(radii)
 
-        # Setting up coordinate array
-        atom_coordinates = np.array(coordinates)
+        # Set up coordinate array
+        all_coordinates = np.array(coordinates)
 
         # Translate coordinates so origin is at atom 2
-        atom_coordinates -= atom_coordinates[atom_1 - 1]
+        all_coordinates -= all_coordinates[atom_2 - 1]
 
         # Get vector pointing from atom 2 to atom 1
-        vector_2_to_1 = atom_coordinates[atom_2 - 1] \
-                        - atom_coordinates[atom_1 - 1]
+        vector_2_to_1 = all_coordinates[atom_2 - 1] \
+                        - all_coordinates[atom_1 - 1]
         vector_2_to_1 = vector_2_to_1 / np.linalg.norm(vector_2_to_1)
 
         # Get rotation quaternion that overlays vector with x-axis
         x_axis = np.array([1, 0, 0])
-        real = np.dot(vector_2_to_1, x_axis).reshape(1) + 1
-
-        #  Handle case of antiparallel vectors
-        if real < 1e-6:
-            w = np.cross(vector_2_to_1, np.array([0, 0, 1]))
-            if np.linalg.norm(w) < 1e-6:
-                w = np.cross(vector_2_to_1, np.array([1, 0, 0]))
-        else:
-            w = np.cross(vector_2_to_1, x_axis)
-
-        q = np.concatenate((w, real))
-        q = q / np.linalg.norm(q)
-
-        # Rotate atomic coordinates
-        rot = Rotation.from_quat(q)
-        atom_coordinates = rot.apply(atom_coordinates)
+        all_coordinates = rotate_coordinates(all_coordinates, vector_2_to_1,
+                                             x_axis)
 
         # Get list of atoms as Atom objects
-        atom_list = []
-        coord_list = []
-        radii_list = []
-        for i, (element_id, radius, coord) in enumerate(zip(element_ids, radii, atom_coordinates), start=1):
-            coord = np.array(coord)
-            atom = Atom(element_id, radius, coord, i)
-            atom_list.append(atom)
-            if i != atom_1:
-                coord_list.append(coord)
-                radii_list.append(radius)
-        coordinates = np.array(coord_list)
-        radii = np.array(radii_list)
+        atoms = []
+        for i, (element, radius, coord) in enumerate(
+                zip(elements, radii, all_coordinates), start=1):
+            atom = Atom(element, coord, radius, i)
+            atoms.append(atom)
+
+        coordinates = np.delete(all_coordinates, atom_1 - 1, axis=0)
+        radii = np.delete(radii, atom_1 - 1)
 
         # Project coordinates onto vector between atoms 1 and 2
-        vector = atom_coordinates[atom_2 - 1, :] - atom_coordinates[atom_1 - 1, :]
-        vector = vector / np.linalg.norm(vector)
-        c_values = np.dot(vector, coordinates.T)
+        vector = all_coordinates[atom_2 - 1] - all_coordinates[atom_1 - 1]
+        bond_length = np.linalg.norm(vector)
+        unit_vector = vector / np.linalg.norm(vector)
+
+        c_values = np.dot(unit_vector.reshape(1, -1), coordinates.T)
         projected = c_values + radii
 
         # Get L as largest projection along the vector
-        L_value = np.max(projected)
+        L_value = np.max(projected) + bond_length
         L = vector * L_value
 
         # Get rotation vectors in yz plane
@@ -141,14 +122,12 @@ class Sterimol:
         # Determine B1 and B5 from the smallest and largest scalar projections
         B_1_value = np.min(max_c_values)
         B_1 = rot_vectors[np.argmin(max_c_values)] * B_1_value
-        B_1 += np.array([atom_coordinates[atom_2 - 1, 0], 0, 0])
     
         B_5_value = np.max(max_c_values)
         B_5 = rot_vectors[np.argmax(max_c_values)] * B_5_value
-        B_5 += np.array([atom_coordinates[atom_2 - 1, 0], 0, 0])
 
         # Set up attributes
-        self._atoms = atom_list
+        self._atoms = atoms
         self.vector = vector.reshape(-1)
         
         self.atom_1 = atom_1
@@ -157,7 +136,7 @@ class Sterimol:
         self.L = L.reshape(-1)
         self.L_value = L_value + 0.40
         self.L_value_uncorrected = L_value
-        self.bond_length = np.linalg.norm(atom_list[atom_2 - 1].coordinates - atom_list[atom_1 - 1].coordinates)
+        self.bond_length = bond_length
         
         self.B_1 = B_1
         self.B_1_value = B_1_value
@@ -165,32 +144,13 @@ class Sterimol:
         self.B_5 = B_5
         self.B_5_value = B_5_value
 
-    def print_report(self, verbose=False):
-        """Prints the values of the Sterimol parameters.
-
-        Args:
-            verbose (bool) :    Toggles printing of uncorrected L_value and bond
-                                length between atom 1 and atom 2.
-        """
-        if verbose:
-            print(f"{'L':10s}{'B_1':10s}{'B_5':10s}{'L_uncorr':10s}{'d(a1-a2)':10s}")
-            print(f"{self.L_value:<10.2f}{self.B_1_value:<10.2f}{self.B_5_value:<10.2f}{self.L_value_uncorrected:<10.2f}{self.bond_length:<10.2f}")
-        else:
-            print(f"{'L':10s}{'B_1':10s}{'B_5':10s}")
-            print(f"{self.L_value:<10.2f}{self.B_1_value:<10.2f}{self.B_5_value:<10.2f}")
-
     def draw_3D(self):
         """Draw a 3D representation of the molecule with the Sterimol vectors"""
         # Set up lists for drawing
-        elements = []
-        coordinates = []
-        radii = []
-        indices = []
-        for atom in self._atoms:
-            elements.append(atom.element_id)
-            coordinates.append(atom.coordinates)
-            radii.append(atom.radius)
-            indices.append(atom.index)
+        elements = [atom.element for atom in self._atoms]
+        coordinates = [atom.coordinates for atom in self._atoms]
+        radii = [atom.radius for atom in self._atoms]
+        indices = [atom.index for atom in self._atoms]
         
         # Draw molecule scene
         scene = MoleculeScene(elements, coordinates, radii, indices)
@@ -215,6 +175,24 @@ class Sterimol:
         B_5_stop = self.B_5
         B_5_length = self.B_5_value
         scene.add_arrow(B_5_start, B_5_stop, B_5_length, "B_5")       
+
+    def print_report(self, verbose=False):
+        """Prints the values of the Sterimol parameters.
+
+        Args:
+            verbose (bool): Toggles printing of uncorrected L_value and bond
+                            length between atom 1 and atom 2.
+        """
+        if verbose:
+            print(f"{'L':10s}{'B_1':10s}{'B_5':10s}"
+                  f"{'L_uncorr':10s}{'d(a1-a2)':10s}")
+            print(f"{self.L_value:<10.2f}{self.B_1_value:<10.2f}"
+                  f"{self.B_5_value:<10.2f}{self.L_value_uncorrected:<10.2f}"
+                  f"{self.bond_length:<10.2f}")
+        else:
+            print(f"{'L':10s}{'B_1':10s}{'B_5':10s}")
+            print(f"{self.L_value:<10.2f}{self.B_1_value:<10.2f}"
+                  f"{self.B_5_value:<10.2f}")
 
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
@@ -613,34 +591,7 @@ class SASA:
                 color = '#1f77b4'
             if np.any(points):
                 scene.add_points(points, color=color)
-    
-    def plot_3D(self, highlight=[]):
-        """Plot the solvent accessible surface area.
-
-        Args:
-            highlight (list):   List of atoms to highligt (1-index)
-        """
-
-        # Set up dictionary for coloring atomic centers
-        element_list = [atom.element_id for atom in self._atoms]
-        color_dict = {element_id: jmol_colors[element_id] 
-                      for element_id in set(element_list)}
-        
-        with ax_3D() as ax:
-            for atom in self._atoms:
-                step = int(max(round(1 / self._density / 20), 1))
-                accessible_points = np.array(atom.accessible_points)
-                np.random.shuffle(accessible_points)
-                x = accessible_points[::step, 0]
-                y = accessible_points[::step, 1]
-                z = accessible_points[::step, 2]
-                if atom.index in highlight:
-                    ax.scatter(x, y, z, c=color_dict[atom.element_id], 
-                               alpha=1, edgecolors="k", linewidths=0.5)
-                else:
-                    ax.scatter(x, y, z, c=color_dict[atom.element_id],
-                               alpha=0.3, edgecolor="k", linewidths=0.2)
-    
+       
     def print_report(self, verbose=False):
         """Print report of results
 
