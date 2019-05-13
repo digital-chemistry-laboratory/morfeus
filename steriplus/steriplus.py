@@ -201,105 +201,69 @@ class BuriedVolume:
     """Performs and stores the results of a buried volume calculation.
 
     Args:
-        atom_1 (int)                :   Atom index of metal (starting from 1)
-        coordinates (list)          :   List of coordinates in Å
-        density (float)             :   Density of points on the vdW surface in
-                                        Å^-2
-        element_ids (list)          :   List of element_ids, either as atomic
-                                        numbers or symbols
-        exclude_list (list)         :   List of atom indices to exclude from the
-                                        calculation (one-indexed)
-        include_hs (bool)           :   Flag to include H atoms when calculating
-                                        the buried volume or not
-
-        radii (list)                :   List of radii (optional)
-        radii_scale (float)         :   Scaling factor for radii. Default set
-                                        from original paper.
-        radii_type (str)            :   Type of radii to use, either "crc" or
-                                        "bondi"
+        atom_1 (int): Atom index of metal (starting from 1)
+        coordinates (list): Coordinates (Å)
+        density (float): Area per point (Å**2) on the vdW surface.
+        elements (list): Elements as atomic symbols or numbers
+        exclude_list (list): Indices of atoms to exclude from the calculation
+                             (starting from 1)
+        include_hs (bool): Whether to include H atoms in the calculation
+        radii (list): vdW radii (Å)
+        radii_scale (float): Scaling factor for radii. 1.17 from original paper.
+        radii_type (str): Type of radii to use: 'bondi' (default) or 'crc'
+        radius (float): Radius of sphere (Å). 3.5 from orginal paper.
 
     Parameters:
-        atoms (list)                :   List of atoms objects for the ligand
-                                        (excluding the exclude list)
-        atom_coordinates (ndarray)  :   Array of atom coordinates
-        buried_points (ndarray)     :   Array of points buried by the ligand
-        buried_volume (float)       :   Buried volume
-        free_points (ndarray)       :   Array of free points
-        sphere (object)             :   Sphere object at the metal center
-
+        buried_volume (float): Buried volume
     """
-    def __init__(self, element_ids, coordinates, atom_1, exclude_list=[],
+    def __init__(self, elements, coordinates, atom_1, exclude_list=[],
                  radii=[], include_hs=False, radius=3.5, radii_type="bondi",
                  radii_scale=1.17, density=0.001):
         # Get the coordinates for the central atom
         center = np.array(coordinates[atom_1 - 1])
 
         # Construct sphere at metal center
-        s = Sphere(center, radius, method="projection", density=density,
+        sphere = Sphere(center, radius, method="projection", density=density,
                    filled=True)
 
-        # Save all coordinates before deleting some atoms
+        # Save density and coordinates for steric map plotting.
         self._density = density
-        self._excluded_atoms = exclude_list
         self._all_coordinates = np.array(coordinates)
 
-        # Make copies of lists to avoid deleting originals
-        coordinates = list(coordinates)
-        element_ids = list(element_ids)
-
-        # Remove atoms from the exclude list when assessing buried volume
-        if exclude_list:
-            for entry in sorted(exclude_list, reverse=True):
-                del element_ids[entry - 1]
-                del coordinates[entry - 1]
-
         # Converting element ids to atomic numbers if the are symbols
-        element_ids = convert_element_ids(element_ids)
-
-        # Exclude Hs if option set
-        exclude_H_list = []
-        for i, element in enumerate(element_ids):
-            if element == 1:
-                exclude_H_list.append(i)
-        for i in reversed(exclude_H_list):
-            del element_ids[i]
-            del coordinates[i]
+        elements = convert_elements(elements)
 
         # Getting radii if they are not supplied
         if not radii:
-            radii = get_radii(element_ids, radii_type=radii_type,
+            radii = get_radii(elements, radii_type=radii_type,
                               scale=radii_scale)
 
-        # Setting up coordinate array and center array
-        atom_coordinates = np.array(coordinates)
-
         # Get list of atoms as Atom objects
-        atom_list = []
-        for i, (element_id, radius, coord) in enumerate(zip(element_ids, radii,
-                                             atom_coordinates), start=1):
-            coord = np.array(coord)
-            atom = Atom(element_id, radius, coord, i)
-            atom_list.append(atom)
+        atoms= []
+        for i, (element, radius, coord) in enumerate(zip(elements, radii,
+                                               coordinates), start=1):
+            if i not in exclude_list and element != 1:
+                atom = Atom(element, coord, radius, i)
+                atoms.append(atom)
 
         # Prune sphere points which are within vdW radius of other atoms.
-        tree = scipy.spatial.cKDTree(s.points, compact_nodes=False,
+        tree = scipy.spatial.cKDTree(sphere.points, compact_nodes=False,
                                      balanced_tree=False)
-        mask = np.zeros(len(s.points), dtype=bool)
-        for atom in atom_list:
-            if atom.radius + s.radius > np.linalg.norm(atom.coordinates):
+        mask = np.zeros(len(sphere.points), dtype=bool)
+        for atom in atoms:
+            if atom.radius + sphere.radius > np.linalg.norm(atom.coordinates):
                 to_prune = tree.query_ball_point(atom.coordinates,
                                                  atom.radius)
                 mask[to_prune] = True
-        buried_points = s.points[mask,:]
-        free_points = s.points[np.invert(mask),:]
+        buried_points = sphere.points[mask,:]
+        free_points = sphere.points[np.invert(mask),:]
 
         # Calculate buried_volume
-        self.buried_volume = len(buried_points) / len(s.points)
+        self.buried_volume = len(buried_points) / len(sphere.points)
 
         # Set variables for outside access and function access.
-        self._atoms = atom_list
-        self._atom_coordinates = atom_coordinates
-        self._sphere = s
+        self._atoms = atoms
+        self._sphere = sphere
         self._buried_points = buried_points
         self._free_points = free_points
 
@@ -316,7 +280,7 @@ class BuriedVolume:
         radii = []
         indices = []
         for atom in self._atoms:
-            elements.append(atom.element_id)
+            elements.append(atom.element)
             coordinates.append(atom.coordinates)
             radii.append(atom.radius)
             indices.append(atom.index)
@@ -344,28 +308,23 @@ class BuriedVolume:
         scene.add_points(buried_points, color='#1f77b4')
         scene.add_points(free_points, color='#ff7f0e')
 
-    def print_report(self):
-        """Prints a report of the buried volume for use in shell scripts"""
-        print("V_bur (%):", round(self.buried_volume * 100, 1))
-
     def plot_steric_map(self, z_axis_atoms, filename=None, levels=150, grid=100, all_positive=True, cmap="viridis"):
         """Plots a steric map as in the original article.
 
         Args:
-            all_positive (bool)     :   Plot all positive values, even if they
-                                        are outside the sphere.
-            cmap (str)              :   Colormap for contour plot
-            filename (str)          :   Name of file for saving the plot.
-            grid (int)              :   Dimension of plotting grid
-            levels (int)            :   Number of levels in the contour plot
-            z_axis_atoms (list)     :   Atom indices for determining the
-                                        orientation of the z axis (one-indexed)
+            all_positive (bool): Plot all positive values
+            cmap (str): Colormap for contour plot
+            filename (str): Name of file for saving the plot.
+            grid (int): Point along each axis of plotting grid 
+            levels (int): Number of levels in the contour plot
+            z_axis_atoms (list): Indices of atoms for determining the
+                                 orientation of the z axis (starting at 1)
         """
         # Set up coordinates
         atoms = self._atoms
         center = np.array(self._sphere.center)
-        all_coordinates = np.array(self._all_coordinates)
-        coordinates = np.array(self._atom_coordinates)
+        all_coordinates = self._all_coordinates
+        coordinates = np.array([atom.coordinates for atom in atoms])
 
         # Translate coordinates
         all_coordinates -= center
@@ -379,7 +338,8 @@ class BuriedVolume:
         vector = vector / np.linalg.norm(vector)
 
         #Rotate coordinate system
-        coordinates = rotate_coordinates(coordinates, vector, np.array([0, 0, -1]))
+        coordinates = rotate_coordinates(coordinates, vector,
+                                         np.array([0, 0, -1]))
 
         # Make grid
         r = self._sphere.radius
@@ -400,9 +360,9 @@ class BuriedVolume:
                 x_s = coordinates[i, 0]
                 y_s = coordinates[i, 1]
                 z_s = coordinates[i, 2]
-                thingy = atom.radius**2 - (x - x_s)**2 - (y - y_s)**2
-                if thingy >= 0:
-                    z_atom = math.sqrt(thingy) + z_s
+                test = atom.radius**2 - (x - x_s)**2 - (y - y_s)**2
+                if test >= 0:
+                    z_atom = math.sqrt(test) + z_s
                     z_list.append(z_atom)
             # Take point which is furthest along z axis
             if z_list:
@@ -428,17 +388,24 @@ class BuriedVolume:
         cf = ax.contourf(x_, y_, z, levels, cmap=cmap)
         circle = plt.Circle((0,0), r, fill=False)
         ax.add_patch(circle)
-        plt.xlabel("X (Å)")
-        plt.ylabel("Y (Å)")
+        plt.xlabel("x (Å)")
+        plt.ylabel("y (Å)")
         cf.set_clim(-r, r)
         c_bar = fig.colorbar(cf)
-        c_bar.set_label("Z(Å)")
+        c_bar.set_label("z(Å)")
         ax.set_aspect('equal', 'box')
 
         if filename:
             plt.savefig(filename)
         else:
             plt.show()
+
+    def print_report(self):
+        """Prints a report of the buried volume for use in shell scripts"""
+        print("V_bur (%):", round(self.buried_volume * 100, 1))
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
 
 class SASA:
     """Performs and stores results of solvent accessible surface area 
