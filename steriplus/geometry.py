@@ -266,8 +266,8 @@ class Sphere:
         return points
 
     def __repr__(self):
-        return (f"{self.__class__.__name__}(center: {self.center}, ",
-                "radius: {self.radius})")
+        return (f"{self.__class__.__name__}(center: {self.center}, "
+                f"radius: {self.radius})")
 
 def rotate_coordinates(coordinates, vector, axis):
     """Rotates coordinates by the rotation that aligns vector with axis.

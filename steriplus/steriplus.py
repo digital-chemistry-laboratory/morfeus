@@ -35,9 +35,6 @@ class Sterimol:
         radii_type (str): Type of radii to use: 'bondi' or 'crc'
 
     Attributes:
-        atom_1 (int): Index of atom 1 (dummy atom, starting at 1)
-        atom_2 (int): Index of atom 2 (connected atom of substituent, starting
-                      at 1)
         B_1 (ndarray): Sterimol B_1 vector (Å)
         B_1_value (float): Sterimol B_1 value (Å)
         B_5 (ndarray): Sterimol B_5 vector (Å)
@@ -46,7 +43,6 @@ class Sterimol:
         L (ndarray): Sterimol L vector (Å)
         L_value (float): Sterimol L value (Å)
         L_value_uncorrected (float): Sterimol L value minus 0.40 Å
-        vector (ndarray): Vector between atom 1 and atom 2 (Å)
     """
     def __init__(self, elements, coordinates, atom_1, atom_2, radii=[],
                  radii_type="crc", n_rot_vectors=3600):
@@ -118,10 +114,9 @@ class Sterimol:
 
         # Set up attributes
         self._atoms = atoms
-        self.vector = vector.reshape(-1)
         
-        self.atom_1 = atom_1
-        self.atom_2 = atom_2
+        self._atom_1 = atom_1
+        self._atom_2 = atom_2
         
         self.L = L.reshape(-1)
         self.L_value = L_value + 0.40
@@ -149,19 +144,19 @@ class Sterimol:
         scene.set_scale(0.3)
 
         # Draw L vector
-        L_start = coordinates[self.atom_1 - 1]
+        L_start = coordinates[self._atom_1 - 1]
         L_stop = self.L
         L_length = self.L_value 
         scene.add_arrow(L_start, L_stop, L_length, "L")
 
         # Draw B_1 vector
-        B_1_start = coordinates[self.atom_2 - 1]
+        B_1_start = coordinates[self._atom_2 - 1]
         B_1_stop = self.B_1
         B_1_length = self.B_1_value
         scene.add_arrow(B_1_start, B_1_stop, B_1_length, "B_1")
 
         # Draw B_5 vector
-        B_5_start = coordinates[self.atom_2 - 1]
+        B_5_start = coordinates[self._atom_2 - 1]
         B_5_stop = self.B_5
         B_5_length = self.B_5_value
         scene.add_arrow(B_5_start, B_5_stop, B_5_length, "B_5")       
@@ -588,7 +583,8 @@ class ConeAngle:
         within = check_distances(elements, coordinates, atom_1, radii=radii)
         if within:
             atom_string = ' '.join([str(i) for i in within])
-            raise Exception("Atoms within vdW radius of atom 1:", atom_string)
+            raise Exception("Atoms within vdW radius of central atom:",
+                             atom_string)
 
         # Set up coordinate array and translate coordinates
         coordinates = np.array(coordinates)
@@ -596,7 +592,8 @@ class ConeAngle:
 
         # Get list of atoms as Atom objects
         atoms = []
-        for i, (element, coord, radius) in enumerate(zip(elements, coordinates, radii), start=1):
+        for i, (element, coord, radius) in \
+                enumerate(zip(elements, coordinates, radii), start=1):
             if i != atom_1:
                 atom = Atom(element, coord, radius, i)
                 atom.get_cone()
