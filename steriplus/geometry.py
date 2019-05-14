@@ -1,9 +1,8 @@
 """Help classes and functions related to geometry
 
 Classes:
-    ConeAngleAtom: Atom used in cone angle calculations.
-    ConeAngleCone: Cone used in cone angle calculations.
-    SASAAtom: Atom used in SASA calculations.
+    Atom: Atom class.
+    Cone: Cone used in cone angle calculations.
     Sphere: Sphere for representing atoms
 
 Functions:
@@ -130,7 +129,8 @@ class Sphere:
         points (ndarray): Points on sphere surface
         radius (float): Radius (Å)
     """
-    def __init__(self, center, radius, density=0.005, method="fibonacci", filled=False):
+    def __init__(self, center, radius, density=0.005, method="fibonacci",
+                 filled=False):
         self.center = center
         self.radius = radius
         self.circumference = math.pi * radius * 2
@@ -140,7 +140,8 @@ class Sphere:
         if method == "polar":
             self.points = self._get_points_polar(density=density)
         elif method =="projection":
-            self.points = self._get_points_projected(density=density, filled=filled)
+            self.points = self._get_points_projected(density=density,
+                                                     filled=filled)
         elif method == "fibonacci":
             self.points = self._get_points_fibonacci(density=density)
 
@@ -265,7 +266,8 @@ class Sphere:
         return points
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(center: {self.center}, radius: {self.radius})"
+        return (f"{self.__class__.__name__}(center: {self.center}, ",
+                "radius: {self.radius})")
 
 def rotate_coordinates(coordinates, vector, axis):
     """Rotates coordinates by the rotation that aligns vector with axis.

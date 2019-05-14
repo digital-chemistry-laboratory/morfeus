@@ -1,13 +1,12 @@
 """Data dictionaries. Data taken from the Mendeleev package.
 
 Attributes:
-    atomic_symbols (dict): Dictionary of atomic symbols.
-    atomic_numbers (dict): Dictionary of atomic numbers.
-    bondi_radii (dict): Dictionary of Bondi vdW radii.
-    crc_radii (dict): Dictionary of CRC vdW radii.
-    jmol_colors (dict): Dictionary of jmol colors.
+    atomic_symbols (dict): Atomic symbols.
+    atomic_numbers (dict): Atomic numbers.
+    bondi_radii (dict): Bondi vdW radii.
+    crc_radii (dict): CRC vdW radii.
+    jmol_colors (dict): Jmol colors.
 """
-
 atomic_symbols = {1: 'H', 2: 'He', 3: 'Li', 4: 'Be', 5: 'B', 6: 'C', 7: 'N',
 8: 'O', 9: 'F', 10: 'Ne', 11: 'Na', 12: 'Mg', 13: 'Al', 14: 'Si', 15: 'P',
 16: 'S', 17: 'Cl', 18: 'Ar', 19: 'K', 20: 'Ca', 21: 'Sc', 22: 'Ti', 23: 'V',

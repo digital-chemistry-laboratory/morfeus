@@ -1,33 +1,23 @@
-"""This module contains classes for performing calculations of steric
-descriptors of molecules.
+"""Classes for performing calculations of steric descriptors of molecules.
 
 Classes:
-    Atom: Atom class.
     BuriedVolume: Calculates buried volumes
     ConeAngle: Calculates exact cone angles.
     SASA: Calculates solvent accessible surface area.
     Sterimol: Calculates Sterimol parameters
 """
-
 import math
 import itertools
-import time
 
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.tri import Triangulation
+import numpy as np
 
-import scipy.linalg
 import scipy.spatial
-from scipy.spatial import ConvexHull
 from scipy.spatial.distance import cdist
-from scipy.spatial.transform import Rotation
 
-from steriplus.data import atomic_numbers, atomic_symbols, \
-    bondi_radii, crc_radii, jmol_colors
-from steriplus.geometry import rotate_coordinates, Atom, Sphere, Cone
-from steriplus.helpers import convert_elements, check_distances, get_radii
-from steriplus.io import read_gjf, read_xyz
+from steriplus.data import atomic_symbols
+from steriplus.geometry import Atom, Cone, rotate_coordinates, Sphere
+from steriplus.helpers import check_distances, convert_elements, get_radii
 from steriplus.plotting import MoleculeScene
 
 class Sterimol:
@@ -198,12 +188,13 @@ class Sterimol:
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
 
 class BuriedVolume:
-    """Performs and stores the results of a buried volume calculation.
+    """Performs and stores the results of a buried volume calculation as
+    described in Organometallics 2016, 35, 2286.
 
     Args:
         atom_1 (int): Atom index of metal (starting from 1)
         coordinates (list): Coordinates (Å)
-        density (float): Area per point (Å**2) on the vdW surface.
+        density (float): Volume per point (Å**3) in the sphere
         elements (list): Elements as atomic symbols or numbers
         exclude_list (list): Indices of atoms to exclude from the calculation
                              (starting from 1)
@@ -275,15 +266,10 @@ class BuriedVolume:
             full_density (bool): Requests drawing of all points (slow).
         """
         # Set up lists for drawing
-        elements = []
-        coordinates = []
-        radii = []
-        indices = []
-        for atom in self._atoms:
-            elements.append(atom.element)
-            coordinates.append(atom.coordinates)
-            radii.append(atom.radius)
-            indices.append(atom.index)
+        elements = [atom.element for atom in self._atoms]
+        coordinates = [atom.coordinates for atom in self._atoms]
+        radii = [atom.radius for atom in self._atoms]
+        indices = [atom.index for atom in self._atoms]
         
         coordinates = np.vstack(coordinates)
         
@@ -308,7 +294,8 @@ class BuriedVolume:
         scene.add_points(buried_points, color='#1f77b4')
         scene.add_points(free_points, color='#ff7f0e')
 
-    def plot_steric_map(self, z_axis_atoms, filename=None, levels=150, grid=100, all_positive=True, cmap="viridis"):
+    def plot_steric_map(self, z_axis_atoms, filename=None, levels=150, grid=100,
+                        all_positive=True, cmap="viridis"):
         """Plots a steric map as in the original article.
 
         Args:
@@ -412,33 +399,31 @@ class SASA:
     calculations.
 
     Args:
-        coordinates (list):     List of coordinates in Å.
-        density (float):        Density of points on the vdW atomic
-                                spheres in Å^-2
-        element_ids (list):     List of element identifiers, either as symbols
-                                or numbers.
-        probe_radius (float):   Radius of probe atom in Å.
-        radii (list):           List of radii (optional)
-        radii_type (str):       Choice of vdW radii, either "crc" or "bondi"
+        coordinates (list): Coordinates (Å)
+        density (float): Area per point (Å**2) on the vdW surface.
+        elements (list): Elements as atomic symbols or numbers.
+        probe_radius (float): Radius of probe atom (Å)
+        radii (list): VdW radii (Å)
+        radii_type (str): Choice of vdW radii: 'bondi' or 'crc' (default)
 
     Attributes:
-        area (float):           Area of the solvent accessible surface.
-        atom_areas (dict):      Dictionary of atom areas (1-indexed)
-        atom_volumes (dict):    Dictionary of atom volumes (1-indexed)
-        volume (float):         Volume of the solvent accessible surface.
+        area (float): Area of the solvent accessible surface.
+        atom_areas (dict): Atom areas (starting from 1)
+        atom_volumes (dict): Atom volumes (starting from 1)
+        volume (float): Volume of the solvent accessible surface.
     """
-    def __init__(self, element_ids, coordinates, radii=[], radii_type="crc", 
+    def __init__(self, elements, coordinates, radii=[], radii_type="crc", 
                  probe_radius=1.4, density=0.01):
-        # Converting element ids to atomic numbers if the are symbols
-        element_ids = convert_element_ids(element_ids)
+        # Converting elements to atomic numbers if the are symbols
+        elements = convert_elements(elements)
 
         # Getting radii if they are not supplied
         if not radii:
-            radii = get_radii(element_ids, radii_type=radii_type)
+            radii = get_radii(elements, radii_type=radii_type)
         
         # Increment the radii with the probe radius
-        orig_radii = np.array(radii)
-        radii = orig_radii + probe_radius
+        radii = np.array(radii)
+        radii = radii + probe_radius
         
         # Center coordinate system at geometric center
         coordinates = np.array(coordinates)
@@ -447,13 +432,10 @@ class SASA:
         
         # Construct list of atoms
         atoms = []
-        orig_atoms = []
-        for i, (coordinate, radius, orig_radius, element_id) in \
-                enumerate(zip(coordinates, radii, orig_radii, element_ids), start=1):
-            sasa_atom = SASAAtom(element_id, radius, coordinate, i)
-            orig_atom = Atom(element_id, orig_radius, coordinate, i)
-            atoms.append(sasa_atom)
-            orig_atoms.append(orig_atom)
+        for i, (coordinate, radius, element) in \
+                enumerate(zip(coordinates, radii, elements), start=1):
+            atom = Atom(element, coordinate, radius, i)
+            atoms.append(atom)
         
         # Determine occluded and accessible points of each atom based on
         # distances to all other atoms (brute force)
@@ -461,12 +443,19 @@ class SASA:
             # Construct sphere for atom
             sphere = Sphere(atom.coordinates, atom.radius, density=density)
 
-            # Select atoms to test against
-            test_atoms = [test_atom for test_atom in atoms 
-                if test_atom is not atom and np.linalg.norm(atom.coordinates - test_atom.coordinates) < atom.radius + test_atom.radius]
+            # Select atoms that are at a distance less than the sum of radii
+            test_atoms = []
+            for test_atom in atoms:
+                if test_atom is not atom:
+                    distance = np.linalg.norm(atom.coordinates 
+                                              - test_atom.coordinates)
+                    radii_sum = atom.radius + test_atom.radius
+                    if distance < radii_sum:
+                        test_atoms.append(test_atom)
 
             # Select coordinates and radii for other atoms
-            test_coordinates = [test_atom.coordinates for test_atom in test_atoms]
+            test_coordinates = [test_atom.coordinates for
+                                test_atom in test_atoms]
             test_radii = [test_atom.radius for test_atom in test_atoms]
             test_radii = np.array(test_radii).reshape(-1, 1)
 
@@ -515,35 +504,31 @@ class SASA:
         self.area = sum([atom.area for atom in atoms])
         self.volume = sum([atom.volume for atom in atoms])
         self._atoms = atoms
-        self._orig_atoms = orig_atoms
         self._density = density
 
     def draw_3D(self, full_density=False, highlight=[]):
-        """Draw a 3D representation of the molecule with the cone
+        """Draw a 3D representation of the molecule with the solvent accessible
+        surface areas as dots.
         
         Args:
-            full_density (bool) : Requests drawing of all points (slow)
-            highlight (list)    : List of atom indices for highlighting surface
+            full_density (bool): Requests drawing of all points (slow)
+            highlight (list): Atom indices for highlighting surface
         """
         # Set up lists for drawing
-        elements = []
-        coordinates = []
-        radii = []
-        indices = []
-        for atom in self._orig_atoms:
-            elements.append(atom.element_id)
-            coordinates.append(atom.coordinates)
-            radii.append(atom.radius)
-            indices.append(atom.index)
-        
+        elements = [atom.element for atom in self._atoms]
+        coordinates = [atom.coordinates for atom in self._atoms]
+        radii = [atom.radius for atom in self._atoms]
+        indices = [atom.index for atom in self._atoms]
+       
         coordinates = np.vstack(coordinates)
+        radii = np.array(radii) - self._probe_radius
         
         # Draw molecule scene
         scene = MoleculeScene(elements, coordinates, radii, indices)
 
         # Take out a reasonable amount of points
         for atom in self._atoms:
-            points = np.array(atom.accessible_points)
+            points = atom.accessible_points
             if full_density:
                 step = 1
             else:
@@ -563,16 +548,16 @@ class SASA:
         """Print report of results
 
         Args:
-            verbose(bool):  Prints areas per atom if set to True.
+            verbose (bool): Print atom areas
         """
         print(f"Probe radius (Å): {self._probe_radius}")
         print(f"Solvent accessible surface area (Å^2): {self.area:.1f}")
         print("Volume inside solvent accessible surface (Å^3): "
               f"{self.volume:.1f}")
         if verbose:
-            print(f"{'Atom':<10s}{'Index':<10s}{'Area (Å^2)':<10s}")
+            print(f"{'Symbol':<10s}{'Index':<10s}{'Area (Å^2)':<10s}")
             for atom, (i, area) in zip(self._atoms, self.atom_areas.items()):
-                symbol = atomic_symbols[atom.element_id]
+                symbol = atomic_symbols[atom.element]
                 print(f"{symbol:<10s}{i:<10d}{area:<10.1f}")
 
 class ConeAngle:
@@ -580,95 +565,83 @@ class ConeAngle:
     described in J. Comput. Chem. 2013, 34, 1189.
 
     Args:
-        atom_1 (int)            :   Index of central atom (starting from 1)
-        coordinates (list)      :   List of atom coordinates (Å)
-        element_ids (list)      :   Elements as atomic numbers or symbols
-        radii (list)            :   vdW radii (Å) (optional)
-        radii_type (str)        :   Type of radii, "crc" or "bondi"
+        atom_1 (int): Index of central atom (starting from 1)
+        coordinates (list): Coordinates (Å)
+        elements (list): Elements as atomic symbols or numbers
+        radii (list): vdW radii (Å)
+        radii_type (str): Type of vdW radii: 'bondi' or 'crc' (default)
 
     Attributes:
-        atoms (list)            :   List of atoms objects
-        cone (object)           :   Smallest cone encompassing all atoms
-        cone_angle (float)      :   Exact cone angle (degrees)
-        element_ids (list)      :   Element ids as atomic numbers or symbols
-        radii (list)            :   vdW radii (Å) (optional)
-        tangent_atoms (list)    :   Atoms tangent to cone
+        cone_angle (float): Exact cone angle (degrees)
+        tangent_atoms (list): Atoms tangent to cone
     """
-    def __init__(self, element_ids, coordinates, atom_1, radii=[], radii_type="crc"):
-        # Converting element ids to atomic numbers if the are symbols
-        element_ids = convert_element_ids(element_ids)
+    def __init__(self, elements, coordinates, atom_1, radii=[],
+                 radii_type="crc"):
+        # Convert elements to atomic numbers if the are symbols
+        elements = convert_elements(elements)
 
-        # Getting radii if they are not supplied
+        # Get radii if they are not supplied
         if not radii:
-            radii = get_radii(element_ids, radii_type=radii_type)
+            radii = get_radii(elements, radii_type=radii_type)
 
-        # Check distances to atom_1 so that it is not within their vdW radii
-        within = check_distances(element_ids, coordinates, atom_1, radii=radii)
+        # Check so that no atom is within vdW distance of atom 1
+        within = check_distances(elements, coordinates, atom_1, radii=radii)
         if within:
             atom_string = ' '.join([str(i) for i in within])
             raise Exception("Atoms within vdW radius of atom 1:", atom_string)
 
-        # Setting up coordinate array and translate coordinates
-        atom_coordinates = np.array(coordinates)
-        atom_coordinates -= coordinates[atom_1 - 1]
+        # Set up coordinate array and translate coordinates
+        coordinates = np.array(coordinates)
+        coordinates -= coordinates[atom_1 - 1]
 
         # Get list of atoms as Atom objects
         atoms = []
-        for i, (coord, radius, element_id) in enumerate(zip(atom_coordinates, radii, element_ids), start=1):
+        for i, (element, coord, radius) in enumerate(zip(elements, coordinates, radii), start=1):
             if i != atom_1:
-                coord = np.array(coord)
-                atom = ConeAngleAtom(coord, radius, i, element_id)
-                atoms.append(atom)
+                atom = Atom(element, coord, radius, i)
                 atom.get_cone()
+                atoms.append(atom)
         self._atoms = atoms
 
         # Search for cone over single atoms
         cone = self._search_one_cones()
-        if cone:
-            self.cone = cone
-            self.cone_angle = math.degrees(cone.angle * 2)
-            self.tangent_atoms = [atom for atom in cone.atoms]
-        else:
-            # Prune out atoms that lie in the shadow of another atom's cone
-            loop_list = list(atoms)
-            remove_set = set()
-            for cone_atom in loop_list:
-                for test_atom in loop_list:
+
+        # Prune out atoms that lie in the shadow of another atom's cone
+        if not cone:  
+            loop_atoms = list(atoms)
+            remove_atoms = set()
+            for cone_atom in loop_atoms:
+                for test_atom in loop_atoms:
                     if cone_atom != test_atom:
                         if cone_atom.cone.is_inside(test_atom):
-                            remove_set.add(test_atom)
-            for i in remove_set:
-                loop_list.remove(i)
-            self._loop_list = loop_list
+                            remove_atoms.add(test_atom)
+            for i in remove_atoms:
+                loop_atoms.remove(i)
+            self._loop_atoms = loop_atoms
 
         # Search for cone over pairs of atoms
         if not cone:
             cone = self._search_two_cones()
-            if cone:
-                self.cone = cone
-                self.cone_angle = math.degrees(cone.angle * 2)
-                self.tangent_atoms = [atom for atom in cone.atoms]
 
         # Search for cones over triples of atoms
         if not cone:
             cone = self._search_three_cones()
-            if cone:
-                self.cone = cone
-                self.cone_angle = math.degrees(cone.angle * 2)
-                self.tangent_atoms = [atom for atom in cone.atoms]
-    
+        
+        # Set attributes
+        if cone:
+            self._cone = cone
+            self.cone_angle = math.degrees(cone.angle * 2)
+            self.tangent_atoms = [atom.index for atom in cone.atoms]
+        else:
+            raise Exception("Cone could not be found.")
+
     def draw_3D(self):
         """Draw a 3D representation of the molecule with the cone"""
         # Set up lists for drawing
-        elements = []
-        coordinates = []
-        radii = []
-        indices = []
-        for atom in self._atoms:
-            elements.append(atom.element_id)
-            coordinates.append(atom.coordinates)
-            radii.append(atom.radius)
-            indices.append(atom.index)
+        elements = [atom.element for atom in self._atoms]
+        coordinates = [atom.coordinates for atom in self._atoms]
+        radii = [atom.radius for atom in self._atoms]
+        indices = [atom.index for atom in self._atoms]
         
         coordinates = np.vstack(coordinates)
         
@@ -677,9 +650,9 @@ class ConeAngle:
 
         # Determine direction and extension of cone
         if self.cone_angle > 180:
-            normal = - self.cone.normal 
+            normal = - self._cone.normal 
         else:
-            normal = self.cone.normal
+            normal = self._cone.normal
         projected = np.dot(normal, coordinates.T) + np.array(radii)
 
         max_extension = np.max(projected)
@@ -687,13 +660,49 @@ class ConeAngle:
             max_extension += 1
         
         # Add cone
-        scene.add_cone([0, 0, 0], normal, self.cone.angle, max_extension)
+        scene.add_cone([0, 0, 0], normal, self._cone.angle, max_extension)
+
+    def print_report(self):
+        """Prints report of results"""
+        tangent_atoms = [atom for atom in self._atoms 
+                         if atom.index in self.tangent_atoms]
+        tangent_labels = [f'{atomic_symbols[atom.element]}{atom.index}' \
+                        for atom in tangent_atoms]
+        tangent_string = ' '.join(tangent_labels)
+        print(f"Cone angle: {self.cone_angle:.1f}")
+        print(f"No. tangent atoms: {len(tangent_atoms)}")
+        print(f"Tangent to: {tangent_string}")
+
+    def _get_upper_bound(self):
+        """Calculates upper bound for apex angle
+
+        Returns:
+            upper_bound (float): Upper bound to apex angle in radians
+        """
+        # Calculate unit vector to centroid
+        coordinates = np.array([atom.coordinates for atom in self._atoms])
+        centroid_vector = np.mean(coordinates, axis=0)
+        centroid_unit_vector = centroid_vector / np.linalg.norm(centroid_vector)
+
+        # Getting sums of angle to centroid and vertex angle.
+        angle_sums = []
+        for atom in self._atoms:
+            cone = atom.cone
+            cos_angle = np.dot(centroid_unit_vector, cone.normal)
+            vertex_angle = math.acos(cos_angle)
+            angle_sum = cone.angle + vertex_angle
+            angle_sums.append(angle_sum)
+
+        # Select upper bound as the maximum angle
+        upper_bound = max(angle_sums)
+
+        return upper_bound
 
     def _search_one_cones(self):
         """Searches over cones tangent to one atom
 
         Returns:
-            max_1_cone (object)     :   Largest cone tangent to one atom
+            max_1_cone (obj): Largest cone tangent to one atom
         """
         # Get the largest cone
         atoms = self._atoms
@@ -703,40 +712,40 @@ class ConeAngle:
 
         # Check if all atoms are contained in cone. If yes, return cone,
         # otherwise, return None.
-        in_list = []
-        test_list = [atom for atom in atoms if atom not in max_1_cone.atoms]
-        for atom in test_list:
-            in_list.append(max_1_cone.is_inside(atom))
-        if all(in_list):
+        in_atoms = []
+        test_atoms = [atom for atom in atoms if atom not in max_1_cone.atoms]
+        for atom in test_atoms:
+            in_atoms.append(max_1_cone.is_inside(atom))
+        if all(in_atoms):
             return max_1_cone
         else:
             return None
 
     def _search_two_cones(self):
-        """Search over cones tangent to two atoms
+        """Search over cones tangent to two atoms.
 
         Returns:
-            max_2_cone (object)     :   Largest cone tangent to two atoms
+            max_2_cone (obj): Largest cone tangent to two atoms
         """
         # Create two-atom cones
-        loop_list = self._loop_list
-        cone_list = []
-        for atom_i, atom_j in itertools.combinations(loop_list, r=2):
+        loop_atoms = self._loop_atoms
+        cones = []
+        for atom_i, atom_j in itertools.combinations(loop_atoms, r=2):
             cone = self._get_two_atom_cone(atom_i, atom_j)
-            cone_list.append(cone)
+            cones.append(cone)
 
         # Select largest two-atom cone
-        angles = np.array([cone.angle for cone in cone_list])
-        max_2_cone = cone_list[np.argmax(angles)]
+        angles = np.array([cone.angle for cone in cones])
+        max_2_cone = cones[np.argmax(angles)]
         self._max_2_cone = max_2_cone
 
         # Check if all atoms are contained in cone. If yes, return cone,
         # otherwise, return None
-        in_list = []
-        for atom in loop_list:
-            in_list.append(max_2_cone.is_inside(atom))
+        in_atoms = []
+        for atom in loop_atoms:
+            in_atoms.append(max_2_cone.is_inside(atom))
 
-        if all(in_list):
+        if all(in_atoms):
             return max_2_cone
         else:
             return None
@@ -745,81 +754,53 @@ class ConeAngle:
         """Search over cones tangent to three atoms
 
         Returns:
-            min_3_cone (object)     :   Smallest cone tangent to three atoms
-                                        encompassing all atoms
+            min_3_cone (obj): Smallest cone tangent to three atoms
         """
         # Create three-atom cones
-        loop_list = self._loop_list
-        cone_list = []
-        for atom_i, atom_j, atom_k in itertools.combinations(loop_list, r=3):
-            cones = self._get_three_atom_cones(atom_i, atom_j, atom_k)
-            cone_list.extend(cones)
+        loop_atoms = self._loop_atoms
+        cones = []
+        for atom_i, atom_j, atom_k in itertools.combinations(loop_atoms, r=3):
+            three_cones = self._get_three_atom_cones(atom_i, atom_j, atom_k)
+            cones.extend(three_cones)
 
         # Get upper and lower bound to apex angle
         upper_bound = self._get_upper_bound()
         lower_bound = self._max_2_cone.angle
 
         # Remove cones from consideration which are outside the bounds
-        remove_list = []
-        for cone in cone_list:
+        remove_cones = []
+        for cone in cones:
             if cone.angle - lower_bound < -1e-5 or upper_bound - cone.angle < -1e-5:
-                remove_list.append(cone)
+                remove_cones.append(cone)
 
-        for cone in reversed(remove_list):
-            cone_list.remove(cone)
+        for cone in reversed(remove_cones):
+            cones.remove(cone)
 
-        # Keep cones that encompass all atoms
-        keep_list = []
-        for cone in cone_list:
-            in_list = []
-            for atom in loop_list:
-                in_list.append(cone.is_inside(atom))
-            if all(in_list):
-                keep_list.append(cone)
+        # Keep only cones that encompass all atoms
+        keep_cones = []
+        for cone in cones:
+            in_atoms = []
+            for atom in loop_atoms:
+                in_atoms.append(cone.is_inside(atom))
+            if all(in_atoms):
+                keep_cones.append(cone)
 
         # Take the smallest cone that encompasses all atoms
-        cone_angles = np.array([cone.angle for cone in keep_list])
-        min_3_cone = keep_list[np.argmin(cone_angles)]
+        cone_angles = np.array([cone.angle for cone in keep_cones])
+        min_3_cone = keep_cones[np.argmin(cone_angles)]
 
         return min_3_cone
-
-    def _get_upper_bound(self):
-        """Calculates upper bound for apex angle
-
-        Returns:
-            upper_bound (float)     :   Upper bound to apex angle in radians
-        """
-        loop_list = self._loop_list
-
-        # Calculate unit vector to centroid
-        coordinates = np.array([atom.coordinates for atom in self._atoms])
-        centroid_vector = np.mean(coordinates, axis=0)
-        centroid_unit_vector = centroid_vector / np.linalg.norm(centroid_vector)
-
-        # Getting sums of angle to centroid and vertex angle.
-        angle_sum_list = []
-        for atom in self._atoms:
-            cone = atom.cone
-            cos_angle = np.dot(centroid_unit_vector, cone.normal)
-            angle = math.acos(cos_angle)
-            angle_sum = cone.angle + angle
-            angle_sum_list.append(angle_sum)
-
-        # Select upper bound as the maximum angle
-        upper_bound = max(angle_sum_list)
-
-        return upper_bound
 
     @staticmethod
     def _get_two_atom_cone(atom_i, atom_j):
         """Creates a cone tangent to two atoms
 
         Args:
-            atom_i (object) :   First tangent atom object
-            atom_j (object) :   Second tangent atom object
+            atom_i (obj): First tangent atom 
+            atom_j (obj): Second tangent atom
 
         Returns:
-            cones (object)  :   Cone tangent to the two atoms
+            cones (obj): Cone tangent to the two atoms
         """
         # Get the cone angle
         cone_i = atom_i.cone
@@ -840,22 +821,21 @@ class ConeAngle:
         # Create cone
         angle = alpha_ij
         normal = n
-        cone = ConeAngleCone(angle, [atom_i, atom_j], normal)
+        cone = Cone(angle, [atom_i, atom_j], normal)
 
         return cone
 
     @staticmethod
     def _get_three_atom_cones(atom_i, atom_j, atom_k):
-        """Creates a list of cones tangent to three atoms
+        """Creates cones tangent to three atoms
 
         Args:
-            atom_i (object)     :   First tangent atom object
-            atom_j (object)     :   Second tangent atom object
-            atom_k (object)     :   Third tangent atom object
+            atom_i (obj): First tangent atom 
+            atom_j (obj): Second tangent atom 
+            atom_k (obj): Third tangent atom 
 
         Returns:
-            cone_list (list)    :   List of cones tangent to the three atoms
-
+            cones (list): Cones tangent to the three atoms
         """
         # Set up vertex angles
         beta_i = atom_i.cone.angle
@@ -873,7 +853,8 @@ class ConeAngle:
         # Setup matrices
         u = np.array([math.cos(beta_i), math.cos(beta_j), math.cos(beta_k)])
         v = np.array([math.sin(beta_i), math.sin(beta_j), math.sin(beta_k)])
-        N = np.array([np.cross(m_j, m_k), np.cross(m_k, m_i), np.cross(m_i, m_j)]).T
+        N = np.array([np.cross(m_j, m_k), np.cross(m_k, m_i),
+                      np.cross(m_i, m_j)]).T
         P = N.T @ N
         gamma = np.dot(m_i, np.cross(m_j, m_k))
 
@@ -890,28 +871,33 @@ class ConeAngle:
         
         roots = np.roots([p2, p1, p0])
         roots = np.real_if_close(roots, tol=1e10)
-        cos_roots = [math.acos(roots[0]), 2 * np.pi - math.acos(roots[0]), math.acos(roots[1]), 2 * np.pi - math.acos(roots[1])]
+        cos_roots = [math.acos(roots[0]), 2 * np.pi - math.acos(roots[0]),
+                     math.acos(roots[1]), 2 * np.pi - math.acos(roots[1])]
 
         # Test roots and keep only those that are physical
-        angle_list = []
-        test_list = []
+        angles = []
+        D_tests = []
         for root in cos_roots:
             alpha = root / 2
-            test = A * math.cos(alpha)**2 + B * math.sin(alpha)**2 + 2 * C * math.sin(alpha) * math.cos(alpha)
-            test_D = abs(test - D)
-            angle_list.append(alpha)
-            test_list.append(test_D)
-        angles = np.array(angle_list)                
-        tests = np.array(test_list)
-        physical_angles = angles[np.argsort(tests)][:2]
+            test = A * math.cos(alpha)**2 + B * math.sin(alpha)**2 \
+                   + 2 * C * math.sin(alpha) * math.cos(alpha)
+            D_test = abs(test - D)
+            angles.append(alpha)
+            D_tests.append(D_test)
+        angles = np.array(angles)                
+        D_tests = np.array(D_tests)
+        physical_angles = angles[np.argsort(D_tests)][:2]
 
         # Create cones for physical angles
-        cone_list = []
+        cones = []
         for alpha in physical_angles:
             # Calculate normal vector
-            a_ij = (math.cos(alpha - beta_i) - math.cos(alpha - beta_j) * math.cos(beta_ij)) / math.sin(beta_ij)**2
-            b_ij = (math.cos(alpha - beta_j) - math.cos(alpha - beta_i) * math.cos(beta_ij)) / math.sin(beta_ij)**2
-            c_ij_squared = 1 - a_ij**2 - b_ij**2 - 2 * a_ij * b_ij * math.cos(beta_ij)
+            a_ij = (math.cos(alpha - beta_i) - math.cos(alpha - beta_j) 
+                    * math.cos(beta_ij)) / math.sin(beta_ij)**2
+            b_ij = (math.cos(alpha - beta_j) - math.cos(alpha - beta_i) 
+                    * math.cos(beta_ij)) / math.sin(beta_ij)**2
+            c_ij_squared = 1 - a_ij**2 - b_ij**2 \
+                           - 2 * a_ij * b_ij * math.cos(beta_ij)
             # Set c_ij_squared to 0 if negative due to numerical precision.
             if c_ij_squared < 0:
                 c_ij_squared = 0
@@ -920,19 +906,11 @@ class ConeAngle:
             sign = np.sign(gamma) * np.sign(np.dot(p, np.cross(m_i, m_j)))
             if np.sign(c_ij) != sign:
                 c_ij = -c_ij
-            n = a_ij * m_i + b_ij * m_j + c_ij * 1 / math.sin(beta_ij) * np.cross(m_i, m_j)
+            n = a_ij * m_i + b_ij * m_j + c_ij * 1 \
+                / math.sin(beta_ij) * np.cross(m_i, m_j)
 
             # Create cone
-            cone = ConeAngleCone(alpha, [atom_i, atom_j, atom_k], n)
-            cone_list.append(cone)
+            cone = Cone(alpha, [atom_i, atom_j, atom_k], n)
+            cones.append(cone)
 
-        return cone_list
-
-    def print_report(self):
-        """Prints report of results"""
-        tangent_list = [f'{atomic_symbols[atom.element_id]}{atom.index}' \
-                        for atom in self.tangent_atoms]
-        tangent_string = ' '.join(tangent_list)
-        print(f"Cone angle: {self.cone_angle:.1f}")
-        print(f"No. tangent atoms: {len(self.tangent_atoms)}")
-        print(f"Tangent to: {tangent_string}")
+        return cones

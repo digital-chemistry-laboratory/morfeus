@@ -1,4 +1,4 @@
-"""3D plotting
+"""Support for 3D plotting of steric descriptors.
 
 Classes:
     MoleculeScene: Draw molecules and visualize steric descriptors.
@@ -9,11 +9,11 @@ from matplotlib.colors import hex2color
 import numpy as np
 import vpython as vp
 
-from steriplus.data import  atomic_symbols, jmol_colors
+from steriplus.data import atomic_symbols, jmol_colors
 from steriplus.helpers import convert_elements
 
 class MoleculeScene:
-    """Draw molecules and visualize steric descriptors.
+    """Draw molecules and visualize steric descriptors using vpython.
 
     Args:
         coordinates (list): Coordinates (Å)
@@ -144,8 +144,10 @@ class MoleculeScene:
         r = math.tan(angle) * length
         axis = vp.vector(*(-normal))
         pos = vp.vector(*(start + normal * length))
-        color = vp.vector(0.12156862745098039, 0.4666666666666667, 0.7058823529411765)
-        self.cone = vp.cone(pos=pos, axis=axis, length=length, radius=r, color=color, opacity=0.15)
+        color = vp.vector(0.12156862745098039, 0.4666666666666667,
+                          0.7058823529411765)
+        self.cone = vp.cone(pos=pos, axis=axis, length=length,
+                            radius=r, color=color, opacity=0.15)
     
     def add_points(self, points, color):
         """Add points of certain color.

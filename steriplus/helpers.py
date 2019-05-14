@@ -1,4 +1,4 @@
-"""Helper functions
+"""Help functions
 
 Functions:
     check_distances: Controls distances for steric clashes.
@@ -8,8 +8,7 @@ Functions:
 import numpy as np
 from scipy.spatial.distance import cdist
 
-from steriplus.data import atomic_numbers, atomic_symbols, \
-    bondi_radii, crc_radii, jmol_colors
+from steriplus.data import atomic_numbers, bondi_radii, crc_radii
 
 def check_distances(elements, coordinates, check_atom, radii=[], check_radius=0,
                     exclude_list=[], epsilon=0, radii_type="crc"):

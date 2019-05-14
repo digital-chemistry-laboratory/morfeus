@@ -1,7 +1,7 @@
 """Command line script to calculate Sterimol parameters."""
-
 import argparse
-from steriplus import Sterimol, read_gjf, read_xyz
+
+from steriplus import read_gjf, read_xyz, Sterimol
 
 def main():
     # Parse the arguments
@@ -9,13 +9,15 @@ def main():
         "Steriplus script to calculate Sterimol values")
     parser.add_argument(
         'file', type=str, help='Input file, either .xyz, .gjf or .com')
-    parser.add_argument('atom_1', type=int, help='Dummy atom',)
+    parser.add_argument(
+        'atom_1', type=int, help='Dummy atom')
     parser.add_argument(
         'atom_2', type=int, help='Atom of substituent connected to dummy atom')
     parser.add_argument(
-        '--radii', type=str, help='Type of radii, either "crc" or "bondi"',
+        '--radii', type=str, help='Radii type: "bondi" or "crc" (default)',
         choices=["bondi", "crc"], default="crc")
-    parser.add_argument('-v', "--verbose", action='store_true')
+    parser.add_argument(
+        "--verbose", help='Additional print', action='store_true')
 
     args = parser.parse_args()
     radii_type = args.radii
@@ -30,8 +32,7 @@ def main():
     elif file[-4:] == ".gjf" or file[-4:] == ".com":
         elements, coordinates = read_gjf(file)
     else:
-        print("No valid input file. Use .xyz or .gjf/.com")
-        return
+        raise Exception("No valid input file. Use .xyz or .gjf/.com")
 
     # Run the calculations and print the results
     sterimol = Sterimol(elements, coordinates, atom_1, atom_2,

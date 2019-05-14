@@ -4,8 +4,6 @@ Functions:
     read_gjf: Parses Gaussian input files.
     read_xyz: Parses xyz files.
 """
-from steriplus.data import atomic_symbols
-
 def read_gjf(filename):
     """Reads Gaussian gjf/com file and returns elements as they are written in the
     file (either atomic numbers or symbols) as well as coordinates.
