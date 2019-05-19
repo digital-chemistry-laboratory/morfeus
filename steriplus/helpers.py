@@ -51,9 +51,9 @@ def check_distances(elements, coordinates, check_atom, radii=[], check_radius=0,
     # Remove check atom and atoms in the exclude list
     within_distance.remove(check_atom - 1)
     within_distance = [i for i in within_distance if i not in exclude_list]
-    
+
     # Return atoms which are within vdW distance from check atom
-    if any(within_distance):
+    if within_distance:
         within_list = [i + 1 for i in within_distance]
         return within_list
     else:

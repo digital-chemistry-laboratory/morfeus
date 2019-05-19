@@ -868,6 +868,9 @@ class ConeAngle:
         
         roots = np.roots([p2, p1, p0])
         roots = np.real_if_close(roots, tol=1e10)
+        roots[np.isclose(roots, 1, rtol=1e-9, atol=0.0)] = 1
+        roots[np.isclose(roots, -1, rtol=1e-9, atol=0.0)] = -1
+        
         cos_roots = [math.acos(roots[0]), 2 * np.pi - math.acos(roots[0]),
                      math.acos(roots[1]), 2 * np.pi - math.acos(roots[1])]
 
