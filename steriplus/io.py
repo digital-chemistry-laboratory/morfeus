@@ -5,8 +5,8 @@ Functions:
     read_xyz: Parses xyz files.
 """
 def read_gjf(filename):
-    """Reads Gaussian gjf/com file and returns elements as they are written in the
-    file (either atomic numbers or symbols) as well as coordinates.
+    """Reads Gaussian gjf/com file and returns elements as they are written in
+    the file (either atomic numbers or symbols) as well as coordinates.
 
     Args:
         filename (str): Name of gjf/com file

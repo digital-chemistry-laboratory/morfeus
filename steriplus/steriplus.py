@@ -554,6 +554,9 @@ class SASA:
             for atom, (i, area) in zip(self._atoms, self.atom_areas.items()):
                 symbol = atomic_symbols[atom.element]
                 print(f"{symbol:<10s}{i:<10d}{area:<10.1f}")
+    
+    def __repr__(self):
+        return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
 
 class ConeAngle:
     """Calculates and stores the results of exact cone angle calculation as
@@ -808,8 +811,10 @@ class ConeAngle:
         alpha_ij = (beta_ij + beta_i + beta_j) / 2
 
         # Get the cone normal
-        a_ij = (1 / math.sin(beta_ij)) * math.sin(0.5 * (beta_ij + beta_i - beta_j))
-        b_ij = (1 / math.sin(beta_ij)) * math.sin(0.5 * (beta_ij - beta_i + beta_j))
+        a_ij = (1 / math.sin(beta_ij)) * \
+            math.sin(0.5 * (beta_ij + beta_i - beta_j))
+        b_ij = (1 / math.sin(beta_ij)) * \
+            math.sin(0.5 * (beta_ij - beta_i + beta_j))
         c_ij = 0
 
         n = a_ij * cone_i.normal + b_ij * cone_j.normal + c_ij
@@ -914,3 +919,6 @@ class ConeAngle:
             cones.append(cone)
 
         return cones
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"

@@ -123,13 +123,16 @@ class MoleculeScene:
         """
         # Draw arrow
         direction = np.array(stop) - np.array(start)
-        color = vp.vector(0.12156862745098039, 0.4666666666666667, 0.7058823529411765)
-        arrow = vp.arrow(pos=vp.vector(*start), axis=vp.vector(*direction), shaftwidth=0.1, length=length, color=color)
+        color = vp.vector(0.12156862745098039, 
+                          0.4666666666666667, 0.7058823529411765)
+        arrow = vp.arrow(pos=vp.vector(*start), axis=vp.vector(*direction),
+                         shaftwidth=0.1, length=length, color=color)
         self.arrows.append(arrow)
 
         # Draw text if given
         if text:
-            arrow_label = vp.label(pos=vp.vector(*stop), text=text, yoffset=10, opacity=0, line=False, box=False, color=vp.color.red)
+            arrow_label = vp.label(pos=vp.vector(*stop), text=text, yoffset=10,
+                opacity=0, line=False, box=False, color=vp.color.red)
             self.arrow_labels.append(arrow_label)
     
     def add_cone(self, start, normal, angle, length):
@@ -157,7 +160,8 @@ class MoleculeScene:
             points (list): Coordinates of points (Å)
         """
         color = vp.vector(*hex2color(color))
-        points = vp.points(pos=[vp.vector(*point) for point in points], color=color, radius=2)
+        points = vp.points(pos=[vp.vector(*point)
+                                for point in points], color=color, radius=2)
         self.points.append(points)
 
     def set_scale(self, value):

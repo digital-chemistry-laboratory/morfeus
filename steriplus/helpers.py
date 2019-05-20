@@ -42,7 +42,8 @@ def check_distances(elements, coordinates, check_atom, radii=[], check_radius=0,
     check_coordinates = np.array(coordinates[check_atom - 1]).reshape(-1, 3)
 
     # Calculate distances between check atom and all atoms
-    distances = cdist(atom_coordinates, check_coordinates) - radii.reshape(-1, 1) - check_radius - epsilon
+    distances = cdist(atom_coordinates, check_coordinates) - \
+        radii.reshape(-1, 1) - check_radius - epsilon
     distances = distances.reshape(-1)
     
     # Determine atoms which are within a vdW distance from the check atom
@@ -92,11 +93,15 @@ def get_radii(elements, radii_type="crc", scale=1):
     # Set up dictionary of atomic radii for all elements present in the list
     element_set = set(elements)
     if radii_type == "bondi":
-        radii_dict = {element: bondi_radii.get(element) for element in element_set}
+        radii_dict = {element: bondi_radii.get(element) 
+                      for element in element_set}
     elif radii_type == "crc":
-        radii_dict = {element: crc_radii.get(element) for element in element_set}
+        radii_dict = {element: crc_radii.get(element)
+                      for element in element_set}
 
-    # Get radii for elements in the element id list. Set 2 as default if does not exist
-    radii = [radii_dict.get(element) * scale if radii_dict.get(element, 2.0) else 2.0 * scale for element in elements]
+    # Get radii for elements in the element id list.
+    # Set 2 as default if does not exist
+    radii = [radii_dict.get(element) * scale if radii_dict.get(element, 2.0)
+             else 2.0 * scale for element in elements]
 
     return radii
