@@ -455,14 +455,17 @@ class SASA:
             test_radii = np.array(test_radii).reshape(-1, 1)
 
             # Get distances to other atoms and subtract radii
-            distances = cdist(test_coordinates, sphere.points)
-            distances -= test_radii
+            if test_coordinates:
+                distances = cdist(test_coordinates, sphere.points)
+                distances -= test_radii
+                # Take smallest distance and perform check
+                min_distances = np.min(distances, axis=0)
 
-            # Take smallest distance and perform check
-            min_distances = np.min(distances, axis=0)
-
-            atom.occluded_points = sphere.points[min_distances <= 0]
-            atom.accessible_points = sphere.points[min_distances > 0]
+                atom.occluded_points = sphere.points[min_distances <= 0]
+                atom.accessible_points = sphere.points[min_distances > 0]
+            else: 
+                atom.accessible_points = sphere.points
+                atom.occluded_points = np.empty(0)
 
         # Calculate atom areas and volumes
         for atom in atoms:
