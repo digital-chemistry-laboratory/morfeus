@@ -420,10 +420,8 @@ class SASA:
         radii = np.array(radii)
         radii = radii + probe_radius
         
-        # Center coordinate system at geometric center
+        # Copy coordinates to new array
         coordinates = np.array(coordinates)
-        center = np.mean(coordinates, axis=0)
-        coordinates -= center
         
         # Construct list of atoms
         atoms = []

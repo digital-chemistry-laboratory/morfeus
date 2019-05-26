@@ -48,6 +48,12 @@ class MoleculeScene:
         
         # Create scene
         scene = vp.canvas(background=vp.color.white)
+        scene.lights = []
+        vp.distant_light(direction=vp.vector( 0.22,  0.44,  0.88),
+                         color=vp.color.gray(0.2))
+        vp.distant_light(direction=vp.vector(-0.88, -0.22, -0.44),
+                         color=vp.color.gray(0.2))
+        scene.ambient = vp.color.gray(0.8)
 
         # Center camera on geometric center
         center = np.mean(np.array(coordinates), axis=0)
@@ -152,7 +158,7 @@ class MoleculeScene:
         self.cone = vp.cone(pos=pos, axis=axis, length=length,
                             radius=r, color=color, opacity=0.15)
     
-    def add_points(self, points, color):
+    def add_points(self, points, color, radius=2):
         """Add points of certain color.
 
         Args:
@@ -161,7 +167,7 @@ class MoleculeScene:
         """
         color = vp.vector(*hex2color(color))
         points = vp.points(pos=[vp.vector(*point)
-                                for point in points], color=color, radius=2)
+                                for point in points], color=color, radius=radius)
         self.points.append(points)
 
     def set_scale(self, value):
