@@ -13,6 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="",
     packages=["steriplus"],
+    package_data={"steriplus": ['../data/c6_reference_data.pickle']},
     install_requires=["matplotlib", "numpy", "scipy", "vpython"],
     classifiers=[
         "Programming Language :: Python :: 3",

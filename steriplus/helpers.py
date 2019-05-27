@@ -6,9 +6,98 @@ Functions:
     get_radii: Returns radii for list of elements.
 """
 import numpy as np
+import pickle
+import pkg_resources
 from scipy.spatial.distance import cdist
 
-from steriplus.data import atomic_numbers, bondi_radii, crc_radii
+from steriplus.data import atomic_numbers, atomic_symbols
+from steriplus.data import radii_bondi, radii_crc, radii_rahm
+from steriplus.data import cov_radii_pyykko, r2_r4
+from steriplus.geometry import Atom
+
+class D3Calculator:
+    """Calculates C6(AA) and C8(AA) coefficients based on the procedure in 
+    J. Chem. Phys. 2010, 132, 154104.
+
+    Args:
+        elements (list): Elements as atomic symbols or numbers
+        coordinates (list): Coordinates (Å)
+
+    Attributes:
+        c6_coefficients (list): C6(AA) coefficients (au)
+        c8_coefficients (list): C8(AA) coefficients (au)
+    """
+    def __init__(self, elements, coordinates):
+        # Convert elements to atomic numbers
+        elements = convert_elements(elements)
+
+        # Load the covalent radii
+        radii = get_radii(elements, radii_type='pyykko')
+
+        # Set up the atoms objects
+        atoms = []
+        for i, (element, coordinate, radius) in enumerate(zip(elements,
+                coordinates, radii), start=1):
+            atom = Atom(element, coordinate, radius, i)
+            atoms.append(atom)
+        self._atoms = atoms
+            
+        # Calculate the coordination numbers according to Grimme's recipe.
+        k_1 = 16
+        k_2 = 4 / 3
+        k_3 = 4
+        for cn_atom in atoms:
+            # Get coordinates and radii of all other atoms
+            coordinates = np.array([atom.coordinates for 
+                                    atom in atoms if atom is not cn_atom])
+            radii = np.array([atom.radius for
+                              atom in atoms if atom is not cn_atom])
+
+            # Calculate distances
+            dists = cdist(np.array(cn_atom.coordinates).reshape(-1, 3),
+                          coordinates.reshape(-1, 3))
+            
+            # Calculate coordination number
+            coordination_number = np.sum(1 / (1 + np.exp(-k_1 * 
+                (k_2 * (cn_atom.radius + radii) / dists - 1))))
+            cn_atom.coordination_number = coordination_number
+        
+        # Load the reference data
+        data_file = pkg_resources.resource_filename('steriplus',
+            '../data/c6_reference_data.pickle')
+        with open(data_file, "rb") as file:
+            c6_reference_data = pickle.load(file)
+        
+        # Calculate the C6 coefficients
+        c6_coefficients = []
+        c8_coefficients = []
+        for atom in atoms:
+            # Get the reference data for atom
+            reference_data = c6_reference_data[atom.element]
+            cn = atom.coordination_number
+            
+            # Take out the coordination numbers and c6(aa) values
+            c6_ref = reference_data[:,0]
+            cn_1 = reference_data[:,1]
+            cn_2 = reference_data[:,2]
+
+            # Calculate c6  and c8 according to the recipe
+            r = (cn - cn_1)**2 + (cn - cn_2)**2
+            L = np.exp(-k_3 * r)
+            W = np.sum(L)
+            Z = np.sum(c6_ref * L)
+            c6 = Z / W
+            c8 = 3 * c6 * r2_r4[atom.element]**2
+            c6_coefficients.append(c6)
+            c8_coefficients.append(c8)
+
+        # Set up attributes
+        self._atoms = atoms
+        self.c6_coefficients = c6_coefficients
+        self.c8_coefficients = c8_coefficients
+
+        def __repr__(self):
+            return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
 
 def check_distances(elements, coordinates, check_atom, radii=[], check_radius=0,
                     exclude_list=[], epsilon=0, radii_type="crc"):
@@ -60,48 +149,56 @@ def check_distances(elements, coordinates, check_atom, radii=[], check_radius=0,
     else:
         return None
 
-def convert_elements(elements):
-    """Converts elements to atomic numbers.
+def convert_elements(elements, output='numbers'):
+    """Converts elements to atomic symbols or numbers.
 
     Args:
         elements (list): Elements as atomic symbols or numbers
+        output (str): Output format: 'numbers' (default) or 'symbols'.
     
     Returns:
-        converted_elements (list): Elements as atomic numbers
+        elements (list): Converted elements
     """
-    if type(elements[0]) == str:
-        cap_elements = [element.capitalize() for element in elements]
-        converted_elements = [atomic_numbers[element] for 
-                              element in cap_elements]
-    else:
-        converted_elements = elements
+    try:
+        elements = [element.capitalize() for element in elements]
+    except AttributeError:
+        pass
 
-    return converted_elements
+    if output == "numbers":
+        try:
+            elements = [atomic_numbers[element] for 
+                                  element in elements]
+        except KeyError:
+            pass
+    if output == "symbols":
+        try:
+            elements = [atomic_symbols[element] for 
+                                  element in elements]
+        except KeyError:
+            pass
+
+    return elements
 
 def get_radii(elements, radii_type="crc", scale=1):
     """Gets radii from element identifiers
 
     Args:
         elements (list): Elements as atomic symbols or numbers
-        radii_type (str): Type of vdW radius, 'bondi' or 'crc' (default)
+        radii_type (str): Type of radius: 'bondi', 'crc' (default), 'rahm' or
+                          'pyykko'
 
     Returns:
         radii (list): vdW radii (Å)
     """
     elements = convert_elements(elements)
 
-    # Set up dictionary of atomic radii for all elements present in the list
-    element_set = set(elements)
-    if radii_type == "bondi":
-        radii_dict = {element: bondi_radii.get(element) 
-                      for element in element_set}
-    elif radii_type == "crc":
-        radii_dict = {element: crc_radii.get(element)
-                      for element in element_set}
-
-    # Get radii for elements in the element id list.
-    # Set 2 as default if does not exist
-    radii = [radii_dict.get(element) * scale if radii_dict.get(element, 2.0)
-             else 2.0 * scale for element in elements]
+    # Set up dictionary of radii types
+    radii_choice = {'bondi': radii_bondi,
+                    'crc': radii_crc,
+                    'rahm': radii_rahm,
+                    'pyykko': cov_radii_pyykko}
+    
+    # Get the radii. Replace with 2.0 if it the radius doesn't exist.
+    radii = [radii_choice[radii_type].get(element, 2.0) * scale for element in elements]
 
     return radii

@@ -44,6 +44,7 @@ class Atom:
         self.accessible_points = None
         self.area = None
         self.cone = None
+        self.coordination_number = None
         self.occluded_points = None
         self.volume = None
     

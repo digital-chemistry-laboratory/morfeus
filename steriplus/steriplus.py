@@ -11,13 +11,16 @@ import itertools
 
 import matplotlib.pyplot as plt
 import numpy as np
+from subprocess import Popen, DEVNULL, PIPE
 
 import scipy.spatial
-from scipy.spatial.distance import cdist
+from scipy.spatial.distance import cdist, euclidean
 
-from steriplus.data import atomic_symbols
+from steriplus.data import atomic_symbols, au_to_kcal, angstrom_to_bohr
 from steriplus.geometry import Atom, Cone, rotate_coordinates, Sphere
 from steriplus.helpers import check_distances, convert_elements, get_radii
+from steriplus.helpers import D3Calculator
+from steriplus.io import D3Parser, D4Parser, VertexParser
 from steriplus.plotting import MoleculeScene
 
 class Sterimol:
@@ -419,10 +422,7 @@ class SASA:
         # Increment the radii with the probe radius
         radii = np.array(radii)
         radii = radii + probe_radius
-        
-        # Copy coordinates to new array
-        coordinates = np.array(coordinates)
-        
+              
         # Construct list of atoms
         atoms = []
         for i, (coordinate, radius, element) in \
@@ -437,11 +437,11 @@ class SASA:
             sphere = Sphere(atom.coordinates, atom.radius, density=density)
 
             # Select atoms that are at a distance less than the sum of radii
+            #!TODO can be vectorized
             test_atoms = []
             for test_atom in atoms:
                 if test_atom is not atom:
-                    distance = np.linalg.norm(atom.coordinates 
-                                              - test_atom.coordinates)
+                    distance = euclidean(atom.coordinates, test_atom.coordinates)
                     radii_sum = atom.radius + test_atom.radius
                     if distance < radii_sum:
                         test_atoms.append(test_atom)
@@ -923,3 +923,235 @@ class ConeAngle:
 
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
+
+class Dispersion:
+    """Calculates and stores the results for the P_int dispersion descriptor.
+
+    The descriptor is defined in Angew. Chemie Int. Ed. 2019.
+    DOI: 10.1002/anie.201905439. Steriplus can calculate it based on a surface
+    either from vdW radii, surface vertices or electron density. Dispersion can
+    be obtained with the D3 or D4 model.
+
+    Args:
+
+    Parameters:
+
+    """
+    def __init__(self, elements, coordinates, charge=0, radii=[],
+                 radii_type="rahm", surface="spheres", model="id3",
+                 density=0.01, excluded_atoms=[]):
+        # Set up atoms
+        self._charge = charge
+        self._excluded_atoms = excluded_atoms
+        
+        # Converting elements to atomic numbers if the are symbols
+        elements = convert_elements(elements)
+        
+        # Getting radii if they are not supplied
+        if not radii:
+            radii = get_radii(elements, radii_type=radii_type)
+        
+        if surface == "spheres":
+            # Get vdW surface
+            sasa = SASA(elements, coordinates, radii=radii, density=density,
+                        probe_radius=0.0)
+            self._atoms = sasa._atoms
+            self.area = sum([atom.area for atom in self._atoms 
+                             if atom.index not in excluded_atoms])
+            self.atom_areas = sasa.atom_areas
+            self.volume = sum([atom.volume for atom in self._atoms
+                               if atom.index not in excluded_atoms])
+        else:
+            # Get list of atoms as Atom objects
+            atoms = []
+            for i, (element, coord, radius) in \
+                        enumerate(zip(elements, coordinates, radii), start=1):
+                    atom = Atom(element, coord, radius, i)
+                    atom.get_cone()
+                    atoms.append(atom)
+            self._atoms = atoms
+        
+        if model == "id3":
+            # Calculate coefficients
+            self.get_coefficients(model='id3')
+        
+        if model == "id3" and surface == "spheres":
+                self.calculate_p_int()
+            
+    def get_surface(self, molden_filename=None, vertex_filename=None, isodensity=0.001, density=0.25, xtb_options=""):
+        if not vertex_filename:
+            if not molden_filename:
+                # Run xtb program to get molden file
+                self.write_xyz("xtb.xyz", self.symbols, self.coordinates)
+                submit_string = f"xtb xtb.xyz --molden --chrg {self.charge} " + xtb_options
+                with open("xtb.out", "w") as file:
+                    Popen(submit_string.split(), stdout=file, stderr=DEVNULL).wait()
+                molden_filename = "molden.input"
+            
+            # Run Multiwfn to get the surface file
+            input_string = ""
+            #excluded_atoms = self.excluded_atoms
+            #if excluded_atoms:
+            #    input_string += "6\n-4\n"
+            #    input_string += ",".join([str(i) for i in excluded_atoms]) + "\n"
+            #    input_string += "-1\n"
+            input_string += f"12\n1\n1\n{isodensity}\n3\n{density}\n2\n-1\n0\n11\ny\n"
+            p = Popen(f"Multiwfn {molden_filename}".split(), stdout=PIPE, stderr=DEVNULL, stdin=PIPE)
+            output = p.communicate(input=input_string.encode())[0].decode()
+            vertex_filename = "locsurf.pdb"
+            lines = output.split("\n")
+            for line in lines:
+                if "Volume enclosed by the isosurface:" in line:
+                    split_line = line.strip().split()
+                    self.volume = float(split_line[8])
+                if "Isosurface area:" in line:
+                    split_line = line.strip().split()
+                    self.area = float(split_line[5])
+            
+            # Remove area and volume of excluded groups
+            if self.excluded_atoms:
+                n_atoms = len(self.elements)
+                excluded_atoms = [i for i in range(1, n_atoms + 1) if i not in self.excluded_atoms]
+                input_string = ""
+                input_string += "6\n-4\n"
+                input_string += ",".join([str(i) for i in excluded_atoms]) + "\n"
+                input_string += "-1\n"
+                input_string += f"12\n1\n1\n{isodensity}\n3\n{density}\n2\n-1\n0\n"
+                p = Popen(f"Multiwfn {filename}".split(), stdout=PIPE, stderr=DEVNULL, stdin=PIPE)
+                output = p.communicate(input=input_string.encode())[0].decode()
+                lines = output.split("\n")
+                for line in lines:
+                    if "Volume enclosed by the isosurface:" in line:
+                        split_line = line.strip().split()
+                        self.volume -= float(split_line[8])
+                    if "Isosurface area:" in line:
+                        split_line = line.strip().split()
+                        self.area -= float(split_line[5])
+            
+        # Parse the surface file to get the points
+        parser = VertexParser(vertex_filename)
+        
+        # Set up list of atoms with surface points
+        atoms = []
+        for i, (element, coordinate, radius) in enumerate(zip(self.elements, self.coordinates, self.radii), start=1):
+            #if i not in self.excluded_atoms:
+            atom = Atom(element, coordinate, radius, i)
+            atom.accessible_points = parser.atom_points[i]
+            atoms.append(atom)
+        self.atoms = atoms
+
+    def calculate_p_int(self, points=[]):
+        points = np.array(points)
+
+        # Set up atoms and coefficients that are part of the calculation
+        atom_indices = [atom.index - 1 for atom in self._atoms 
+                        if atom.index not in self._excluded_atoms]
+        coordinates = np.array([atom.coordinates for atom in self._atoms])
+        coordinates = coordinates[atom_indices]
+        c6_coefficients = np.array(self.c6_coefficients)
+        c6_coefficients = c6_coefficients[atom_indices] * au_to_kcal
+        c8_coefficients = np.array(self.c8_coefficients)
+        c8_coefficients = c8_coefficients[atom_indices] * au_to_kcal
+
+        # Take surface points if none are given
+        if points.size == 0:
+            points = np.vstack([atom.accessible_points for atom in self._atoms 
+                                if atom.index not in self._excluded_atoms])
+            atomic = True
+
+        # Calculate p_int for each point
+        dist = cdist(points, coordinates) * angstrom_to_bohr 
+        p = np.sum(np.sqrt(c6_coefficients/(dist**6)), axis=1) \
+            + np.sum(np.sqrt(c8_coefficients/(dist**8)), axis=1)
+    
+        # Take out atomic p_ints if no points are given
+        if atomic:
+            p_int_atom = {}
+            i_start = 0
+            for atom in self._atoms:
+                if atom.index not in self._excluded_atoms:
+                    n_points = len(atom.accessible_points)
+                    if n_points > 0:
+                        i_stop = i_start + n_points
+                        p_atom = p[i_start:i_stop]
+                        p_int_atom[atom.index] = np.mean(p_atom)
+                        i_start = i_stop
+                    else:
+                        p_int_atom[atom.index] = 0
+            self.p_int_atom = p_int_atom
+
+        # Calculate total p_int    
+        self.p_values = p
+        self.p_int = np.mean(p)
+
+        # Calculate p_min and p_max accoridng to Robert's definitions
+        p_sorted = np.sort(p)
+        self.p_min = np.median(p_sorted[:100])
+        self.p_max = np.mean(p_sorted[-10:])
+
+    def get_coefficients(self, filename=None, model='id3'):
+        """Get the C6 and C8 coefficients.
+
+        The default model is the internal D3 calculator. Output can be read from
+        the dftd3 and dftd4 programs by giving a filename in combination with
+        the corresponding 'model' keyword argument. If no filename is specified,
+        steriplus will attemp to run dftd3 or dftd4 which must be in the path.
+
+        Args:
+            filename (str): Output file from the dftd3 or dftd4 programs
+            model (str): Calculation model: 'id3' (default), 'd3' or 'd4'.
+        """
+        if not filename and model =="id3":
+            # Set up atoms and coordinates
+            elements = [atom.element for atom in self._atoms]
+            coordinates = [atom.coordinates for atom in self._atoms]
+
+            # Calculate the D3 values
+            calc = D3Calculator(elements, coordinates)
+            self.c6_coefficients = calc.c6_coefficients
+            self.c8_coefficients = calc.c8_coefficients
+        elif not filename and model == "d3":
+            # Write coordinate file
+            elements = [atom.element for atom in self._atoms]
+            coordinates = [atom.element for atom in self._atoms]
+            self.write_xyz("dftd3.xyz", elements, coordinates)
+            
+            # Run the dftd3 program
+            filename = "dftd3.out"
+            with open(filename, "w") as file:
+                Popen("dftd3 dftd3.xyz -func b3-lyp -bjm".split(), stdout=file,
+                      stderr=DEVNULL).wait()
+
+            # Read the data
+            parser = D3Parser("dftd3.out")
+            self.c6_coefficients = parser.c6_coefficients
+            self.c8_coefficients = parser.c8_coefficients
+        elif not filename and model == "d4":
+            # Write coordinate file
+            elements = [atom.element for atom in self._atoms]
+            coordinates = [atom.element for atom in self._atoms]            
+            self.write_xyz("dftd4.xyz", elements, coordinates)
+            
+            # Run the dftd4 program
+            filename = "dftd4.out"
+            with open(filename, "w") as file:
+                Popen(f"dftd4 --chrg {self._charge} dftd4.xyz".split(),
+                      stdout=file, stderr=DEVNULL).wait()
+        
+            # Read the data
+            parser = D4Parser(filename)
+            self.c6_coefficients = parser.c6_coefficients
+            self.c8_coefficients = parser.c8_coefficients
+        elif filename and model == "d3":
+            # Read the data
+            parser = D3Parser(filename)
+            self.c6_coefficients = parser.c6_coefficients
+            self.c8_coefficients = parser.c8_coefficients
+        elif filename and model == "d4":
+            # Read the data
+            parser = D4Parser(filename)
+            self.c6_coefficients = parser.c6_coefficients
+            self.c8_coefficients = parser.c8_coefficients            
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"    
