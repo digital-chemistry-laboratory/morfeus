@@ -8,6 +8,86 @@ import numpy as np
 
 from steriplus.helpers import convert_elements
 
+class CubeParser:
+    """Parses Gaussian cube file of electron density
+    Args:
+        filename (str): Name of cube file
+    
+    Attributes:
+        min_x (float): Minimum x value (Å)
+        min_y (float): Minimum y value (Å)
+        min_z (float): Minimum z value (Å)
+        step_x (float): Step size in x direction (Å)
+        step_y (float): Step size in y direction (Å)
+        step_z (float): Step size in z direction (Å)
+        X (ndarray): 3D array of x values (Å)
+        Y (ndarray): 3D array of y values (Å)
+        Z (ndarray): 3D array of z values (Å)
+        S (ndarray): 3D array of electron density scalars
+    """
+    def __init__(self, filename):
+        # Read the lines from the cube file
+        lines = open(filename).readlines()
+        
+        # Skip first two lines which are comments
+        lines = lines[2:]
+        
+        # Get the number of atoms
+        n_atoms = int(lines[0].strip().split()[0])
+        
+        # Get the minimum values along the axes
+        min_x = float(lines[0].strip().split()[1])
+        min_y = float(lines[0].strip().split()[2])
+        min_z = float(lines[0].strip().split()[3])
+        
+        # Get the number of points and step size along each axis
+        n_points_x = int(lines[1].strip().split()[0])
+        step_x = float(lines[1].strip().split()[1])
+        
+        n_points_y = int(lines[2].strip().split()[0])
+        step_y = float(lines[2].strip().split()[2])
+
+        n_points_z = int(lines[3].strip().split()[0])
+        step_z = float(lines[3].strip().split()[3]) 
+        
+        # Generate grid
+        x = min_x + np.arange(0, n_points_x) * step_x
+        y = min_y + np.arange(0, n_points_y) * step_y
+        z = min_z + np.arange(0, n_points_z) * step_z
+        X, Y, Z = np.meshgrid(x, y, z, indexing="ij")
+        
+        # Skips to data lines and read in data
+        lines = lines[(n_atoms + 4):]
+        
+        data = []
+        for line in lines:
+            line_data = [float(datum) for datum in line.strip().split()]
+            data.extend(line_data)
+            
+        # Create array and reorder data
+        S = np.array(data).reshape(X.shape)
+        S = np.flip(S.T, axis=1)
+        
+        # Set up attributes
+        self.X = X
+        self.Y = Y
+        self.Z = Z
+        self.S = np.transpose(S, (2,1,0))
+        
+        self.min_x = min_x
+        self.min_y = min_y
+        self.min_z = min_z
+        
+        self.step_x = step_x
+        self.step_y = step_y
+        self.step_z = step_z
+
+        self._filename = filename
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self._filename!r}, " \
+        f"{self.S.size!r} points)"
+
 class D3Parser:
     """Parses the output of Grimme's D3 program and extracts the C6(AA) and
     C8(AA) coefficients
