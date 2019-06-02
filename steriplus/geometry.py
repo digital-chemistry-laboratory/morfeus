@@ -46,6 +46,8 @@ class Atom:
         self.cone = None
         self.coordination_number = None
         self.occluded_points = None
+        self.point_areas = None
+        self.p_values = None
         self.volume = None
     
     def get_cone(self):

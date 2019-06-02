@@ -10,17 +10,22 @@ import math
 import itertools
 
 import matplotlib.pyplot as plt
+from matplotlib.colors import hex2color
 import numpy as np
 from subprocess import Popen, DEVNULL, PIPE
 
+import pyvista as pv
 import scipy.spatial
+from scipy.spatial import cKDTree
 from scipy.spatial.distance import cdist, euclidean
+import vtk
 
 from steriplus.data import atomic_symbols, au_to_kcal, angstrom_to_bohr
+from steriplus.data import jmol_colors
 from steriplus.geometry import Atom, Cone, rotate_coordinates, Sphere
 from steriplus.helpers import check_distances, convert_elements, get_radii
 from steriplus.helpers import D3Calculator
-from steriplus.io import D3Parser, D4Parser, VertexParser
+from steriplus.io import CubeParser, D3Parser, D4Parser, VertexParser
 from steriplus.plotting import MoleculeScene
 
 class Sterimol:
@@ -459,8 +464,8 @@ class SASA:
                 # Take smallest distance and perform check
                 min_distances = np.min(distances, axis=0)
 
-                atom.occluded_points = sphere.points[min_distances <= 0]
-                atom.accessible_points = sphere.points[min_distances > 0]
+                atom.occluded_points = sphere.points[min_distances < 0]
+                atom.accessible_points = sphere.points[min_distances >= 0]
             else: 
                 atom.accessible_points = sphere.points
                 atom.occluded_points = np.empty(0)
@@ -924,6 +929,32 @@ class ConeAngle:
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
 
+def get_fine_surface(elements, coordinates, model='id3', density=0.1,
+                     neighborhood_size=10, sample_spacing=0.2, smoothing=1000,
+                     decimation=0.0, radii_scale=1.1):
+    disp = Dispersion(elements, coordinates, density=density,
+                      radii_scale=radii_scale, model=model,
+                      radii_type='rahm', surface="spheres")
+    disp.points_to_surface(method="surface_reconstruction", 
+                           neighborhood_size=neighborhood_size,
+                           sample_spacing=sample_spacing,
+                           smoothing=smoothing,
+                           decimation=decimation)
+    return disp
+
+def get_rough_surface(elements, coordinates, model='id3', density=0.1,
+                     neighborhood_size=10, sample_spacing=0.4, smoothing=100,
+                     decimation=0.0, radii_scale=1.1):
+    disp = Dispersion(elements, coordinates, density=density,
+                      radii_scale=radii_scale, model=model,
+                      radii_type='rahm', surface="spheres")
+    disp.points_to_surface(method="surface_reconstruction", 
+                           neighborhood_size=neighborhood_size,
+                           sample_spacing=sample_spacing,
+                           smoothing=smoothing,
+                           decimation=decimation)
+    return disp
+
 class Dispersion:
     """Calculates and stores the results for the P_int dispersion descriptor.
 
@@ -939,35 +970,47 @@ class Dispersion:
     """
     def __init__(self, elements, coordinates, charge=0, radii=[],
                  radii_type="rahm", surface="spheres", model="id3",
-                 density=0.01, excluded_atoms=[]):
-        # Set up atoms
+                 density=0.01, excluded_atoms=[], radii_scale=1.0):
+        # Set up
         self._charge = charge
+        self._surface = None
         self._excluded_atoms = excluded_atoms
+        self._density = None
         
         # Converting elements to atomic numbers if the are symbols
         elements = convert_elements(elements)
         
         # Getting radii if they are not supplied
         if not radii:
-            radii = get_radii(elements, radii_type=radii_type)
+            radii = get_radii(elements, radii_type=radii_type, scale=radii_scale)
         
-        if surface == "spheres":
+        if surface == "spheres":    
             # Get vdW surface
             sasa = SASA(elements, coordinates, radii=radii, density=density,
-                        probe_radius=0.0)
+                        probe_radius=0)
             self._atoms = sasa._atoms
             self.area = sum([atom.area for atom in self._atoms 
                              if atom.index not in excluded_atoms])
             self.atom_areas = sasa.atom_areas
             self.volume = sum([atom.volume for atom in self._atoms
                                if atom.index not in excluded_atoms])
+            point_areas = []
+            point_map = []
+            for atom in self._atoms:
+                n_points = len(atom.accessible_points)
+                atom.radius /= radii_scale
+                atom.point_areas = np.repeat(atom.area / n_points, n_points)
+                point_areas.extend(atom.point_areas)
+                point_map.extend([atom.index] * n_points)
+            self._point_areas = np.array(point_areas)
+            self._point_map = np.array(point_map)
+            self._density = density
         else:
             # Get list of atoms as Atom objects
             atoms = []
             for i, (element, coord, radius) in \
                         enumerate(zip(elements, coordinates, radii), start=1):
                     atom = Atom(element, coord, radius, i)
-                    atom.get_cone()
                     atoms.append(atom)
             self._atoms = atoms
         
@@ -977,8 +1020,175 @@ class Dispersion:
         
         if model == "id3" and surface == "spheres":
                 self.calculate_p_int()
-            
+
+    def add_surface_from_cube(self, filename, isodensity=0.001,
+                              method="flying_edges"):
+        """Adds a surface from a Gaussian cube file.
+
+        The surface will be constructed as an isodensity surface of the electron
+        density. A value of 0.001 is recommended. Three contouring methods from
+        VTK can be choosen.
+        
+        Args:
+            filename (str): Name of Gaussian cube file or Multiwfn vertex file.
+            isodensity (float): Isodensity for electron density from cube file
+            method (str): Method for constructing the surface
+        """
+        # Parse the cubefile
+        parser = CubeParser(filename)
+
+        # Generate grid and fill with values
+        grid = pv.UniformGrid()
+        grid.dimensions = np.array(parser.X.shape)
+        grid.origin = (parser.min_x, parser.min_y, parser.min_z)
+        grid.spacing = (parser.step_x, parser.step_y, parser.step_z)
+        grid.point_arrays['values'] = parser.S.flatten(order='F')
+        self.grid = grid
+
+        # Contour the surface
+        surface = self._contour_surface(grid, method=method, 
+                                        isodensity=isodensity)
+        self._surface = surface
+        self._process_surface()
+    
+    def construct_pseudo_surface(self, step_size=0.3, smoothening=200, radii_scale=0.95, method="flying_edges"):
+        coordinates = np.array([atom.coordinates for atom in self._atoms])
+        radii = np.array([atom.radius for atom in self._atoms]) * radii_scale
+        min_x, min_y, min_z = np.min(coordinates - np.tile(radii.reshape(-1, 1), (1, 3)), axis=0) - step_size * 5
+        max_x, max_y, max_z = np.max(coordinates + np.tile(radii.reshape(-1, 1), (1, 3)), axis=0) + step_size * 5
+
+        # Construct grid and extract points
+        x = np.arange(min_x, max_x + step_size, step_size)
+        y = np.arange(min_y, max_y + step_size, step_size)
+        z = np.arange(min_z, max_z + step_size, step_size)
+        X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
+        points = np.stack((X.flatten(order="F"), Y.flatten(order="F"), Z.flatten(order="F")), axis=1)
+
+        # Take out distances to surface
+        dists = cdist(points, coordinates) - radii
+        min_dists = np.min(dists, axis=1)
+        min_dists = min_dists
+
+        # Construct grid and add points
+        grid = pv.UniformGrid(X, Y, Z)
+        grid.dimensions = np.array((x.shape, y.shape, z.shape))
+        grid.origin = (min_x, min_y, min_z)
+        grid.spacing = (step_size, step_size, step_size)
+        grid.point_arrays["values"] = min_dists
+
+        # Countour the surface
+        surface = self._contour_surface(grid, method=method, isodensity=0)
+        self._surface = surface.smooth(smoothening)
+        self._process_surface()
+
+    def _process_surface(self):
+         # Get the area and volume
+        self.area = self._surface.area
+        self.volume = self._surface.volume
+
+        # Assign points to atoms according to Voronoi partitioning
+        coordinates = np.array([atom.coordinates for atom in self._atoms])
+        points = self._surface.cell_centers().points
+        kd_tree = cKDTree(coordinates)
+        _, point_regions = kd_tree.query(points, k=1)
+        point_regions = point_regions + 1
+        
+        # Assign cell centers to atoms according to Voronoi partitioning
+        area_data = self._surface.compute_cell_sizes()
+        areas = area_data.cell_arrays["Area"]
+
+        atom_areas = {}
+        for atom in self._atoms:
+            atom.accessible_points = points[point_regions == atom.index]
+            point_areas = areas[point_regions == atom.index]
+            atom.area = np.sum(point_areas)
+            atom.point_areas = point_areas
+            atom_areas[atom.index] = atom.area
+        
+        self.atom_areas = atom_areas
+        self._point_areas = areas
+        self._point_map = point_regions       
+    
+    @staticmethod
+    def _contour_surface(grid, method="flying_edges", isodensity=0.001):
+        # Select method for contouring
+        if method == "flying_edges":
+            contour_filter = vtk.vtkFlyingEdges3D()
+        elif method == "contour":
+            contour_filter = vtk.vtkContourFilter()
+        elif method == "marching_cubes":
+            contour_filter = vtk.vtkMarchingCubes()
+        
+        # Run the contour filter
+        isodensity = isodensity
+        contour_filter.SetInputData(grid)
+        contour_filter.SetValue(0, isodensity)
+        contour_filter.Update()
+        surface = contour_filter.GetOutput()
+        surface = pv.wrap(surface)
+
+        return surface        
+
+    def points_to_surface(self, points=[], method="surface_reconstruction",
+                          contour_filter="flying_edges", alpha=0.1, tol=0.001,
+                          neighborhood_size=10, sample_spacing=None,
+                          smoothing=1000, decimation=0.1, density=None):
+        # Set up points array
+        points = np.array(points)
+
+        # Take existing atom points if none are supplied
+        if points.size == 0:
+            points = [atom.accessible_points for atom in self._atoms]
+            points = np.vstack(points)
+
+        points = pv.PolyData(points)
+
+        # Reconstruct the surface
+        if method == "surface_reconstruction":
+            #!TODO calculate point density from the points and their extension
+            if not density:
+                if self._density:
+                    density = self._density
+                else:
+                    density = None
+            if not sample_spacing:
+                sample_spacing = max(density, 0.3)
+            surface_filter = vtk.vtkSurfaceReconstructionFilter()
+            surface_filter.SetInputData(points)
+            surface_filter.SetNeighborhoodSize(neighborhood_size)
+            surface_filter.SetSampleSpacing(sample_spacing)
+            surface_filter.Update()
+            surface = surface_filter.GetOutput()
+            surface = pv.wrap(surface)
+            surface = self._contour_surface(surface, method=contour_filter,
+                                            isodensity=0)
+            surface = surface.extract_largest().smooth(smoothing).decimate(decimation)
+        elif method == "delaunay":
+            #!TODO adjust point density to surface
+            surface = points.delaunay_3d(alpha=alpha, tol=tol)
+            surface = surface.extract_surface()
+
+        self._surface = surface 
+        self._process_surface()
+
+    def add_surface_from_vertex(self, vertex_filename):
+        parser = VertexParser(vertex_filename)
+        vertices = np.array(parser.vertices)
+        if parser.faces:
+            faces = np.array(parser.faces)
+            faces = np.insert(faces, 0, values=3, axis=1)
+            surface = pv.PolyData(vertices, faces, show_edges=True)
+            self._surface = surface
+            self._process_surface()
+        else:
+            #TODO Add the options here.
+            self.points_to_surface(vertices)
+
     def get_surface(self, molden_filename=None, vertex_filename=None, isodensity=0.001, density=0.25, xtb_options=""):
+
+
+
+
         if not vertex_filename:
             if not molden_filename:
                 # Run xtb program to get molden file
@@ -1056,13 +1266,15 @@ class Dispersion:
         # Take surface points if none are given
         if points.size == 0:
             points = np.vstack([atom.accessible_points for atom in self._atoms 
-                                if atom.index not in self._excluded_atoms])
+                                if atom.index not in self._excluded_atoms and atom.accessible_points.size > 0])
             atomic = True
 
         # Calculate p_int for each point
         dist = cdist(points, coordinates) * angstrom_to_bohr 
         p = np.sum(np.sqrt(c6_coefficients/(dist**6)), axis=1) \
             + np.sum(np.sqrt(c8_coefficients/(dist**8)), axis=1)
+
+        self.p_values = p
     
         # Take out atomic p_ints if no points are given
         if atomic:
@@ -1074,20 +1286,29 @@ class Dispersion:
                     if n_points > 0:
                         i_stop = i_start + n_points
                         p_atom = p[i_start:i_stop]
-                        p_int_atom[atom.index] = np.mean(p_atom)
+                        atom.p_values = p_atom
+                        p_int_atom[atom.index] = np.sum(p_atom * atom.point_areas / atom.area)
                         i_start = i_stop
                     else:
                         p_int_atom[atom.index] = 0
+                        atom.p_values = np.array([])
             self.p_int_atom = p_int_atom
 
-        # Calculate total p_int    
-        self.p_values = p
-        self.p_int = np.mean(p)
+        self.p_int = np.sum(p * self._point_areas / self.area)
 
         # Calculate p_min and p_max accoridng to Robert's definitions
         p_sorted = np.sort(p)
         self.p_min = np.median(p_sorted[:100])
         self.p_max = np.mean(p_sorted[-10:])
+
+        # Map p_values onto surface
+        if self._surface:
+            mapped_p = np.zeros(len(p))
+            for atom in self._atoms:
+                if atom.index not in self._excluded_atoms:
+                    mapped_p[self._point_map == atom.index] = atom.p_values
+            self._surface.cell_arrays['p_int'] = mapped_p
+
 
     def get_coefficients(self, filename=None, model='id3'):
         """Get the C6 and C8 coefficients.
@@ -1152,6 +1373,35 @@ class Dispersion:
             parser = D4Parser(filename)
             self.c6_coefficients = parser.c6_coefficients
             self.c8_coefficients = parser.c8_coefficients            
+
+    def draw_3D(self, opacity=1, display_p_int=True, molecule_opacity=1, atom_scale=1):
+        """Draw a 3D representation of the molecule with the cone"""
+        # Set up plotter
+        p = pv.BackgroundPlotter()
+
+        # Set up lists for drawing
+        elements = [atom.element for atom in self._atoms]
+        coordinates = [atom.coordinates for atom in self._atoms]
+        radii = [atom.radius for atom in self._atoms]
+        #indices = [atom.index for atom in self._atoms]
+        colors = [hex2color(jmol_colors[i]) for i in elements]
+
+        for coordinate, radius, color in zip(coordinates, radii, colors):
+            sphere = pv.Sphere(center=coordinate, radius=radius * atom_scale)
+            p.add_mesh(sphere, color=color, opacity=molecule_opacity)
+        
+        if display_p_int == True:
+            if self._surface:
+                self._surface.set_active_scalar('p_int')
+            color = None
+            cmap = "coolwarm"
+        else:
+            color = "tan"
+            cmap = None
+
+        if self._surface:
+            p.add_mesh(self._surface, opacity=opacity, color=color, cmap=cmap)
+            #p.enable_cell_picking(self._surface, callback=lambda e: addtext(p))
 
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"    

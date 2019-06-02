@@ -7,6 +7,7 @@ Functions:
 import numpy as np
 
 from steriplus.helpers import convert_elements
+from steriplus.data import angstrom_to_bohr
 
 class CubeParser:
     """Parses Gaussian cube file of electron density
@@ -36,20 +37,20 @@ class CubeParser:
         n_atoms = int(lines[0].strip().split()[0])
         
         # Get the minimum values along the axes
-        min_x = float(lines[0].strip().split()[1])
-        min_y = float(lines[0].strip().split()[2])
-        min_z = float(lines[0].strip().split()[3])
+        min_x = float(lines[0].strip().split()[1]) / angstrom_to_bohr
+        min_y = float(lines[0].strip().split()[2]) / angstrom_to_bohr
+        min_z = float(lines[0].strip().split()[3]) / angstrom_to_bohr
         
         # Get the number of points and step size along each axis
         n_points_x = int(lines[1].strip().split()[0])
-        step_x = float(lines[1].strip().split()[1])
+        step_x = float(lines[1].strip().split()[1]) / angstrom_to_bohr
         
         n_points_y = int(lines[2].strip().split()[0])
-        step_y = float(lines[2].strip().split()[2])
+        step_y = float(lines[2].strip().split()[2]) / angstrom_to_bohr
 
         n_points_z = int(lines[3].strip().split()[0])
-        step_z = float(lines[3].strip().split()[3]) 
-        
+        step_z = float(lines[3].strip().split()[3]) / angstrom_to_bohr
+       
         # Generate grid
         x = min_x + np.arange(0, n_points_x) * step_x
         y = min_y + np.arange(0, n_points_y) * step_y
@@ -64,19 +65,18 @@ class CubeParser:
             line_data = [float(datum) for datum in line.strip().split()]
             data.extend(line_data)
             
-        # Create array and reorder data
+        # Create array
         S = np.array(data).reshape(X.shape)
-        S = np.flip(S.T, axis=1)
         
         # Set up attributes
         self.X = X
         self.Y = Y
         self.Z = Z
-        self.S = np.transpose(S, (2,1,0))
+        self.S = S
         
-        self.min_x = min_x
-        self.min_y = min_y
-        self.min_z = min_z
+        self.min_x = min_x 
+        self.min_y = min_y 
+        self.min_z = min_z 
         
         self.step_x = step_x
         self.step_y = step_y
@@ -86,7 +86,7 @@ class CubeParser:
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self._filename!r}, " \
-        f"{self.S.size!r} points)"
+            f"{self.S.size!r} points)"
 
 class D3Parser:
     """Parses the output of Grimme's D3 program and extracts the C6(AA) and
@@ -170,27 +170,73 @@ class D4Parser:
 
 class VertexParser:
     """Parses the contents of a Multiwfn vtx.pdb file and extracts the
-    vertices of the surface.
+    vertices and faces of the surface.
 
     Args:
         filename (str): Name of file containing the vertices.
 
     Attributes:
-        atom_vertices (dict): Atom indices (starting from 1) as keys and
-                              lists of vertices as values
-        vertices (list): All vertices
+        faces (list): Faces of surface
+        vertices (list): Vertices of surface
+
     """
     def __init__(self, filename):
-        # Read the datafile with NumPy
-        data = np.genfromtxt(filename, 
-            delimiter=[6, 5, 3, 8, 4, 12, 8, 8, 6, 6, 12],
-            comments="REMARK", skip_footer=1)
+        # Parse file to see if it containts connectivity
+        lines = open(filename).readlines()
         
-        # Extract the vertices
-        vertices = data[:, [5, 6, 7]]
+        # Get the number of vertices
+        n_vertices = int(lines[0].strip().split()[5])
 
-        # Set up attributes. Dictionary with vertices per atom.
-        self.vertices = vertices
+        # Parse the vertex positions and their connectivities
+        vertices = {}
+        vertex_map = {}
+        connectivities = {i: set() for i in range(1, n_vertices + 1)}
+        vertex_counter = 1
+        included_vertex_counter = 1
+        for line in lines:
+            if "HETATM" in line:
+                if line[13] == "C":
+                    x = float(line[32:39])
+                    y = float(line[40:47])
+                    z = float(line[48:55])
+                    vertices[vertex_counter] = [x, y, z]
+                    vertex_map[vertex_counter] = included_vertex_counter
+                    included_vertex_counter += 1
+                vertex_counter += 1        
+            if "CONECT" in line:
+                n_entries = int(len(line.strip()) / 6 - 1)
+                entries = []
+                for i in range(1, n_entries + 1):
+                    entry = int(line[i * 6: i * 6 + 6])
+                    entries.append(entry)             
+                connectivities[entries[0]].update(entries[1:])
+        
+        # Establish faces based on connectivity
+        # https://stackoverflow.com/questions/1705824/finding-cycle-of-3-nodes-or-triangles-in-a-graph
+        if any(connectivities.values()):
+            faces = []
+            visited = set() 
+            for vertex_1 in connectivities:
+                temp_visited = set()
+                for vertex_2 in connectivities[vertex_1]:
+                    if vertex_2 in visited:
+                        continue 
+                    for vertex_3 in connectivities[vertex_2]:
+                        if vertex_3 in visited or vertex_3 in temp_visited:
+                            continue 
+                        if vertex_1 in connectivities[vertex_3]:
+                            triangle_vertices = [vertex_1, vertex_2, vertex_3]
+                            mapped_vertices = [vertex_map[vertex] - 1 for vertex in
+                                               triangle_vertices]
+                            faces.append(mapped_vertices)
+                    temp_visited.add(vertex_2)
+                visited.add(vertex_1)
+            self.faces = faces
+        else:
+            self.faces = None
+
+        # Set up attributes.
+        self.vertices = list(vertices.values())
         self._filename = filename
     
     def __repr__(self):
