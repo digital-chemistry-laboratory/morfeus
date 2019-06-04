@@ -9,24 +9,40 @@ Classes:
 import math
 import itertools
 
-import matplotlib.pyplot as plt
-from matplotlib.colors import hex2color
+# Matplotlib is required for plotting steric maps for buried volumes
+try:
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import hex2color
+except ImportError:
+    _has_matplotlib = False
+else:
+    _has_matplotlib = True
+_warning_matplotlib = "Install matplotlib to use this function."
+
 import numpy as np
 from subprocess import Popen, DEVNULL, PIPE
 
-import pyvista as pv
+# VTK and PyVista are required for 3D visualization and for generating surfaces
+# for dispersion calculations.
+try:
+    import vtk
+    import pyvista as pv
+except ImportError:
+    _has_vtk = False
+else:
+    _has_vtk = True
+_warning_vtk = "Install pyvista and vtk to use this function."
+
 import scipy.spatial
 from scipy.spatial import cKDTree
 from scipy.spatial.distance import cdist, euclidean
-import vtk
 
 from steriplus.data import atomic_symbols, au_to_kcal, angstrom_to_bohr
 from steriplus.data import jmol_colors
 from steriplus.geometry import Atom, Cone, rotate_coordinates, Sphere
 from steriplus.helpers import check_distances, convert_elements, get_radii
-from steriplus.helpers import D3Calculator
+from steriplus.helpers import D3Calculator, conditional
 from steriplus.io import CubeParser, D3Parser, D4Parser, VertexParser
-from steriplus.plotting import MoleculeScene
 
 class Sterimol:
     """Performs and stores results of Sterimol calculation.
@@ -135,39 +151,7 @@ class Sterimol:
         self.B_1_value = B_1_value
 
         self.B_5 = B_5
-        self.B_5_value = B_5_value
-
-    def draw_3D(self):
-        """Draw a 3D representation of the molecule with the Sterimol vectors"""
-        # Set up lists for drawing
-        elements = [atom.element for atom in self._atoms]
-        coordinates = [atom.coordinates for atom in self._atoms]
-        radii = [atom.radius for atom in self._atoms]
-        indices = [atom.index for atom in self._atoms]
-        
-        # Draw molecule scene
-        scene = MoleculeScene(elements, coordinates, radii, indices)
-
-        # Set the size of the atoms
-        scene.set_scale(0.3)
-
-        # Draw L vector
-        L_start = coordinates[self._atom_1 - 1]
-        L_stop = self.L
-        L_length = self.L_value 
-        scene.add_arrow(L_start, L_stop, L_length, "L")
-
-        # Draw B_1 vector
-        B_1_start = coordinates[self._atom_2 - 1]
-        B_1_stop = self.B_1
-        B_1_length = self.B_1_value
-        scene.add_arrow(B_1_start, B_1_stop, B_1_length, "B_1")
-
-        # Draw B_5 vector
-        B_5_start = coordinates[self._atom_2 - 1]
-        B_5_stop = self.B_5
-        B_5_length = self.B_5_value
-        scene.add_arrow(B_5_start, B_5_stop, B_5_length, "B_5")       
+        self.B_5_value = B_5_value    
 
     def print_report(self, verbose=False):
         """Prints the values of the Sterimol parameters.
@@ -260,43 +244,8 @@ class BuriedVolume:
         self._sphere = sphere
         self._buried_points = buried_points
         self._free_points = free_points
-
-    def draw_3D(self, full_density=False):
-        """Draw a 3D representation of the molecule with buried and free 
-        points
-        
-        Args:
-            full_density (bool): Requests drawing of all points (slow).
-        """
-        # Set up lists for drawing
-        elements = [atom.element for atom in self._atoms]
-        coordinates = [atom.coordinates for atom in self._atoms]
-        radii = [atom.radius for atom in self._atoms]
-        indices = [atom.index for atom in self._atoms]
-        
-        coordinates = np.vstack(coordinates)
-        
-        # Draw molecule scene
-        scene = MoleculeScene(elements, coordinates, radii, indices)
-
-        # Take out reasonable amount of points
-        if full_density:
-            step = 1
-        else:
-            step = math.ceil(1 / self._density / 25)  
-
-        buried_points = np.array(self._buried_points)
-        np.random.shuffle(buried_points)
-        buried_points = buried_points[::step, :]
-
-        free_points = np.array(self._free_points)
-        np.random.shuffle(free_points)
-        free_points = free_points[::step, :]
-
-        # Add points
-        scene.add_points(buried_points, color='#1f77b4')
-        scene.add_points(free_points, color='#ff7f0e')
-
+    
+    @conditional(_has_matplotlib, _warning_matplotlib)
     def plot_steric_map(self, z_axis_atoms, filename=None, levels=150, grid=100,
                         all_positive=True, cmap="viridis"):
         """Plots a steric map as in the original article.
@@ -506,44 +455,6 @@ class SASA:
         self.volume = sum([atom.volume for atom in atoms])
         self._atoms = atoms
         self._density = density
-
-    def draw_3D(self, full_density=False, highlight=[]):
-        """Draw a 3D representation of the molecule with the solvent accessible
-        surface areas as dots.
-        
-        Args:
-            full_density (bool): Requests drawing of all points (slow)
-            highlight (list): Atom indices for highlighting surface
-        """
-        # Set up lists for drawing
-        elements = [atom.element for atom in self._atoms]
-        coordinates = [atom.coordinates for atom in self._atoms]
-        radii = [atom.radius for atom in self._atoms]
-        indices = [atom.index for atom in self._atoms]
-       
-        coordinates = np.vstack(coordinates)
-        radii = np.array(radii) - self._probe_radius
-        
-        # Draw molecule scene
-        scene = MoleculeScene(elements, coordinates, radii, indices)
-
-        # Take out a reasonable amount of points
-        for atom in self._atoms:
-            points = atom.accessible_points
-            if full_density:
-                step = 1
-            else:
-                step = math.ceil(1 / self._density / 25)
-            np.random.shuffle(points)
-            points = points[::step, :]
-        
-            # Add points
-            if atom.index in highlight:
-                color = '#ff7f0e'
-            else:
-                color = '#1f77b4'
-            if np.any(points):
-                scene.add_points(points, color=color)
        
     def print_report(self, verbose=False):
         """Print report of results
@@ -640,33 +551,6 @@ class ConeAngle:
             self.tangent_atoms = [atom.index for atom in cone.atoms]
         else:
             raise Exception("Cone could not be found.")
-
-    def draw_3D(self):
-        """Draw a 3D representation of the molecule with the cone"""
-        # Set up lists for drawing
-        elements = [atom.element for atom in self._atoms]
-        coordinates = [atom.coordinates for atom in self._atoms]
-        radii = [atom.radius for atom in self._atoms]
-        indices = [atom.index for atom in self._atoms]
-        
-        coordinates = np.vstack(coordinates)
-        
-        # Draw molecule scene
-        scene = MoleculeScene(elements, coordinates, radii, indices)
-
-        # Determine direction and extension of cone
-        if self.cone_angle > 180:
-            normal = - self._cone.normal 
-        else:
-            normal = self._cone.normal
-        projected = np.dot(normal, coordinates.T) + np.array(radii)
-
-        max_extension = np.max(projected)
-        if self.cone_angle > 180:
-            max_extension += 1
-        
-        # Add cone
-        scene.add_cone([0, 0, 0], normal, self._cone.angle, max_extension)
 
     def print_report(self):
         """Prints report of results"""
@@ -1019,6 +903,7 @@ class Dispersion:
         if point_surface and calculate_coefficients:
             self.calculate_p_int()
 
+    @conditional(_has_vtk, _warning_vtk)
     def surface_from_cube(self, filename, isodensity=0.001,
                               method="flying_edges"):
         """Adds an isodensity surface from a Gaussian cube file.
@@ -1046,6 +931,7 @@ class Dispersion:
         self._surface = surface
         self._process_surface()
     
+    @conditional(_has_vtk, _warning_vtk)
     def surface_from_multiwfn(self, filename):
         """Adds surface from Multiwfn vertex file with connectivity information.
 
@@ -1060,6 +946,7 @@ class Dispersion:
         self._surface = surface
         self._process_surface()
 
+    @conditional(_has_vtk, _warning_vtk)
     def surface_from_radii(self, step_size=0.313, smoothing=76,
                            radii_scale=1.138, method="flying_edges"):
         """Construct surface by smoothening vdW surface from atomic radii.
@@ -1107,7 +994,8 @@ class Dispersion:
         surface = self._contour_surface(grid, method=method, isodensity=0)
         self._surface = surface.smooth(smoothing)
         self._process_surface()
-
+    
+    @conditional(_has_vtk, _warning_vtk)
     def _process_surface(self):
         """Extracts face center points and assigns these to atoms based on
         proximity
@@ -1141,6 +1029,7 @@ class Dispersion:
         self._point_areas = areas
         self._point_map = point_regions       
     
+    @conditional(_has_vtk, _warning_vtk)
     @staticmethod
     def _contour_surface(grid, method="flying_edges", isodensity=0.001):
         """
@@ -1183,9 +1072,9 @@ class Dispersion:
                         if atom.index not in self._excluded_atoms]
         coordinates = np.array([atom.coordinates for atom in self._atoms])
         coordinates = coordinates[atom_indices]
-        c6_coefficients = np.array(self.c6_coefficients)
+        c6_coefficients = np.array(self._c6_coefficients)
         c6_coefficients = c6_coefficients[atom_indices] * au_to_kcal
-        c8_coefficients = np.array(self.c8_coefficients)
+        c8_coefficients = np.array(self._c8_coefficients)
         c8_coefficients = c8_coefficients[atom_indices] * au_to_kcal
 
         # Take surface points if none are given
@@ -1204,28 +1093,30 @@ class Dispersion:
     
         # Take out atomic p_ints if no points are given
         if atomic:
-            p_int_atom = {}
+            atom_p_ints = {}
             i_start = 0
             for atom in self._atoms:
                 if atom.index not in self._excluded_atoms:
                     n_points = len(atom.accessible_points)
                     if n_points > 0:
                         i_stop = i_start + n_points
-                        p_atom = p[i_start:i_stop]
-                        atom.p_values = p_atom
-                        p_int_atom[atom.index] = np.sum(p_atom * 
+                        atom_ps = p[i_start:i_stop]
+                        atom.p_values = atom_ps
+                        atom_p_ints[atom.index] = np.sum(atom_ps * 
                             atom.point_areas / atom.area)
                         i_start = i_stop
                     else:
-                        p_int_atom[atom.index] = 0
+                        atom_p_ints[atom.index] = 0
                         atom.p_values = np.array([])
-            self.p_int_atom = p_int_atom
+            self.atom_p_ints = atom_p_ints
 
         self.p_int = np.sum(p * self._point_areas / self.area)
 
-        # Calculate p_min and p_max accoridng to Robert's definitions
+        # Calculate p_min and p_max with slight modification to Robert's 
+        # definitions
         p_sorted = np.sort(p)
-        self.p_min = np.median(p_sorted[:100])
+        #self.p_min = np.median(p_sorted[:100]) # Robert's definition
+        self.p_min = np.mean(p_sorted[:10])
         self.p_max = np.mean(p_sorted[-10:])
 
         # Map p_values onto surface
@@ -1255,19 +1146,20 @@ class Dispersion:
 
             # Calculate the D3 values
             calc = D3Calculator(elements, coordinates)
-            self.c6_coefficients = calc.c6_coefficients
-            self.c8_coefficients = calc.c8_coefficients
+            self._c6_coefficients = calc.c6_coefficients
+            self._c8_coefficients = calc.c8_coefficients
         elif filename and model == "d3":
             # Read the data
             parser = D3Parser(filename)
-            self.c6_coefficients = parser.c6_coefficients
-            self.c8_coefficients = parser.c8_coefficients
+            self._c6_coefficients = parser.c6_coefficients
+            self._c8_coefficients = parser.c8_coefficients
         elif filename and model == "d4":
             # Read the data
             parser = D4Parser(filename)
-            self.c6_coefficients = parser.c6_coefficients
-            self.c8_coefficients = parser.c8_coefficients            
+            self._c6_coefficients = parser.c6_coefficients
+            self._c8_coefficients = parser.c8_coefficients            
 
+    @conditional(_has_vtk, _warning_vtk)
     def draw_3D(self, opacity=1, display_p_int=True, molecule_opacity=1,
                 atom_scale=1):
         """Draw surface with mapped P_int values.

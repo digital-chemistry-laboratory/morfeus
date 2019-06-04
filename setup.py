@@ -14,7 +14,8 @@ setuptools.setup(
     url="",
     packages=["steriplus"],
     package_data={"steriplus": ['../data/c6_reference_data.pickle']},
-    install_requires=["matplotlib", "numpy", "scipy", "vpython"],
+    install_requires=["numpy", "scipy"],
+    extras_require = {'extras': ["vtk", "pyvista", "matplotlib"]},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

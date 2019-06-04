@@ -5,9 +5,11 @@ Functions:
     convert_elements: Converts atomic symbols to atomic numbers.
     get_radii: Returns radii for list of elements.
 """
-import numpy as np
 import pickle
 import pkg_resources
+import warnings
+
+import numpy as np
 from scipy.spatial.distance import cdist
 
 from steriplus.data import atomic_numbers, atomic_symbols
@@ -148,6 +150,32 @@ def check_distances(elements, coordinates, check_atom, radii=[], check_radius=0,
         return within_list
     else:
         return None
+
+def conditional(condition, warning=None):
+    """Decorator factory to control if functions are presented.
+
+    Args:
+        condition (bool): Whether to import function or not  
+        warning (warning): Warning to print if function not imported
+    
+    Returns:
+        noop_decorator (obj): Decorator that passes the original function
+        neutered_function (obj): Decorator that passes nothing and prints warning.
+
+    """
+    def noop_decorator(function):
+        """Returns function unchanged."""
+        return function
+
+    def neutered_function(function):
+        """Returns function that just prints warning"""
+        def neutered(*args, **kw):
+            if warning:
+                warnings.warn(warning)
+            return
+        return neutered
+
+    return noop_decorator if condition else neutered_function
 
 def convert_elements(elements, output='numbers'):
     """Converts elements to atomic symbols or numbers.
