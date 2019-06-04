@@ -828,7 +828,7 @@ class Dispersion:
         density (float): Area per point (Å**2) on the vdW surface.
         elements (list): Elements as atomic symbols or numbers
         excluded_atoms (list): Atoms to exclude from the calculation. Used only
-            calculation of substituent P_ints.
+            for calculation of substituent P_ints.
         point_surface (bool): Use point surface from vdW radii.
         radii (list): VdW radii (Å)
         radii_type (str): Choice of vdW radii: 'bondi', 'crc' or 'rahm'
@@ -841,7 +841,7 @@ class Dispersion:
             starting from 1)
         p_int (float): P_int value for molecule (kcal^(1/2) Bohr^(-1/2)
         p_max (float): Mean of 10 highest P values (kcal^(1/2) Bohr^(-1/2)
-        p_min (float): Median of 100 lowest P values (kcal^(1/2) Bohr^(-1/2)
+        p_min (float): Mean of 10 lowest P values (kcal^(1/2) Bohr^(-1/2)
         p_values (list): All P values (kcal^(1/2) Bohr^(-1/2)
         volume (float): Volume of surface (Å^3)
     """
@@ -1132,8 +1132,7 @@ class Dispersion:
 
         The default model is the internal D3 calculator. Output can be read from
         the dftd3 and dftd4 programs by giving a filename in combination with
-        the corresponding 'model' keyword argument. If no filename is specified,
-        steriplus will attemp to run dftd3 or dftd4 which must be in the path.
+        the corresponding 'model' keyword argument.
 
         Args:
             filename (str): Output file from the dftd3 or dftd4 programs
