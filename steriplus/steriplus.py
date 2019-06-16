@@ -27,6 +27,7 @@ from subprocess import Popen, DEVNULL, PIPE
 try:
     import vtk
     import pyvista as pv
+    from steriplus.plotting import Arrow_3D, Cone_3D
 except ImportError:
     _has_vtk = False
 else:
@@ -71,11 +72,11 @@ class Sterimol:
     def __init__(self, elements, coordinates, atom_1, atom_2, radii=[],
                  radii_type="crc", n_rot_vectors=3600):
         # Convert elements to atomic numbers if the are symbols
-        element_ids = convert_elements(elements)
+        elements = convert_elements(elements)
 
         # Get radii if they are not supplied
         if not radii:
-            radii = get_radii(element_ids, radii_type=radii_type)
+            radii = get_radii(elements, radii_type=radii_type)
         radii = np.array(radii)
 
         # Set up coordinate array
@@ -114,7 +115,7 @@ class Sterimol:
 
         # Get L as largest projection along the vector
         L_value = np.max(projected) + bond_length
-        L = vector * L_value
+        L = unit_vector * L_value
 
         # Get rotation vectors in yz plane
         r = 1
@@ -170,6 +171,64 @@ class Sterimol:
             print(f"{'L':10s}{'B_1':10s}{'B_5':10s}")
             print(f"{self.L_value:<10.2f}{self.B_1_value:<10.2f}"
                   f"{self.B_5_value:<10.2f}")
+
+    @conditional(_has_vtk, _warning_vtk)
+    @conditional(_has_matplotlib, _warning_matplotlib) 
+    def draw_3D(self, atom_scale=0.5, background_color="white",
+                arrow_color="steelblue"):
+        """Draw a 3D representation of the molecule with the Sterimol vectors.
+        
+        Args:
+            atom_scale (float): Scaling factor for atom size
+            background_color (str): Background color for plot
+            arrow_color (str): Arrow color
+        """
+        # Set up plotter
+        p = pv.BackgroundPlotter()
+        p.set_background(background_color)
+
+        # Set up lists for drawing
+        elements = [atom.element for atom in self._atoms]
+        coordinates = [atom.coordinates for atom in self._atoms]
+        radii = [atom.radius for atom in self._atoms]
+        colors = [hex2color(jmol_colors[i]) for i in elements]
+
+        # Draw molecule
+        for coordinate, radius, color in zip(coordinates, radii, colors):
+            sphere = pv.Sphere(center=list(coordinate),
+                               radius=radius * atom_scale)
+            p.add_mesh(sphere, color=color, opacity=1)
+        
+        # Get arrow starting points
+        start_L = self._atoms[self._atom_1 - 1].coordinates
+        start_B = self._atoms[self._atom_2 - 1].coordinates
+
+        # Add L arrow with label 
+        length = np.linalg.norm(self.L)
+        direction = self.L / length
+        stop_L = start_L + length * direction 
+        L_arrow = Arrow_3D(start=start_L, direction=direction, length=length)
+        p.add_mesh(L_arrow, color=arrow_color)
+
+        # Add B_1 arrow
+        length = np.linalg.norm(self.B_1)
+        direction = self.B_1 / length
+        stop_B_1 = start_B + length * direction 
+        B_1_arrow = Arrow_3D(start=start_B, direction=direction, length=length)
+        p.add_mesh(B_1_arrow, color=arrow_color)
+
+        # Add B_5 arrow
+        length = np.linalg.norm(self.B_5)
+        direction = self.B_5 / length
+        stop_B_5 = start_B + length * direction 
+        B_5_arrow = Arrow_3D(start=start_B, direction=direction, length=length)
+        p.add_mesh(B_5_arrow, color=arrow_color)
+
+        # Add labels
+        points = np.vstack([stop_L, stop_B_1, stop_B_5])
+        labels = ["L", "B1", "B5"]
+        p.add_point_labels(points, labels, text_color="black", font_size=30,
+                           bold=False, show_points=False, point_size=1)
 
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
@@ -343,6 +402,45 @@ class BuriedVolume:
         """Prints a report of the buried volume for use in shell scripts"""
         print("V_bur (%):", round(self.buried_volume * 100, 1))
 
+    @conditional(_has_vtk, _warning_vtk)
+    @conditional(_has_matplotlib, _warning_matplotlib) 
+    def draw_3D(self, atom_scale=1, background_color="white",
+                buried_color="tomato", free_color="steelblue", opacity=0.05,
+                size=1):
+        """Draw a 3D representation of the molecule with the buried and free
+        points.
+
+        Args:
+            atom_scale (float): Scaling factor for atom size
+            background_color (str): Background color for plot
+            buried_color (str): Color of buried points
+            free_color (str): Color of free points
+            opacity (float): Point opacity
+            size (float): Point size
+        """
+        # Set up plotter
+        p = pv.BackgroundPlotter()
+        p.set_background(background_color)
+
+        # Set up lists for drawing
+        elements = [atom.element for atom in self._atoms]
+        coordinates = [atom.coordinates for atom in self._atoms]
+        radii = [atom.radius for atom in self._atoms]
+        colors = [hex2color(jmol_colors[i]) for i in elements]
+
+        # Draw molecule
+        for coordinate, radius, color in zip(coordinates, radii, colors):
+            sphere = pv.Sphere(center=list(coordinate),
+                               radius=radius * atom_scale)
+            p.add_mesh(sphere, color=color, opacity=1)
+        
+        # Add buried points
+        p.add_points(self._buried_points, color=buried_color, opacity=opacity)
+
+        # Add free points
+        p.add_points(self._free_points, color=free_color, opacity=opacity,
+                     size=size)
+
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
 
@@ -471,7 +569,44 @@ class SASA:
             for atom, (i, area) in zip(self._atoms, self.atom_areas.items()):
                 symbol = atomic_symbols[atom.element]
                 print(f"{symbol:<10s}{i:<10d}{area:<10.1f}")
-    
+
+    @conditional(_has_vtk, _warning_vtk)
+    @conditional(_has_matplotlib, _warning_matplotlib) 
+    def draw_3D(self, atom_scale=1, background_color="white",
+                point_color="steelblue", opacity=1, size=1):
+        """Draw a 3D representation of the molecule with the solvent accessible
+        surface area
+
+        Args:
+            atom_scale (float): Scaling factor for atom size
+            background_color (str): Background color for plot
+            point_color (str): Color of surface points
+            opacity (float): Point opacity
+            size (float): Point size
+        """
+        # Set up plotter
+        p = pv.BackgroundPlotter()
+        p.set_background(background_color)
+
+        # Set up lists for drawing
+        elements = [atom.element for atom in self._atoms]
+        coordinates = [atom.coordinates for atom in self._atoms]
+        radii = np.array([atom.radius for atom in self._atoms]) - \
+            self._probe_radius
+        colors = [hex2color(jmol_colors[i]) for i in elements]
+
+        # Draw molecule
+        for coordinate, radius, color in zip(coordinates, radii, colors):
+            sphere = pv.Sphere(center=list(coordinate),
+                               radius=radius * atom_scale)
+            p.add_mesh(sphere, color=color, opacity=1)
+        
+        # Draw surface points
+        surface_points = np.vstack([atom.accessible_points 
+                                    for atom in self._atoms])
+        p.add_points(surface_points, color=point_color, opacity=opacity,
+                     size=size)
+        
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
 
@@ -809,6 +944,53 @@ class ConeAngle:
             cones.append(cone)
 
         return cones
+
+    @conditional(_has_vtk, _warning_vtk)
+    @conditional(_has_matplotlib, _warning_matplotlib) 
+    def draw_3D(self, atom_scale=1, background_color="white",
+                cone_color="steelblue", cone_opacity=0.75):
+        """Draw a 3D representation of the molecule with the cone.
+
+        Args:
+            atom_scale (float): Scaling factor for atom size
+            background_color (str): Background color for plot
+            cone_color (str): Cone color
+            cone_opacity (float): Cone opacity
+        """
+        # Set up plotter
+        p = pv.BackgroundPlotter()
+        p.set_background(background_color)
+
+        # Set up lists for drawing
+        elements = [atom.element for atom in self._atoms]
+        coordinates = [atom.coordinates for atom in self._atoms]
+        radii = [atom.radius for atom in self._atoms]
+        colors = [hex2color(jmol_colors[i]) for i in elements]
+
+        # Draw molecule
+        for coordinate, radius, color in zip(coordinates, radii, colors):
+            sphere = pv.Sphere(center=list(coordinate),
+                               radius=radius * atom_scale)
+            p.add_mesh(sphere, color=color, opacity=1)
+        
+        # Determine direction and extension of cone
+        cone_angle = math.degrees(self._cone.angle)
+        coordinates = np.array(coordinates)
+        if cone_angle > 180:
+            normal = - self._cone.normal 
+        else:
+            normal = self._cone.normal
+        projected = np.dot(normal, coordinates.T) + np.array(radii)
+
+        max_extension = np.max(projected)
+        if cone_angle > 180:
+            max_extension += 1
+        
+        # Make the cone
+        cone = Cone_3D(center=[0, 0, 0] + (max_extension * normal) / 2,
+                       direction=-normal, angle=cone_angle, 
+                       height=max_extension, capping=False, resolution=100)
+        p.add_mesh(cone, opacity=cone_opacity, color=cone_color)
 
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
@@ -1159,6 +1341,7 @@ class Dispersion:
             self._c8_coefficients = parser.c8_coefficients            
 
     @conditional(_has_vtk, _warning_vtk)
+    @conditional(_has_matplotlib, _warning_matplotlib)
     def draw_3D(self, opacity=1, display_p_int=True, molecule_opacity=1,
                 atom_scale=1):
         """Draw surface with mapped P_int values.
