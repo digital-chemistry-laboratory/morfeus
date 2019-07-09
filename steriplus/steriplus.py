@@ -1340,6 +1340,21 @@ class Dispersion:
             self._c6_coefficients = parser.c6_coefficients
             self._c8_coefficients = parser.c8_coefficients            
 
+    def print_report(self, verbose=False):
+        """Print report of results
+
+        Args:
+            verbose (bool): Print atom P_ints
+        """
+        print(f"Surface area (Å^2): {self.area:.1f}")
+        print(f"Surface volume (Å^3): {self.volume:.1f}")
+        print(f"P_int (kcal^(1/2) Bohr^(-1/2): {self.p_int:.1f}")
+        if verbose:
+            print(f"{'Symbol':<10s}{'Index':<10s}{'P_int (kcal^(1/2) Bohr^(-1/2))':<30s}")
+            for atom, (i, p_int) in zip(self._atoms, self.atom_p_ints.items()):
+                symbol = atomic_symbols[atom.element]
+                print(f"{symbol:<10s}{i:<10d}{p_int:<10.1f}")        
+
     @conditional(_has_vtk, _warning_vtk)
     @conditional(_has_matplotlib, _warning_matplotlib)
     def draw_3D(self, opacity=1, display_p_int=True, molecule_opacity=1,

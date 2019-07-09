@@ -3,14 +3,16 @@
 
 Modules:
     data: Data dictionaries.
-    geometry: Helper functions related to geometry.
-    io: Geometry file parsers.
-    plotting: 3D plotting functions.
+    geometry: Geometry functions and classes.
+    helpers: General helper functions.
+    io: File parser functions and classes.
+    plotting: 3D plotting classes.
     steriplus: Classes for steric descriptor calculations.
 
 Scripts:
     script_buried_volume: Calculate buried volume.
     script_cone_angle: Calculate cone angle.
+    script_dispersion: Calculate dispersion descriptor.
     script_sasa: Calculate solvent accessible surface area.
     script_steriplus: Calculate Sterimol parameters.
 """
