@@ -21,5 +21,5 @@ Scripts:
 __version__ = "0.3.0"
 
 from steriplus.steriplus import BuriedVolume, ConeAngle, Dispersion
-from steriplus.steriplus import SASA, Sterimol
+from steriplus.steriplus import SASA, Sterimol, LocalForce
 from steriplus.io import read_gjf, read_xyz

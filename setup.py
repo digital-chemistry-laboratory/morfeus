@@ -15,7 +15,7 @@ setuptools.setup(
     packages=["steriplus"],
     package_data={"steriplus": ['../data/c6_reference_data.pickle']},
     install_requires=["numpy", "scipy"],
-    extras_require = {'extras': ["vtk", "pyvista", "matplotlib"]},
+    extras_require = {'extras': ["vtk", "pyvista", "pymeshfix", "matplotlib"]},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
@@ -27,6 +27,7 @@ setuptools.setup(
             "steriplus_sasa=steriplus.script_sasa:main",
             "steriplus_buried_volume=steriplus.script_buried_volume:main",
             "steriplus_cone_angle=steriplus.script_cone_angle:main",
-            "steriplus_dispersion=steriplus.script_dispersion:main"
+            "steriplus_dispersion=steriplus.script_dispersion:main",
+            "steriplus_local_force=steriplus.script_local_force:main",
         ]}
 )

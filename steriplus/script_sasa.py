@@ -6,7 +6,7 @@ from steriplus import read_gjf, read_xyz, SASA
 def main():
     # Add arguments
     parser = argparse.ArgumentParser(
-        "Steriplus script to calcaulate solvent accessible surface areas "
+        "Steriplus script to calculate solvent accessible surface areas "
         "and volumes beneath this area")
     parser.add_argument(
         'file', type=str, help='Input file, either .xyz, .gjf or .com')

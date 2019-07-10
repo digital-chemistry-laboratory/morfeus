@@ -27,6 +27,7 @@ from subprocess import Popen, DEVNULL, PIPE
 try:
     import vtk
     import pyvista as pv
+    import pymeshfix
     from steriplus.plotting import Arrow_3D, Cone_3D
 except ImportError:
     _has_vtk = False
@@ -1120,11 +1121,19 @@ class Dispersion:
         Args:
             filename (str): Name of vertex file
         """
+        # Read the vertices and faces from the Multiwfn output file
         parser = VertexParser(filename)
         vertices = np.array(parser.vertices)
         faces = np.array(parser.faces)
         faces = np.insert(faces, 0, values=3, axis=1)
+        
+        # Construct surface and fix it with pymeshfix
         surface = pv.PolyData(vertices, faces, show_edges=True)
+        meshfix = pymeshfix.MeshFix(surface)
+        meshfix.repair()
+        surface = meshfix.mesh
+
+        # Process surface
         self._surface = surface
         self._process_surface()
 
@@ -1394,6 +1403,105 @@ class Dispersion:
         # Draw surface
         if self._surface:
             p.add_mesh(self._surface, opacity=opacity, color=color, cmap=cmap)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
+
+class LocalForce:
+    """Calculates local force constants of Cremer and co-workers.
+    
+    Args:
+        filename (str): Filename of Gaussian log file.
+    """
+
+    def __init__(self, filename):
+        self._filename = filename
+        self._parse_log_file()
+        self._compute_local_force_constants()
+    
+    def get_local_force_constant(self, atom_1, atom_2):
+        """Return the local force constant for bond between two atoms.
+        
+        Args:
+            atom_1 (int): Index of atom 1 (starting at 1)
+            atom_2 (int): Index of atom 2 (starting at 1)
+        
+        Returns:
+            force_constant (float): Local force constant (mDyn/Å)
+        """
+        atoms = frozenset([atom_1, atom_2])
+        index = self.internal_indices.get(atoms)
+        if index == None:
+            raise Exception(f"No bond internal coordinate between atoms {atom_1} and {atom_2}")
+        force_constant = self.local_force_constants[index] 
+        
+        return force_constant
+    
+    def print_report(self):
+        """Print report of results"""
+        print(f"{'Atom_1':<10s}{'Atom_2':<10s}{'Force constant (mDyn/Å)':<10s}")
+        for atom_set, index in self.internal_indices.items():
+            force_constant = self.local_force_constants[index]
+            atoms = [atom for atom in atom_set]
+            atom_1, atom_2 = sorted(atoms)
+            print(f"{atom_1:<10d}{atom_2:<10d}{force_constant:<10.3f}")
+    
+    def _compute_local_force_constants(self):
+        K = np.diag(self._force_constants)
+        k_s = []
+        for row in self._normal_vectors:
+            k = 1 / (row @ np.linalg.inv(K) @ np.conj(row).T)
+            k_s.append(k)
+        k_s = np.array(k_s)
+        self.local_force_constants = k_s
+    
+    def _parse_log_file(self):
+        lines = open(self._filename).readlines()
+        internal_indices = {}
+        force_constants = []
+        normal_vectors = []
+        
+        read_internal = False
+        read_normal = False
+        for line in lines:
+            if read_internal:
+                if internal_counter > 1:
+                    if " --------------------------------------------------------------------------------" in line:
+                        read_internal = False
+                    else:
+                        split_line = line.strip().split()
+                        name = split_line[1]
+                        internal_names.append(name)
+                        if name[0] == "R":
+                            atoms = split_line[2][2:].replace(")", "").split(",")
+                            atoms = [int(atom) for atom in atoms]
+                            internal_indices[frozenset([atoms[0], atoms[1]])] = internal_counter - 2
+                internal_counter += 1 
+            if read_normal:
+                if normal_counter > 3:
+                    if "--------------------------------------------------------------------------------" in line:
+                        read_normal = False
+                        normal_vectors.append(normal_vector)
+                    else:
+                        value = float(line.strip().split()[3])
+                        normal_vector.append(value)
+                normal_counter += 1
+            if "Name  Definition              Value          Derivative Info." in line:
+                read_internal = True
+                internal_counter = 1
+                internal_names = []
+            if "Normal Mode" in line:
+                read_normal = True
+                normal_counter = 1
+                normal_vector = []
+            if "Frc consts" in line:
+                split_line = line.strip().split()
+                values = [float(value) for value in split_line[3:]]
+                force_constants.extend(values)
+
+        self._force_constants = np.array(force_constants)
+        self.internal_indices = internal_indices
+        self._normal_vectors = np.array(normal_vectors).T 
 
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"    
