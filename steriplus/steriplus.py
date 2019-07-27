@@ -42,6 +42,7 @@ from scipy.spatial.distance import cdist, euclidean
 from steriplus.data import atomic_symbols, au_to_kcal, angstrom_to_bohr
 from steriplus.data import jmol_colors
 from steriplus.geometry import Atom, Cone, rotate_coordinates, Sphere
+from steriplus.geometry import kabsch_rotation_matrix
 from steriplus.helpers import check_distances, convert_elements, get_radii
 from steriplus.helpers import D3Calculator, conditional
 from steriplus.io import CubeParser, D3Parser, D4Parser, VertexParser
@@ -1407,16 +1408,557 @@ class Dispersion:
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
 
-class LocalForce:
+class LocalForce():
+    def __init__(self, log_file, fchk_file=None, pes_file=None, project_imag=True, cutoff=1e-6, method="local"):
+        """Compliance matrices according to J. Chem. Phys. 2010, 132, 184101.
+
+        Args:
+            log_file (str): Name of Gaussian log file
+            fchk_file (str): Name of Gaussian fchk file
+            pes_file (stry): Name of Gaussian PES file
+            project_imag (bool): Whether to project out imaginary frequencies
+                when using the local modes method
+            cutoff (float): Cutoff for low force constant when using the local
+                modes method
+            method (str): Method for calculating the local force constants:
+                 'compliance' or 'local' (default)
+
+        Attributes:
+            internal_names (list): Gaussian names of internal indices
+            internal_indices (dict): Mapping of internal coordinates to indices
+                for force constants and frequencies
+            local_force_constants (ndarray): Local mode force constants (mDyne/Å)
+            local_frequencies (ndarray): Local mode frequencies (cm^(-1))
+            n_imag (int): Number of normal modes with imaginary frequencies
+        """
+        # Set up attributes
+        self.n_imag = None
+        self.local_force_constants = np.array([])
+        self.local_frequencies = np.array([])
+        self.internal_indices = {}
+        self.internal_names = []
+        
+        self._redundant = None
+        self._B = np.array([])
+        self._B_inv = np.array([])
+        self._B_inv = np.array([])
+        self._D = np.array([])
+        self._D_full = np.array([])
+        self._force_constants = np.array([])
+        self._force_constants_full = np.array([])
+        self._fc_matrix = np.array([])
+        self._ifc_matrix = np.array([])
+        self._normal_modes = np.array([])
+        self._local_modes = np.array([])
+        self._project_imag = project_imag
+        self._cutoff = cutoff
+        self._rotation_matrix = None
+
+        # Read in data from Gaussian log file
+        self._parse_log_file(log_file)
+
+        # Read in high-precision normal modes force constants from fchk file
+        if fchk_file:
+            self._parse_fchk_file(fchk_file)
+        
+        # Read in high-precision force constants from PES file.
+        if pes_file:
+            self._parse_pes_file(pes_file)
+        
+        # Compute local mode properties from local modes or compliance matrix
+        if method == "local":
+            self._compute_local()
+        if method == "compliance":
+            self._compute_compliance()
+
+    def get_local_force_constant(self, atoms):
+        """Return the local force constant between a set of atoms.
+        
+        Args:
+            atoms (list): Atoms in the internal coordinate
+        
+        Returns:
+            force_constant (float): Local force constant (mDyne/Å)
+        """
+        atoms = frozenset(atoms)
+        index = self.internal_indices.get(atoms)
+        if index == None:
+            raise Exception(f"No bond internal coordinate with these atoms.")
+        force_constant = self.local_force_constants[index]
+        
+        return force_constant
+
+    def print_report(self, angles=False, dihedrals=False, angle_units=False):
+        """Print report of results.
+        
+        Args:
+            angle_units (bool): Convert angle and dihedral force constants to
+                mDyne Å rad^(-2)
+            angles (bool): Whether to print angles
+            dihedrals (bool): Whether to print dihedrals
+        """
+        # Print header
+        if angle_units:
+            unit = "mDyne/Å, mDyne Å rad^(-2)"
+        else:
+            unit = "mDyne/Å"
+        
+        print(f"{'Atom_1':>10s}{'Atom_2':>10s}{'Atom_3':>10s}{'Atom_4':>10s}{'Force constant' + '(' + unit + ')':>50s}{'Frequency (cm-1)':>40s}")
+        
+        # Print results for each internal
+        for atoms, index in self.internal_indices.items():
+            # Check if internal coordinate is angle or dihedral
+            if len(atoms) == 3 and not angles:
+                continue
+            if len(atoms) == 4 and not dihedrals:
+                continue
+            force_constant = self.local_force_constants[index]
+            frequency = self.local_frequencies[index]
+
+            # Convert units for angles and dihedrals
+            if len(atoms) > 2 and angle_units:
+                force_constant *= 0.52918**2
+            
+            # Print out the results
+            atom_iter = iter(sorted(atoms))
+            atom_string = ""
+            for i in range(4):
+                atom = next(atom_iter, "")
+                atom_string += f"{atom:>10}"
+            print(atom_string + f"{force_constant:50.3f}" + f"{frequency:40.0f}")
+
+    def _add_cutoff(self):
+        # Cut off low force constants at given value
+        indices_small = np.where(np.array(self._force_constants) < self._cutoff)[0]
+        if len(indices_small) > 0:
+            self._force_constants[indices_small] = np.array(self._cutoff).reshape(-1)
+
+    def _compute_compliance(self):
+        # Compute force constant matrix and get local force constants
+        C = self._B @ np.linalg.pinv(self._fc_matrix) @ self._B.T
+        k_s = 1 / np.diag(C) * 15.569141 #TODO update constants
+        self.local_force_constants = k_s
+        
+    def _compute_local(self):
+        # Compute D matrix from normal modes and B matrix
+        if self._B.size > 0  and self._normal_modes.size > 0:
+            self._D = self._B @ self._normal_modes.T
+        elif len(self._D) < 1:
+            raise Exception("Need both B matrix and normal modes, or read local modes.")
+        
+        # Project out imaginary modes
+        if self._project_imag:
+            self._prune_imaginary()
+        
+        # Add cutoff to modes with low force constants
+        if self._cutoff is not None:
+            self._add_cutoff()
+                
+        # Compute local mode force constants
+        K = np.diag(self._force_constants)
+        
+        k_s = []
+        for row in self._D:
+            k = 1 / (row @ np.linalg.inv(K) @ np.conj(row).T)
+            k_s.append(k)
+        k_s = np.array(k_s)
+
+        # Scale force constants due to projection of imaginary normal modes
+        if self._project_imag and self.n_imag:
+            lengths = np.linalg.norm(self._D, axis=1)
+            lengths_full = np.linalg.norm(self._D_full, axis=1)
+            k_s *= lengths / lengths_full
+        
+        # Compute local mode frequencies TODO add these constants somewhere
+        G = self._D @ self._D.T
+        frequencies = np.sqrt((np.diag(G) * (1.66053904e-27)**-1 * (k_s * (1e-10)**-1 * 1e-8)) / (4 * np.pi**2 * 299792458**2)) / 100
+        
+        self.local_force_constants = k_s
+        self.local_frequencies = frequencies
+
+    def _parse_fchk_file(self, file):
+        # Read fchk file
+        lines = open(file).readlines()
+
+        # Set up read flags
+        read_modes = False
+        read_hessian = False
+        read_vib_e2 = False
+        read_ic = False
+
+        # Set up containers for reading data
+        modes = []
+        hessian = []
+        vib_e2 = []
+        internal_coordinates = []
+
+        # Parse fchk file
+        for line in lines:
+            # Read normal modes
+            if read_modes:
+                try:
+                    split_line = line.strip().split()
+                    values = [float(value) for value in split_line]
+                    modes.extend(values)
+                except ValueError:
+                    read_modes = False
+            # Read cartesian force constants
+            if read_hessian:
+                try:
+                    split_line = line.strip().split()
+                    values = [float(value) for value in split_line]
+                    hessian.extend(values)
+                except ValueError:
+                    read_hessian = False
+            # Read normal mode force constants
+            if read_vib_e2:
+                try:
+                    split_line = line.strip().split()
+                    values = [float(value) for value in split_line]
+                    vib_e2.extend(values)
+                except ValueError:
+                    read_vib_e2 = False
+            # Read internal coordinates
+            if read_ic:
+                try:
+                    split_line = line.strip().split()
+                    values = [int(value) for value in split_line]
+                    internal_coordinates.extend(values)
+                except ValueError:
+                    read_ic = False
+            # Read number of atoms
+            if "Number of atoms" in line:
+                n_atoms = int(line.strip().split()[4])
+            # Read number of normal modes
+            if "Number of Normal Modes" in line:
+                n_modes = int(line.strip().split()[5])
+            # Read number of internal coordinates
+            if "Redundant internal coordinates" in line:
+                n_redundant = int(line.strip().split()[5])        
+            if "Vib-Modes" in line:
+                read_modes = True
+            if "Cartesian Force Constants" in line:
+                read_hessian = True
+            if "Vib-E2 " in line:
+                read_vib_e2 = True
+            if "Redundant internal coordinate indices" in line:
+                read_ic = True
+
+        # Take out normal mode force constants
+        force_constants = np.array(vib_e2[n_modes * 2:n_modes * 3])
+
+        # Construct force constant matrix from lower triangle       
+        fc_matrix = np.zeros((n_atoms * 3, n_atoms * 3))
+        fc_matrix[np.tril_indices_from(fc_matrix)] = hessian
+        fc_matrix = np.triu(fc_matrix.T, 1) + fc_matrix
+
+        # Take out the internal coordinates
+        internal_coordinates = np.array(internal_coordinates)
+        n_coordinates = int(len(internal_coordinates) / 4)
+        internal_indices = {}
+        for i, coordinate in enumerate(np.split(internal_coordinates, n_coordinates)):
+            pruned_coordinate = [i for i in coordinate if i != 0]
+            internal_indices[frozenset(pruned_coordinate)] = i
+        
+        # Set up attributes
+        self._fc_matrix = fc_matrix
+        self._normal_modes = np.array(modes).reshape(n_modes, n_atoms * 3)
+        self._force_constants = force_constants
+        self.internal_indices = internal_indices
+
+    def _parse_log_file(self, file):
+        # Read the log file
+        lines = open(file).readlines()
+        
+        # Set up read flags
+        read_b_atoms = False
+        read_b_vectors = False
+        read_fc_matrix = False
+        read_ifc_matrix = False
+        read_input_orientation = False
+        read_standard_orientation = False
+        read_internal = False
+        read_internal_modes = False
+        read_hp_modes = False
+
+        # Set up containers for reading data
+        B_atom_map = {}
+        B_vectors = {}
+        normal_modes = []
+        internal_modes = []
+        force_constants = []
+        fc_matrix = np.array([])
+        ifc_matrix = np.array([])
+        input_coordinates = []
+        standard_coordinates = []
+        n_imag = None
+        internal_indices = {}
+
+        # Parse through log file content
+        for line in lines:
+            # Read in internal coordinate definitions
+            if read_internal:
+                if counter > 1:
+                    if " --------------------------------------------------------------------------------" in line:
+                        read_internal = False
+                        n_internals = len(internal_indices.items())
+                    else:
+                        split_line = line.strip().split()
+                        name = split_line[1]
+                        internal_names.append(name)
+                        atoms = split_line[2][2:].replace(")", "").split(",")
+                        atoms = [int(atom) for atom in atoms]
+                        internal_indices[frozenset(atoms)] = counter - 2
+                counter += 1 
+            # Read in Cartesian force constant matrix
+            if read_fc_matrix:
+                if  " FormGI is forming" in line:
+                    read_fc_matrix = False
+                    fc_matrix = np.triu(fc_matrix.T, 1) + fc_matrix
+                elif "          " in line:
+                    column_indices = [int(value) for value in line.strip().split()]
+                elif "D" in line:
+                    split_line = line.strip().split()
+                    row_index = int(split_line[0]) - 1
+                    values = split_line[1:]
+                    values = [float(value.replace("D", "E")) for value in values]
+                    for i, value in enumerate(values):
+                        column_index = column_indices[i] - 1
+                        fc_matrix[row_index, column_index] = value   
+            # Read in internal force constant matrix 
+            if read_ifc_matrix:
+                if  "Leave Link  716" in line:
+                    read_ifc_matrix = False
+                    ifc_matrix = np.triu(ifc_matrix.T, 1) + ifc_matrix
+                elif "          " in line:
+                    column_indices = [int(value) for value in line.strip().split()]
+                elif "D" in line:
+                    split_line = line.strip().split()
+                    row_index = int(split_line[0]) - 1
+                    values = split_line[1:]
+                    values = [float(value.replace("D", "E")) for value in values]
+                    for i, value in enumerate(values):
+                        column_index = column_indices[i] - 1
+                        ifc_matrix[row_index, column_index] = value
+            # Read in atoms for creation of B matrix       
+            if read_b_atoms:
+                if " B Matrix in FormBX:" in line:
+                    read_b_atoms = False
+                else:
+                    if counter == 0:
+                        atoms = [int(value) for value in line.strip().split()]
+                        for atom in atoms:
+                            B_atom_map[atom] = []
+                    if counter > 0 and counter < 5:
+                        values = [int(value) for value in line.strip().split()[1:]]
+                        for atom, value in zip(atoms, values):
+                            B_atom_map[atom].append(value)
+                    counter += 1
+                    if counter == 5:
+                        counter = 0
+            # Read in values of B matrix
+            if read_b_vectors:
+                if  " IB Matrix in Red2BG:" in line or "Iteration" in line or " G Matrix:" in line:
+                    read_b_vectors = False
+                else:
+                    if counter == 0:
+                        atoms = [int(value) for value in line.strip().split()]
+                        for atom in atoms:
+                            B_vectors[atom] = []
+                    if counter > 0 and counter < 13:
+                        values = [float(value.replace("D", "E")) for value in line.strip().split()[1:]]
+                        for atom, value in zip(atoms, values):
+                            B_vectors[atom].append(value)
+                    counter += 1
+                    if counter == 13:
+                        counter = 0
+            # Read atomic coordinates in input orientation
+            if read_input_orientation:
+                if counter > 3:
+                    if "---------------------------------------------------------------------" in line:
+                        read_input_orientation = False
+                    else:
+                        strip_line = line.strip().split()
+                        values = [float(value) for value in strip_line[3:]]
+                        input_coordinates.append(values)
+                counter += 1
+            # Read atomic coordinates in standard orientation   
+            if read_standard_orientation:
+                if counter > 3:
+                    if "---------------------------------------------------------------------" in line:
+                        read_standard_orientation = False
+                    else:
+                        strip_line = line.strip().split()
+                        values = [float(value) for value in strip_line[3:]]
+                        standard_coordinates.append(values)                    
+                counter += 1
+            # Read decomposition of normal modes in internal coordinates
+            if read_internal_modes:
+                if counter > 3:
+                    if "--------------------------------------------------------------------------------" in line:
+                        read_internal_modes = False
+                        internal_modes.append(internal_vector)
+                    else:
+                        value = float(line.strip().split()[3])
+                        internal_vector.append(value)    
+                counter += 1
+            # Read high-precision normal modes 
+            if read_hp_modes:
+                if counter < n_atoms * 3:
+                    strip_line = line.strip().split()
+                    values = [float(value) for value in strip_line[3:]]
+                    coordinates.append(values)
+                if counter == n_atoms * 3:
+                    coordinates = np.array(coordinates)
+                    normal_modes.append(coordinates)
+                    read_hp_modes = False
+                counter += 1
+            # Read number of atoms
+            if " NAtoms=" in line:
+                n_atoms = int(line.strip().split()[1])
+            # Read normal mode force constants
+            if "Frc consts" in line:
+                split_line = line.strip().split()
+                values = [float(value) for value in split_line[3:]]
+                force_constants.extend(values)
+            # Read number of imaginary frequencies
+            if "imaginary frequencies (negative Signs)" in line:
+                n_imag = int(line.strip().split()[1])
+            if "Name  Definition              Value          Derivative Info." in line:
+                read_internal = True
+                counter = 1
+                internal_names = []
+            if " IB Matrix in FormBX:" in line:
+                read_b_atoms = True
+                counter = 0
+            if " B Matrix in FormBX:" in line:
+                read_b_vectors = True
+                counter = 0
+            if " Force constants in Cartesian coordinates: " in line:
+                read_fc_matrix = True
+                fc_matrix = np.zeros((3 * n_atoms, 3 * n_atoms))
+                counter = 0
+            if " Force constants in internal coordinates: " in line:
+                read_ifc_matrix = True
+                ifc_matrix = np.zeros((n_internals, n_internals))                
+                counter = 0
+            if "Input orientation: " in line:
+                read_input_orientation = True
+                counter = 0
+            if "Standard orientation: " in line:
+                read_standard_orientation = True
+                counter = 0 
+            if "Normal Mode" in line:
+                read_internal_modes = True
+                counter = 1
+                internal_vector = []           
+            if " Coord Atom Element:" in line:
+                read_hp_modes = True
+                coordinates = []
+                counter = 0
+        
+        # Construct the B matrix from atoms and vectors
+        n_cartesian = n_atoms * 3
+        B = np.zeros((n_internals, n_cartesian))
+        for i in range(n_internals):
+            for j, atom in enumerate(B_atom_map[i + 1]):
+                if atom:
+                    B[i][(atom - 1) * 3:(atom - 1) * 3 + 3] = B_vectors[i + 1][j * 3 :j * 3 + 3]
+        B_inv = np.linalg.pinv(B)
+
+        # Detect whether the internal coordinate system is redundant
+        if B.shape[0] == len(force_constants):
+            self._redundant = False
+        else:
+            self._redundant = True
+        
+        # Detect whether the input coordinates have been rotated. If so, rotate
+        # B matrix and its inverse.
+        input_coordinates = np.array(input_coordinates).reshape(-1, 3)
+        standard_coordinates = np.array(standard_coordinates).reshape(-1, 3)
+        
+        if not np.array_equal(input_coordinates, standard_coordinates) and standard_coordinates.size > 0:
+            rotation_i_to_s = kabsch_rotation_matrix(input_coordinates, standard_coordinates)
+            B = (rotation_i_to_s @ B.reshape(-1, 3).T).T.reshape(n_internals, -1)
+            B_inv = np.linalg.pinv(B)
+            self._rotation_matrix = rotation_i_to_s
+        
+        # Set up attributes
+        self._B = B
+        self._B_inv = B_inv
+        self._fc_matrix = fc_matrix
+        if fc_matrix.size == 0 and ifc_matrix.size > 0:
+           self._fc_matrix = B.T @ ifc_matrix @ B
+        self._ifc_matrix = ifc_matrix
+        self._force_constants = np.array(force_constants)
+        if len(normal_modes) > 0:
+            self._normal_modes = np.hstack(normal_modes).T 
+        else:
+            self._normal_modes = np.array([])
+        if len(internal_modes) > 0:
+            self._D = np.array(internal_modes).T
+        self.n_imag = n_imag
+        self.internal_indices = internal_indices
+        self.internal_names = internal_names
+        self._input_coordinates = input_coordinates
+        self._standard_coordinate = standard_coordinates
+    
+    def _parse_pes_file(self, file):
+        # Read PES file
+        lines = open(file).readlines()
+        
+        # Set up read flags
+        read_hessian = False
+
+        # Set up containers for reading data
+        hessian = []
+
+        for line in lines:
+            # Read Cartesian force constant matrix
+            if read_hessian:
+                try:
+                    split_line = line.strip().split()
+                    values = [float(value.replace("D", "E")) for value in split_line]
+                    hessian.extend(values)
+                except ValueError:
+                    read_hessian = False
+            # Read number of atoms
+            if " NAtoms= " in line:
+                n_atoms = int(line.strip().split()[1]) 
+            if "Cartesian Force constants:" in line:
+                read_hessian = True
+                hessian = []
+
+        # Construct force constant matrix from lower triangle
+        fc_matrix = np.zeros((n_atoms * 3, n_atoms * 3))
+        fc_matrix[np.tril_indices_from(fc_matrix)] = hessian
+        fc_matrix = np.triu(fc_matrix.T, 1) + fc_matrix
+        fc_matrix = (self._rotation_matrix @ fc_matrix.T.reshape(-1, 3, 3) @ self._rotation_matrix).reshape(12, 12).T[:3]
+
+        # Set up attributes
+        self._fc_matrix = fc_matrix
+
+    def _prune_imaginary(self):
+        # Save full D matrix and force constant vector
+        self._D_full = self._D
+        self._force_constants_full = self._force_constants
+
+        # Remove force constants with imaginary force constants
+        self._force_constants = self._force_constants[self.n_imag:]
+        self._D = self._D[:, self.n_imag:]
+    
     """Calculates local force constants of Cremer and co-workers.
     
     Args:
         filename (str): Filename of Gaussian log file.
     """
 
-    def __init__(self, filename):
-        self._filename = filename
-        self._parse_log_file()
+    def __init__(self, log_file, fchk_file, cutoff=0.001):
+        self.cutoff = cutoff
+        self._parse_log_file(log_file)
+        self._parse_fchk_file(fchk_file)
+        #if self._n_imag:
+        self._prune_imaginary()
         self._compute_local_force_constants()
     
     def get_local_force_constant(self, atom_1, atom_2):
@@ -1446,20 +1988,61 @@ class LocalForce:
             atom_1, atom_2 = sorted(atoms)
             print(f"{atom_1:<10d}{atom_2:<10d}{force_constant:<10.3f}")
     
+    def _prune_imaginary(self):
+        indices_small = np.where(np.array(self._force_constants) < self.cutoff)[0]
+        if len(indices_small) > 0:
+            self._force_constants[indices_small] = np.array(self.cutoff).reshape(-1)
+        #self._normal_vectors_full = self._normal_vectors
+        #self._force_constants_full = self._force_constants
+        #self._force_constants = np.delete(self._force_constants, indices_small)
+        #self._normal_vectors = np.delete(self._normal_vectors, indices_small, axis=1)
+
+        #n_imag = int(np.max(np.where(np.array(self._frequencies) < 0)[0])) + 1
+        #self._normal_vectors_imaginary = self._normal_vectors
+        #self._force_constants_imaginary = self._force_constants
+        #self._force_constants = self._force_constants[self._n_imag:]
+        #self._normal_vectors = self._normal_vectors[:, self._n_imag:]
+    
     def _compute_local_force_constants(self):
         K = np.diag(self._force_constants)
         k_s = []
         for row in self._normal_vectors:
             k = 1 / (row @ np.linalg.inv(K) @ np.conj(row).T)
             k_s.append(k)
+        if self._n_imag:
+            lengths = np.linalg.norm(self._normal_vectors, axis=1)
+            lengths_imaginary = np.linalg.norm(self._normal_vectors_imaginary, axis=1)
+            k_s *= lengths / lengths_imaginary
         k_s = np.array(k_s)
-        self.local_force_constants = k_s
+        self.local_force_constants = np.array(k_s)
     
-    def _parse_log_file(self):
-        lines = open(self._filename).readlines()
+    def _parse_fchk_file(self, filename):
+        # Read in values for lower triangle
+        lines = open(filename).readlines()
+        
+        vib_e2 = []
+        read = False
+        for line in lines:
+            if read:
+                try:
+                    split_line = line.strip().split()
+                    values = [float(value) for value in split_line]
+                    vib_e2.extend(values)
+                except ValueError:
+                    read_fc = False               
+            if "Vib-E2 " in line:
+                read = True
+            if "Number of Normal Modes" in line:
+                n_modes = int(line.strip().split()[5])
+        self._force_constants = np.array(vib_e2[n_modes * 2:n_modes * 3])
+    
+    def _parse_log_file(self, filename):
+        lines = open(filename).readlines()
         internal_indices = {}
         force_constants = []
         normal_vectors = []
+        frequencies = []
+        n_imag = 0
         
         read_internal = False
         read_normal = False
@@ -1494,14 +2077,22 @@ class LocalForce:
                 read_normal = True
                 normal_counter = 1
                 normal_vector = []
-            if "Frc consts" in line:
+            if "Frc consts --" in line:
                 split_line = line.strip().split()
                 values = [float(value) for value in split_line[3:]]
                 force_constants.extend(values)
+            if "Frequencies --" in line:
+                split_line = line.strip().split()
+                values = [float(value) for value in split_line[2:]]
+                frequencies.extend(values)
+            if "imaginary frequencies (negative Signs)" in line:
+                n_imag = int(line.strip().split()[1])
 
         self._force_constants = np.array(force_constants)
         self.internal_indices = internal_indices
-        self._normal_vectors = np.array(normal_vectors).T 
+        self._normal_vectors = np.array(normal_vectors).T
+        self._frequencies = frequencies
+        self._n_imag = n_imag
 
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"    
