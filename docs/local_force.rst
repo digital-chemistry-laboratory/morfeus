@@ -4,8 +4,7 @@ Local force constants
 
 Local force constants can be calculated with the local modes method [1]_ or the
 compliance matrix method [2]_. A Gaussian log file is currently required.
-Increased accuracy might be achieved by supplying a fchk file with
-high-precision normal modes and normal mode force constants.
+Increased accuracy might be achieved by supplying a fchk file.
 
 ************************
 Preparing Gaussian input
@@ -22,7 +21,7 @@ The local modes method needs normal modes decomposed into contributions from
 internal coordinates as well as normal mode force constants.
 
 1. Normal mode decomposition in Gaussian
-  This is the most simple way. Only the log file is required.
+  This is the easiest way. Only the log file is required.
     ``#p freq(intmodes) iop(7/75=-1) iop(1/33=3)``
 2. Normal mode decomposition from high precision normal modes
   This might increase the accuracy somewhat. Only log file is required.
@@ -37,7 +36,7 @@ constants
 Compliance matrix
 #################
 
-The compliance matrix methods needs the force constant matrix (Hessian).
+The compliance matrix method needs the force constant matrix (Hessian).
 
 1. Force constant matrix from the log file
     ``#p freq(intmodes) iop(1/33=3)``
@@ -50,7 +49,39 @@ The compliance matrix methods needs the force constant matrix (Hessian).
 Command line script
 *******************
 
-Some dummy text here.
+The command line script provides access to the basic functionality through the 
+terminal.
+
+.. code-block:: console
+  :caption: Example of single internal coordinate
+  
+  $ steriplus_local_force freq-hp.log -a 1 2
+  5.364
+
+.. code-block:: console
+  :caption: Example of report
+  
+  $ steriplus_local_force freq-hp.log
+    Atom_1    Atom_2    Atom_3    Atom_4                           Force constant(mDyne/Å)                       Frequency (cm^-1)
+         1         2                                                                 5.364                                    3252
+         1         3                                                                 5.364                                    3252
+         1         4                                                                 5.364                                    3252
+         1         5                                                                 5.364                                    3252
+
+-a <list>
+  List of atoms in the bond/internal coordinate.
+--cutoff <float>
+  Cutoff value for low-frequency modes (default:0.001)
+--fchk_file <str>
+  Name of Gaussian fchk file
+--method <str>
+  Method: "local" (default) or "compliance"
+--no_project_imaginary
+  Flag to disable projection of imaginary modes
+--pes_file <str>
+  Name of Gaussian PES file
+  
+More information is given with ``steriplus_local_force --help``
 
 ******
 Module
@@ -84,6 +115,9 @@ can be controlled with ``cutoff=<float>``. Choice of method is controlled with
 of any fchk file and PES are specified with the ``fchk_file=<str>`` and
 ``pes_file=<str>`` keywords.
 
+For more detailed information, use ``help(LocalForce)`` or see the API:
+:py:class:`steriplus.steriplus.LocalForce`
+
 **********
 Background
 **********
@@ -91,15 +125,15 @@ Background
 Local force constants describe the bond strength based on vibrational
 frequencies. In the literature, there are two approaches to this, the local
 modes method of Cremer [1]_ and the compliance matrix method championed by
-Grunenberg [2]. They have been shown to be equivalent within numerical accuracy
+Grunenberg [2]_. They have been shown to be equivalent within numerical accuracy
 [3]_. Steriplus can use either method, and they give almost identical results
 for most bonds. The exception is when imaginary or very small vibrational
 frequencies exist. In this case, the numerical stability of the local modes
 approach can be improved by two methods: (1) projecting out normal modes with
 imaginary frequencies and (2) raising the force constants of the low-frequency
 modes to a cutoff value. Steriplus does this projection by default and uses a 
-cutoff of 0.001 mDyne/Å for low-frequency modes. We therefore recommend the
-local modes with default setting for this case. Expert users can turn off this
+cutoff of 0.001 mDyne/Å for low-frequency modes. We therefore recommend local
+modes with default settings as the most robust method. Expert users can turn off this
 projection and alter the cutoff value.
 
 Note that interactions involving imaginary modes (such as breaking/forming
