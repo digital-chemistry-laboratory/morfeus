@@ -13,12 +13,13 @@ Scripts:
     script_buried_volume: Calculate buried volume.
     script_cone_angle: Calculate cone angle.
     script_dispersion: Calculate dispersion descriptor.
+    script_local_force: Calculate local force constants.
     script_sasa: Calculate solvent accessible surface area.
     script_steriplus: Calculate Sterimol parameters.
 """
 
 # Version of the Steriplus package
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 from steriplus.steriplus import BuriedVolume, ConeAngle, Dispersion
 from steriplus.steriplus import SASA, Sterimol, LocalForce

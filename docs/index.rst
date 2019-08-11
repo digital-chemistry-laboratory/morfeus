@@ -12,6 +12,7 @@ Welcome to steriplus's documentation!
 
    buried_volume
    cone_angles
+   local_force
    sasa
    sterimol
    api
