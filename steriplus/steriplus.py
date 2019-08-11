@@ -1409,34 +1409,36 @@ class Dispersion:
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
 
-#TODO remove the atomic masses if they are not used
-#TODO fix frequencies with redundant coordinate set
-class LocalForce():
-    def __init__(self, log_file, fchk_file=None, pes_file=None, project_imag=True, cutoff=1e-3, method="local"):
-        """Calculates and stores the results from local force constant 
-        calculations described by Cremer in Int. J. Quantum Chem. 1998, 67, 1.
-        Alternatively, the compliance matrix method can be used according to 
-        J. Chem. Phys. 2010, 132, 184101.
+class LocalForce:
+    """Calculates and stores the results from local force constant 
+    calculations.
+    
+    The method is described by Cremer in Int. J. Quantum Chem. 1998, 67, 1.
+    Alternatively, the compliance matrix method can be used according to 
+    J. Chem. Phys. 2010, 132, 184101.
 
-        Args:
-            log_file (str): Name of Gaussian log file
-            fchk_file (str): Name of Gaussian fchk file
-            pes_file (stry): Name of Gaussian PES file
-            project_imag (bool): Whether to project out imaginary frequencies
-                when using the local modes method
-            cutoff (float): Cutoff for low force constant when using the local
-                modes method
-            method (str): Method for calculating the local force constants:
-                 'compliance' or 'local' (default)
+    Args:
+        log_file (str): Name of Gaussian log file
+        fchk_file (str): Name of Gaussian fchk file
+        pes_file (stry): Name of Gaussian PES file
+        project_imag (bool): Whether to project out imaginary frequencies
+            when using the local modes method
+        cutoff (float): Cutoff for low force constant when using the local
+            modes method
+        method (str): Method for calculating the local force constants:
+             'compliance' or 'local' (default)
 
-        Attributes:
-            internal_names (list): Gaussian names of internal indices
-            internal_indices (dict): Mapping of internal coordinates to indices
-                for force constants and frequencies
-            local_force_constants (ndarray): Local mode force constants (mDyne/Å)
-            local_frequencies (ndarray): Local mode frequencies (cm^(-1))
-            n_imag (int): Number of normal modes with imaginary frequencies
-        """
+    Attributes:
+        internal_names (list): Gaussian names of internal indices
+        internal_indices (dict): Mapping of internal coordinates to indices
+            for force constants and frequencies
+        local_force_constants (ndarray): Local mode force constants
+            (mDyne/Å)
+        local_frequencies (ndarray): Local mode frequencies (cm^(-1))
+        n_imag (int): Number of normal modes with imaginary frequencies
+    """
+    def __init__(self, log_file, fchk_file=None, pes_file=None, 
+        project_imag=True, cutoff=1e-3, method="local"):
         # Set up attributes
         self._log_file = log_file
         self.n_imag = None
@@ -1514,7 +1516,9 @@ class LocalForce():
         else:
             unit = "mDyne/Å"
         
-        print(f"{'Atom_1':>10s}{'Atom_2':>10s}{'Atom_3':>10s}{'Atom_4':>10s}{'Force constant' + '(' + unit + ')':>50s}{'Frequency (cm^-1)':>40s}")
+        print(f"{'Atom_1':>10s}{'Atom_2':>10s}{'Atom_3':>10s}{'Atom_4':>10s}"
+            f"{'Force constant' + '(' + unit + ')':>50s}"
+            f"{'Frequency (cm^-1)':>40s}")
         
         # Print results for each internal
         for atoms, index in self.internal_indices.items():
@@ -1536,13 +1540,16 @@ class LocalForce():
             for i in range(4):
                 atom = next(atom_iter, "")
                 atom_string += f"{atom:>10}"
-            print(atom_string + f"{force_constant:50.3f}" + f"{frequency:40.0f}")
+            print(atom_string + f"{force_constant:50.3f}" \
+                + f"{frequency:40.0f}")
 
     def _add_cutoff(self):
         # Cut off low force constants at given value
-        indices_small = np.where(np.array(self._force_constants) < self._cutoff)[0]
+        indices_small = np.where(np.array(self._force_constants)
+            < self._cutoff)[0]
         if len(indices_small) > 0:
-            self._force_constants[indices_small] = np.array(self._cutoff).reshape(-1)
+            self._force_constants[indices_small] \
+                = np.array(self._cutoff).reshape(-1)
 
     def _compute_compliance(self):
         # Compute force constant matrix and get local force constants
@@ -1555,7 +1562,8 @@ class LocalForce():
         if self._B.size > 0  and self._normal_modes.size > 0:
             self._D = self._B @ self._normal_modes.T
         elif len(self._D) < 1:
-            raise Exception("Need both B matrix and normal modes, or read local modes.")
+            raise Exception("Need both B matrix and normal modes,"
+                            " or read local modes.")
         
         # Project out imaginary modes
         if self._project_imag:
@@ -1582,7 +1590,8 @@ class LocalForce():
         
         # Compute local mode frequencies TODO add these constants somewhere
         G = self._D @ self._D.T
-        frequencies = np.sqrt((np.diag(G) * (1.66053904e-27)**-1 * (k_s * (1e-10)**-1 * 1e-8)) / (4 * np.pi**2 * 299792458**2)) / 100
+        frequencies = np.sqrt((np.diag(G) * (1.66053904e-27)**-1 \
+            * (k_s * (1e-10)**-1 * 1e-8)) / (4 * np.pi**2 * 299792458**2)) / 100
         
         self.local_force_constants = k_s
         self.local_frequencies = frequencies
@@ -1676,7 +1685,8 @@ class LocalForce():
         # Take out the internal coordinates
         internal_coordinates = np.array(internal_coordinates)
         internal_indices = {}
-        for i, coordinate in enumerate(np.split(internal_coordinates, n_redundant)):
+        for i, coordinate in enumerate(np.split(internal_coordinates,
+                                                n_redundant)):
             pruned_coordinate = [i for i in coordinate if i != 0]
             internal_indices[frozenset(pruned_coordinate)] = i
         
@@ -1739,12 +1749,14 @@ class LocalForce():
                     read_fc_matrix = False
                     fc_matrix = np.triu(fc_matrix.T, 1) + fc_matrix
                 elif "          " in line:
-                    column_indices = [int(value) for value in line.strip().split()]
+                    column_indices = [int(value) for value 
+                                      in line.strip().split()]
                 elif "D" in line:
                     split_line = line.strip().split()
                     row_index = int(split_line[0]) - 1
                     values = split_line[1:]
-                    values = [float(value.replace("D", "E")) for value in values]
+                    values = [float(value.replace("D", "E")) for value
+                              in values]
                     for i, value in enumerate(values):
                         column_index = column_indices[i] - 1
                         fc_matrix[row_index, column_index] = value   
@@ -1754,12 +1766,14 @@ class LocalForce():
                     read_ifc_matrix = False
                     ifc_matrix = np.triu(ifc_matrix.T, 1) + ifc_matrix
                 elif "          " in line:
-                    column_indices = [int(value) for value in line.strip().split()]
+                    column_indices = [int(value) for value 
+                                      in line.strip().split()]
                 elif "D" in line:
                     split_line = line.strip().split()
                     row_index = int(split_line[0]) - 1
                     values = split_line[1:]
-                    values = [float(value.replace("D", "E")) for value in values]
+                    values = [float(value.replace("D", "E")) for value
+                              in values]
                     for i, value in enumerate(values):
                         column_index = column_indices[i] - 1
                         ifc_matrix[row_index, column_index] = value
@@ -1773,7 +1787,8 @@ class LocalForce():
                         for atom in atoms:
                             B_atom_map[atom] = []
                     if counter > 0 and counter < 5:
-                        values = [int(value) for value in line.strip().split()[1:]]
+                        values = [int(value) for value 
+                                  in line.strip().split()[1:]]
                         for atom, value in zip(atoms, values):
                             B_atom_map[atom].append(value)
                     counter += 1
@@ -1781,7 +1796,8 @@ class LocalForce():
                         counter = 0
             # Read in values of B matrix
             if read_b_vectors:
-                if  " IB Matrix in Red2BG:" in line or "Iteration" in line or " G Matrix:" in line:
+                if  " IB Matrix in Red2BG:" in line or "Iteration" in line \
+                        or " G Matrix:" in line:
                     read_b_vectors = False
                 else:
                     if counter == 0:
@@ -1789,7 +1805,8 @@ class LocalForce():
                         for atom in atoms:
                             B_vectors[atom] = []
                     if counter > 0 and counter < 13:
-                        values = [float(value.replace("D", "E")) for value in line.strip().split()[1:]]
+                        values = [float(value.replace("D", "E")) for value
+                                  in line.strip().split()[1:]]
                         for atom, value in zip(atoms, values):
                             B_vectors[atom].append(value)
                     counter += 1
@@ -1893,7 +1910,8 @@ class LocalForce():
         for i in range(n_internals):
             for j, atom in enumerate(B_atom_map[i + 1]):
                 if atom:
-                    B[i][(atom - 1) * 3:(atom - 1) * 3 + 3] = B_vectors[i + 1][j * 3 :j * 3 + 3]
+                    B[i][(atom - 1) * 3:(atom - 1) * 3 + 3] \
+                        = B_vectors[i + 1][j * 3 :j * 3 + 3]
         B_inv = np.linalg.pinv(B)
 
         # Detect whether the internal coordinate system is redundant
@@ -1907,9 +1925,12 @@ class LocalForce():
         input_coordinates = np.array(input_coordinates).reshape(-1, 3)
         standard_coordinates = np.array(standard_coordinates).reshape(-1, 3)
         
-        if not np.array_equal(input_coordinates, standard_coordinates) and standard_coordinates.size > 0:
-            rotation_i_to_s = kabsch_rotation_matrix(input_coordinates, standard_coordinates)
-            B = (rotation_i_to_s @ B.reshape(-1, 3).T).T.reshape(n_internals, -1)
+        if not np.array_equal(input_coordinates, standard_coordinates) \
+                and standard_coordinates.size > 0:
+            rotation_i_to_s = kabsch_rotation_matrix(input_coordinates,
+                                                     standard_coordinates)
+            B = (rotation_i_to_s @ B.reshape(-1, 3).T).T.reshape(n_internals,
+                                                                 -1)
             B_inv = np.linalg.pinv(B)
             self._rotation_matrix = rotation_i_to_s
         
@@ -1949,7 +1970,8 @@ class LocalForce():
             if read_hessian:
                 try:
                     split_line = line.strip().split()
-                    values = [float(value.replace("D", "E")) for value in split_line]
+                    values = [float(value.replace("D", "E")) for value
+                              in split_line]
                     hessian.extend(values)
                 except ValueError:
                     read_hessian = False
@@ -1964,7 +1986,8 @@ class LocalForce():
         fc_matrix = np.zeros((n_atoms * 3, n_atoms * 3))
         fc_matrix[np.tril_indices_from(fc_matrix)] = hessian
         fc_matrix = np.triu(fc_matrix.T, 1) + fc_matrix
-        fc_matrix = (self._rotation_matrix @ fc_matrix.T.reshape(-1, 3, 3) @ self._rotation_matrix).reshape(12, 12).T[:3]
+        fc_matrix = (self._rotation_matrix @ fc_matrix.T.reshape(-1, 3, 3) @ 
+                     self._rotation_matrix).reshape(12, 12).T[:3]
 
         # Set up attributes
         self._fc_matrix = fc_matrix

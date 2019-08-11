@@ -5,7 +5,7 @@ with open("README.rst", "r") as fh:
 
 setuptools.setup(
     name="steriplus",
-    version="0.3.0",
+    version="0.4.0",
     author="Kjell Jorner",
     author_email="kjell.jorner@gmail.com",
     description="A package to calculate steric descriptors.",

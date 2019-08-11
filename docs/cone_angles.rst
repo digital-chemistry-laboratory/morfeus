@@ -1,6 +1,6 @@
-###########
-Cone angles
-###########
+##########
+Cone angle
+##########
 
 Exact cone angles are implemented as described by Allen and co-workers [1]_.
 

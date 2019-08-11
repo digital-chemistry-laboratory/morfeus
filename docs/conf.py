@@ -43,7 +43,8 @@ extensions = [
     'sphinx.ext.napoleon',
 ]
 
-autodoc_mock_imports = ["numpy", "scipy", "matplotlib", "rdkit", "mpl_toolkits"]
+autodoc_mock_imports = ["numpy", "scipy", "matplotlib", "rdkit", "mpl_toolkits",
+                        "vtk", "pyvista", "pymeshfix"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
