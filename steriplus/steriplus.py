@@ -1,10 +1,11 @@
 """Classes for performing calculations of steric descriptors of molecules.
 
 Classes:
-    BuriedVolume: Calculates buried volumes
+    BuriedVolume: Calculates buried volumes.
     ConeAngle: Calculates exact cone angles.
+    LocalForce: Calculates local force constants.
     SASA: Calculates solvent accessible surface area.
-    Sterimol: Calculates Sterimol parameters
+    Sterimol: Calculates Sterimol parameters.
 """
 import math
 import itertools

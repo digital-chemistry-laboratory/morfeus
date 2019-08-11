@@ -1,6 +1,6 @@
-===============================
+=====================
 Local force constants
-===============================
+=====================
 
 Local force constants can be calculated with the local modes method [1]_ or the
 compliance matrix method [2]_. A Gaussian log file is currently required.
