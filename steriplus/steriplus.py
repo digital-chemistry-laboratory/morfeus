@@ -1466,6 +1466,7 @@ class LocalForce:
             self._compute_local()
         if method == "compliance":
             self._compute_compliance()
+        self._compute_frequencies()
 
     def get_local_force_constant(self, atoms):
         """Return the local force constant between a set of atoms.
@@ -1556,7 +1557,16 @@ class LocalForce:
         C = self._B @ np.linalg.pinv(self._fc_matrix) @ self._B.T
         k_s = 1 / np.diag(C) * 15.569141 #TODO update constants
         self.local_force_constants = k_s
+    
+    def _compute_frequencies(self):
+        # Compute local mode frequencies TODO add these constants somewhere
+        M = np.diag(np.repeat(self._atomic_masses, 3))
+        G = self._B @ np.linalg.inv(M) @ self._B.T
+        frequencies = np.sqrt((np.diag(G) * (1.66053904e-27)**-1 \
+            * (self.local_force_constants * (1e-10)**-1 * 1e-8)) / (4 * np.pi**2 * 299792458**2)) / 100
         
+        self.local_frequencies = frequencies
+
     def _compute_local(self):
         # Compute D matrix from normal modes and B matrix
         if self._B.size > 0  and self._normal_modes.size > 0:
@@ -1588,13 +1598,7 @@ class LocalForce:
             lengths_full = np.linalg.norm(self._D_full, axis=1)
             k_s *= lengths / lengths_full
         
-        # Compute local mode frequencies TODO add these constants somewhere
-        G = self._D @ self._D.T
-        frequencies = np.sqrt((np.diag(G) * (1.66053904e-27)**-1 \
-            * (k_s * (1e-10)**-1 * 1e-8)) / (4 * np.pi**2 * 299792458**2)) / 100
-        
         self.local_force_constants = k_s
-        self.local_frequencies = frequencies
 
     def _prune_imaginary(self):
         # Save full D matrix and force constant vector

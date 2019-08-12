@@ -17,7 +17,6 @@ Welcome to steriplus's documentation!
    local_force
    sasa
    sterimol
-   notes
    api
 
 ==================

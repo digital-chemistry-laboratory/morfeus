@@ -139,28 +139,28 @@ projection and alter the cutoff value.
 Note that interactions involving imaginary modes (such as breaking/forming
 bonds in transition states) cannot be assessed by the local force constants.
 
-The results have been benchmarked against the local force constants for small
-organic molecules given by Cremer [3]_. 
+The results have been benchmarked against the local force constants and
+frequencies for small organic molecules given by Cremer [3]_. 
 
 .. figure:: benchmarks/local_force/organic_intmodes.png
   
-  Benchmark of local force constants against data from Table 1 of ref. [3]_
-  Data obtained using the local modes approach with recipe 1.
+  Benchmark of local force constants and frequencies against data from Table 1
+  of ref. [3]_. Data obtained using the local modes method with recipe 1.
 
 .. figure:: benchmarks/local_force/organic_hpmodes.png
   
-  Benchmark of local force constants against data from Table 1 of ref. [3]_
-  Data obtained using the local modes approach with recipe 2.
+  Benchmark of local force constants and frequencies against data from Table 1
+  of ref. [3]_. Data obtained using the local modes method with recipe 2.
 
 .. figure:: benchmarks/local_force/organic_fchk.png
   
-  Benchmark of local force constants against data from Table 1 of ref. [3]_
-  Data obtained using the local modes approach with recipe 3.
+  Benchmark of local force constants and frequencies against data from Table 1
+  of ref. [3]_. Data obtained using the local modes method with recipe 3.
 
 .. figure:: benchmarks/local_force/organic_compliance.png
   
-  Benchmark of local force constants against data from Table 1 of ref. [3]_
-  Data obtained using the compliance matrix approach with recipe 2.
+  Benchmark of local force constants and frequencies against data from Table 1
+  of ref. [3]_. Data obtained using the compliance matrix method with recipe 1.
 
 **********
 References
