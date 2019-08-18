@@ -11,7 +11,7 @@ def main():
         'file', type=str, help='Input file, either .xyz, .gjf or .com')
     parser.add_argument(
         '--density', type=float,
-        help='Density of points on sphere vdW surface (default: 0.01',
+        help='Density of points on sphere vdW surface (default: 0.1)',
         default=0.1)
     parser.add_argument(
         '--cube_file', type=str, help='Cube file of electron density.')

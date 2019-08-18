@@ -13,7 +13,8 @@ Welcome to steriplus's documentation!
 
    notes
    buried_volume
-   cone_angles
+   cone_angle
+   dispersion
    local_force
    sasa
    sterimol

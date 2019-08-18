@@ -37,6 +37,8 @@ else:
 _warning_vtk = "Install pyvista and vtk to use this function."
 
 import scipy.spatial
+from scipy.io import FortranFile
+from scipy.constants import physical_constants
 from scipy.spatial import cKDTree
 from scipy.spatial.distance import cdist, euclidean
 
@@ -47,6 +49,8 @@ from steriplus.geometry import kabsch_rotation_matrix
 from steriplus.helpers import check_distances, convert_elements, get_radii
 from steriplus.helpers import D3Calculator, conditional
 from steriplus.io import CubeParser, D3Parser, D4Parser, VertexParser
+
+C = physical_constants["speed of light in vacuum"]
 
 class Sterimol:
     """Performs and stores results of Sterimol calculation.
@@ -1308,7 +1312,6 @@ class Dispersion:
         # Calculate p_min and p_max with slight modification to Robert's 
         # definitions
         p_sorted = np.sort(p)
-        #self.p_min = np.median(p_sorted[:100]) # Robert's definition
         self.p_min = np.mean(p_sorted[:10])
         self.p_max = np.mean(p_sorted[-10:])
 
@@ -1957,7 +1960,7 @@ class LocalForce:
         self.internal_indices = internal_indices
         self.internal_names = internal_names
         self._input_coordinates = input_coordinates
-        self._standard_coordinate = standard_coordinates
+        self._standard_coordinates = standard_coordinates
     
     def _parse_pes_file(self, file):
         # Read PES file
@@ -1996,5 +1999,19 @@ class LocalForce:
         # Set up attributes
         self._fc_matrix = fc_matrix
 
+    def _parse_xtb_normal_modes(self, file="xtb_normal_modes"):
+        # Read in data from xtb normal modes file
+        fortran_file = FortranFile(file)
+        n_modes = fortran_file.read_ints()[0]
+        frequencies = fortran_file.read_reals()
+        reduced_masses = fotran_file.read_reals()
+        xtb_normal_modes = fortran_file.read_reals().reshape(n_modes, - 1)
+
+        # Calculate force constants #TODO when we get reliable reduced masses
+        #force_constants = 4 * np.pi ** 2 * (frequencies * 1e2) ** 2 * C ** 2 * reduced_masses
+
+        self._normal_modes = xtb_normal_modes
+        #self._force_constants = force_constants
+    
     def __repr__(self):
         return f"{self.__class__.__name__}({self._log_file!r})"    

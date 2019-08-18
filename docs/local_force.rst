@@ -160,7 +160,7 @@ frequencies for small organic molecules given by Cremer [3]_.
 .. figure:: benchmarks/local_force/organic_compliance.png
   
   Benchmark of local force constants and frequencies against data from Table 1
-  of ref. [3]_. Data obtained using the compliance matrix method with recipe 1.
+  of ref. [3]_. Data obtained using the compliance matrix method with recipe 2.
 
 **********
 References

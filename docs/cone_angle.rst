@@ -68,11 +68,11 @@ The method implemented in Steriplus is taken directly from the article by Allen
 [1]_. The results have been benchmarked against Table 1 of the original article
 and agree within numerical accuracy.
 
-.. figure:: benchmarks/cone_angles/cone_angles_min.png
+.. figure:: benchmarks/cone_angle/cone_angles_min.png
   
   Benchmark of minimum cone angles from Table 1 of ref. [1]_
 
-.. figure:: benchmarks/cone_angles/cone_angles_max.png
+.. figure:: benchmarks/cone_angle/cone_angles_max.png
 
   Benchmark of maximum cone angles from Table 1 of ref. [1]_
 
