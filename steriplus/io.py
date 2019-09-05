@@ -7,7 +7,7 @@ Functions:
 import numpy as np
 
 from steriplus.helpers import convert_elements
-from steriplus.data import angstrom_to_bohr
+from steriplus.data import BOHR_TO_ANGSTROM
 
 class CubeParser:
     """Parses Gaussian cube file of electron density
@@ -37,19 +37,19 @@ class CubeParser:
         n_atoms = int(lines[0].strip().split()[0])
         
         # Get the minimum values along the axes
-        min_x = float(lines[0].strip().split()[1]) / angstrom_to_bohr
-        min_y = float(lines[0].strip().split()[2]) / angstrom_to_bohr
-        min_z = float(lines[0].strip().split()[3]) / angstrom_to_bohr
+        min_x = float(lines[0].strip().split()[1]) * BOHR_TO_ANGSTROM
+        min_y = float(lines[0].strip().split()[2]) * BOHR_TO_ANGSTROM
+        min_z = float(lines[0].strip().split()[3]) * BOHR_TO_ANGSTROM
         
         # Get the number of points and step size along each axis
         n_points_x = int(lines[1].strip().split()[0])
-        step_x = float(lines[1].strip().split()[1]) / angstrom_to_bohr
+        step_x = float(lines[1].strip().split()[1]) * BOHR_TO_ANGSTROM
         
         n_points_y = int(lines[2].strip().split()[0])
-        step_y = float(lines[2].strip().split()[2]) / angstrom_to_bohr
+        step_y = float(lines[2].strip().split()[2]) * BOHR_TO_ANGSTROM
 
         n_points_z = int(lines[3].strip().split()[0])
-        step_z = float(lines[3].strip().split()[3]) / angstrom_to_bohr
+        step_z = float(lines[3].strip().split()[3]) * BOHR_TO_ANGSTROM
        
         # Generate grid
         x = min_x + np.arange(0, n_points_x) * step_x

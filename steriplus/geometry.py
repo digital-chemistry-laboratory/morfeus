@@ -13,6 +13,8 @@ import math
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+from steriplus.data import ANGSTROM_TO_BOHR
+
 class Atom:
     """Atom common for Steriplus calculations.
 
@@ -271,6 +273,173 @@ class Sphere:
     def __repr__(self):
         return (f"{self.__class__.__name__}(center: {self.center}, "
                 f"radius: {self.radius})")
+
+class InternalCoordinates:
+    def __init__(self, coordinates):
+        n_atoms = len(coordinates)
+        self.internal_coordinates = set()
+    
+    def add_bond(self, atom_1, atom_2):
+        bond = Bond(atom_1, atom_2)
+        self.internal_coordinates.add(bond)
+    
+    def add_angle(self, atom_1, atom_2, atom_3):
+        angle = Angle(atom_1, atom_2, atom_3)
+        self.internal_coordinates.add(angle)
+    
+    def add_dihedral(self, atom_1, atom_2, atom_3, atom_4):
+        dihedral = Dihedral(atom_1, atom_2, atom_3, atom_4)
+        self.internal_coordinates.add(dihedral)
+    
+    def get_B_matrix(self, coordinates):
+        b_vectors = []
+        for internal_coordinate in self.internal_coordinates:
+            b_vectors.append(internal_coordinate.get_b_vector(coordinates))
+        B_matrix = np.vstack(b_vectors)
+        
+        return B_matrix   
+
+class Bond:
+    def __init__(self, atom_1, atom_2):
+        self.i = atom_1
+        self.j = atom_2
+        self.atoms = frozenset([atom_1, atom_2])
+    
+    def get_b_vector(self, coordinates):
+        i, j = self.i - 1, self.j -1
+        v = (coordinates[i] - coordinates[j]) * ANGSTROM_TO_BOHR
+        r = np.linalg.norm(v)
+        grad  = np.array([v / r, -v / r])
+        
+        b_vector = np.zeros(coordinates.size)
+        b_vector[i * 3:i * 3 + 3] = grad[0]
+        b_vector[j * 3:j * 3 + 3] = grad[1]
+        
+        return b_vector
+
+    def __repr__(self):
+        atoms = ", ".join(str(i) for i in sorted(self.atoms))
+        return (f"{self.__class__.__name__}({atoms})")
+
+class Angle:
+    def __init__(self, atom_1, atom_2, atom_3):
+        self.i = atom_1
+        self.j = atom_2
+        self.k = atom_3
+        self.atoms = frozenset([atom_1, atom_2, atom_3])
+    
+    def get_b_vector(self, coordinates):
+        i, j, k = self.i - 1, self.j - 1, self.k - 1
+        v_1 = (coordinates[i] - coordinates[j]) * ANGSTROM_TO_BOHR
+        v_2 = (coordinates[k] - coordinates[j]) * ANGSTROM_TO_BOHR
+        dot_product = np.dot(v_1, v_2) / (np.linalg.norm(v_1) * np.linalg.norm(v_2))
+        if dot_product < -1:
+            dot_product = -1
+        elif dot_product > 1:
+            dot_product = 1
+        phi = np.arccos(dot_product)
+        if abs(phi) > np.pi - 1e-6:
+            grad = [
+                (np.pi - phi) / (2 * np.linalg.norm(v_1) ** 2) * v_1,
+                (1 / np.linalg.norm(v_1) - 1 / np.linalg.norm(v_2)) * (np.pi - phi) / (2 * np.linalg.norm(v_1)) * v_1,
+                (np.pi - phi) / (2 * np.linalg.norm(v_2) ** 2) * v_2,
+            ]
+        else:
+            grad = [
+                1 / np.tan(phi) * v_1 / np.linalg.norm(v_1) ** 2
+                - v_2 / (np.linalg.norm(v_1) * np.linalg.norm(v_2) * np.sin(phi)),
+                (v_1 + v_2) / (np.linalg.norm(v_1) * np.linalg.norm(v_2) * np.sin(phi))
+                - 1 / np.tan(phi) * (v_1 / np.linalg.norm(v_1) ** 2 + v_2 / np.linalg.norm(v_2) ** 2),
+                1 / np.tan(phi) * v_2 / np.linalg.norm(v_2) ** 2
+                - v_1 / (np.linalg.norm(v_1) * np.linalg.norm(v_2) * np.sin(phi)),
+            ]
+        
+        b_vector = np.zeros(coordinates.size)
+        b_vector[i * 3:i * 3 + 3] = grad[0]
+        b_vector[j * 3:j * 3 + 3] = grad[1]
+        b_vector[k * 3:k * 3 + 3] = grad[2]
+        
+        return b_vector
+
+    def __repr__(self):
+        atoms = ", ".join(str(i) for i in sorted(self.atoms))
+        return (f"{self.__class__.__name__}({atoms})")
+
+class Dihedral:
+    def __init__(self, atom_1, atom_2, atom_3, atom_4):
+        self.i = atom_1
+        self.j = atom_2
+        self.k = atom_3
+        self.l = atom_4
+        self.atoms = frozenset([atom_1, atom_2, atom_3, atom_4])
+
+    def get_b_vector(self, coordinates):       
+        i, j, k, l = self.i - 1, self.j - 1, self.k - 1, self.l - 1
+        v_1 = (coordinates[i] - coordinates[j]) * ANGSTROM_TO_BOHR
+        v_2 = (coordinates[l] - coordinates[k]) * ANGSTROM_TO_BOHR
+        w = (coordinates[k] - coordinates[j]) * ANGSTROM_TO_BOHR
+        ew = w / np.linalg.norm(w)
+        a_1 = v_1 - np.dot(v_1, ew) * ew
+        a_2 = v_2 - np.dot(v_2, ew) * ew
+        sgn = np.sign(np.linalg.det(np.array([v_2, v_1, w])))
+        sgn = sgn or 1
+        dot_product = np.dot(a_1, a_2) / (np.linalg.norm(a_1) * np.linalg.norm(a_2))
+        if dot_product < -1:
+            dot_product = -1
+        elif dot_product > 1:
+            dot_product = 1
+        phi = np.arccos(dot_product) * sgn
+
+        if abs(phi) > np.pi - 1e-6:
+            g = np.cross(w, a_1)
+            g = g / np.linalg.norm(g)
+            A = np.dot(v_1, ew) / np.linalg.norm(w)
+            B = np.dot(v_2, ew) / np.linalg.norm(w)
+            grad = [
+                g / (np.linalg.norm(g) * np.linalg.norm(a_1)),
+                -((1 - A) / np.linalg.norm(a_1) - B / np.linalg.norm(a_2)) * g,
+                -((1 + B) / np.linalg.norm(a_2) + A / np.linalg.norm(a_1)) * g,
+                g / (np.linalg.norm(g) * np.linalg.norm(a_2)),
+            ]
+        elif abs(phi) < 1e-6:
+            g = np.cross(w, a_1)
+            g = g / np.linalg.norm(g)
+            A = np.dot(v_1, ew) / np.linalg.norm(w)
+            B = np.dot(v_2, ew) / np.linalg.norm(w)
+            grad = [
+                g / (np.linalg.norm(g) * np.linalg.norm(a_1)),
+                -((1 - A) / np.linalg.norm(a_1) + B / np.linalg.norm(a_2)) * g,
+                ((1 + B) / np.linalg.norm(a_2) - A / np.linalg.norm(a_1)) * g,
+                -g / (np.linalg.norm(g) * np.linalg.norm(a_2)),
+            ]
+        else:
+            A = np.dot(v_1, ew) / np.linalg.norm(w)
+            B = np.dot(v_2, ew) / np.linalg.norm(w)
+            grad = [
+                1 / np.tan(phi) * a_1 / np.linalg.norm(a_1) ** 2
+                - a_2 / (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi)),
+                ((1 - A) * a_2 - B * a_1) / (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi))
+                - 1
+                / np.tan(phi)
+                * ((1 - A) * a_1 / np.linalg.norm(a_1) ** 2 - B * a_2 / np.linalg.norm(a_2) ** 2),
+                ((1 + B) * a_1 + A * a_2) / (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi))
+                - 1
+                / np.tan(phi)
+                * ((1 + B) * a_2 / np.linalg.norm(a_2) ** 2 + A * a_1 / np.linalg.norm(a_1) ** 2),
+                1 / np.tan(phi) * a_2 / np.linalg.norm(a_2) ** 2
+                - a_1 / (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi)),
+            ]
+        b_vector = np.zeros(coordinates.size)
+        b_vector[i * 3:i * 3 + 3] = grad[0]
+        b_vector[j * 3:j * 3 + 3] = grad[1]
+        b_vector[k * 3:k * 3 + 3] = grad[2]
+        b_vector[l * 3:l * 3 + 3] = grad[3]
+        
+        return b_vector        
+
+    def __repr__(self):
+        atoms = ", ".join(str(i) for i in sorted(self.atoms))
+        return (f"{self.__class__.__name__}({atoms})")
 
 def rotate_coordinates(coordinates, vector, axis):
     """Rotates coordinates by the rotation that aligns vector with axis.

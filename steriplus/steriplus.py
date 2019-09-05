@@ -42,15 +42,14 @@ from scipy.constants import physical_constants
 from scipy.spatial import cKDTree
 from scipy.spatial.distance import cdist, euclidean
 
-from steriplus.data import atomic_symbols, au_to_kcal, angstrom_to_bohr
-from steriplus.data import jmol_colors
+from steriplus.data import atomic_symbols, HARTREE_TO_KCAL, ANGSTROM_TO_BOHR, HARTREE, BOHR, BOHR_TO_ANGSTROM
+from steriplus.data import jmol_colors, atomic_masses
+from steriplus.data import ANGSTROM, DYNE, C, AMU, AFU, cov_radii_pyykko
 from steriplus.geometry import Atom, Cone, rotate_coordinates, Sphere
 from steriplus.geometry import kabsch_rotation_matrix
 from steriplus.helpers import check_distances, convert_elements, get_radii
 from steriplus.helpers import D3Calculator, conditional
 from steriplus.io import CubeParser, D3Parser, D4Parser, VertexParser
-
-C = physical_constants["speed of light in vacuum"]
 
 class Sterimol:
     """Performs and stores results of Sterimol calculation.
@@ -1270,9 +1269,9 @@ class Dispersion:
         coordinates = np.array([atom.coordinates for atom in self._atoms])
         coordinates = coordinates[atom_indices]
         c6_coefficients = np.array(self._c6_coefficients)
-        c6_coefficients = c6_coefficients[atom_indices] * au_to_kcal
+        c6_coefficients = c6_coefficients[atom_indices] * HARTREE_TO_KCAL
         c8_coefficients = np.array(self._c8_coefficients)
-        c8_coefficients = c8_coefficients[atom_indices] * au_to_kcal
+        c8_coefficients = c8_coefficients[atom_indices] * HARTREE_TO_KCAL
 
         # Take surface points if none are given
         if points.size == 0:
@@ -1282,7 +1281,7 @@ class Dispersion:
             atomic = True
 
         # Calculate p_int for each point
-        dist = cdist(points, coordinates) * angstrom_to_bohr 
+        dist = cdist(points, coordinates) * ANGSTROM_TO_BOHR 
         p = np.sum(np.sqrt(c6_coefficients/(dist**6)), axis=1) \
             + np.sum(np.sqrt(c8_coefficients/(dist**8)), axis=1)
 
@@ -1440,36 +1439,147 @@ class LocalForce:
         local_frequencies (ndarray): Local mode frequencies (cm^(-1))
         n_imag (int): Number of normal modes with imaginary frequencies
     """
-    def __init__(self, log_file, fchk_file=None, pes_file=None, 
-        project_imag=True, cutoff=1e-3, method="local"):
+    def __init__(self, elements=[], coordinates=[]):
         # Set up attributes
-        self._log_file = log_file
         self.n_imag = None
         self.local_force_constants = np.array([])
         self.local_frequencies = np.array([])
         self.internal_indices = {}
         self.internal_names = []
-        self._project_imag = project_imag
-        self._cutoff = cutoff
         self._rotation_matrix = None
-
-        # Read in data from Gaussian log file
-        self._parse_log_file(log_file)
-
-        # Read in high-precision normal modes force constants from fchk file
-        if fchk_file:
-            self._parse_fchk_file(fchk_file)
         
-        # Read in high-precision force constants from PES file.
-        if pes_file:
-            self._parse_pes_file(pes_file)
+        if elements and coordinates:
+            geometry = berny.Geometry(elements, coordinates)
+            self._geometry = geometry
+            self._internal_coordinates = berny.coords.InternalCoords(geometry)
+
+        if elements:
+            elements = convert_elements(elements)
+        self._atomic_masses = np.array([atomic_masses[i] for i in elements])
         
-        # Compute local mode properties from local modes or compliance matrix
-        if method == "local":
-            self._compute_local()
-        if method == "compliance":
-            self._compute_compliance()
-        self._compute_frequencies()
+        self._elements = elements
+        self._coordinates = coordinates
+    
+    def load_file(self, filename, program, filetype):
+        choices = {"gaussian": {"fchk": self._parse_fchk_file,
+                                "log": self._parse_log_file},
+                   "xtb": {"log": self._parse_xtb_file,
+                           "hessian": self._parse_xtb_hessian,
+                           "normal_modes": self._parse_xtb_normal_modes},
+                   "unimolvib": {"local": self._parse_unimovib_local,
+                                 "log": self._parse_unimovib_out},
+                   }
+        choices[program][filetype](filename)
+    
+    def process_internal_coordinates(self):
+        # Detect bonds based on covalent radii
+        covalent_radii = cov_radii_pyykko 
+
+        self._B = self._internal_coordinates.B_matrix(self._geometry)
+        self.internal_indices = {frozenset([i + 1 for i in coord.idx]): j for j, coord in enumerate(self._internal_coordinates._coords)}
+        internal_names = []
+        for atoms in self.internal_indices.keys():
+            atoms = list(atoms)
+            if len(atoms) == 2:
+                coord_type = "Bond"
+            if len(atoms) == 3:
+                coord_type = "Angle"
+            if len(atoms) == 4:
+                coord_type = "Dihedral"
+            internal_names.append(f"{coord_type}({', '.join([str(i) for i in atoms])})")
+
+        self.internal_names = internal_names
+    
+    def normal_mode_analysis(self):
+        """Perform normal mode analysis with projection of translations
+        and vibrations to get normal modes and force constants."""
+        # Set up
+        coordinates = np.array(self._coordinates) * ANGSTROM_TO_BOHR
+        masses = self._atomic_masses 
+        hessian = self._fc_matrix
+        n_atoms = len(coordinates)
+
+        # Create mass matrices
+        M_minus = np.diag(np.repeat(masses, 3)**(-1/2))
+        m_plus = np.repeat(masses, 3)**(1/2)
+        m_minus = np.repeat(masses, 3)**(-1/2)
+        
+        # Mass-weight Hessian
+        hessian_mw = M_minus @ hessian @ M_minus
+        
+        # Find center of mass
+        com = np.sum(masses.reshape(-1, 1) * coordinates, axis=0) / np.sum(masses)
+        
+        # Shift origin to center of mass
+        coordinates -= com    
+        
+        # Construct translation vectors
+        t_x = (np.tile(np.array([1, 0, 0]), n_atoms)).reshape(-1, 3)
+        t_y = (np.tile(np.array([0, 1, 0]), n_atoms)).reshape(-1, 3)
+        t_z = (np.tile(np.array([0, 0, 1]), n_atoms)).reshape(-1, 3)
+        
+        # Construct mass-weighted rotation vectors
+        R_x = np.cross(coordinates, t_x).flatten() * m_plus
+        R_y = np.cross(coordinates, t_y).flatten() * m_plus
+        R_z = np.cross(coordinates, t_z).flatten() * m_plus
+        
+        # Mass-weight translation vectors
+        T_x = t_x.flatten() * m_plus
+        T_y = t_y.flatten() * m_plus
+        T_z = t_z.flatten() * m_plus
+
+        # Remove linear dependencies from translation/rotation space
+        TR_vectors = np.vstack([T_x, T_y, T_z, R_x, R_y, R_z])
+        Q, R = np.linalg.qr(TR_vectors.T)
+        keep_indices = ~np.isclose(np.diag(R), 0, atol=1e-6, rtol=0)
+        TR_vectors = Q.T[keep_indices]
+        n_tr = len(TR_vectors)
+        
+        # Construct P matrix
+        P = np.identity(n_atoms * 3)
+        for vector in TR_vectors:
+            P -= np.outer(vector, vector)
+        
+        # Project out translations and rotations
+        hessian_proj = P.T @ hessian_mw @ P
+        
+        # Diagonalize
+        eigenvalues, eigenvectors = np.linalg.eigh(hessian_proj)
+        eigenvalues = eigenvalues[n_tr:]
+        eigenvectors = eigenvectors[:, n_tr:]
+        
+        # Calculate cartesian displacements
+        cart = eigenvectors.T * m_minus
+        N = 1 / np.linalg.norm(cart, axis=1)
+        norm_cart = cart * N.reshape(-1, 1)
+        reduced_masses = N ** 2
+        
+        # Calculate frequencies and force constants
+        n_imag = np.sum(eigenvalues < 0 )
+        frequencies = np.sqrt(np.abs(eigenvalues) * HARTREE / BOHR ** 2 / AMU) / (2 * np.pi * C) / 100
+        frequencies[:n_imag] = -frequencies[:n_imag]
+        force_constants = 4 * np.pi ** 2 * (frequencies * 100) ** 2 * C ** 2 * reduced_masses * AMU / (DYNE / 1000) * ANGSTROM
+        
+        # Set up attributes
+        self.n_imag = n_imag
+        self._force_constants = force_constants
+        self._normal_modes = norm_cart
+    
+    def add_internal_coordinate(self, atoms):
+        # Make sure that the internal coordinate is not already included.
+        compare_atoms = set(atoms)
+        comparison = [compare_atoms == set([i + 1 for i in coord.idx]) for coord in self._internal_coordinates._coords]
+        if not any(comparison):
+            C = np.ones(self._geometry.bondmatrix().shape)
+            if len(atoms) == 2:
+                coord = berny.coords.Bond(*atoms, C=C)
+            elif len(atoms) == 3:
+                coord = berny.coords.Angle(*atoms, C=C)
+            elif len(atoms) == 4:
+                coord = berny.coords.Dihedral(*atoms, C=C)
+            else:
+                raise Exception("Internal coordinate must refer to 2, 3 or 4 atoms.")
+            self._internal_coordinates.append(coord)
 
     def get_local_force_constant(self, atoms):
         """Return the local force constant between a set of atoms.
@@ -1483,7 +1593,7 @@ class LocalForce:
         atoms = frozenset(atoms)
         index = self.internal_indices.get(atoms)
         if index == None:
-            raise Exception(f"No bond internal coordinate with these atoms.")
+            raise Exception(f"No internal coordinate with these atoms.")
         force_constant = self.local_force_constants[index]
         
         return force_constant
@@ -1547,30 +1657,23 @@ class LocalForce:
             print(atom_string + f"{force_constant:50.3f}" \
                 + f"{frequency:40.0f}")
 
-    def _add_cutoff(self):
-        # Cut off low force constants at given value
-        indices_small = np.where(np.array(self._force_constants)
-            < self._cutoff)[0]
-        if len(indices_small) > 0:
-            self._force_constants[indices_small] \
-                = np.array(self._cutoff).reshape(-1)
-
-    def _compute_compliance(self):
+    def compute_compliance(self):
         # Compute force constant matrix and get local force constants
         C = self._B @ np.linalg.pinv(self._fc_matrix) @ self._B.T
-        k_s = 1 / np.diag(C) * 15.569141 #TODO update constants
+        k_s = 1 / np.diag(C) * AFU / BOHR / (DYNE / 1000) * ANGSTROM
         self.local_force_constants = k_s
     
-    def _compute_frequencies(self):
+    def compute_frequencies(self):
         # Compute local mode frequencies TODO add these constants somewhere
         M = np.diag(np.repeat(self._atomic_masses, 3))
         G = self._B @ np.linalg.inv(M) @ self._B.T
-        frequencies = np.sqrt((np.diag(G) * (1.66053904e-27)**-1 \
-            * (self.local_force_constants * (1e-10)**-1 * 1e-8)) / (4 * np.pi**2 * 299792458**2)) / 100
+        frequencies = np.sqrt((np.diag(G) / AMU \
+            * (self.local_force_constants / ANGSTROM * DYNE / 1000)) \
+            / (4 * np.pi ** 2 * C ** 2)) / 100
         
         self.local_frequencies = frequencies
 
-    def _compute_local(self):
+    def compute_local(self, project_imag=True, cutoff=1e-3):
         # Compute D matrix from normal modes and B matrix
         if self._B.size > 0  and self._normal_modes.size > 0:
             self._D = self._B @ self._normal_modes.T
@@ -1579,38 +1682,42 @@ class LocalForce:
                             " or read local modes.")
         
         # Project out imaginary modes
-        if self._project_imag:
-            self._prune_imaginary()
+        if project_imag and self.n_imag:
+            # Save full D matrix and force constant vector
+            self._D_full = self._D
+            self._force_constants_full = self._force_constants
+    
+            # Remove force constants with imaginary force constants
+            self._force_constants = self._force_constants[self.n_imag:]
+            self._D = self._D[:, self.n_imag:]
         
         # Add cutoff to modes with low force constants
-        if self._cutoff is not None:
-            self._add_cutoff()
+        if cutoff is not None:
+            indices_small = np.where(np.array(self._force_constants)
+                < cutoff)[0]
+            if len(indices_small) > 0:
+                self._force_constants[indices_small] \
+                    = np.array(cutoff).reshape(-1)
                 
         # Compute local mode force constants
         K = np.diag(self._force_constants)
         
         k_s = []
         for row in self._D:
-            k = 1 / (row @ np.linalg.inv(K) @ np.conj(row).T)
-            k_s.append(k)
+            if not np.all(np.isclose(row, 0)):
+                k = 1 / (row @ np.linalg.inv(K) @ np.conj(row).T)
+                k_s.append(k)
+            else:
+                k_s.append(0.0)
         k_s = np.array(k_s)
 
         # Scale force constants due to projection of imaginary normal modes
-        if self._project_imag and self.n_imag:
+        if project_imag and self.n_imag:
             lengths = np.linalg.norm(self._D, axis=1)
             lengths_full = np.linalg.norm(self._D_full, axis=1)
             k_s *= lengths / lengths_full
         
         self.local_force_constants = k_s
-
-    def _prune_imaginary(self):
-        # Save full D matrix and force constant vector
-        self._D_full = self._D
-        self._force_constants_full = self._force_constants
-
-        # Remove force constants with imaginary force constants
-        self._force_constants = self._force_constants[self.n_imag:]
-        self._D = self._D[:, self.n_imag:]
 
     def _parse_fchk_file(self, file):
         # Read fchk file
@@ -1621,6 +1728,9 @@ class LocalForce:
         read_hessian = False
         read_vib_e2 = False
         read_ic = False
+        read_atomic_numbers = False
+        read_coordinates = False
+        read_atomic_masses = False
 
         # Set up containers for reading data
         modes = []
@@ -1628,6 +1738,9 @@ class LocalForce:
         vib_e2 = []
         internal_coordinates = []
         n_atoms = None
+        atomic_numbers = []
+        atomic_masses = []
+        coordinates = []
 
         # Parse fchk file
         for line in lines:
@@ -1663,6 +1776,29 @@ class LocalForce:
                     internal_coordinates.extend(values)
                 except ValueError:
                     read_ic = False
+            # Read atomic numbers
+            if read_atomic_numbers:
+                try:
+                    split_line = line.strip().split()
+                    values = [int(value) for value in split_line]
+                    atomic_numbers.extend(values)
+                except ValueError:
+                    read_atomic_numbers = False
+            if read_atomic_masses:
+                try:
+                    split_line = line.strip().split()
+                    values = [float(value) for value in split_line]
+                    atomic_masses.extend(values)
+                except ValueError:
+                    read_atomic_masses= False
+            # Read coordinates
+            if read_coordinates:
+                try:
+                    split_line = line.strip().split()
+                    values = [float(value) for value in split_line]
+                    coordinates.extend(values)
+                except ValueError:
+                    read_coordinates = False                
             # Read number of atoms
             if "Number of atoms" in line:
                 n_atoms = int(line.strip().split()[4])
@@ -1674,12 +1810,18 @@ class LocalForce:
                 n_redundant = int(line.strip().split()[5])        
             if "Vib-Modes" in line:
                 read_modes = True
+            if "Vib-AtMass" in line:
+                read_atomic_masses = True
             if "Cartesian Force Constants" in line:
                 read_hessian = True
             if "Vib-E2 " in line:
                 read_vib_e2 = True
             if "Redundant internal coordinate indices" in line:
                 read_ic = True
+            if "Atomic numbers" in line:
+                read_atomic_numbers = True
+            if "Current cartesian coordinates " in line:
+                read_coordinates = True
 
         # Take out normal mode force constants
         force_constants = np.array(vib_e2[n_modes * 2:n_modes * 3])
@@ -1696,12 +1838,18 @@ class LocalForce:
                                                 n_redundant)):
             pruned_coordinate = [i for i in coordinate if i != 0]
             internal_indices[frozenset(pruned_coordinate)] = i
+
+        # Convert to right units
+        coordinates = np.array(coordinates).reshape(-1, 3) * BOHR_TO_ANGSTROM
         
         # Set up attributes
         self._fc_matrix = fc_matrix
         self._normal_modes = np.array(modes).reshape(n_modes, n_atoms * 3)
         self._force_constants = force_constants
+        self._elements = convert_elements(atomic_numbers)
         self.internal_indices = internal_indices
+        self._coordinates = coordinates
+        self._atomic_masses = np.array(atomic_masses)
 
     def _parse_log_file(self, file):
         # Read the log file
@@ -1733,6 +1881,7 @@ class LocalForce:
         n_imag = None
         n_atoms = None
         internal_indices = {}
+        atomic_numbers = []
 
         # Parse through log file content
         for line in lines:
@@ -1828,6 +1977,7 @@ class LocalForce:
                         strip_line = line.strip().split()
                         values = [float(value) for value in strip_line[3:]]
                         input_coordinates.append(values)
+                        atomic_numbers.append(int(strip_line[1]))
                 counter += 1
             # Read atomic coordinates in standard orientation   
             if read_standard_orientation:
@@ -1961,8 +2111,10 @@ class LocalForce:
         self.internal_names = internal_names
         self._input_coordinates = input_coordinates
         self._standard_coordinates = standard_coordinates
+        self._coordinates = input_coordinates
+        self._elements = convert_elements(atomic_numbers)
     
-    def _parse_pes_file(self, file):
+    def _parse_pes_file(self, file="PES.out"):
         # Read PES file
         lines = open(file).readlines()
         
@@ -2004,14 +2156,218 @@ class LocalForce:
         fortran_file = FortranFile(file)
         n_modes = fortran_file.read_ints()[0]
         frequencies = fortran_file.read_reals()
-        reduced_masses = fotran_file.read_reals()
+        reduced_masses = fortran_file.read_reals()
         xtb_normal_modes = fortran_file.read_reals().reshape(n_modes, - 1)
 
-        # Calculate force constants #TODO when we get reliable reduced masses
-        #force_constants = 4 * np.pi ** 2 * (frequencies * 1e2) ** 2 * C ** 2 * reduced_masses
+        # Find the number of rotations and translations
+        n_tr_1  = np.sum(frequencies == 0)
+        n_tr_2 = np.sum(reduced_masses == 0)
+        n_tr_3 = np.sum(np.sum(xtb_normal_modes, axis=1) == 0)
+        print(n_tr_1)
+        if n_tr_1 == n_tr_2 == n_tr_3:
+            frequencies = frequencies[n_tr_1:]
+            reduced_masses = reduced_masses[n_tr_1:]
+            xtb_normal_modes = xtb_normal_modes[n_tr_1:]
+        else:
+            raise Exception("Can't determine the number of translations and rotations.")
 
-        self._normal_modes = xtb_normal_modes
-        #self._force_constants = force_constants
+        # Un-mass-weight normal modes, calculate reduced masses and normalize
+        m_inverse = 1 / np.repeat(self._atomic_masses, 3)
+        cart_disp = xtb_normal_modes * np.sqrt(m_inverse)
+        N = 1 / np.linalg.norm(cart_disp, axis=1)
+        norm_cart_disp = cart_disp * N.reshape(-1, 1)
+        reduced_masses = N ** 2
     
+        # Calculate force constants
+        c = physical_constants["speed of light in vacuum"][0]
+
+        force_constants = 4 * np.pi ** 2 * (frequencies * 1e2) ** 2 * c ** 2 * reduced_masses * physical_constants["atomic mass constant"][0]
+        force_constants = force_constants / scipy.constants.dyne / 1e-3 * scipy.constants.angstrom
+
+        # Detect imaginary modes
+        n_imag = np.sum(frequencies < 0)
+
+        self._normal_modes = norm_cart_disp
+        self._force_constants = force_constants
+        self.n_imag = n_imag
+
+    def _parse_xtb_file(self, file):
+        lines = open(file, encoding="utf8").readlines()
+        
+        read_coordinates = False
+        
+        coordinates = []
+        elements = []
+        
+        for line in lines:
+            if read_coordinates:
+                if "$end" in line:
+                    read_coordinates = False
+                elif counter > 1:
+                    split_line = line.strip().split()
+                    coordinates.append([float(value) for value in split_line[:3]])
+                    elements.append(split_line[3])
+                counter += 1
+            if " final structure:" in line:
+                read_coordinates = True
+                counter = 0
+        
+        self._elements = convert_elements(elements)
+        self._atomic_masses = np.array([atomic_masses[i] for i in elements])
+        self._coordinates = np.array(coordinates)
+    
+    def _parse_xtb_hessian(self, file):
+        lines = open(file).readlines()
+    
+        hessian = []
+        for line in lines:
+            try:
+                hessian.extend([float(value) for value in line.strip().split()])
+            except ValueError:
+                pass
+    
+        dimension = int(np.sqrt(len(hessian)))
+        self._fc_matrix = np.array(hessian).reshape(dimension, dimension)
+
+    def _parse_unimovib_local(self, file):
+        lines = open(file).readlines()
+        read_atomic_masses = False
+        read_atomic_numbers = False
+        read_coordinates = False
+        read_hessian = False
+        read_normal_modes = False
+        
+        atomic_masses = []
+        atomic_numbers = []
+        coordinates = []
+        hessian = []
+        normal_modes = []
+        for line in lines:
+            if read_atomic_masses:
+                if " $ZA  $END" in line:
+                    read_atomic_masses = False
+                else:
+                    split_line = line.strip().split()
+                    atomic_masses.extend([float(value.replace("D", "E")) for value in split_line])
+            if read_atomic_numbers:
+                if " $XYZ  $END" in line:
+                    read_atomic_numbers = False
+                else:
+                    split_line = line.strip().split()
+                    atomic_numbers.extend([int(float(value.replace("D", "E"))) for value in split_line])
+            if read_coordinates:
+                if " $FFX  $END" in line:
+                    read_coordinates = False
+                else:
+                    split_line = line.strip().split()
+                    coordinates.extend([float(value.replace("D", "E")) for value in split_line])
+            if read_hessian:
+                if " $NMMODE  $END" in line:
+                    read_hessian = False
+                else:
+                    split_line = line.strip().split()
+                    hessian.extend([float(value.replace("D", "E")) for value in split_line])
+            if read_normal_modes:
+                if " $APT" in line:
+                    read_normal_modes = False
+                else:
+                    split_line = line.strip().split()
+                    normal_modes.extend([float(value.replace("D", "E")) for value in split_line])
+            if " $AMASS  $END" in line:
+                read_atomic_masses = True
+            if " $ZA  $END" in line:
+                read_atomic_numbers = True
+            if " $XYZ  $END" in line:
+                read_coordinates = True
+            if " $FFX  $END" in line:
+                read_hessian = True
+            if " $NMMODE  $END" in line:
+                read_normal_modes = True
+            if " $CONTRL" in line:
+                split_line = line.strip().split()
+                n_atoms = int(split_line[1].split("=")[1])
+                n_modes = int(split_line[2].split("=")[1])
+        
+        coordinates = np.array(coordinates).reshape(-1, 3)
+        hessian = np.array(hessian).reshape(n_atoms * 3, n_atoms * 3)
+        normal_modes = np.array(normal_modes).reshape(-1, n_atoms * 3)[:n_modes]
+        elements = convert_elements(atomic_numbers)
+    
+        self._normal_modes = normal_modes
+        self._atomic_masses = atomic_masses
+        self._fc_matrix = hessian
+        self._coordinates = coordinates
+        self._elements = elements
+
+    def _parse_unimovib_out(self, file):
+        lines = open(file).readlines()
+        
+        read_coordinates = False
+        read_vibrations = False
+        read_normal_modes = False
+        
+        atomic_numbers = []
+        atomic_masses = []
+        coordinates = []
+        frequencies = []
+        force_constants = []
+        normal_modes = []
+        for line in lines:
+            if read_coordinates:
+                if counter > 0:
+                    if " ------------------------------------------------------------------------------------------" in line:
+                        read_coordinates = False
+                    else:
+                        split_line = line.strip().split()
+                        atomic_numbers.append(int(split_line[2]))
+                        coordinates.extend([float(value) for value in split_line[3:6]])
+                        atomic_masses.append(float(split_line[6]))
+                counter += 1
+            if read_vibrations:
+                if " Results of translations and rotations:" in line:
+                    read_vibrations = False
+                if read_normal_modes:
+                    split_line = line.strip().split()
+                    if len(split_line) == 0:
+                        read_normal_modes = False
+                        normal_modes.extend(normal_modes_chunk)
+                    else:
+                        values = [float(value) for value in split_line[2:]]
+                        for i in range(n_modes_chunk):
+                            normal_modes_chunk[i].append(values[i * 3: i * 3 + 3])
+                elif "Irreps" in line:
+                    split_line = line.strip().split()
+                    n_modes_chunk = len(split_line) - 1
+                    normal_modes_chunk = [[] for i in range(n_modes_chunk)]
+                elif "Force constants" in line:
+                    split_line = line.strip().split()
+                    force_constants.extend([float(value) for value in split_line[2:]])
+                elif "Frequencies" in line:
+                    split_line = line.strip().split()
+                    force_constants.extend([float(value) for value in split_line[1:]])                
+                elif "        Atom  ZA" in line:
+                    read_normal_modes = True
+            if "No.   Atom    ZA" in line:
+                read_coordinates = True
+                counter = 0
+            if "Results of vibrations:" in line:
+                read_vibrations = True
+                
+        n_atoms = len(atomic_masses)
+        coordinates = np.array(coordinates).reshape(-1, 3)
+        normal_modes = np.array(normal_modes).reshape(-1, n_atoms * 3) 
+        elements = convert_elements(atomic_numbers)
+        frequencies = np.array(frequencies)
+    
+        # Detect imaginary modes
+        self.n_imag = np.sum(frequencies < 0)
+    
+        self._elements = elements
+        self._coordinates = coordinates
+        self._atomic_masses = atomic_masses
+        self._force_constants = force_constants
+        self._normal_modes = normal_modes
+
     def __repr__(self):
-        return f"{self.__class__.__name__}({self._log_file!r})"    
+        n_internal = len(self.internal_indices)
+        return f"{self.__class__.__name__}({n_internal!r} internal coordinates)"    

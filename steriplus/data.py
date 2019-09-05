@@ -2,6 +2,7 @@
 
 Attributes:
     atomic_symbols (dict): Atomic symbols.
+    atom_masses (dict): Atom masses
     atomic_numbers (dict): Atomic numbers.
     radii_bondi (dict): Bondi vdW radii.
     radii_crc (dict): CRC vdW radii.
@@ -11,6 +12,8 @@ Attributes:
     angstrom_to_bohr (float): Conversion factor from Ångström to Bohr.
     au_to_kcal (float): Conversion factor from Hartree to kcal/mol
 """
+import scipy.constants
+
 atomic_symbols = {1: 'H', 2: 'He', 3: 'Li', 4: 'Be', 5: 'B', 6: 'C', 7: 'N',
 8: 'O', 9: 'F', 10: 'Ne', 11: 'Na', 12: 'Mg', 13: 'Al', 14: 'Si', 15: 'P',
 16: 'S', 17: 'Cl', 18: 'Ar', 19: 'K', 20: 'Ca', 21: 'Sc', 22: 'Ti', 23: 'V',
@@ -28,6 +31,33 @@ atomic_symbols = {1: 'H', 2: 'He', 3: 'Li', 4: 'Be', 5: 'B', 6: 'C', 7: 'N',
 'Mt', 110: 'Ds', 111: 'Rg', 112: 'Cn', 113: 'Nh', 114: 'Fl', 115: 'Mc',
 116: 'Lv', 117: 'Ts', 118: 'Og'}
 """dict: Atomic numbers as keys and symbols as values."""
+
+atomic_masses = {1: 1.0078250322, 2: 3.01602932, 3: 6.015122887, 4: 9.0121831,
+5: 10.012937, 6: 12.0, 7: 14.003074004, 8: 15.99491462, 9: 18.998403163,
+10: 19.99244018, 11: 22.98976928, 12: 23.9850417, 13: 26.9815385,
+14: 27.976926535, 15: 30.973761998, 16: 31.972071174, 17: 34.9688527,
+18: 35.9675451, 19: 38.96370649, 20: 39.9625909, 21: 44.955908, 22: 45.952628,
+23: 49.947156, 24: 49.946042, 25: 54.938044, 26: 53.939609, 27: 58.933194,
+28: 57.935342, 29: 62.929598, 30: 63.929142, 31: 68.925574, 32: 69.924249,
+33: 74.921595, 34: 73.9224759, 35: 78.918338, 36: 77.920365, 37: 84.91178974,
+38: 83.913419, 39: 88.90584, 40: 89.9047, 41: 92.90637, 42: 91.906808,
+43: 97.90721, 44: 95.90759, 45: 102.9055, 46: 101.9056, 47: 106.90509,
+48: 105.90646, 49: 112.904062, 50: 111.904824, 51: 120.90381, 52: 119.90406,
+53: 126.90447, 54: 123.90589, 55: 132.90545196, 56: 129.90632, 57: 137.90712,
+58: 135.907129, 59: 140.90766, 60: 141.90773, 61: 144.91276, 62: 143.91201,
+63: 150.91986, 64: 151.9198, 65: 158.92535, 66: 155.92428, 67: 164.93033,
+68: 161.92879, 69: 168.93422, 70: 167.93389, 71: 174.94078, 72: 173.94005,
+73: 179.94746, 74: 179.94671, 75: 184.952955, 76: 183.952489, 77: 190.96059,
+78: 189.95993, 79: 196.966569, 80: 195.96583, 81: 202.972345, 82: 203.973044,
+83: 208.9804, 84: 207.98125, 85: 209.98715, 86: 209.98969, 87: 211.99623,
+88: 226.02541, 89: 225.02323, 90: 230.03313, 91: 231.03588, 92: 233.03964,
+93: 236.0466, 94: 238.04956, 95: 241.05683, 96: 243.06139, 97: 247.07031,
+98: 249.07485, 99: 252.083, 100: 253.08519, 101: 258.09843, 102: 255.0932,
+103: 261.107, 104: 265.117, 105: 268.126, 106: 269.129, 107: 270.133,
+108: 269.1338, 109: 276.152, 110: 280.161, 111: 281.166, 112: 283.173,
+113: 285.18, 114: 287.187, 115: 288.193, 116: 291.201, 117: 293.208,
+118: 294.214}
+"""dict: Atomic numbers as keys and masses as values."""
 
 atomic_numbers = {'H': 1, 'He': 2, 'Li': 3, 'Be': 4, 'B': 5, 'C': 6, 'N': 7,
 'O': 8, 'F': 9, 'Ne': 10, 'Na': 11, 'Mg': 12, 'Al': 13, 'Si': 14, 'P': 15,
@@ -152,5 +182,16 @@ jmol_colors = {1: '#ffffff', 2: '#ffc0cb', 3: '#b22222', 4: '#ff1493',
 """dict: Atomic numbers as keys and jmol hexadecimal colors as values."""
 
 # Units taken from the NIST webpage 2019-05-27.
-angstrom_to_bohr = 1.889726125
-au_to_kcal = 627.5094741
+ANGSTROM = scipy.constants.angstrom
+BOHR = scipy.constants.physical_constants["atomic unit of length"][0]
+HARTREE = scipy.constants.physical_constants["atomic unit of energy"][0]
+KCAL = scipy.constants.calorie * 1000
+MOL = scipy.constants.Avogadro
+C = scipy.constants.speed_of_light
+AMU = scipy.constants.physical_constants["atomic mass constant"][0]
+DYNE = scipy.constants.dyne
+AFU = scipy.constants.physical_constants["atomic unit of force"][0]
+
+ANGSTROM_TO_BOHR = ANGSTROM / BOHR
+BOHR_TO_ANGSTROM = BOHR / ANGSTROM
+HARTREE_TO_KCAL = HARTREE / KCAL * MOL

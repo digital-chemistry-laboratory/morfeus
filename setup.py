@@ -14,7 +14,7 @@ setuptools.setup(
     url="",
     packages=["steriplus"],
     package_data={"steriplus": ['../data/c6_reference_data.pickle']},
-    install_requires=["numpy", "scipy"],
+    install_requires=["numpy", "pyberny", "scipy"],
     extras_require = {'extras': ["vtk", "pyvista", "pymeshfix", "matplotlib"]},
     classifiers=[
         "Programming Language :: Python :: 3",
