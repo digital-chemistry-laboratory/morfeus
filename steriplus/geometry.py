@@ -12,8 +12,10 @@ import math
 
 import numpy as np
 from scipy.spatial.transform import Rotation
+import scipy.spatial
 
-from steriplus.data import ANGSTROM_TO_BOHR
+from steriplus.helpers import convert_elements
+from steriplus.data import ANGSTROM_TO_BOHR, cov_radii_pyykko
 
 class Atom:
     """Atom common for Steriplus calculations.
@@ -275,21 +277,50 @@ class Sphere:
                 f"radius: {self.radius})")
 
 class InternalCoordinates:
-    def __init__(self, coordinates):
-        n_atoms = len(coordinates)
-        self.internal_coordinates = set()
+    def __init__(self):
+        self.internal_coordinates = []
     
     def add_bond(self, atom_1, atom_2):
         bond = Bond(atom_1, atom_2)
-        self.internal_coordinates.add(bond)
+        if not bond in self.internal_coordinates:
+            self.internal_coordinates.append(bond)
     
     def add_angle(self, atom_1, atom_2, atom_3):
         angle = Angle(atom_1, atom_2, atom_3)
-        self.internal_coordinates.add(angle)
+        if not angle in self.internal_coordinates:
+            self.internal_coordinates.append(angle)
     
     def add_dihedral(self, atom_1, atom_2, atom_3, atom_4):
         dihedral = Dihedral(atom_1, atom_2, atom_3, atom_4)
-        self.internal_coordinates.add(dihedral)
+        if not dihedral in self.internal_coordinates:
+            self.internal_coordinates.append(dihedral)
+    
+    def add_internal_coordinate(self, atoms):
+        if len(atoms) == 2:
+            self.add_bond(*atoms)
+        elif len(atoms) == 3:
+            self.add_angle(*atoms)
+        elif len(atoms) == 4:
+            self.add_dihedral(*atoms)
+    
+    def detect_bonds(self, elements, coordinates):
+        # Detect bonds based on covalent radii
+        elements = convert_elements(elements)
+        covalent_radii = np.array([cov_radii_pyykko[element] for element in elements])
+        distance_matrix = scipy.spatial.distance_matrix(coordinates, coordinates)
+        radii_matrix = np.add.outer(covalent_radii, covalent_radii) * 1.2
+        bo_matrix = (distance_matrix < radii_matrix)  - np.identity(len(elements))
+        indices = np.where(bo_matrix)
+
+        bonds = set()
+        for i, j in zip(*indices):
+            bond = frozenset([i + 1, j + 1])
+            bonds.add(bond)
+        
+        # Add each bond as an internal coordinate
+        for bond in bonds:
+            i, j = sorted(bond)
+            self.add_bond(i, j)
     
     def get_B_matrix(self, coordinates):
         b_vectors = []
@@ -297,13 +328,16 @@ class InternalCoordinates:
             b_vectors.append(internal_coordinate.get_b_vector(coordinates))
         B_matrix = np.vstack(b_vectors)
         
-        return B_matrix   
+        return B_matrix
+        
+    def __repr__(self):
+        return (f"{self.__class__.__name__}({len(self.internal_coordinates)} coordinates)")        
 
 class Bond:
     def __init__(self, atom_1, atom_2):
         self.i = atom_1
         self.j = atom_2
-        self.atoms = frozenset([atom_1, atom_2])
+        self.atoms = [atom_1, atom_2]
     
     def get_b_vector(self, coordinates):
         i, j = self.i - 1, self.j -1
@@ -317,6 +351,16 @@ class Bond:
         
         return b_vector
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (self.i == other.i or self.i == other.j) and \
+                   (self.j == other.i or self.j == other.j)
+        else:
+            return False
+    
+    def __hash__(self):
+        return hash((self.i, self.j))
+
     def __repr__(self):
         atoms = ", ".join(str(i) for i in sorted(self.atoms))
         return (f"{self.__class__.__name__}({atoms})")
@@ -326,7 +370,7 @@ class Angle:
         self.i = atom_1
         self.j = atom_2
         self.k = atom_3
-        self.atoms = frozenset([atom_1, atom_2, atom_3])
+        self.atoms = [atom_1, atom_2, atom_3]
     
     def get_b_vector(self, coordinates):
         i, j, k = self.i - 1, self.j - 1, self.k - 1
@@ -361,6 +405,17 @@ class Angle:
         
         return b_vector
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (self.i == other.i or self.i == other.k) and \
+                   (self.k == other.i or self.k == other.k) and \
+                    self.j == other.j
+        else:
+            return False
+    
+    def __hash__(self):
+        return hash((self.i, self.j, self.k))
+
     def __repr__(self):
         atoms = ", ".join(str(i) for i in sorted(self.atoms))
         return (f"{self.__class__.__name__}({atoms})")
@@ -371,7 +426,7 @@ class Dihedral:
         self.j = atom_2
         self.k = atom_3
         self.l = atom_4
-        self.atoms = frozenset([atom_1, atom_2, atom_3, atom_4])
+        self.atoms = [atom_1, atom_2, atom_3, atom_4]
 
     def get_b_vector(self, coordinates):       
         i, j, k, l = self.i - 1, self.j - 1, self.k - 1, self.l - 1
@@ -436,6 +491,18 @@ class Dihedral:
         b_vector[l * 3:l * 3 + 3] = grad[3]
         
         return b_vector        
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return all([self.i == other.i, self.j == other.j,
+                        self.k == other.k, self.l == other.l]) or \
+                   all([self.i == other.l, self.j == other.k,
+                        self.k == other.j, self.l == other.i])
+        else:
+            return False
+
+    def __hash__(self):
+        return hash((self.i, self.j, self.k, self.l))
 
     def __repr__(self):
         atoms = ", ".join(str(i) for i in sorted(self.atoms))
