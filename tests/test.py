@@ -104,7 +104,7 @@ class TestLocalForce(unittest.TestCase):
         lf.compute_frequencies()
         
         assert_array_almost_equal(lf.local_force_constants, ref_force_constants, decimal=4)
-        assert_array_almost_equal(lf.local_frequencies, ref_frequencies, decimal=3)
+        assert_array_almost_equal(lf.local_frequencies, ref_frequencies, decimal=2)
 
     def test_gaussian_fchk(self):
         with open(self.gaussian_dir / "fchk/force_constants.pickle", "rb") as file:
@@ -251,7 +251,7 @@ class TestLocalForce(unittest.TestCase):
                                   decimal=4)
         assert_array_almost_equal(lf.local_frequencies,
                                   np.array([3187.18622363, 2357.92562845]),
-                                  decimal=3)
+                                  decimal=2)
 
         lf.normal_mode_analysis(save_hessian=True)
         lf.compute_compliance()
@@ -261,7 +261,7 @@ class TestLocalForce(unittest.TestCase):
                                   decimal=4)
         assert_array_almost_equal(lf.local_frequencies,
                                   np.array([3239.63554963, 2379.74109906]),
-                                  decimal=3)        
+                                  decimal=2)        
 
     def test_xtb_normal_modes(self):
         with open(self.xtb_dir / "normal_modes/force_constants.pickle", "rb") as file:
