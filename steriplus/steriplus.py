@@ -1726,7 +1726,7 @@ class LocalForce:
             # Print out the results
             string = f"{repr(coordinate):30s}" + f"{force_constant:50.3f}"
             if len(self.local_frequencies) > 0:            
-                string += f"{frequency:30.0f}"bf
+                string += f"{frequency:30.0f}"
             print(string)
 
     def reset_internal_coordinates(self):
