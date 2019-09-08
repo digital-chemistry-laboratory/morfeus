@@ -1,4 +1,4 @@
-image: python:3.7.4
+image: python:3.7-slim-buster
  
 before_script:
 - python -V # Print out python version for debugging
@@ -11,6 +11,4 @@ test_job:
   stage: test
   script:
   - echo "Running tests"
-  - export MPLBACKEND="agg"
-  - export PYVISTA_OFF_SCREEN=true
   - python -m unittest discover -s "./tests/"
