@@ -30,7 +30,8 @@ try:
     import pyvista as pv
     import pymeshfix
     from steriplus.plotting import Arrow_3D, Cone_3D
-except ImportError:
+except ImportError as e:
+    print(e)
     _has_vtk = False
 else:
     _has_vtk = True
