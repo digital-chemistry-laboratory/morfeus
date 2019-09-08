@@ -103,8 +103,8 @@ class TestLocalForce(unittest.TestCase):
         lf.compute_compliance()
         lf.compute_frequencies()
         
-        assert_array_almost_equal(lf.local_force_constants, ref_force_constants)
-        assert_array_almost_equal(lf.local_frequencies, ref_frequencies)
+        assert_array_almost_equal(lf.local_force_constants, ref_force_constants, decimal=4)
+        assert_array_almost_equal(lf.local_frequencies, ref_frequencies, decimal=4)
 
     def test_gaussian_fchk(self):
         with open(self.gaussian_dir / "fchk/force_constants.pickle", "rb") as file:
