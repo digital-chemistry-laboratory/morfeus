@@ -1,7 +1,8 @@
 image: python:3.7-buster
  
 before_script:
-- apt-get install -y libgl1-mesa-glx
+- apt-get install -y libgl1-mesa-dev
+- apt-get install -y libxt-dev
 - python -V # Print out python version for debugging
 - pip install .[extras]
  
