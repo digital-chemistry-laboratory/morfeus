@@ -31,7 +31,6 @@ try:
     import pymeshfix
     from steriplus.plotting import Arrow_3D, Cone_3D
 except ImportError as e:
-    print(e)
     _has_vtk = False
 else:
     _has_vtk = True
@@ -1603,9 +1602,14 @@ class LocalForce:
                    }
         choices[program][filetype](filename)
 
-    def normal_mode_analysis(self):
+    def normal_mode_analysis(self, save_hessian=False):
         """Perform normal mode analysis with projection of translations
-        and vibrations to get normal modes and force constants."""
+        and vibrations to get normal modes and force constants.
+        
+        Args:
+            save_hessian (bool): Save projected Hessian for use in compliance
+                matrix method.
+        """
         # Set up
         coordinates = np.array(self._coordinates) * ANGSTROM_TO_BOHR
         masses = self._atomic_masses 
@@ -1614,6 +1618,7 @@ class LocalForce:
 
         # Create mass matrices
         M_minus = np.diag(np.repeat(masses, 3)**(-1/2))
+        M_plus = np.diag(np.repeat(masses, 3)**(1/2))
         m_plus = np.repeat(masses, 3)**(1/2)
         m_minus = np.repeat(masses, 3)**(-1/2)
         
@@ -1677,6 +1682,8 @@ class LocalForce:
         self.n_imag = n_imag
         self._force_constants = force_constants
         self._normal_modes = norm_cart
+        if save_hessian:
+            self._fc_matrix = M_plus @ hessian_proj @ M_plus
     
     def print_report(self, angles=False, dihedrals=False, angle_units=False):
         """Print report of results.

@@ -150,7 +150,7 @@ class TestLocalForce(unittest.TestCase):
         assert_array_almost_equal(lf.local_frequencies, ref_frequencies)    
 
     def test_misc(self):
-        elements, coordinates = read_xyz(self.xtb_dir / "xtb.xyz")       
+        elements, coordinates = read_xyz(self.xtb_dir / "hessian/xtb.xyz")       
         lf = LocalForce(elements, coordinates)
         lf.load_file(self.xtb_dir / "hessian/hessian", "xtb", "hessian")
         lf.normal_mode_analysis()
@@ -226,7 +226,7 @@ class TestLocalForce(unittest.TestCase):
         with open(self.xtb_dir / "hessian/frequencies.pickle", "rb") as file:
             ref_frequencies = pickle.load(file) 
 
-        elements, coordinates = read_xyz(self.xtb_dir / "xtb.xyz")       
+        elements, coordinates = read_xyz(self.xtb_dir / "hessian/xtb.xyz")       
         lf = LocalForce(elements, coordinates)
         lf.load_file(self.xtb_dir / "hessian/hessian", "xtb", "hessian")
         lf.normal_mode_analysis()
@@ -235,7 +235,29 @@ class TestLocalForce(unittest.TestCase):
         lf.compute_frequencies()
         
         assert_array_almost_equal(lf.local_force_constants, ref_force_constants)
-        assert_array_almost_equal(lf.local_frequencies, ref_frequencies)
+        assert_array_almost_equal(lf.local_frequencies, ref_frequencies)           
+
+    def test_xtb_compliance(self):
+        elements, coordinates = read_xyz(self.xtb_dir / "compliance/xtb.xyz")       
+        lf = LocalForce(elements, coordinates)
+        lf.load_file(self.xtb_dir / "compliance/hessian", "xtb", "hessian")
+        lf.normal_mode_analysis()
+        lf.detect_bonds()
+        lf.compute_compliance()
+        lf.compute_frequencies()
+        
+        assert_array_almost_equal(lf.local_force_constants,
+                                  np.array([5.56450853, 21.16851423]))
+        assert_array_almost_equal(lf.local_frequencies,
+                                  np.array([3187.18622363, 2357.92562845]))
+
+        lf.normal_mode_analysis(save_hessian=True)
+        lf.compute_compliance()
+        lf.compute_frequencies()
+        assert_array_almost_equal(lf.local_force_constants,
+                                  np.array([5.74915802, 21.56202739]))
+        assert_array_almost_equal(lf.local_frequencies,
+                                  np.array([3239.63554963, 2379.74109906]))        
 
     def test_xtb_normal_modes(self):
         with open(self.xtb_dir / "normal_modes/force_constants.pickle", "rb") as file:
@@ -243,7 +265,7 @@ class TestLocalForce(unittest.TestCase):
         with open(self.xtb_dir / "normal_modes/frequencies.pickle", "rb") as file:
             ref_frequencies = pickle.load(file) 
 
-        elements, coordinates = read_xyz(self.xtb_dir / "xtb.xyz")       
+        elements, coordinates = read_xyz(self.xtb_dir / "normal_modes/xtb.xyz")       
         lf = LocalForce(elements, coordinates)
         lf.load_file(self.xtb_dir / "normal_modes/xtb_normalmodes", "xtb", "normal_modes")
         lf.detect_bonds()
