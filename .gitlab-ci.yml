@@ -12,7 +12,7 @@ test_job:
   script:
   - echo "Running tests"
   - export MPLBACKEND="agg"
-  - sudo apt-get install xvfb
+  - apt-get install -y xvfb
   - export DISPLAY=:99.0
   - export PYVISTA_OFF_SCREEN=true
   - export PYVISTA_USE_PANEL=true
