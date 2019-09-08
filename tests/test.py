@@ -247,17 +247,21 @@ class TestLocalForce(unittest.TestCase):
         lf.compute_frequencies()
         
         assert_array_almost_equal(lf.local_force_constants,
-                                  np.array([5.56450853, 21.16851423]))
+                                  np.array([5.56450853, 21.16851423]),
+                                  decimal=4)
         assert_array_almost_equal(lf.local_frequencies,
-                                  np.array([3187.18622363, 2357.92562845]))
+                                  np.array([3187.18622363, 2357.92562845]),
+                                  decimal=4)
 
         lf.normal_mode_analysis(save_hessian=True)
         lf.compute_compliance()
         lf.compute_frequencies()
         assert_array_almost_equal(lf.local_force_constants,
-                                  np.array([5.74915802, 21.56202739]))
+                                  np.array([5.74915802, 21.56202739]),
+                                  decimal=4)
         assert_array_almost_equal(lf.local_frequencies,
-                                  np.array([3239.63554963, 2379.74109906]))        
+                                  np.array([3239.63554963, 2379.74109906]),
+                                  decimal=4)        
 
     def test_xtb_normal_modes(self):
         with open(self.xtb_dir / "normal_modes/force_constants.pickle", "rb") as file:
