@@ -1,0 +1,68 @@
+  _________________________________
+                                   
+ |         DFTD3 V3.1 Rev 1        |
+ | S.Grimme, University Bonn       |
+ |         October  2015           |
+ |   see dftd3 -h for options      |
+  _________________________________
+
+ Please cite DFT-D3 work done with this code as:
+ S. Grimme, J. Antony, S. Ehrlich and H. Krieg,
+ J. Chem. Phys. 132 (2010), 154104
+ If used with BJ-damping cite also
+ S. Grimme, S. Ehrlich and L. Goerigk,
+ J. Comput. Chem. 32 (2011), 1456-1465
+ For DFT-D2 the reference is
+ S. Grimme, J. Comput. Chem., 27 (2006), 1787-1799
+ For DFT-D3M or DFT-D3M(BJ) the reference is
+ D.G.A. Smith, L.A. Burns, K. Patkowski, and 
+ C.D. Sherrill, J. Phys. Chem. Lett. 7 (2016) 2197-2203
+
+  files read :     
+ ded_10.xyz
+C6 coefficients used:
+           2  C6 for element            1
+Z=  1 CN= 0.912     C6(AA)=    3.03
+Z=  1 CN= 0.000     C6(AA)=    7.59
+           5  C6 for element            6
+Z=  6 CN= 0.000     C6(AA)=   49.11
+Z=  6 CN= 0.987     C6(AA)=   43.25
+Z=  6 CN= 1.998     C6(AA)=   29.36
+Z=  6 CN= 2.999     C6(AA)=   25.78
+Z=  6 CN= 3.984     C6(AA)=   18.21
+           4  C6 for element            7
+Z=  7 CN= 0.000     C6(AA)=   25.27
+Z=  7 CN= 0.994     C6(AA)=   22.12
+Z=  7 CN= 2.014     C6(AA)=   19.68
+Z=  7 CN= 2.990     C6(AA)=   15.58
+
+#               XYZ [au]               R0(AA) [Ang.]  CN       C6(AA)     C8(AA)   C10(AA) [au] 
+   1   2.40672   0.00001   0.00001   c     0.566    3.996        18.3       530.1     18781.2
+   2   3.09445   0.69321   1.81227   h     0.366    1.000         3.1        37.4       553.2
+   3  -0.30828  -0.00003  -0.00004   c     0.566    2.018        29.5       851.8     30179.0
+   4  -2.46748   0.00001   0.00002   n     0.495    1.020        22.1       488.0     13189.0
+   5   3.09452   1.22291  -1.50638   h     0.366    1.000         3.1        37.4       553.2
+   6   3.09459  -1.91601  -0.30578   h     0.366    1.000         3.1        37.4       553.2
+
+molecular C6(AA) [au] =       386.27
+ --------------------------------------------------
+ !! SOME DISTANCES VERY SHORT. CHECK COORDINATES !!
+ --------------------------------------------------
+
+           DFT-D V3(BJ)
+ DF b3-lyp                                            
+ parameters
+ s6       :    1.0000
+ s8       :    1.9889
+ a1       :    0.3981
+ a2       :    4.4211
+ k1-k3    :   16.0000    1.3333   -4.0000
+ Cutoff   :   94.8683 a.u.
+ CN-Cutoff:   40.0000 a.u.
+
+ Edisp /kcal,au:    -3.0110 -0.00479831
+
+ E6    /kcal :    -1.4517
+ E8    /kcal :    -1.5592
+ % E8        : 51.78
+ normal termination of dftd3

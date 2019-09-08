@@ -24,11 +24,12 @@ class CubeParser:
         X (ndarray): 3D array of x values (Å)
         Y (ndarray): 3D array of y values (Å)
         Z (ndarray): 3D array of z values (Å)
-        S (ndarray): 3D array of electron density scalars
+        S (ndarray): 3D array of electron density scalars (electorns / Bohr^3)
     """
     def __init__(self, filename):
         # Read the lines from the cube file
-        lines = open(filename).readlines()
+        with open(filename) as file:
+            lines = file.readlines()
         
         # Skip first two lines which are comments
         lines = lines[2:]
@@ -82,6 +83,10 @@ class CubeParser:
         self.step_y = step_y
         self.step_z = step_z
 
+        self.n_points_x = n_points_x
+        self.n_points_y = n_points_y
+        self.n_points_z = n_points_z
+
         self._filename = filename
 
     def __repr__(self):
@@ -101,7 +106,8 @@ class D3Parser:
     """
     def __init__(self, filename):
         # Read the file
-        lines = open(filename, encoding="utf-8").readlines()
+        with open(filename, encoding="utf-8") as file:
+            lines = file.readlines()
         
         # Parse the file for the coefficients
         c6_coefficients = []
@@ -141,7 +147,8 @@ class D4Parser:
     """    
     def __init__(self, filename):
         # Read the file
-        lines = open(filename, encoding="utf-8").readlines()
+        with open(filename, encoding="utf-8") as file:
+            lines = file.readlines()
         
         # Parse the file and extract the coefficients
         c6_coefficients = []
@@ -182,7 +189,8 @@ class VertexParser:
     """
     def __init__(self, filename):
         # Parse file to see if it containts connectivity
-        lines = open(filename).readlines()
+        with open(filename) as file:
+            lines = file.readlines()
         
         # Get the number of vertices
         n_vertices = int(lines[0].strip().split()[5])
@@ -255,7 +263,8 @@ def read_gjf(filename):
         coordinates (list): Coordinates (Å)
     """
     # Read file and split lines
-    lines = open(filename).readlines()
+    with open(filename) as file:
+        lines = file.readlines()
     lines = [line.strip().split() for line in lines]
 
     # Loop over lines and store elements and coordinates 
@@ -289,7 +298,8 @@ def read_xyz(filename):
         coordinates (list): Coordinates (Å)
     """
     # Read file and split lines
-    lines = open(filename).readlines()[2:]
+    with open(filename) as file:
+        lines = file.readlines()[2:]
     lines = [line.strip().split() for line in lines if line.strip().split()]
 
     # Loop over lines and store elements and coordinates

@@ -278,7 +278,7 @@ class BuriedVolume:
         elements = convert_elements(elements)
 
         # Getting radii if they are not supplied
-        if not radii:
+        if len(radii) == 0:
             radii = get_radii(elements, radii_type=radii_type,
                               scale=radii_scale)
 
@@ -286,7 +286,11 @@ class BuriedVolume:
         atoms= []
         for i, (element, radius, coord) in enumerate(zip(elements, radii,
                                                coordinates), start=1):
-            if i not in exclude_list and element != 1:
+            if i in exclude_list:
+                continue
+            elif (not include_hs) and element == 1:
+                continue
+            else:
                 atom = Atom(element, coord, radius, i)
                 atoms.append(atom)
 
@@ -1121,11 +1125,12 @@ class Dispersion:
         self._process_surface()
     
     @conditional(_has_vtk, _warning_vtk)
-    def surface_from_multiwfn(self, filename):
+    def surface_from_multiwfn(self, filename, fix_mesh=True):
         """Adds surface from Multiwfn vertex file with connectivity information.
 
         Args:
             filename (str): Name of vertex file
+            fix_mesh (bool): Whether to fix holes in the mesh with pymeshfix.
         """
         # Read the vertices and faces from the Multiwfn output file
         parser = VertexParser(filename)
@@ -1135,9 +1140,10 @@ class Dispersion:
         
         # Construct surface and fix it with pymeshfix
         surface = pv.PolyData(vertices, faces, show_edges=True)
-        meshfix = pymeshfix.MeshFix(surface)
-        meshfix.repair()
-        surface = meshfix.mesh
+        if fix_mesh:
+            meshfix = pymeshfix.MeshFix(surface)
+            meshfix.repair()
+            surface = meshfix.mesh
 
         # Process surface
         self._surface = surface
@@ -1710,6 +1716,11 @@ class LocalForce:
             print(f"{repr(coordinate):30s}" + f"{force_constant:50.3f}" \
                 + f"{frequency:30.0f}")
 
+    def reset_internal_coordinates(self):
+        """Reset internal coordinate system"""
+        self._internal_coordinates = InternalCoordinates()
+        self.internal_coordinates = self._internal_coordinates.internal_coordinates
+
     @staticmethod
     def _get_internal_coordinate(atoms):
         # Return bond, angle or dihedral
@@ -1720,9 +1731,10 @@ class LocalForce:
         elif len(atoms) == 4:
             return Dihedral(*atoms)
 
-    def _parse_gaussian_fchk(self, file):
+    def _parse_gaussian_fchk(self, filename):
         # Read fchk file
-        lines = open(file).readlines()
+        with open(filename) as file:
+            lines = file.readlines()
 
         # Set up read flags
         read_modes = False
@@ -1853,9 +1865,10 @@ class LocalForce:
         self._coordinates = coordinates
         self._atomic_masses = np.array(atomic_masses)
 
-    def _parse_gaussian_log(self, file):
+    def _parse_gaussian_log(self, filename):
         # Read the log file
-        lines = open(file).readlines()
+        with open(filename) as file:
+            lines = file.readlines()
         
         # Set up read flags
         read_b_atoms = False
@@ -2129,9 +2142,10 @@ class LocalForce:
         self._coordinates = input_coordinates
         self._elements = convert_elements(atomic_numbers)
 
-    def _parse_unimovib_local(self, file):
+    def _parse_unimovib_local(self, filename):
         # Read file
-        lines = open(file).readlines()
+        with open(filename) as file:
+            lines = file.readlines()
 
         # Set up flags for reading
         read_atomic_masses = False
@@ -2214,9 +2228,10 @@ class LocalForce:
         self._coordinates = coordinates
         self._elements = elements
 
-    def _parse_unimovib_log(self, file):
+    def _parse_unimovib_log(self, filename):
         # Read file
-        lines = open(file).readlines()
+        with open(filename) as file:
+            lines = file.readlines()
         
         # Set up read flags
         read_coordinates = False
@@ -2294,9 +2309,10 @@ class LocalForce:
         self._force_constants = force_constants
         self._normal_modes = normal_modes
 
-    def _parse_unimovib_umv(self, file):
+    def _parse_unimovib_umv(self, filename):
         # Read file
-        lines = open(file).readlines()
+        with open(filename) as file:
+            lines= file.readlines()
 
         # Set up flags for reading
         read_n_atoms = False
@@ -2372,9 +2388,10 @@ class LocalForce:
         self._coordinates = coordinates
         self._elements = elements
 
-    def _parse_xtb_hessian(self, file):
+    def _parse_xtb_hessian(self, filename):
         # Read hessian file
-        lines = open(file).readlines()
+        with open(filename) as file:
+            lines = file.readlines()
     
         # Parse file
         hessian = []
@@ -2387,13 +2404,13 @@ class LocalForce:
         dimension = int(np.sqrt(len(hessian)))
         self._fc_matrix = np.array(hessian).reshape(dimension, dimension)
 
-    def _parse_xtb_normal_modes(self, file="xtb_normal_modes"):
+    def _parse_xtb_normal_modes(self, filename):
         # Read in data from xtb normal modes file
-        fortran_file = FortranFile(file)
-        n_modes = fortran_file.read_ints()[0]
-        frequencies = fortran_file.read_reals()
-        reduced_masses = fortran_file.read_reals()
-        xtb_normal_modes = fortran_file.read_reals().reshape(n_modes, - 1)
+        with FortranFile(filename) as file:
+            n_modes = file.read_ints()[0]
+            frequencies = file.read_reals()
+            reduced_masses = file.read_reals()
+            xtb_normal_modes = file.read_reals().reshape(n_modes, - 1)
 
         # Find the number of rotations and translations
         n_tr_1  = np.sum(frequencies == 0)

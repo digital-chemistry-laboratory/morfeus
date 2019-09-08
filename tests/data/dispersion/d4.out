@@ -1,0 +1,84 @@
+      -----------------------------------------------------------      
+     |                   =====================                   |     
+     |                        D F T - D 4                        |     
+     |                   =====================                   |     
+     |            E. Caldeweyher, S. Ehlert & S. Grimme          |     
+     |          Mulliken Center for Theoretical Chemistry        |     
+     |                    University of Bonn                     |     
+     |                  Version 2.0 (SAW190211)                  |     
+      -----------------------------------------------------------      
+
+   Please cite:
+   E. Caldeweyher, C. Bannwarth and S. Grimme, J. Chem. Phys., 2017,
+   147, 034112.
+   and
+   E. Caldeweyher, S. Ehlert, A. Hansen, H. Neugebauer, S. Spicher,
+   C. Bannwarth and S. Grimme, ChemRxiv, 2018, preprint.
+   http://doi.org/10.26434/chemrxiv.7430216.v2
+   
+   For GFN2-xTB:
+   C. Bannwarth, S. Ehlert and S. Grimme., ChemRxiv, 2018, preprint.
+   http://doi.org/10.26434/chemrxiv.7246238.v2
+   
+   For a general overview on dispersion corrected mean-field methods
+   we recommend:
+   S. Grimme, A. Hansen, J. G. Brandenburg, C. Bannwarth, Chem. Rev. 2016,
+   116, 5105−5154.
+   
+   with help from (in alphabetical order)
+   C. Bannwarth, P. Shushkov, and S. Spicher.
+   
+ * started run on 2019/06/02 at 14:46:28.541     
+
+           -------------------------------------------------
+          |                Calculation Setup                |
+           -------------------------------------------------
+   number of atoms      :      6
+   charge               :      0
+   non-additivity corr. : ATM
+   charge model         : EEQ
+   omp threads          :      1
+   memory needed (est.) :    0.0 Mb
+
+
+ C      q(ref)        CN(ref)   cov. CN(ref)     α(AIM,ref)
+     0.0000000      0.0000000      0.0000000     12.3555336
+    -0.1712371      0.9867893      0.9189476     12.8040100
+    -0.1421000      1.9984766      1.9078606      9.6347083
+    -0.2225085      2.9987259      2.8312240      9.6866280
+    -0.2565392      3.9843988      3.7487004      7.6947605
+    -0.1044135      3.1417713      2.9183271      9.3751067
+     0.2103031      0.9999501      0.8556099      7.7402501
+ H      q(ref)        CN(ref)   cov. CN(ref)     α(AIM,ref)
+     0.0000000      0.0000000      0.0000000      5.0540161
+     0.0000000      0.9117922      0.8942243      2.7207580
+ N      q(ref)        CN(ref)   cov. CN(ref)     α(AIM,ref)
+     0.0000000      0.0000000      0.0000000      7.5385089
+    -0.3529859      0.9944072      0.8582779      8.6583057
+    -0.3012579      2.0142722      1.8398511      7.9579326
+    -0.8242972      2.9902642      2.5803990      9.7489831
+     0.0000000      0.9999895      0.9808553      5.8062716
+
+           -------------------------------------------------
+          |              Molecular Properties               |
+           -------------------------------------------------
+
+          #   Z        covCN         q      C6AA      C8AA      α(0)
+          1   6 C      3.754    -0.161    26.485     766.0     7.427
+          2   1 H      0.925     0.129     1.546      18.7     1.945
+          3   6 C      1.890     0.139    28.197     815.5     8.566
+          4   7 N      0.911    -0.364    28.859     636.7     7.776
+          5   1 H      0.925     0.129     1.546      18.7     1.945
+          6   1 H      0.925     0.129     1.546      18.7     1.945
+
+            Mol. C6AA /au·bohr⁶  :        381.486447
+            Mol. C8AA /au·bohr⁸  :       8894.028635
+            Mol. α(0) /au        :         29.602882
+
+
+ * finished run on 2019/06/02 at 14:46:28.682     
+ total:
+ * wall-time:     0 d,  0 h,  0 min,  0.140 sec
+ *  cpu-time:     0 d,  0 h,  0 min,  0.922 sec
+ * ratio c/w:     6.600 speedup
+
