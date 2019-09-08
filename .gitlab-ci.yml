@@ -11,4 +11,5 @@ test_job:
   stage: test
   script:
   - echo "Running tests"
+  - export MPLBACKEND="agg"
   - python -m unittest discover -s "./tests/"
