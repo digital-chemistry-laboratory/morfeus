@@ -2,7 +2,7 @@ image: python:3.7
  
 before_script:
 - python -V # Print out python version for debugging
-- pip install .
+- pip install .[extras]
  
 stages:
 - test
