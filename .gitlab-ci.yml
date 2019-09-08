@@ -3,7 +3,7 @@ image: ubuntu:18.04
 before_script:
 - apt-get update -qy 
 - apt-get install -y python3.7 python3-pip
-- python -V # Print out python version for debugging
+- python3 -V # Print out python version for debugging
 - pip install .[extras]
  
 stages:
@@ -13,4 +13,4 @@ test_job:
   stage: test
   script:
   - echo "Running tests"
-  - python -m unittest discover -s "./tests/"
+  - python3 -m unittest discover -s "./tests/"
