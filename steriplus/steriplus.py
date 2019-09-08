@@ -1699,10 +1699,12 @@ class LocalForce:
             unit = "mDyne/Å, mDyne Å rad^(-2)"
         else:
             unit = "mDyne/Å"
-        
-        print(f"{'Coordinate':30s}"
+
+        string = f"{'Coordinate':30s}" + \
             f"{'Force constant ' + '(' + unit + ')':>50s}"
-            f"{'Frequency (cm^-1)':>30s}")
+        if len(self.local_frequencies) > 0:
+            string += f"{'Frequency (cm^-1)':>30s}"        
+        print(string)
         
         # Print results for each internal
         sorted_coordinates = sorted(self.internal_coordinates, key=lambda x: (len(x.atoms), *x.atoms))
@@ -1714,15 +1716,18 @@ class LocalForce:
                 continue
             index = self.internal_coordinates.index(coordinate)
             force_constant = self.local_force_constants[index]
-            frequency = self.local_frequencies[index]
+            if len(self.local_frequencies) > 0:
+                frequency = self.local_frequencies[index]
 
             # Convert units for angles and dihedrals
             if len(coordinate.atoms) > 2 and angle_units:
                 force_constant = force_constant * BOHR_TO_ANGSTROM ** 2
             
             # Print out the results
-            print(f"{repr(coordinate):30s}" + f"{force_constant:50.3f}" \
-                + f"{frequency:30.0f}")
+            string = f"{repr(coordinate):30s}" + f"{force_constant:50.3f}"
+            if len(self.local_frequencies) > 0:            
+                string += f"{frequency:30.0f}")
+            print(string)
 
     def reset_internal_coordinates(self):
         """Reset internal coordinate system"""
