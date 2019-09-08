@@ -4,7 +4,7 @@ before_script:
 - apt-get update -qy 
 - apt-get install -y python3.7 python3-pip
 - python3 -V # Print out python version for debugging
-- pip install .[extras]
+- pip3 install .[extras]
  
 stages:
 - test
