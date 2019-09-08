@@ -2442,5 +2442,5 @@ class LocalForce:
         self.n_imag = n_imag
 
     def __repr__(self):
-        n_internal = len(self.internal_indices)
+        n_internal = len(self.internal_coordinates)
         return f"{self.__class__.__name__}({n_internal!r} internal coordinates)"    
