@@ -11,16 +11,34 @@ Preparing input
 ***************
 
 The LocalForce class needs input from quantum-chemical frequency calculations.
-This input can either be read using the `load_file` method, or alternatively
+This input can either be read using the ``load_file`` method, or alternatively
 a Hessian from memory can be used. The following information is needed for each
 method:
 
 .. csv-table:: Information required
-  :header: "Method", "Elements", "Coordinates", "Internal modes", "Hessian"
+  :file: tables/local_force_required.csv
+  :header-rows: 1
+  :stub-columns: 1
   :align: center
 
-  "Local modes", "x", "x", "", "x"
-  "Compliance", "x", "x", "x", ""
+.. csv-table:: Gaussian
+  :file: tables/local_force_gaussian.csv 
+  :header-rows: 1
+  :stub-columns: 1
+  :align: center
+
+.. csv-table:: UniMoVib
+  :file: tables/local_force_unimovib.csv 
+  :header-rows: 1
+  :stub-columns: 1
+  :align: center  
+
+.. csv-table:: xtb
+  :file: tables/local_force_xtb.csv 
+  :header-rows: 1
+  :stub-columns: 1
+  :align: center  
+
 
 ************************
 Preparing Gaussian input
@@ -29,37 +47,6 @@ Preparing Gaussian input
 Depending on if you want to use the local modes method (recommended) or the 
 compliance matrix method, different inputs for Gaussian are needed.
 
-###########
-Local modes
-###########
-
-The local modes method needs normal modes decomposed into contributions from
-internal coordinates as well as normal mode force constants.
-
-1. Normal mode decomposition in Gaussian
-  This is the easiest way. Only the log file is required.
-    ``#p freq(intmodes) iop(7/75=-1) iop(1/33=3)``
-2. Normal mode decomposition from high precision normal modes
-  This might increase the accuracy somewhat. Only log file is required.
-    ``#p freq(intmodes,hpmodes) iop(1/33=3)``
-3. Normal mode decomposition from very high precision normal modes and force
-constants
-  This is the highest accuracy mode. Both the log file and fchk file are
-  required. The fchk file is generated with the Gaussian formchk program.
-    ``#p freq(intmodes) iop(1/33=3)``
-
-#################
-Compliance matrix
-#################
-
-The compliance matrix method needs the force constant matrix (Hessian).
-
-1. Force constant matrix from the log file
-    ``#p freq(intmodes) iop(1/33=3)``
-2. Higher-accuracy force constant matrix from the fchk file
-    ``#p freq(intmodes) iop(1/33=3)``
-3. Highest-accuarcy force constant matrix from PES file.
-    ``#p freq(intmodes) iop(1/33=3) iop(7/32=3)``
 
 *******************
 Command line script
