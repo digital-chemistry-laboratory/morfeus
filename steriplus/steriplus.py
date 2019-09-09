@@ -1602,7 +1602,7 @@ class LocalForce:
                    }
         choices[program][filetype](filename)
 
-    def normal_mode_analysis(self, save_hessian=False):
+    def normal_mode_analysis(self, hessian=None, save_hessian=False):
         """Perform normal mode analysis with projection of translations
         and vibrations to get normal modes and force constants.
         
@@ -1612,8 +1612,9 @@ class LocalForce:
         """
         # Set up
         coordinates = np.array(self._coordinates) * ANGSTROM_TO_BOHR
-        masses = self._atomic_masses 
-        hessian = self._fc_matrix
+        masses = self._atomic_masses
+        if not hessian:
+            hessian = self._fc_matrix
         n_atoms = len(coordinates)
 
         # Create mass matrices
