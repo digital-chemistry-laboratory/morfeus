@@ -3,8 +3,24 @@ Local force constants
 =====================
 
 Local force constants can be calculated with the local modes method [1]_ or the
-compliance matrix method [2]_. A Gaussian log file is currently required.
-Increased accuracy might be achieved by supplying a fchk file.
+compliance matrix method [2]_. Steriplus can use the output of Gaussian_, xtb_,
+or UniMoVib_ programs.
+
+***************
+Preparing input
+***************
+
+The LocalForce class needs input from quantum-chemical frequency calculations.
+This input can either be read using the `load_file` method, or alternatively
+a Hessian from memory can be used. The following information is needed for each
+method:
+
+.. csv-table:: Information required
+  :header: "Method", "Elements", "Coordinates", "Internal modes", "Hessian"
+  :align: center
+
+  "Local modes", "x", "x", "", "x"
+  "Compliance", "x", "x", "x", ""
 
 ************************
 Preparing Gaussian input
@@ -169,3 +185,7 @@ References
 .. [1] Konkoli, Z.; Cremer, D. Int. J. Quantum Chem. 1998, 67, 1.
 .. [2] Brandhorst, K.; Grunenberg, J. Chem. Soc. Rev. 2008, 37, 1558.
 .. [3] Zou, W.; Kalescky, R.; Kraka, E.; Cremer, D. J. Chem. Phys. 2012, 137, 84114.
+
+.. _Gaussian: https://gaussian.com/
+.. _UniMoVib: https://github.com/zorkzou/UniMoVib
+.. _xtb: https://xtb-docs.readthedocs.io/en/latest/contents.html
