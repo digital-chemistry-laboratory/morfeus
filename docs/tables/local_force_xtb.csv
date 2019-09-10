@@ -1,3 +1,9 @@
-Keyword,Elements,Coordinates,Internal modes,Internal coordinates,B matrix,Normal modes,Hessian,Force constants
-hessian,,,,,,,x,
-xtb_normalmodes,,,,,,x,,x
+Keyword,hessian,xtb_normalmodes
+Elements,,
+Coordinates,,
+Internal modes,,
+Internal coordinates,,
+B matrix,,
+Normal modes,,x
+Hessian,x,
+Force constants,,x

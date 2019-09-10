@@ -1,4 +1,9 @@
-Keyword,Elements,Coordinates,Internal modes,Internal coordinates,B matrix,Normal modes,Hessian,Force constants
-local,x,x,,,,x,x,
-log,x,x,,,,x,,x
-umv,x,x,,,,,x,
+,local,log,umv
+Elements,x,x,x
+Coordinates,x,x,x
+Internal modes,,,
+Internal coordinates,,,
+B matrix,,,
+Normal modes,x,x,
+Hessian,x,,x
+Force constants,,x,

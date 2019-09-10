@@ -1,3 +1,9 @@
-Filetype,Elements,Coordinates,Internal modes,Internal coordinates,B matrix,Normal modes,Hessian,Force constants
-log + freq=intmodes iop(7/75=-1) iop(1/33=3),x,x,x,x,x,,,x
-"fchk + freq=intmodes ",x,x,,x,,x,x,x
+Filetype,log + freq=intmodes iop(7/75=-1) iop(1/33=3),fchk + freq=intmodes 
+Elements,x,x
+Coordinates,x,x
+Internal modes,x,
+Internal coordinates,x,x
+B matrix,x,
+Normal modes,,x
+Hessian,,x
+Force constants,x,x

@@ -1,3 +1,7 @@
-"Method", "Elements", "Coordinates", "Internal modes", "Internal coordinates", "Force constants", "Hessian"
-"Local modes", "x", "x", "x", "", "x", "x"
-"Compliance", "x", "x", "", "x", "", "x"
+Method,Local modes,Compliance
+Elements,x,x
+Coordinates,x,x
+Internal modes,x,
+Internal coordinates,,x
+Force constants,x,
+Hessian,x,x
