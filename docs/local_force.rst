@@ -6,43 +6,44 @@ Local force constants can be calculated with the local modes method [1]_ or
 the compliance matrix method [2]_. Steriplus can use the output of Gaussian_,
 xtb_, or UniMoVib_ programs.
 
-===============
+***************
 Preparing input
-===============
+***************
 
 The LocalForce class needs input from quantum-chemical frequency calculations.
-Therefore, the instructions are a bit more involved. This input can either be
-read using the ``load_file`` method, and Steriplus can also provide by 
-built-in normal mode analysis and internal coordinate codes.
+Therefore, the instructions are a bit more involved. This input can be read
+using the ``load_file`` method, and Steriplus can also calculate some
+quantities using its built-in normal mode analysis and internal coordinate
+codes.
 
-***********
+###########
 Local modes
-***********
+###########
 
-The local modes approach needs the normal modes in terms of internal
-coordinates, here called *internal modes*, as well as the normal mode force
-constants. These can either be read from a file or calculated with Steriplus.
-For example, the internal modes can be computed from the normal modes and the
+The local modes approach needs the normal modes in internalcoordinates, here
+called *internal modes*, as well as the normal mode force constants. The
+internal modes can either be read from file or calculated with Steriplus.
+Specifically, the internal modes can be computed from the normal modes and the
 Wilson B matrix. For local frequencies, additional input is needed.
 
 .. figure:: images/local_force/diagram_local.svg
   
   Input needed for the local modes approach.
 
-*****************
+#################
 Compliance matrix
-*****************
+#################
 
 The compliance matrix method needs the Hessian matrix and the Wilson B matrix.
-For local frequencies, the elements are needed (to get the atomic masses).
+For local frequencies, the elements are also needed (for their atomic masses).
 
 .. figure:: images/local_force/diagram_compliance.svg
   
   Input needed for the compliance matrix method.
 
-*****************
+#################
 Recommended input
-*****************
+#################
 
 The table below summarizes the recommended input to Steriplus from the
 supported programs. More details are given below.
@@ -58,49 +59,24 @@ supported programs. More details are given below.
   Compliance  fchk     umv/local hessian
   =========== ======== ========= =======
 
-**********************
-Geometry optimizations
-**********************
-
-Local force constants and frequencies are based on the harmonic approximation
-that is valid only at stationary points (minima and transition states) on the
-potential energy surface. Therefore, the geometry optimizations need to be of
-good quality. For difficult examples on flat surfaces, this can mean
-increasing the convergence criteria of the quantum-chemical program.
-Vibrations with small imaginary frequencies should be eliminated as much as
-possible. The local modes method is somewhat robust to the presence of these
-vibrations with the standards settings, while the they can result in artifacts
-with the compliance matrix method. Therefore, the local modes method is
-recommended in these cases.
-
-For transition states, the imaginary mode corresponding to the reaction is
-projected out. This also means that forces involving theseatoms are
-meaningless and should not be used. Only the local modes method can be used
-for transition states.
-
-.. warning:: Transition states
-
-  Transition states can only be treate with the local modes method. Force
-  constants and frequencies of the atoms corresponding to the imaginary mode
-  should not be used.
-
-********
+########
 Gaussian
-********
+########
 
-Gaussian can provide the input for both the local modes and the compliance
-matrix methods directly. For the local modes method, it is recommended to
-use the log file, while for the the compliance matrix method, the fchk file
-is neeed.
+Gaussian can provide the complete input for both the local modes and the
+compliance matrix methods. The *log* file is recommended as input for the the
+local modes method, and the *fchk* file for the compliance matrix method.
+The Gaussian input file should be prepared with the following keywords
+included (appropriate method and basis set need to be added as well).
 
 ==== =========================================
 log  ``freq=intmodes iop(7/75=1) iop(1/33=3)``
 fchk ``freq=intmodes``
 ==== =========================================
 
-``iop(7/75=1)`` makes Gaussian print the internal modes with full accuracy,
-while ``iop(1/33=3)`` triggers printing of the Wilson B matrix. The table
-below lists all the quantities read by each approach.
+``iop(7/75=1)`` makes triggers printing of the internal modes with full
+accuracy, while ``iop(1/33=3)`` triggers printing of the Wilson B matrix. The
+table below lists all the quantities read by each approach.
 
 .. table:: Quantities from Gaussian files.
   :widths: auto
@@ -119,15 +95,15 @@ below lists all the quantities read by each approach.
   Force constants       x   x
   ==================== === ===
 
-.. note:: Additional accuracy
-  
+.. note:: 
+
   Additional accuracy for local modes calculations be achieved by loading
   also the fchk file which contains the normal mode force constants to
   higher accuracy.
 
-********
+########
 UniMoVib
-********
+########
 
 The UniMoVib program can do vibrational analysis for a range of different
 quantum-chemical programs. The user needs to define internal coordinates in
@@ -154,9 +130,9 @@ either the *umv* or the *local* files are recommended.
   ==================== ===== === === 
 
 The *log* file is the standard output of the program. The *umw* file and the
-*local* file can be generated by specifying them in the input file
+*local* file can be generated by specifying them in the input file:
 
-.. code-block::
+.. code-block:: none
   :emphasize-lines: 5, 6
   :caption: Example UniMoVib input file
 
@@ -172,15 +148,15 @@ The *log* file is the standard output of the program. The *umw* file and the
     fchk="freq.fchk"
   $end
 
-***
+###
 xtb
-***
+###
 
-The xtb program can provide the Hessian and the normal modes and normal mode
-force constants. The files *hessian* and *xtb_normalmodes* are generated by
-the xtb program as a results of a frequency calculation. The recommended
+The xtb program can provide the Hessian as well as the normal modes and normal
+mode force constants. The files *hessian* and *xtb_normalmodes* are generated
+by the xtb program as a results of a frequency calculation. The recommended
 approach for both the local modes method and the compliance method matrix is
-to read the *hessian* file.
+to use the *hessian* file.
 
 .. table:: Quantities from xtb files.
   :widths: auto
@@ -199,11 +175,38 @@ to read the *hessian* file.
   Force constants              x
   ==================== ======= =========== 
 
-.. warning:: Linear molecules
+.. warning::
 
   xtb 6.2 has a bug which gives the wrong number of normal modes for linear
   molecules in the *xtb_normalmodes* file. Therefore, the approach of reading
   the Hessian and doing a normal mode analysis with Steriplus is recommended.  
+
+######################
+Geometry optimizations
+######################
+
+Local force constants and frequencies are based on the harmonic approximation
+that is valid only at stationary points (minima and transition states) on the
+potential energy surface. Therefore, the geometry optimizations need to be of
+good quality. For difficult examples on flat surfaces, this can mean
+increasing the convergence criteria of the quantum-chemical program.
+Vibrations with small imaginary frequencies should be eliminated as much as
+possible. The local modes method with standards settings is somewhat robust to
+the presence of these vibrations , while they can result in artifacts with the
+compliance matrix method. Therefore, the local modes method is recommended in
+these cases.
+
+For transition states, the imaginary mode corresponding to the reaction is
+projected out with the local modes approach. This also means that forces
+involving the atoms corresponding this imaginary mode are meaningless and
+should not be used. Only the local modes method can be used for transition
+states.
+
+.. warning::
+
+  Transition states can only be treated with the local modes method. Force
+  constants and frequencies of the atoms corresponding to the imaginary mode
+  should not be used.
 
 *******************
 Command line script
@@ -260,7 +263,7 @@ Module
 ******
 
 The LocalForce class is provided to calculate and store the local force
-constants.
+constants and frequencies.
 
 .. code-block:: python
   :caption: Example with Gaussian and local modes method.
@@ -355,7 +358,8 @@ constants.
 For the local modes method, projection of imaginary frequencies can be
 controlled with the ``project_imag=<bool>`` keyword to the ``compute_local``
 method. The cutoff for low-freqency modes can be controlled with 
-``cutoff=<float>``. Internal coordinates can be added with 
+``cutoff=<float>``. Internal coordinates can be added with the
+``add_internal_coordinate`` method.
 
 For more detailed information, use ``help(LocalForce)`` or see the API:
 :py:class:`steriplus.steriplus.LocalForce`
@@ -365,24 +369,24 @@ Background
 **********
 
 Local force constants describe the bond strength based on vibrational
-frequencies. There are two approachces in the literature, the local modes
-method of Cremer [1]_ and the compliance matrix method of Grunenberg [2]_.
-They have been shown to be equivalent within numerical accuracy [3]_.
-Steriplus can use either method, and they give almost identical results for
-most cases. The exception is when there are modes with imaginary or very small
-frequencies exist. In this case, the numerical stability of the local modes
-approach can be improved by two methods: (1) projecting out normal modes with
-imaginary frequencies and (2) raising the force constants of low-frequency
-modes to a cutoff value. Steriplus does this projection by default and uses a 
-cutoff of 0.001 mDyne/Å for low-frequency modes. We therefore recommend local
-modes with default settings as the most robust method in these cases.
-Expert users can turn off the projection and alter the cutoff value.
+frequencies. There are two approachces in the literature: the local modes
+method of Cremer [1]_ and the compliance matrix method of Grunenberg.[2]_
+They have been shown to be equivalent within numerical accuracy.[3]_
+Steriplus can use either method, and they give almost identical results except
+when there are modes with imaginary or very small frequencies. In these cases,
+the local modes approach can handle the issue with  two methods: (1)
+projecting out imaginary modes, and (2) raising the force constants of
+low-frequency modes to a cutoff value. Steriplus does this projection by
+default and uses a cutoff of 0.001 mDyne/Å for low-frequency modes. We
+therefore recommend local modes with default settings as the most robust
+method in cases problematic cases. Expert users can turn off the projection
+and alter the cutoff value.
 
 Note that interactions involving imaginary modes (such as breaking/forming
 bonds in transition states) cannot be assessed by the local force constants.
 
 Steriplus has been benchmarked against the local force constants and
-frequencies for small organic molecules given by Cremer [3]_. 
+frequencies given by Cremer [3]_ for small organic molecules. 
 
 .. figure:: benchmarks/local_force/benchmark.png
   
