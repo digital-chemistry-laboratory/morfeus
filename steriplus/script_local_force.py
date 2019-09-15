@@ -19,7 +19,7 @@ def main():
         '-p', '--program', type=str, help="Quantum-chemical program",
         required=True)
     parser.add_argument(
-        '-t', '--filetype', type=str, help="Filetype", required=True)
+        '-t', '--type', type=str, help="Filetype", required=True)
     parser.add_argument(
         "-x", '--xyz', type=str, help='xyz file')
 
@@ -49,7 +49,7 @@ def main():
     lf.load_file(input_file, program, filetype)
 
     if method == "local":
-        if not lf._force_constants:
+        if len(lf._force_constants) < 1:
             lf.normal_mode_analysis()
         lf.compute_local()
     if method == "compliance":

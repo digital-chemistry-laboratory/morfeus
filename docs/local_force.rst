@@ -213,34 +213,46 @@ The command line script provides access to the basic functionality through
 the terminal.
 
 .. code-block:: console
-  :caption: Example of single internal coordinate
+  :caption: Example with Gaussian log file.
   
-  $ steriplus_local_force freq-hp.log -a 1 2
-  5.364
+  $ steriplus_local_force freq-lm.log -p gaussian -t log
+  Coordinate                            Force constant (mDyne/Å, mDyne Å rad^(-2))             Frequency (cm^-1)
+  Bond(1, 2)                                                                 5.364                          3129
+  Bond(1, 3)                                                                 5.364                          3129
+  Bond(1, 4)                                                                 5.365                          3129
+  Bond(1, 5)                                                                 5.364                          3129
+  Angle(1, 2, 3)                                                             0.667                          1448
+  Angle(1, 2, 4)                                                             0.667                          1448
+  Angle(1, 2, 5)                                                             0.667                          1448
+  Angle(1, 3, 4)                                                             0.667                          1448
+  Angle(1, 3, 5)                                                             0.667                          1448
+  Angle(1, 4, 5)                                                             0.667                          1448
+  Dihedral(1, 2, 3, 4)                                                       0.433                          1384
+  Dihedral(1, 2, 3, 5)                                                       0.433                          1384
+  Dihedral(1, 2, 4, 5)                                                       0.433                          1384
+  Dihedral(1, 3, 4, 5)                                                       0.433                          1384
 
 .. code-block:: console
-  :caption: Example of report
+  :caption: Example with xtb and hessian file.
   
-  $ steriplus_local_force freq-hp.log
-    Atom_1    Atom_2    Atom_3    Atom_4                           Force constant(mDyne/Å)                       Frequency (cm^-1)
-         1         2                                                                 5.364                                    3252
-         1         3                                                                 5.364                                    3252
-         1         4                                                                 5.364                                    3252
-         1         5                                                                 5.364                                    3252
+  $ steriplus_local_force hessian -x xtbopt.xyz -p xtb -t hessian -m local -c 1 2 -c 1 5 -c 1 2 3
+  Coordinate                            Force constant (mDyne/Å, mDyne Å rad^(-2))             Frequency (cm^-1)
+  Bond(1, 2)                                                                 5.190                          3078
+  Bond(1, 5)                                                                 5.190                          3078
+  Angle(1, 2, 3)                                                             2.388                          1692                                 3252
 
--a <list>
-  List of atoms in the bond/internal coordinate.
---cutoff <float>
-  Cutoff value for low-frequency modes (default:0.001)
---fchk_file <str>
-  Name of Gaussian fchk file
---method <str>
+-c, --coordinate <list>
+  List of atoms in the bond/internal coordinate. Can be given multiple times
+  to add multiple coordinates.
+-m, --method <str>
   Method: "local" (default) or "compliance"
---no_project_imaginary
-  Flag to disable projection of imaginary modes
---pes_file <str>
-  Name of Gaussian PES file
-  
+-p, --program <str>
+  Quantum-chemical program
+-t, --type <str>
+  Input file type.
+-x, --xyz <str>
+  Coordinate file in xyz format
+
 More information is given with ``steriplus_local_force --help``
 
 ******
