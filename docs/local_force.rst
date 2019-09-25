@@ -242,7 +242,7 @@ the terminal.
   Coordinate                            Force constant (mDyne/Å, mDyne Å rad^(-2))             Frequency (cm^-1)
   Bond(1, 2)                                                                 5.190                          3078
   Bond(1, 5)                                                                 5.190                          3078
-  Angle(1, 2, 3)                                                             2.388                          1692                                 3252
+  Angle(1, 2, 3)                                                             2.388                          1692
 
 -c, --coordinate <list>
   List of atoms in the bond/internal coordinate. Can be given multiple times
