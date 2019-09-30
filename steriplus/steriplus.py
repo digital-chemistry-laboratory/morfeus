@@ -194,17 +194,13 @@ class Sterimol:
         p = pv.BackgroundPlotter()
         p.set_background(background_color)
 
-        # Set up lists for drawing
-        elements = [atom.element for atom in self._atoms]
-        coordinates = [atom.coordinates for atom in self._atoms]
-        radii = [atom.radius for atom in self._atoms]
-        colors = [hex2color(jmol_colors[i]) for i in elements]
-
         # Draw molecule
-        for coordinate, radius, color in zip(coordinates, radii, colors):
-            sphere = pv.Sphere(center=list(coordinate),
-                               radius=radius * atom_scale)
-            p.add_mesh(sphere, color=color, opacity=1)
+        for atom in self._atoms:
+            color = hex2color(jmol_colors[atom.element])
+            radius = atom.radius * atom_scale
+            sphere = pv.Sphere(center=list(atom.coordinates),
+                               radius=radius)
+            p.add_mesh(sphere, color=color, opacity=1, name=str(atom.index))
         
         # Get arrow starting points
         start_L = self._atoms[self._atom_1 - 1].coordinates
@@ -433,17 +429,13 @@ class BuriedVolume:
         p = pv.BackgroundPlotter()
         p.set_background(background_color)
 
-        # Set up lists for drawing
-        elements = [atom.element for atom in self._atoms]
-        coordinates = [atom.coordinates for atom in self._atoms]
-        radii = [atom.radius for atom in self._atoms]
-        colors = [hex2color(jmol_colors[i]) for i in elements]
-
         # Draw molecule
-        for coordinate, radius, color in zip(coordinates, radii, colors):
-            sphere = pv.Sphere(center=list(coordinate),
-                               radius=radius * atom_scale)
-            p.add_mesh(sphere, color=color, opacity=1)
+        for atom in self._atoms:
+            color = hex2color(jmol_colors[atom.element])
+            radius = atom.radius * atom_scale
+            sphere = pv.Sphere(center=list(atom.coordinates),
+                               radius=radius)
+            p.add_mesh(sphere, color=color, opacity=1, name=str(atom.index))
         
         # Add buried points
         p.add_points(self._buried_points, color=buried_color, opacity=opacity)
@@ -584,7 +576,7 @@ class SASA:
     @conditional(_has_vtk, _warning_vtk)
     @conditional(_has_matplotlib, _warning_matplotlib) 
     def draw_3D(self, atom_scale=1, background_color="white",
-                point_color="steelblue", opacity=1, size=1):
+                point_color="steelblue", opacity=0.25, size=1):
         """Draw a 3D representation of the molecule with the solvent accessible
         surface area
 
@@ -599,18 +591,13 @@ class SASA:
         p = pv.BackgroundPlotter()
         p.set_background(background_color)
 
-        # Set up lists for drawing
-        elements = [atom.element for atom in self._atoms]
-        coordinates = [atom.coordinates for atom in self._atoms]
-        radii = np.array([atom.radius for atom in self._atoms]) - \
-            self._probe_radius
-        colors = [hex2color(jmol_colors[i]) for i in elements]
-
         # Draw molecule
-        for coordinate, radius, color in zip(coordinates, radii, colors):
-            sphere = pv.Sphere(center=list(coordinate),
-                               radius=radius * atom_scale)
-            p.add_mesh(sphere, color=color, opacity=1)
+        for atom in self._atoms:
+            color = hex2color(jmol_colors[atom.element])
+            radius = atom.radius * atom_scale - self._probe_radius
+            sphere = pv.Sphere(center=list(atom.coordinates),
+                               radius=radius)
+            p.add_mesh(sphere, color=color, opacity=1, name=str(atom.index))
         
         # Draw surface points
         surface_points = np.vstack([atom.accessible_points 
@@ -972,17 +959,13 @@ class ConeAngle:
         p = pv.BackgroundPlotter()
         p.set_background(background_color)
 
-        # Set up lists for drawing
-        elements = [atom.element for atom in self._atoms]
-        coordinates = [atom.coordinates for atom in self._atoms]
-        radii = [atom.radius for atom in self._atoms]
-        colors = [hex2color(jmol_colors[i]) for i in elements]
-
         # Draw molecule
-        for coordinate, radius, color in zip(coordinates, radii, colors):
-            sphere = pv.Sphere(center=list(coordinate),
-                               radius=radius * atom_scale)
-            p.add_mesh(sphere, color=color, opacity=1)
+        for atom in self._atoms:
+            color = hex2color(jmol_colors[atom.element])
+            radius = atom.radius * atom_scale
+            sphere = pv.Sphere(center=list(atom.coordinates),
+                               radius=radius)
+            p.add_mesh(sphere, color=color, opacity=1, name=str(atom.index))
         
         # Determine direction and extension of cone
         cone_angle = math.degrees(self._cone.angle)
@@ -1390,16 +1373,13 @@ class Dispersion:
         # Set up plotter
         p = pv.BackgroundPlotter()
 
-        # Set up lists for drawing
-        elements = [atom.element for atom in self._atoms]
-        coordinates = [atom.coordinates for atom in self._atoms]
-        radii = [atom.radius for atom in self._atoms]
-        colors = [hex2color(jmol_colors[i]) for i in elements]
-
         # Draw molecule
-        for coordinate, radius, color in zip(coordinates, radii, colors):
-            sphere = pv.Sphere(center=coordinate, radius=radius * atom_scale)
-            p.add_mesh(sphere, color=color, opacity=molecule_opacity)
+        for atom in self._atoms:
+            color = hex2color(jmol_colors[atom.element])
+            radius = atom.radius * atom_scale
+            sphere = pv.Sphere(center=list(atom.coordinates),
+                               radius=radius)
+            p.add_mesh(sphere, color=color, opacity=1, name=str(atom.index))
         
         # Set up plotting of mapped surface
         if display_p_int == True:
