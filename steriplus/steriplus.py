@@ -993,12 +993,12 @@ class Dispersion:
     """Calculates and stores the results for the P_int dispersion descriptor.
 
     The descriptor is defined in Angew. Chemie Int. Ed. 2019.
-    DOI: 10.1002/anie.201905439. Steriplus can calculate it based on a surface
+    DOI: 10.1002/anie.201905439. Steriplus can compute it based on a surface
     either from vdW radii, surface vertices or electron density. Dispersion can
     be obtained with the D3 or D4 model.
 
     Args:
-        calculate_coefficents (bool): Whether to calculate D3 coefficients with
+        compute_coefficients (bool): Whether to compute D3 coefficients with
             internal code.
         coordinates (list): Coordinates (Å)
         density (float): Area per point (Å**2) on the vdW surface.
@@ -1022,7 +1022,7 @@ class Dispersion:
         volume (float): Volume of surface (Å^3)
     """
     def __init__(self, elements, coordinates, radii=[], radii_type="rahm",
-                 point_surface=True, calculate_coefficients=True, density=0.1,
+                 point_surface=True, compute_coefficients=True, density=0.1,
                  excluded_atoms=[]):
         # Set up
         self._surface = None
@@ -1072,12 +1072,12 @@ class Dispersion:
             self._atoms = atoms
         
         # Calculate coefficients
-        if calculate_coefficients:
-            self.get_coefficients(model='id3')
+        if compute_coefficients:
+            self.compute_coefficients(model='id3')
         
         # Calculatte P_int values
-        if point_surface and calculate_coefficients:
-            self.calculate_p_int()
+        if point_surface and compute_coefficients:
+            self.compute_p_int()
 
     @conditional(_has_vtk, _warning_vtk)
     def surface_from_cube(self, filename, isodensity=0.001,
@@ -1244,18 +1244,18 @@ class Dispersion:
 
         return surface        
 
-    def calculate_p_int(self, points=[]):
-        """Calculate P_int values for surface or points.
+    def compute_p_int(self, points=[]):
+        """Compute P_int values for surface or points.
 
         Args:
-            points (list): Points to calculate P values for
+            points (list): Points to compute P values for
         """
         # Set up array of points
         points = np.array(points)
 
         # Set up atoms and coefficients that are part of the calculation
-        atom_indices = [atom.index - 1 for atom in self._atoms 
-                        if atom.index not in self._excluded_atoms]
+        atom_indices = np.array([atom.index - 1 for atom in self._atoms 
+                        if atom.index not in self._excluded_atoms])
         coordinates = np.array([atom.coordinates for atom in self._atoms])
         coordinates = coordinates[atom_indices]
         c6_coefficients = np.array(self._c6_coefficients)
@@ -1296,13 +1296,14 @@ class Dispersion:
                         atom.p_values = np.array([])
             self.atom_p_ints = atom_p_ints
 
-        self.p_int = np.sum(p * self._point_areas / self.area)
+        point_areas = self._point_areas[np.isin(self._point_map,
+                                        atom_indices + 1)]
+        self.p_int = np.sum(p * point_areas / self.area)
 
         # Calculate p_min and p_max with slight modification to Robert's 
         # definitions
-        p_sorted = np.sort(p)
-        self.p_min = np.mean(p_sorted[:10])
-        self.p_max = np.mean(p_sorted[-10:])
+        self.p_min = np.min(p)
+        self.p_max = np.max(p)
 
         # Map p_values onto surface
         if self._surface:
@@ -1312,18 +1313,14 @@ class Dispersion:
                     mapped_p[self._point_map == atom.index] = atom.p_values
             self._surface.cell_arrays['p_int'] = mapped_p
 
-    def get_coefficients(self, filename=None, model='id3'):
-        """Get the C6 and C8 coefficients.
-
-        The default model is the internal D3 calculator. Output can be read from
-        the dftd3 and dftd4 programs by giving a filename in combination with
-        the corresponding 'model' keyword argument.
+    def compute_coefficients(self, model='id3'):
+        """Compute dispersion coefficients. Currently, the D3 model is
+        supported.
 
         Args:
-            filename (str): Output file from the dftd3 or dftd4 programs
-            model (str): Calculation model: 'id3' (default), 'd3' or 'd4'.
-        """
-        if not filename and model =="id3":
+            model (str): Calculation model: 'id3'
+        """       
+        if model =="id3":
             # Set up atoms and coordinates
             elements = [atom.element for atom in self._atoms]
             coordinates = [atom.coordinates for atom in self._atoms]
@@ -1331,8 +1328,19 @@ class Dispersion:
             # Calculate the D3 values
             calc = D3Calculator(elements, coordinates)
             self._c6_coefficients = calc.c6_coefficients
-            self._c8_coefficients = calc.c8_coefficients
-        elif filename and model == "d3":
+            self._c8_coefficients = calc.c8_coefficients 
+
+    def load_coefficients(self, filename, model):
+        """Load the C6 and C8 coefficients.
+
+         Output can be read from the dftd3 and dftd4 programs by giving a
+        filename in combination with the corresponding model.
+
+        Args:
+            filename (str): Output file from the dftd3 or dftd4 programs
+            model (str): Calculation model: 'd3' or 'd4'.
+        """
+        if filename and model == "d3":
             # Read the data
             parser = D3Parser(filename)
             self._c6_coefficients = parser.c6_coefficients
