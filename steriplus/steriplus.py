@@ -990,7 +990,7 @@ class ConeAngle:
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
 
 class Dispersion:
-    """Calculates and stores the results for the P_int dispersion descriptor.
+    """Calculates and stores the results for the 🍺P_int dispersion descriptor.
 
     The descriptor is defined in Angew. Chemie Int. Ed. 2019.
     DOI: 10.1002/anie.201905439. Steriplus can compute it based on a surface
