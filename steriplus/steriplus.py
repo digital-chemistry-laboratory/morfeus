@@ -1013,11 +1013,15 @@ class Dispersion:
     Parameters:
         area (float): Area of surface (Å^2)
         atom_areas (dict): Atom areas (Å^2, starting from 1)
-        atom_p_ints (dict): P_int value for atoms (kcal^(1/2) Bohr^(-1/2)
+        atom_p_int (dict): P_int value for atoms (kcal^(1/2) Bohr^(-1/2)
+            starting from 1)
+        atom_p_max (dict): P_max value for atoms (kcal^(1/2) Bohr^(-1/2)
+            starting from 1)
+        atom_p_min (dict): P_min value for atoms (kcal^(1/2) Bohr^(-1/2)
             starting from 1)
         p_int (float): P_int value for molecule (kcal^(1/2) Bohr^(-1/2)
-        p_max (float): Mean of 10 highest P values (kcal^(1/2) Bohr^(-1/2)
-        p_min (float): Mean of 10 lowest P values (kcal^(1/2) Bohr^(-1/2)
+        p_max (float): Highest P values (kcal^(1/2) Bohr^(-1/2)
+        p_min (float): Lowest P values (kcal^(1/2) Bohr^(-1/2)
         p_values (list): All P values (kcal^(1/2) Bohr^(-1/2)
         volume (float): Volume of surface (Å^3)
     """
@@ -1279,7 +1283,9 @@ class Dispersion:
     
         # Take out atomic p_ints if no points are given
         if atomic:
-            atom_p_ints = {}
+            atom_p_max = {}
+            atom_p_min = {}
+            atom_p_int = {}
             i_start = 0
             for atom in self._atoms:
                 if atom.index not in self._excluded_atoms:
@@ -1288,13 +1294,19 @@ class Dispersion:
                         i_stop = i_start + n_points
                         atom_ps = p[i_start:i_stop]
                         atom.p_values = atom_ps
-                        atom_p_ints[atom.index] = np.sum(atom_ps * 
+                        atom_p_max[atom.index] = np.max(atom_ps)
+                        atom_p_min[atom.index] = np.min(atom_ps)
+                        atom_p_int[atom.index] = np.sum(atom_ps * 
                             atom.point_areas / atom.area)
                         i_start = i_stop
                     else:
-                        atom_p_ints[atom.index] = 0
+                        atom_p_max[atom.index] = 0
+                        atom_p_min[atom.index] = 0
+                        atom_p_int[atom.index] = 0
                         atom.p_values = np.array([])
-            self.atom_p_ints = atom_p_ints
+            self.atom_p_max = atom_p_max
+            self.atom_p_min = atom_p_min
+            self.atom_p_int = atom_p_int
 
         point_areas = self._point_areas[np.isin(self._point_map,
                                         atom_indices + 1)]
@@ -1362,9 +1374,18 @@ class Dispersion:
         print(f"P_int (kcal^(1/2) Bohr^(-1/2): {self.p_int:.1f}")
         if verbose:
             print(f"{'Symbol':<10s}{'Index':<10s}{'P_int (kcal^(1/2) Bohr^(-1/2))':<30s}")
-            for atom, (i, p_int) in zip(self._atoms, self.atom_p_ints.items()):
+            for atom, (i, p_int) in zip(self._atoms, self.atom_p_int.items()):
                 symbol = atomic_symbols[atom.element]
-                print(f"{symbol:<10s}{i:<10d}{p_int:<10.1f}")        
+                print(f"{symbol:<10s}{i:<10d}{p_int:<10.1f}")
+
+    @conditional(_has_vtk, _warning_vtk)
+    def save_vtk(self, filename):
+        """Save surface as .vtk file
+
+        Args:
+            filename (str): Name of file. Use .vtk suffix.
+        """
+        self._surface.save(filename)
 
     @conditional(_has_vtk, _warning_vtk)
     @conditional(_has_matplotlib, _warning_matplotlib)
@@ -1391,8 +1412,6 @@ class Dispersion:
         
         # Set up plotting of mapped surface
         if display_p_int == True:
-            if self._surface:
-                self._surface.set_active_scalar('p_int')
             color = None
             cmap = "coolwarm"
         else:
