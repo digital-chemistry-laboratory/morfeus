@@ -1005,6 +1005,8 @@ class Dispersion:
         elements (list): Elements as atomic symbols or numbers
         excluded_atoms (list): Atoms to exclude from the calculation. Used only
             for calculation of substituent P_ints.
+        included_atoms (list): Atoms to include in the calculation. Used only
+            for calculation of functional group P_ints.
         point_surface (bool): Use point surface from vdW radii.
         radii (list): VdW radii (Å)
         radii_type (str): Choice of vdW radii: 'bondi', 'crc' or 'rahm'
@@ -1027,10 +1029,21 @@ class Dispersion:
     """
     def __init__(self, elements, coordinates, radii=[], radii_type="rahm",
                  point_surface=True, compute_coefficients=True, density=0.1,
-                 excluded_atoms=[]):
+                 excluded_atoms=[], included_atoms=[]):
+        # Check that only excluded or included atoms are given
+        if len(excluded_atoms) > 0 and len(included_atoms) > 0:
+            raise Exception("Give either excluded or included atoms but not both.")
+        
+        # Set excluded atoms
+        all_atoms = set(range(1, len(elements) + 1))
+        if len(included_atoms) > 0:
+            included_atoms = set(included_atoms)
+            excluded_atoms = list(all_atoms - included_atoms)
+            
+        self._excluded_atoms = excluded_atoms
+
         # Set up
         self._surface = None
-        self._excluded_atoms = excluded_atoms
         self._density = None
         
         # Converting elements to atomic numbers if the are symbols

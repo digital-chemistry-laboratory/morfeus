@@ -301,7 +301,7 @@ def read_xyz(filename):
     with open(filename) as file:
         lines = file.readlines()
         # Check whether it has number of atoms and comments
-        if len(lines[0].strip().split()) == 0:
+        if len(lines[0].strip().split()) == 1:
             lines = lines[2:]
     lines = [line.strip().split() for line in lines if line.strip().split()]
 
