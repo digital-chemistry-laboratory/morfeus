@@ -299,7 +299,10 @@ def read_xyz(filename):
     """
     # Read file and split lines
     with open(filename) as file:
-        lines = file.readlines()[2:]
+        lines = file.readlines()
+        # Check whether it has number of atoms and comments
+        if len(lines[0].strip().split()) == 0:
+            lines = lines[2:]
     lines = [line.strip().split() for line in lines if line.strip().split()]
 
     # Loop over lines and store elements and coordinates
