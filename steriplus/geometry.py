@@ -571,3 +571,44 @@ def kabsch_rotation_matrix(P, Q):
     R = V_T.T @ np.array([[1, 0, 0], [0, 1, 0], [0, 0, d]]) @ U.T
     
     return R
+
+def sphere_line_intersection(vector, center, radius):
+    """Get points of intersection between line and sphere. Follows the
+    procedure outlined here: http://paulbourke.net/geometry/circlesphere/.
+
+    Args:
+        vector (ndarray): Vector giving direction of line
+        center (ndarray): Center of sphere
+        radius (float): Radius of sphere
+
+    Returns:
+        intersection_points (list): Intersection points
+    """
+    # Set up points
+    p_1 = vector
+    p_2 = vector * 2
+
+    # Set up terms for quadratic equation
+    a = (p_2[0] - p_1[0]) ** 2 + (p_2[1] - p_1[1]) ** 2 \
+        + (p_2[2] - p_1[2]) ** 2
+    b = 2 * ((p_2[0] - p_1[0]) * (p_1[0] - center[0]) \
+        + (p_2[1] - p_1[1]) * (p_1[1] - center[1]) \
+        + (p_2[2] - p_1[2]) * (p_1[2] - center[2]))
+    c = center[0] ** 2 + center[1] ** 2 + center[2] ** 2 \
+        + p_1[0] ** 2 + p_1[1] ** 2 + p_1[2] ** 2 \
+        - 2 * (center[0] * p_1[0] + center[1] * p_1[1] + center[2] * p_1[2]) \
+        - radius ** 2
+
+    # Determine value within the square root and select cases
+    within_sqrt = b ** 2 - 4 * a * c
+    if within_sqrt < 0:
+        us = []
+    elif within_sqrt == 0:
+        us = [-b / (2 * a)]
+    elif within_sqrt > 0:
+        us = [(-b + math.sqrt(within_sqrt)) / (2 * a), (-b - math.sqrt(within_sqrt)) / (2 * a)]
+    
+    # Calculate intersection points.
+    intersection_points = [p_1 + u * (p_2 - p_1) for u in us]
+    
+    return intersection_points

@@ -49,7 +49,9 @@ from steriplus.helpers import check_distances, convert_elements, get_radii
 from steriplus.helpers import conditional
 from steriplus.calculators import D3Calculator
 from steriplus.geometry import Atom, Cone, rotate_coordinates, Sphere
-from steriplus.geometry import kabsch_rotation_matrix, InternalCoordinates, Bond, Angle, Dihedral
+from steriplus.geometry import sphere_line_intersection
+from steriplus.geometry import kabsch_rotation_matrix, InternalCoordinates
+from steriplus.geometry import Bond, Angle, Dihedral
 from steriplus.io import CubeParser, D3Parser, D4Parser, VertexParser
 
 class Sterimol:
@@ -65,6 +67,7 @@ class Sterimol:
                              and B_5
         radii (list): List of radii (Å, optional)
         radii_type (str): Type of radii to use: 'bondi' or 'crc'
+        sphere_radius (float): Radius of sphere for Buried Sterimol (Å)
 
     Attributes:
         B_1 (ndarray): Sterimol B_1 vector (Å)
@@ -75,9 +78,10 @@ class Sterimol:
         L (ndarray): Sterimol L vector (Å)
         L_value (float): Sterimol L value (Å)
         L_value_uncorrected (float): Sterimol L value minus 0.40 Å
+        sphere_radius (float): Radius of sphere for Buried Sterimol (Å)
     """
     def __init__(self, elements, coordinates, atom_1, atom_2, radii=[],
-                 radii_type="crc", n_rot_vectors=3600):
+                 radii_type="crc", n_rot_vectors=3600, sphere_radius=None):
         # Convert elements to atomic numbers if the are symbols
         elements = convert_elements(elements)
 
@@ -123,7 +127,8 @@ class Sterimol:
         # Get L as largest projection along the vector
         L_value = np.max(projected) + bond_length
         L = unit_vector * L_value
-
+        L = L.reshape(-1)
+        
         # Get rotation vectors in yz plane
         r = 1
         theta = np.linspace(0, 2 * math.pi, n_rot_vectors)
@@ -144,13 +149,39 @@ class Sterimol:
         B_5_value = np.max(max_c_values)
         B_5 = rot_vectors[np.argmax(max_c_values)] * B_5_value
 
+        # Trim L, B1 and B5 for Buried Sterimol
+        if sphere_radius:
+            atom_1_coordinates = all_coordinates[atom_1 - 1]
+            atom_2_coordinates = all_coordinates[atom_2 - 1]
+
+            new_vectors = []
+            for vector, ref_coordinates in [(L, atom_1_coordinates), (B_1, atom_2_coordinates), (B_5, atom_2_coordinates)]:
+                intersection_points = sphere_line_intersection(vector, atom_1_coordinates, sphere_radius)
+                if len(intersection_points) < 1:
+                    raise Exception("Sphere so small that vectors don't intersect")
+                
+                trial_vectors = [point - ref_coordinates for point in intersection_points]
+                norm_vector = vector / np.linalg.norm(vector)
+                dot_products = [np.dot(norm_vector, trial_vector / np.linalg.norm(trial_vector)) for trial_vector in trial_vectors]
+                new_vector = trial_vectors[np.argmax(dot_products)]
+                new_vectors.append(new_vector)
+            if np.linalg.norm(L) > np.linalg.norm(new_vectors[0]):
+                L = new_vectors[0]
+                L_value = np.linalg.norm(L)
+            if np.linalg.norm(B_1) > np.linalg.norm(new_vectors[1]):
+                B_1 = new_vectors[1]                
+                B_1_value = np.linalg.norm(B_1)
+            if np.linalg.norm(B_5) > np.linalg.norm(new_vectors[2]):
+                B_5 = new_vectors[2]     
+                B_5_value = np.linalg.norm(B_5)
+
         # Set up attributes
         self._atoms = atoms
         
         self._atom_1 = atom_1
         self._atom_2 = atom_2
         
-        self.L = L.reshape(-1)
+        self.L = L
         self.L_value = L_value + 0.40
         self.L_value_uncorrected = L_value
         self.bond_length = bond_length
@@ -160,6 +191,8 @@ class Sterimol:
 
         self.B_5 = B_5
         self.B_5_value = B_5_value    
+
+        self.sphere_radius = sphere_radius
 
     def print_report(self, verbose=False):
         """Prints the values of the Sterimol parameters.
@@ -202,6 +235,14 @@ class Sterimol:
                                radius=radius)
             p.add_mesh(sphere, color=color, opacity=1, name=str(atom.index))
         
+        # Draw sphere for Buried Sterimol
+        if self.sphere_radius:
+            sphere = pv.Sphere(
+                center=self._atoms[self._atom_1 - 1].coordinates,
+                radius=self.sphere_radius
+                )
+            p.add_mesh(sphere, opacity=0.25)
+        
         # Get arrow starting points
         start_L = self._atoms[self._atom_1 - 1].coordinates
         start_B = self._atoms[self._atom_2 - 1].coordinates
@@ -232,6 +273,8 @@ class Sterimol:
         labels = ["L", "B1", "B5"]
         p.add_point_labels(points, labels, text_color="black", font_size=30,
                            bold=False, show_points=False, point_size=1)
+        
+        self._plotter = p
 
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
@@ -1337,6 +1380,9 @@ class Dispersion:
                 if atom.index not in self._excluded_atoms:
                     mapped_p[self._point_map == atom.index] = atom.p_values
             self._surface.cell_arrays['p_int'] = mapped_p
+        
+        # Store points for later use
+        self._points = points
 
     def compute_coefficients(self, model='id3'):
         """Compute dispersion coefficients. Currently, the D3 model is
@@ -1421,7 +1467,7 @@ class Dispersion:
             radius = atom.radius * atom_scale
             sphere = pv.Sphere(center=list(atom.coordinates),
                                radius=radius)
-            p.add_mesh(sphere, color=color, opacity=1, name=str(atom.index))
+            p.add_mesh(sphere, color=color, opacity=molecule_opacity, name=str(atom.index))
         
         # Set up plotting of mapped surface
         if display_p_int == True:
@@ -1434,6 +1480,10 @@ class Dispersion:
         # Draw surface
         if self._surface:
             p.add_mesh(self._surface, opacity=opacity, color=color, cmap=cmap)
+        else:
+            point_cloud = pv.PolyData(self._points)
+            point_cloud["values"] = self.p_values
+            p.add_mesh(point_cloud, opacity=opacity, color=color, cmap=cmap, render_points_as_spheres=True)
 
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
