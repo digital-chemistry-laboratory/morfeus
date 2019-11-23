@@ -298,7 +298,7 @@ class BuriedVolume:
         coordinates (list): Coordinates (Å)
         density (float): Volume per point (Å**3) in the sphere
         elements (list): Elements as atomic symbols or numbers
-        exclude_list (list): Indices of atoms to exclude from the calculation
+        excluded_atoms (list): Indices of atoms to exclude from the calculation
                              (starting from 1)
         include_hs (bool): Whether to include H atoms in the calculation
         radii (list): vdW radii (Å)
@@ -309,15 +309,11 @@ class BuriedVolume:
     Parameters:
         buried_volume (float): Buried volume
     """
-    def __init__(self, elements, coordinates, atom_1, exclude_list=[],
+    def __init__(self, elements, coordinates, atom_1, excluded_atoms=[],
                  radii=[], include_hs=False, radius=3.5, radii_type="bondi",
                  radii_scale=1.17, density=0.001):
         # Get the coordinates for the central atom
         center = np.array(coordinates[atom_1 - 1])
-
-        # Construct sphere at metal center
-        sphere = Sphere(center, radius, method="projection", density=density,
-                   filled=True)
 
         # Save density and coordinates for steric map plotting.
         self._density = density
@@ -333,21 +329,36 @@ class BuriedVolume:
 
         # Get list of atoms as Atom objects
         atoms= []
-        for i, (element, radius, coord) in enumerate(zip(elements, radii,
+        for i, (element, radius_, coord) in enumerate(zip(elements, radii,
                                                coordinates), start=1):
-            if i in exclude_list:
+            if i in excluded_atoms:
                 continue
             elif (not include_hs) and element == 1:
                 continue
             else:
-                atom = Atom(element, coord, radius, i)
+                atom = Atom(element, coord, radius_, i)
                 atoms.append(atom)
 
+        # Set variables for outside access and function access.
+        self._atoms = atoms
+        self._excluded_atoms = excluded_atoms                
+    
+        # Compute buried volume
+        self._compute_buried_volume(center=center, radius=radius,
+                                    density=density)
+
+        self.molecular_volume = None
+        self.distal_volume = None
+    
+    def _compute_buried_volume(self, center, radius, density):
+        # Construct sphere at metal center
+        sphere = Sphere(center, radius, method="projection", density=density,
+                        filled=True)
         # Prune sphere points which are within vdW radius of other atoms.
         tree = scipy.spatial.cKDTree(sphere.points, compact_nodes=False,
                                      balanced_tree=False)
         mask = np.zeros(len(sphere.points), dtype=bool)
-        for atom in atoms:
+        for atom in self._atoms:
             if atom.radius + sphere.radius > np.linalg.norm(atom.coordinates):
                 to_prune = tree.query_ball_point(atom.coordinates,
                                                  atom.radius)
@@ -356,13 +367,62 @@ class BuriedVolume:
         free_points = sphere.points[np.invert(mask),:]
 
         # Calculate buried_volume
-        self.buried_volume = len(buried_points) / len(sphere.points)
-
-        # Set variables for outside access and function access.
-        self._atoms = atoms
+        self.percent_buried_volume = len(buried_points) / len(sphere.points)
+        self.buried_volume = sphere.volume * self.percent_buried_volume
+        self.free_volume = sphere.volume - self.buried_volume
         self._sphere = sphere
         self._buried_points = buried_points
-        self._free_points = free_points
+        self._free_points = free_points        
+    
+    def compute_distal_volume(self, mode="sasa", sasa_density=0.01):
+        if mode == "sasa":
+            elements = []
+            coordinates = []
+            radii = []
+            for atom in self._atoms:
+                elements.append(atom.element)
+                coordinates.append(atom.coordinates)
+                radii.append(atom.radius)
+            coordinates = np.vstack(coordinates)
+            sasa = SASA(elements, coordinates, radii=radii, probe_radius=0,
+                        density=sasa_density)
+            self.molecular_volume = sasa.volume
+            self.distal_volume = self.molecular_volume - self.buried_volume
+        elif mode == "buried volume":
+            # Save the values for the old buried volume calculation
+            old_percent_buried_volume = self.percent_buried_volume
+            old_buried_volume = self.buried_volume
+            old_free_volume = self.free_volume
+            old_sphere = self._sphere
+            old_buried_points = self._buried_points
+            old_free_points = self._free_points
+
+            # Determine sphere radius to cover the whole molecule
+            coordinates = []
+            radii = []
+            for atom in self._atoms:
+                coordinates.append(atom.coordinates)
+                radii.append(atom.radius)
+            coordinates = np.vstack(coordinates)
+            distances = cdist(self._sphere.center.reshape(1, -1), coordinates)
+            new_radius = np.max(distances + radii) + 0.5
+
+            # Compute the distal volume
+            self._compute_buried_volume(center=self._sphere.center,
+                                        radius=new_radius,
+                                        density=self._sphere.density)
+            self.molecular_volume = self.buried_volume
+            self.distal_volume = self.molecular_volume - old_buried_volume
+
+            # Reset values from old calculation
+            self.percent_buried_volume = old_percent_buried_volume 
+            self.buried_volume = old_buried_volume
+            self.free_volume = old_free_volume
+            self._sphere = old_sphere
+            self._buried_points = old_buried_points
+            self._free_points = old_free_points
+        else:
+            raise Exception("Provide valid mode.")
     
     @conditional(_has_matplotlib, _warning_matplotlib)
     def plot_steric_map(self, z_axis_atoms, filename=None, levels=150, grid=100,

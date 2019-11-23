@@ -143,6 +143,7 @@ class Sphere:
         self.circumference = math.pi * radius * 2
         self.area = 4 * radius**2 * math.pi
         self.volume = 4 * radius**3 * math.pi / 3
+        self.density = density
 
         if method == "polar":
             self.points = self._get_points_polar(density=density)
