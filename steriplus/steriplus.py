@@ -63,6 +63,7 @@ class Sterimol:
                       at 1)
         coordinates (list): Coordinates (Å)
         elements (list): Elements as atomic symbols or numbers
+        excluded_atoms (list): Atoms to exclude from the calculation
         n_rot_vectors (int): Number of rotational vectors for determining B_1
                              and B_5
         radii (list): List of radii (Å, optional)
@@ -81,14 +82,15 @@ class Sterimol:
         sphere_radius (float): Radius of sphere for Buried Sterimol (Å)
     """
     def __init__(self, elements, coordinates, atom_1, atom_2, radii=[],
-                 radii_type="crc", n_rot_vectors=3600, sphere_radius=None):
+                 radii_type="crc", n_rot_vectors=3600, sphere_radius=None,
+                 excluded_atoms=[]):
         # Convert elements to atomic numbers if the are symbols
         elements = convert_elements(elements)
 
         # Get radii if they are not supplied
         if not radii:
             radii = get_radii(elements, radii_type=radii_type)
-        radii = np.array(radii)
+        all_radii = np.array(radii)
 
         # Set up coordinate array
         all_coordinates = np.array(coordinates)
@@ -108,13 +110,21 @@ class Sterimol:
 
         # Get list of atoms as Atom objects
         atoms = []
+        coordinates = []
+        radii = []
         for i, (element, radius, coord) in enumerate(
-                zip(elements, radii, all_coordinates), start=1):
-            atom = Atom(element, coord, radius, i)
-            atoms.append(atom)
+                zip(elements, all_radii, all_coordinates), start=1):
+            if i not in excluded_atoms:
+                atom = Atom(element, coord, radius, i)
+                atoms.append(atom)
+                if i != atom_1:
+                    coordinates.append(coord)
+                    radii.append(radius)
+        coordinates = np.vstack(coordinates)
+        radii = np.vstack(radii).reshape(-1)
 
-        coordinates = np.delete(all_coordinates, atom_1 - 1, axis=0)
-        radii = np.delete(radii, atom_1 - 1)
+        #coordinates = np.delete(all_coordinates, atom_1 - 1, axis=0)
+        #radii = np.delete(radii, atom_1 - 1)
 
         # Project coordinates onto vector between atoms 1 and 2
         vector = all_coordinates[atom_2 - 1] - all_coordinates[atom_1 - 1]
