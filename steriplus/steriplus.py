@@ -58,9 +58,9 @@ class Sterimol:
     """Performs and stores results of Sterimol calculation.
 
     Args:
-        atom_1 (int): Index of atom 1 (dummy atom, starting at 1)
-        atom_2 (int): Index of atom 2 (connected atom of substituent, starting
-                      at 1)
+        dummy_index (int): Index of dummy atom, starting at 1)
+        attached_index (int): Index of attached atom of substituent, starting
+                          at 1)
         coordinates (list): Coordinates (Å)
         elements (list): Elements as atomic symbols or numbers
         excluded_atoms (list): Atoms to exclude from the calculation
@@ -79,11 +79,10 @@ class Sterimol:
         L (ndarray): Sterimol L vector (Å)
         L_value (float): Sterimol L value (Å)
         L_value_uncorrected (float): Sterimol L value minus 0.40 Å
-        sphere_radius (float): Radius of sphere for Buried Sterimol (Å)
     """
-    def __init__(self, elements, coordinates, atom_1, atom_2, radii=[],
-                 radii_type="crc", n_rot_vectors=3600, sphere_radius=None,
-                 excluded_atoms=[]):
+    def __init__(self, elements, coordinates, dummy_index, attached_index, radii=[],
+                 radii_type="crc", n_rot_vectors=3600, excluded_atoms=[],
+                 calculate=True):
         # Convert elements to atomic numbers if the are symbols
         elements = convert_elements(elements)
 
@@ -96,11 +95,11 @@ class Sterimol:
         all_coordinates = np.array(coordinates)
 
         # Translate coordinates so origin is at atom 2
-        all_coordinates -= all_coordinates[atom_2 - 1]
+        all_coordinates -= all_coordinates[attached_index - 1]
 
         # Get vector pointing from atom 2 to atom 1
-        vector_2_to_1 = all_coordinates[atom_2 - 1] \
-                        - all_coordinates[atom_1 - 1]
+        vector_2_to_1 = all_coordinates[attached_index - 1] \
+                        - all_coordinates[dummy_index - 1]
         vector_2_to_1 = vector_2_to_1 / np.linalg.norm(vector_2_to_1)
 
         # Get rotation quaternion that overlays vector with x-axis
@@ -110,29 +109,162 @@ class Sterimol:
 
         # Get list of atoms as Atom objects
         atoms = []
-        coordinates = []
-        radii = []
         for i, (element, radius, coord) in enumerate(
                 zip(elements, all_radii, all_coordinates), start=1):
-            if i not in excluded_atoms:
-                atom = Atom(element, coord, radius, i)
-                atoms.append(atom)
-                if i != atom_1:
-                    coordinates.append(coord)
-                    radii.append(radius)
-        coordinates = np.vstack(coordinates)
-        radii = np.vstack(radii).reshape(-1)
+            atom = Atom(element, coord, radius, i)
+            atoms.append(atom)
+            if i == dummy_index:
+                dummy_atom = atom
+            if i == attached_index:
+                attached_atom = atom
+        
+        # Set up attributes
+        self._atoms = atoms
+        self._excluded_atoms = set(excluded_atoms)
+        self._points = np.array([])
+        
+        self._dummy_atom = dummy_atom
+        self._attached_atom = attached_atom
+        
+        self.L = None
+        self.L_value = None
+        self.L_value_uncorrected = None
+        self.bond_length = np.linalg.norm(vector_2_to_1)
+        
+        self.B_1 = None
+        self.B_1_value = None
 
-        #coordinates = np.delete(all_coordinates, atom_1 - 1, axis=0)
-        #radii = np.delete(radii, atom_1 - 1)
+        self.B_5 = None
+        self.B_5_value = None
+
+        self._n_rot_vectors = n_rot_vectors
+        self._sphere_radius = None
+
+        if calculate:
+            self.calculate()
+
+    def bury(self, sphere_radius=3.5, mode="delete", radii_scale=0.5):
+        """Do a Buried Sterimol calculation according to the three available
+        schemes based on deletion, truncation or slicing.
+
+        Args:
+            mode (str): Mode for burying: 'delete', 'slice' or 'truncate'
+            sphere_radius (float): Radius of sphere (Å)
+            radii_scale (float): Scale radii for 'delete'-type calculation.
+        """
+        if mode == "delete":
+            # Remove all atoms outside sphere (taking vdW radii into account)
+            coordinates = np.vstack([atom.coordinates for atom in self._atoms])
+            radii = np.array([atom.radius for atom in self._atoms])
+            distances = cdist(self._dummy_atom.coordinates.reshape(1, -1),
+                              coordinates).reshape(-1)
+            distances = distances - radii * radii_scale
+            excluded_atoms = set(
+                np.array(self._atoms)[distances > sphere_radius])
+            self._excluded_atoms.update(excluded_atoms)
+
+            # Calculate Sterimol parameters
+            self.calculate()
+        elif mode == "truncate":
+            # Calculate Sterimol parameters
+            self.calculate()
+
+            # Calculate intersection between vectors and sphere.
+            atom_1_coordinates = self._dummy_atom.coordinates
+            atom_2_coordinates = self._attached_atom.coordinates
+
+            new_vectors = []
+            for vector, ref_coordinates in [(self.L, atom_1_coordinates), (self.B_1, atom_2_coordinates), (self.B_5, atom_2_coordinates)]:
+                # Get intersection point 
+                intersection_points = sphere_line_intersection(vector, atom_1_coordinates, sphere_radius)
+                if len(intersection_points) < 1:
+                    raise Exception("Sphere so small that vectors don't intersect")
+                
+                # Get vector pointing in the right direction
+                trial_vectors = [point - ref_coordinates for point in intersection_points]
+                norm_vector = vector / np.linalg.norm(vector)
+                dot_products = [np.dot(norm_vector, trial_vector / np.linalg.norm(trial_vector)) for trial_vector in trial_vectors]
+                new_vector = trial_vectors[np.argmax(dot_products)]
+                new_vectors.append(new_vector)
+
+            # Replace vectors if new ones are shorter than old ones
+            if np.linalg.norm(self.L) > np.linalg.norm(new_vectors[0]):
+                L = new_vectors[0]
+                L_value = np.linalg.norm(L)
+            if np.linalg.norm(self.B_1) > np.linalg.norm(new_vectors[1]):
+                B_1 = new_vectors[1]                
+                B_1_value = np.linalg.norm(B_1)
+            if np.linalg.norm(self.B_5) > np.linalg.norm(new_vectors[2]):
+                B_5 = new_vectors[2]     
+                B_5_value = np.linalg.norm(B_5)
+            
+            # Set attributes
+            self.L = L
+            self.L_value = L_value + 0.40
+            self.L_value_uncorrected = L_value
+            
+            self.B_1 = B_1
+            self.B_1_value = B_1_value
+    
+            self.B_5 = B_5
+            self.B_5_value = B_5_value              
+        elif mode == "slice":
+            # Remove points outside of sphere
+            distances = cdist(self._dummy_atom.coordinates.reshape(1, -1), self._points).reshape(-1)
+            self._points = self._points[distances <= sphere_radius]
+
+            # Calculate Sterimol parameters
+            self.calculate()
+        else:
+            raise Exception("Please specify valid mode for burying.")
+        
+        # Set attributes
+        self._sphere_radius = sphere_radius
+    
+    def surface_from_radii(self, density=0.01):
+        # Calculate vdW surface for all active atoms
+        elements = []
+        coordinates = []
+        radii = []
+        for atom in self._atoms:
+            if atom not in self._excluded_atoms and atom is not self._dummy_atom:
+                elements.append(atom.element)
+                coordinates.append(atom.coordinates)
+                radii.append(atom.radius)
+        elements = np.array(elements)
+        coordinates = np.vstack(coordinates)
+        radii = radii
+        sasa = SASA(elements, coordinates, radii=radii, density=density,
+                    probe_radius=0)
+        
+        # Take out points of vdW surface
+        points = np.vstack([atom.accessible_points for atom in sasa._atoms 
+                            if atom.index not in self._excluded_atoms and
+                            atom.accessible_points.size > 0])
+        self._points = points
+
+    def calculate(self):
+        # Use coordinates and radii if points are not given
+        if not len(self._points) > 0:
+            coordinates = []
+            radii = []
+            for atom in self._atoms:
+                if atom != self._dummy_atom and atom not in self._excluded_atoms:
+                    coordinates.append(atom.coordinates)
+                    radii.append(atom.radius)
+            coordinates = np.vstack(coordinates)
+            radii = np.vstack(radii).reshape(-1)
 
         # Project coordinates onto vector between atoms 1 and 2
-        vector = all_coordinates[atom_2 - 1] - all_coordinates[atom_1 - 1]
+        vector = self._attached_atom.coordinates - self._dummy_atom.coordinates
         bond_length = np.linalg.norm(vector)
         unit_vector = vector / np.linalg.norm(vector)
 
-        c_values = np.dot(unit_vector.reshape(1, -1), coordinates.T)
-        projected = c_values + radii
+        if not len(self._points) > 0:
+            c_values = np.dot(unit_vector.reshape(1, -1), coordinates.T)
+            projected = c_values + radii
+        else:
+            projected = np.dot(unit_vector.reshape(1, -1), self._points.T)
 
         # Get L as largest projection along the vector
         L_value = np.max(projected) + bond_length
@@ -141,15 +273,18 @@ class Sterimol:
         
         # Get rotation vectors in yz plane
         r = 1
-        theta = np.linspace(0, 2 * math.pi, n_rot_vectors)
+        theta = np.linspace(0, 2 * math.pi, self._n_rot_vectors)
         x = np.zeros(len(theta))
         y = r * np.cos(theta)
         z = r * np.sin(theta)
         rot_vectors = np.column_stack((x, y, z))
     
         # Project coordinates onto rotation vectors
-        c_values = np.dot(rot_vectors, coordinates.T)
-        projected = c_values + radii
+        if not len(self._points) > 0:
+            c_values = np.dot(rot_vectors, coordinates.T)
+            projected = c_values + radii
+        else:
+            projected = np.dot(rot_vectors, self._points.T)
         max_c_values = np.max(projected, axis=1)
     
         # Determine B1 and B5 from the smallest and largest scalar projections
@@ -159,50 +294,16 @@ class Sterimol:
         B_5_value = np.max(max_c_values)
         B_5 = rot_vectors[np.argmax(max_c_values)] * B_5_value
 
-        # Trim L, B1 and B5 for Buried Sterimol
-        if sphere_radius:
-            atom_1_coordinates = all_coordinates[atom_1 - 1]
-            atom_2_coordinates = all_coordinates[atom_2 - 1]
-
-            new_vectors = []
-            for vector, ref_coordinates in [(L, atom_1_coordinates), (B_1, atom_2_coordinates), (B_5, atom_2_coordinates)]:
-                intersection_points = sphere_line_intersection(vector, atom_1_coordinates, sphere_radius)
-                if len(intersection_points) < 1:
-                    raise Exception("Sphere so small that vectors don't intersect")
-                
-                trial_vectors = [point - ref_coordinates for point in intersection_points]
-                norm_vector = vector / np.linalg.norm(vector)
-                dot_products = [np.dot(norm_vector, trial_vector / np.linalg.norm(trial_vector)) for trial_vector in trial_vectors]
-                new_vector = trial_vectors[np.argmax(dot_products)]
-                new_vectors.append(new_vector)
-            if np.linalg.norm(L) > np.linalg.norm(new_vectors[0]):
-                L = new_vectors[0]
-                L_value = np.linalg.norm(L)
-            if np.linalg.norm(B_1) > np.linalg.norm(new_vectors[1]):
-                B_1 = new_vectors[1]                
-                B_1_value = np.linalg.norm(B_1)
-            if np.linalg.norm(B_5) > np.linalg.norm(new_vectors[2]):
-                B_5 = new_vectors[2]     
-                B_5_value = np.linalg.norm(B_5)
-
         # Set up attributes
-        self._atoms = atoms
-        
-        self._atom_1 = atom_1
-        self._atom_2 = atom_2
-        
         self.L = L
         self.L_value = L_value + 0.40
         self.L_value_uncorrected = L_value
-        self.bond_length = bond_length
         
         self.B_1 = B_1
         self.B_1_value = B_1_value
 
         self.B_5 = B_5
         self.B_5_value = B_5_value    
-
-        self.sphere_radius = sphere_radius
 
     def print_report(self, verbose=False):
         """Prints the values of the Sterimol parameters.
@@ -243,19 +344,26 @@ class Sterimol:
             radius = atom.radius * atom_scale
             sphere = pv.Sphere(center=list(atom.coordinates),
                                radius=radius)
-            p.add_mesh(sphere, color=color, opacity=1, name=str(atom.index))
+            if atom in self._excluded_atoms:
+                opacity = 0.25
+            else:
+                opacity = 1
+            p.add_mesh(sphere, color=color, opacity=opacity, name=str(atom.index))
         
         # Draw sphere for Buried Sterimol
-        if self.sphere_radius:
+        if self._sphere_radius:
             sphere = pv.Sphere(
-                center=self._atoms[self._atom_1 - 1].coordinates,
-                radius=self.sphere_radius
+                center=self._dummy_atom.coordinates,
+                radius=self._sphere_radius
                 )
             p.add_mesh(sphere, opacity=0.25)
         
+        if len(self._points) > 0:
+            p.add_points(self._points, color="gray")
+        
         # Get arrow starting points
-        start_L = self._atoms[self._atom_1 - 1].coordinates
-        start_B = self._atoms[self._atom_2 - 1].coordinates
+        start_L = self._dummy_atom.coordinates
+        start_B = self._attached_atom.coordinates
 
         # Add L arrow with label 
         length = np.linalg.norm(self.L)
