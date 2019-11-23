@@ -143,16 +143,16 @@ class Sterimol:
         if calculate:
             self.calculate()
 
-    def bury(self, sphere_radius=3.5, mode="delete", radii_scale=0.5):
+    def bury(self, sphere_radius=3.5, method="delete", radii_scale=0.5):
         """Do a Buried Sterimol calculation according to the three available
         schemes based on deletion, truncation or slicing.
 
         Args:
-            mode (str): Mode for burying: 'delete', 'slice' or 'truncate'
-            sphere_radius (float): Radius of sphere (Å)
+            method (str): Method for burying: 'delete', 'slice' or 'truncate'
             radii_scale (float): Scale radii for 'delete'-type calculation.
+            sphere_radius (float): Radius of sphere (Å)
         """
-        if mode == "delete":
+        if method == "delete":
             # Remove all atoms outside sphere (taking vdW radii into account)
             coordinates = np.vstack([atom.coordinates for atom in self._atoms])
             radii = np.array([atom.radius for atom in self._atoms])
@@ -165,7 +165,7 @@ class Sterimol:
 
             # Calculate Sterimol parameters
             self.calculate()
-        elif mode == "truncate":
+        elif method == "truncate":
             # Calculate Sterimol parameters
             self.calculate()
 
@@ -208,7 +208,7 @@ class Sterimol:
     
             self.B_5 = B_5
             self.B_5_value = B_5_value              
-        elif mode == "slice":
+        elif method == "slice":
             # Remove points outside of sphere
             distances = cdist(self._dummy_atom.coordinates.reshape(1, -1), self._points).reshape(-1)
             self._points = self._points[distances <= sphere_radius]
@@ -216,7 +216,7 @@ class Sterimol:
             # Calculate Sterimol parameters
             self.calculate()
         else:
-            raise Exception("Please specify valid mode for burying.")
+            raise Exception("Please specify valid method for burying.")
         
         # Set attributes
         self._sphere_radius = sphere_radius
