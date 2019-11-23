@@ -374,8 +374,17 @@ class BuriedVolume:
         self._buried_points = buried_points
         self._free_points = free_points        
     
-    def compute_distal_volume(self, mode="sasa", sasa_density=0.01):
+    def compute_distal_volume(self, method="sasa", sasa_density=0.01):
+        """Computes the distal volume. Uses either SASA or Buried volume with
+        large radius to calculate the molecular volume.
+
+        Args:
+            mode (str): Method to get total volume: 'sasa' or 'buried volume'
+            sasa_density (float): Density of points on SASA surface
+        """
+        # Use SASA to calculate total volume of the molecule
         if mode == "sasa":
+            # Calculate total volume
             elements = []
             coordinates = []
             radii = []
@@ -386,7 +395,9 @@ class BuriedVolume:
             coordinates = np.vstack(coordinates)
             sasa = SASA(elements, coordinates, radii=radii, probe_radius=0,
                         density=sasa_density)
-            self.molecular_volume = sasa.volume
+            self.molecular_volume = sasa.volume                        
+
+            # Calculate distal volume
             self.distal_volume = self.molecular_volume - self.buried_volume
         elif mode == "buried volume":
             # Save the values for the old buried volume calculation
