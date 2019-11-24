@@ -41,6 +41,7 @@ from scipy.io import FortranFile
 from scipy.constants import physical_constants
 from scipy.spatial import cKDTree
 from scipy.spatial.distance import cdist, euclidean
+from scipy.spatial.transform import Rotation
 
 from steriplus.data import atomic_symbols, HARTREE_TO_KCAL, ANGSTROM_TO_BOHR, HARTREE, BOHR, BOHR_TO_ANGSTROM
 from steriplus.data import jmol_colors, atomic_masses
@@ -294,7 +295,7 @@ class BuriedVolume:
     described in Organometallics 2016, 35, 2286.
 
     Args:
-        atom_1 (int): Atom index of metal (starting from 1)
+        metal_index (int): Atom index of metal (starting from 1)
         coordinates (list): Coordinates (Å)
         density (float): Volume per point (Å**3) in the sphere
         elements (list): Elements as atomic symbols or numbers
@@ -309,15 +310,42 @@ class BuriedVolume:
     Parameters:
         buried_volume (float): Buried volume
     """
-    def __init__(self, elements, coordinates, atom_1, excluded_atoms=[],
+    def __init__(self, elements, coordinates, metal_index, excluded_atoms=[],
                  radii=[], include_hs=False, radius=3.5, radii_type="bondi",
-                 radii_scale=1.17, density=0.001):
-        # Get the coordinates for the central atom
-        center = np.array(coordinates[atom_1 - 1])
+                 radii_scale=1.17, density=0.001, z_axis_atoms=[],
+                 xz_plane_atoms=[]):
+        # Get center and and reortient coordinate system
+        coordinates = np.array(coordinates)
+        center = coordinates[metal_index - 1]
+        coordinates -= center
+
+        if len(z_axis_atoms) > 1 and len(xz_plane_atoms) > 1:
+            z_axis_coordinates = coordinates[np.array(z_axis_atoms) - 1]
+            z_point = np.mean(z_axis_coordinates, axis=0)
+    
+            xz_plane_coordinates = coordinates[np.array(xz_plane_atoms) - 1]
+            xz_point = np.mean(xz_plane_coordinates, axis=0)
+    
+            v_1 = z_point - center
+            v_2 = xz_point - center
+            v_3 = np.cross(v_1, v_2)
+            real = np.vstack([v_1, v_3])
+            ref_1 = np.array([0, 0, -1])
+            ref_2 = np.array([0, 1, 0])
+            ref = np.vstack([ref_1, ref_2])
+            rotation, _ = Rotation.match_vectors(ref, real, normalized=False)
+            coordinates = rotation.apply(coordinates)
+        elif len(z_axis_atoms) > 1:
+            z_axis_coordinates = coordinates[np.array(z_axis_atoms) - 1]
+            z_point = np.mean(z_axis_coordinates, axis=0)
+            v_1 = z_point - center
+            v_1 = v_1 / np.linalg.norm(v_1)
+            coordinates = rotate_coordinates(coordinates, vector,
+                                             np.array([0, 0, -1]))
 
         # Save density and coordinates for steric map plotting.
         self._density = density
-        self._all_coordinates = np.array(coordinates)
+        self._all_coordinates = coordinates
 
         # Converting element ids to atomic numbers if the are symbols
         elements = convert_elements(elements)

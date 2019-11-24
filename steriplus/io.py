@@ -331,6 +331,6 @@ def write_xyz(xyz_file, elements, coordinates):
     with open(xyz_file, 'w') as file:
         file.write(f"{len(elements)}\n")
         file.write("\n")
-        for element, coord in zip(elements, coordinates):
+        for element, coord in zip(elements, list(coordinates)):
             file.write(f"{element:10s}{coord[0]:10.6f}" \
                 f"{coord[1]:10.6f}{coord[2]:10.6f}\n")
