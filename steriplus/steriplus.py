@@ -87,7 +87,7 @@ class Sterimol:
         elements = convert_elements(elements)
 
         # Get radii if they are not supplied
-        if not radii:
+        if len(radii) < 1:
             radii = get_radii(elements, radii_type=radii_type)
         all_radii = np.array(radii)
 
@@ -160,7 +160,7 @@ class Sterimol:
                               coordinates).reshape(-1)
             distances = distances - radii * radii_scale
             excluded_atoms = set(
-                np.array(self._atoms)[distances > sphere_radius])
+                np.array(self._atoms)[distances >= sphere_radius])
             self._excluded_atoms.update(excluded_atoms)
 
             # Calculate Sterimol parameters
