@@ -7,6 +7,7 @@ Classes:
     SASA: Calculates solvent accessible surface area.
     Sterimol: Calculates Sterimol parameters.
 """
+import copy
 import math
 import itertools
 
@@ -310,6 +311,39 @@ class BuriedVolume:
     Parameters:
         buried_volume (float): Buried volume
     """
+
+    quadrant_signs = {
+        1: "+,+",
+        2: "-,+",
+        3: "-,-",
+        4: "+,-",
+    }
+
+    quadrant_names = {
+        1: "NE",
+        2: "NW",
+        3: "SW",
+        4: "SE",
+    }
+
+    octant_signs = {
+        0: "+,+,+",
+        1: "-,+,+",
+        3: "+,-,+",
+        2: "-,-,+",
+        7: "+,+,-",
+        6: "-,+,-",
+        4: "+,-,-",
+        5: "-,-,-",
+    }
+
+    octant_quadrant_map = {
+            1: (0, 7),
+            2: (1, 6),
+            3: (2, 5),
+            4: (3, 4)
+        }
+
     def __init__(self, elements, coordinates, metal_index, excluded_atoms=[],
                  radii=[], include_hs=False, radius=3.5, radii_type="bondi",
                  radii_scale=1.17, density=0.001, z_axis_atoms=[],
@@ -319,7 +353,10 @@ class BuriedVolume:
         center = coordinates[metal_index - 1]
         coordinates -= center
 
-        if len(z_axis_atoms) > 1 and len(xz_plane_atoms) > 1:
+        if metal_index not in excluded_atoms:
+            excluded_atoms.append(metal_index)
+
+        if len(z_axis_atoms) > 0 and len(xz_plane_atoms) > 0:
             z_axis_coordinates = coordinates[np.array(z_axis_atoms) - 1]
             z_point = np.mean(z_axis_coordinates, axis=0)
     
@@ -335,7 +372,7 @@ class BuriedVolume:
             ref = np.vstack([ref_1, ref_2])
             rotation, _ = Rotation.match_vectors(ref, real, normalized=False)
             coordinates = rotation.apply(coordinates)
-        elif len(z_axis_atoms) > 1:
+        elif len(z_axis_atoms) > 0:
             z_axis_coordinates = coordinates[np.array(z_axis_atoms) - 1]
             z_point = np.mean(z_axis_coordinates, axis=0)
             v_1 = z_point - center
@@ -369,7 +406,7 @@ class BuriedVolume:
 
         # Set variables for outside access and function access.
         self._atoms = atoms
-        self._excluded_atoms = excluded_atoms                
+        self._excluded_atoms = set(excluded_atoms)
     
         # Compute buried volume
         self._compute_buried_volume(center=center, radius=radius,
@@ -377,7 +414,71 @@ class BuriedVolume:
 
         self.molecular_volume = None
         self.distal_volume = None
+        self.octants = None
+        self.quadrants = None
+        self._octant_limits = None
+
+        self.octants = {}
+        self.quadrants = {}
     
+    def octant_analysis(self):
+        lim = self._sphere.radius
+        octant_limits = {
+            0: ((0, lim), (0, lim), (0, lim)),
+            1: ((-lim, 0), (0, lim), (0, lim)),
+            3: ((0, lim), (-lim, 0), (0, lim)),
+            2: ((-lim, 0), (-lim, 0), (0, lim)),
+            7: ((0, lim), (0, lim), (-lim, 0)),
+            6: ((-lim, 0), (0, lim), (-lim, 0)),
+            4: ((0, lim), (-lim, 0), (-lim, 0)),
+            5: ((-lim, 0), (-lim, 0), (-lim, 0)),
+        }
+
+        octant_volume = self._sphere.volume / 8
+
+        # Do octant analysis
+        percent_buried_volume = {}
+        buried_volume = {}
+        free_volume = {}
+        for name, limits in octant_limits.items():
+            buried_points = self._buried_points[np.logical_and.reduce([
+                self._buried_points[:, 0] > limits[0][0],
+                self._buried_points[:, 0] < limits[0][1],
+                self._buried_points[:, 1] > limits[1][0],
+                self._buried_points[:, 1] < limits[1][1],
+                self._buried_points[:, 2] > limits[2][0],
+                self._buried_points[:, 2] < limits[2][1],
+            ])]
+            free_points = self._free_points[np.logical_and.reduce([
+                self._free_points[:, 0] > limits[0][0],
+                self._free_points[:, 0] < limits[0][1],
+                self._free_points[:, 1] > limits[1][0],
+                self._free_points[:, 1] < limits[1][1],
+                self._free_points[:, 2] > limits[2][0],
+                self._free_points[:, 2] < limits[2][1],
+            ])]
+            fraction_buried = len(buried_points) / (len(buried_points) + len(free_points))
+            percent_buried_volume[name] = fraction_buried * 100
+            buried_volume[name] = fraction_buried * octant_volume
+            free_volume[name] = (1 - fraction_buried) * octant_volume
+        self.octants["percent_buried_volume"] = percent_buried_volume
+        self.octants["buried_volume"] = buried_volume
+        self.octants["free_volume"] = free_volume
+        
+        # Do quadrant analysis
+        percent_buried_volume = {}
+        buried_volume = {}
+        free_volume = {}
+        for name, octants in self.octant_quadrant_map.items():
+            percent_buried_volume[name] = sum([self.octants["percent_buried_volume"][octant] for octant in octants]) / 2
+            buried_volume[name] = sum([self.octants["buried_volume"][octant] for octant in octants])
+            free_volume[name] = sum([self.octants["free_volume"][octant] for octant in octants])
+        self.quadrants["percent_buried_volume"] = percent_buried_volume
+        self.quadrants["buried_volume"] = buried_volume
+        self.quadrants["free_volume"] = free_volume
+
+        self._octant_limits = octant_limits
+
     def _compute_buried_volume(self, center, radius, density):
         # Construct sphere at metal center
         sphere = Sphere(center, radius, method="projection", density=density,
@@ -402,16 +503,19 @@ class BuriedVolume:
         self._buried_points = buried_points
         self._free_points = free_points        
     
-    def compute_distal_volume(self, method="sasa", sasa_density=0.01):
+    def compute_distal_volume(self, method="sasa", octants=False, 
+                              sasa_density=0.01):
         """Computes the distal volume. Uses either SASA or Buried volume with
         large radius to calculate the molecular volume.
 
         Args:
-            mode (str): Method to get total volume: 'sasa' or 'buried volume'
+            method (str): Method to get total volume: 'sasa' or 'buried_volume'
+            octants (bool): Whether to compute distal volume for quadrants and
+                            octants
             sasa_density (float): Density of points on SASA surface
         """
         # Use SASA to calculate total volume of the molecule
-        if mode == "sasa":
+        if method == "sasa":
             # Calculate total volume
             elements = []
             coordinates = []
@@ -427,14 +531,9 @@ class BuriedVolume:
 
             # Calculate distal volume
             self.distal_volume = self.molecular_volume - self.buried_volume
-        elif mode == "buried volume":
+        elif method == "buried_volume":
             # Save the values for the old buried volume calculation
-            old_percent_buried_volume = self.percent_buried_volume
-            old_buried_volume = self.buried_volume
-            old_free_volume = self.free_volume
-            old_sphere = self._sphere
-            old_buried_points = self._buried_points
-            old_free_points = self._free_points
+            temp_bv = copy.deepcopy(self)
 
             # Determine sphere radius to cover the whole molecule
             coordinates = []
@@ -447,21 +546,32 @@ class BuriedVolume:
             new_radius = np.max(distances + radii) + 0.5
 
             # Compute the distal volume
-            self._compute_buried_volume(center=self._sphere.center,
+            temp_bv._compute_buried_volume(center=self._sphere.center,
                                         radius=new_radius,
                                         density=self._sphere.density)
-            self.molecular_volume = self.buried_volume
-            self.distal_volume = self.molecular_volume - old_buried_volume
-
-            # Reset values from old calculation
-            self.percent_buried_volume = old_percent_buried_volume 
-            self.buried_volume = old_buried_volume
-            self.free_volume = old_free_volume
-            self._sphere = old_sphere
-            self._buried_points = old_buried_points
-            self._free_points = old_free_points
+            self.molecular_volume = temp_bv.buried_volume
+            self.distal_volume = self.molecular_volume - self.buried_volume
+            if octants:
+                temp_bv.octant_analysis()
+                # Octant analysis 
+                distal_volume = {}
+                molecular_volume = {}
+                for name in self.octants["buried_volume"].keys():
+                    molecular_volume[name] = temp_bv.octants["buried_volume"][name]
+                    distal_volume[name] = temp_bv.octants["buried_volume"][name] - self.octants["buried_volume"][name]
+                self.octants["distal_volume"] = distal_volume
+                self.octants["molecular_volume"] = molecular_volume
+                
+                # Quadrant analyis
+                distal_volume = {}
+                molecular_volume = {}
+                for name, octants in self.octant_quadrant_map.items():
+                    distal_volume[name] = sum([self.octants["distal_volume"][octant] for octant in octants])
+                    molecular_volume[name] = sum([self.octants["molecular_volume"][octant] for octant in octants])
+                self.quadrants["distal_volume"] = distal_volume
+                self.quadrants["molecular_volume"] = molecular_volume
         else:
-            raise Exception("Provide valid mode.")
+            raise Exception("Provide valid method.")
     
     @conditional(_has_matplotlib, _warning_matplotlib)
     def plot_steric_map(self, z_axis_atoms, filename=None, levels=150, grid=100,
@@ -595,6 +705,18 @@ class BuriedVolume:
         # Add free points
         p.add_points(self._free_points, color=free_color, opacity=opacity,
                      size=size)
+
+        if self._octant_limits:
+            for name, limits in self._octant_limits.items():
+                limits = tuple(itertools.chain(*limits))
+                box = pv.Box(limits)
+                p.add_mesh(box, style="wireframe")
+                x = np.array(limits)[:2][np.argmax(np.abs(limits[:2]))]
+                y = np.array(limits)[2:4][np.argmax(np.abs(limits[2:4]))]
+                z = np.array(limits)[4:][np.argmax(np.abs(limits[4:]))]
+                p.add_point_labels(np.array([x, y, z]), [self.octant_signs[name]], text_color="black")
+        
+        self._plotter = p
 
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
