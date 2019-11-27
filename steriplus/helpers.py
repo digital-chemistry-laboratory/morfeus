@@ -9,6 +9,7 @@ import warnings
 
 import numpy as np
 from scipy.spatial.distance import cdist
+import scipy.spatial
 
 from steriplus.data import atomic_numbers, atomic_symbols
 from steriplus.data import radii_bondi, radii_crc, radii_rahm
@@ -143,3 +144,15 @@ def get_radii(elements, radii_type="crc", scale=1):
     radii = [radii_choice[radii_type].get(element, 2.0) * scale for element in elements]
 
     return radii
+
+def get_connectivity_matrix(elements, coordinates, radii=[], radii_type="pyykko"):
+    elements = convert_elements(elements)
+
+    if len(radii) < 1:
+        radii = get_radii(elements, radii_type="pyykko")
+    distance_matrix = scipy.spatial.distance_matrix(coordinates, coordinates)
+    radii_matrix = np.add.outer(radii, radii) * 1.2
+    connectivity_matrix = (distance_matrix < radii_matrix)  - np.identity(len(elements))
+
+    return connectivity_matrix
+

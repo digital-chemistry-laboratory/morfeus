@@ -46,7 +46,7 @@ from steriplus.data import atomic_symbols, HARTREE_TO_KCAL, ANGSTROM_TO_BOHR, HA
 from steriplus.data import jmol_colors, atomic_masses
 from steriplus.data import ANGSTROM, DYNE, C, AMU, AFU
 from steriplus.helpers import check_distances, convert_elements, get_radii
-from steriplus.helpers import conditional
+from steriplus.helpers import conditional, get_connectivity_matrix
 from steriplus.calculators import D3Calculator
 from steriplus.geometry import Atom, Cone, rotate_coordinates, Sphere
 from steriplus.geometry import sphere_line_intersection
@@ -2537,4 +2537,105 @@ class LocalForce:
 
     def __repr__(self):
         n_internal = len(self.internal_coordinates)
-        return f"{self.__class__.__name__}({n_internal!r} internal coordinates)"    
+        return f"{self.__class__.__name__}({n_internal!r} internal coordinates)"
+
+class Pyramidalization:
+    """Calculates and stores results of pyramidalization and alpha angle as 
+    described in Struct. Chem. 1991, 2, 107.
+
+    Args:
+        atom_index (int): Index of pyramidalized atom (1-indexed)
+        coordinates (list): Coordinates (Å)
+        elements (list): Elements as atomic symbols or numbers. 
+        excluded_atoms (list): Indices of atoms to exclude. 
+        method (str): Method for detecting neighbors. Either 'connectivity' or 
+                      'distance'. Ignored if neighbor_indices is given.
+        neighbor_indices (list): Indices of neighbors to pyramidalized atom.
+        radii (list): VdW radii (Å)
+        radii_type (str): Choice of covalent radii: 'pyykko'
+            (default)
+
+    Attributes:
+        alpha (float): Average alpha angle (deg)
+        alphas (float): Alpha angles for all permutations of neighbors (deg)
+        P (float): Pyramidalization
+    """
+    def __init__(self, coordinates, atom_index, neighbor_indices=[], elements=[], radii=[], radii_type="pyykko", excluded_atoms=[],
+                 method="distance"):            
+        coordinates = np.array(coordinates)
+        atom_coordinates = coordinates[atom_index - 1]
+        excluded_atoms = np.array(excluded_atoms)
+
+        # Get 3 closest neighbors
+        if len(neighbor_indices) > 0:
+            if len(neighbor_indices) != 3:
+                raise Exception(f"Only {len(neighbors)} neighbors.")
+            neighbors = np.array(neighbor_indices) - 1
+        elif method == "distance":
+            # Generate mask for excluded atoms 
+            mask = np.zeros(len(coordinates), dtype=bool)
+            mask[excluded_atoms - 1] = True
+            mask[atom_index - 1] = True
+
+            # Get three closest atoms not in the excluded atoms
+            distances = cdist(atom_coordinates.reshape(1, -1), coordinates).reshape(-1)
+            distances[mask] = np.inf
+            neighbors = np.argsort(distances)[:3]
+        elif method == "connectivity":
+            # Construct connectivity matrix and get closest neighbors.
+            if not (len(elements) > 0 or len(radii) > 0):
+                raise Exception("Connectivity requires elements or radii.")
+            connectivity_matrix = get_connectivity_matrix(elements, coordinates, radii_type="pyykko")
+            connected_atoms = np.where(connectivity_matrix[atom_index - 1, :])[0]
+            neighbors = connected_atoms[~np.isin(connected_atoms, excluded_atoms - 1)]
+            if len(neighbors) != 3:
+                raise Exception(f"{len(neighbors)} neighbors. 3 expected.")
+
+        # Get unit vectors between central atom and neighbors
+        a = coordinates[neighbors[0]] - atom_coordinates
+        a /= np.linalg.norm(a)
+        b = coordinates[neighbors[1]] - atom_coordinates
+        b /= np.linalg.norm(b)
+        c = coordinates[neighbors[2]] - atom_coordinates
+        c /= np.linalg.norm(c)
+
+        # Calculate alpha for all permutations
+        alphas = []
+        vectors = []
+        cos_alphas = []
+        acute = False
+        for v_1, v_2, v_3 in itertools.permutations([a, b, c], 3):
+            # Calculate cos_alpha
+            normal = np.cross(v_1, v_2)
+            normal /= np.linalg.norm(normal)
+            cos_alpha = np.dot(v_3, normal)
+            
+            # Test if normal vector is colinear with v_3
+            if cos_alpha < 0:
+                continue
+            alpha = np.arccos(cos_alpha)
+
+            # Check for "acute" pyramid and correct angle
+            v_1_2 = v_1 + v_2
+            v_1_2 /= np.linalg.norm(v_1_2)
+            cos_angle = np.dot(v_1_2, v_3)
+            if cos_angle > 0:
+                acute = True
+                alpha = -alpha
+            alphas.append(alpha)
+            cos_alphas.append(cos_alpha)
+            vectors.append((v_1, v_2))
+        
+        # Calculate P
+        v_1, v_2 = vectors[0]
+        sin_theta = np.linalg.norm(np.cross(v_1, v_2))
+        P = sin_theta * cos_alphas[0]
+
+        # Correct P if pyramid is "acute"
+        if acute:
+            P = 2 - P
+     
+        # Store attributes
+        self.P = P
+        self.alpha = np.rad2deg(np.mean(alphas))
+        self.alphas = np.rad2deg(alphas)
