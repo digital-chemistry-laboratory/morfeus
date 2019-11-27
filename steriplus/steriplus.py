@@ -42,7 +42,6 @@ from scipy.io import FortranFile
 from scipy.constants import physical_constants
 from scipy.spatial import cKDTree
 from scipy.spatial.distance import cdist, euclidean
-from scipy.spatial.transform import Rotation
 
 from steriplus.data import atomic_symbols, HARTREE_TO_KCAL, ANGSTROM_TO_BOHR, HARTREE, BOHR, BOHR_TO_ANGSTROM
 from steriplus.data import jmol_colors, atomic_masses
@@ -365,13 +364,14 @@ class BuriedVolume:
     
             v_1 = z_point - center
             v_2 = xz_point - center
-            v_3 = np.cross(v_1, v_2)
+            v_3 = np.cross(v_2, v_1)
             real = np.vstack([v_1, v_3])
-            ref_1 = np.array([0, 0, -1])
-            ref_2 = np.array([0, 1, 0])
+            real /= np.linalg.norm(real, axis=1).reshape(-1, 1)
+            ref_1 = np.array([0., 0., -1.])
+            ref_2 = np.array([0., 1., 0.])
             ref = np.vstack([ref_1, ref_2])
-            rotation, _ = Rotation.match_vectors(ref, real, normalized=False)
-            coordinates = rotation.apply(coordinates)
+            R = kabsch_rotation_matrix(real, ref, center=False)
+            coordinates = (R @ coordinates.T).T
         elif len(z_axis_atoms) > 0:
             z_axis_coordinates = coordinates[np.array(z_axis_atoms) - 1]
             z_point = np.mean(z_axis_coordinates, axis=0)

@@ -541,7 +541,7 @@ def rotate_coordinates(coordinates, vector, axis):
 
     return rotated_coordinates
 
-def kabsch_rotation_matrix(P, Q):
+def kabsch_rotation_matrix(P, Q, center=True):
     """Construct the rotation matrix that overlays the points in P with the
     points in Q with minimum RMSD.
     https://en.wikipedia.org/wiki/Kabsch_algorithm
@@ -554,13 +554,14 @@ def kabsch_rotation_matrix(P, Q):
         R (ndarray): Rotation matrix
     """
     # Calculate centroids and center coordinates
-    centroid_P = np.mean(P, axis=0)
-    centroid_Q = np.mean(Q, axis=0)
-    P_centered = P - centroid_P
-    Q_centered = Q - centroid_Q
+    if center:
+        centroid_P = np.mean(P, axis=0)
+        centroid_Q = np.mean(Q, axis=0)
+        P -= centroid_P
+        Q -= centroid_Q
 
     # Calculate cross-covariance matrix
-    H = P_centered.T @ Q_centered
+    H = P.T @ Q
 
     # Perform SVD
     U, S, V_T = np.linalg.svd(H)
