@@ -14,7 +14,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 import scipy.spatial
 
-from steriplus.helpers import convert_elements
+from steriplus.helpers import convert_elements, get_connectivity_matrix
 from steriplus.data import ANGSTROM_TO_BOHR, cov_radii_pyykko
 
 class Atom:
@@ -306,12 +306,8 @@ class InternalCoordinates:
     
     def detect_bonds(self, elements, coordinates):
         # Detect bonds based on covalent radii
-        elements = convert_elements(elements)
-        covalent_radii = np.array([cov_radii_pyykko[element] for element in elements])
-        distance_matrix = scipy.spatial.distance_matrix(coordinates, coordinates)
-        radii_matrix = np.add.outer(covalent_radii, covalent_radii) * 1.2
-        bo_matrix = (distance_matrix < radii_matrix)  - np.identity(len(elements))
-        indices = np.where(bo_matrix)
+        connectivity_matrix = get_connectivity_matrix(elements, coordinates, radii_type="pyykko")
+        indices = np.where(connectivity_matrix)
 
         bonds = set()
         for i, j in zip(*indices):
