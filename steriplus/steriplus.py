@@ -104,9 +104,10 @@ class Sterimol:
         vector_2_to_1 = vector_2_to_1 / np.linalg.norm(vector_2_to_1)
 
         # Get rotation quaternion that overlays vector with x-axis
-        x_axis = np.array([1, 0, 0])
-        all_coordinates = rotate_coordinates(all_coordinates, vector_2_to_1,
-                                             x_axis)
+        x_axis = np.array([[1.0, 0.0, 0.0]])
+        R = kabsch_rotation_matrix(vector_2_to_1.reshape(1, -1), x_axis, center=False)
+        all_coordinates = (R @ all_coordinates.T).T
+        self._rotation_matrix = R
 
         # Get list of atoms as Atom objects
         atoms = []
