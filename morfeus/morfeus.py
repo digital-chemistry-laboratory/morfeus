@@ -30,7 +30,7 @@ try:
     import vtk
     import pyvista as pv
     import pymeshfix
-    from steriplus.plotting import Arrow_3D, Cone_3D
+    from morfeus.plotting import Arrow_3D, Cone_3D
 except ImportError as e:
     _has_vtk = False
 else:
@@ -43,17 +43,17 @@ from scipy.constants import physical_constants
 from scipy.spatial import cKDTree
 from scipy.spatial.distance import cdist, euclidean
 
-from steriplus.data import atomic_symbols, HARTREE_TO_KCAL, ANGSTROM_TO_BOHR, HARTREE, BOHR, BOHR_TO_ANGSTROM
-from steriplus.data import jmol_colors, atomic_masses
-from steriplus.data import ANGSTROM, DYNE, C, AMU, AFU
-from steriplus.helpers import check_distances, convert_elements, get_radii
-from steriplus.helpers import conditional, get_connectivity_matrix
-from steriplus.calculators import D3Calculator
-from steriplus.geometry import Atom, Cone, rotate_coordinates, Sphere
-from steriplus.geometry import sphere_line_intersection
-from steriplus.geometry import kabsch_rotation_matrix, InternalCoordinates
-from steriplus.geometry import Bond, Angle, Dihedral
-from steriplus.io import CubeParser, D3Parser, D4Parser, VertexParser
+from morfeus.data import atomic_symbols, HARTREE_TO_KCAL, ANGSTROM_TO_BOHR, HARTREE, BOHR, BOHR_TO_ANGSTROM
+from morfeus.data import jmol_colors, atomic_masses
+from morfeus.data import ANGSTROM, DYNE, C, AMU, AFU
+from morfeus.helpers import check_distances, convert_elements, get_radii
+from morfeus.helpers import conditional, get_connectivity_matrix
+from morfeus.calculators import D3Calculator
+from morfeus.geometry import Atom, Cone, rotate_coordinates, Sphere
+from morfeus.geometry import sphere_line_intersection
+from morfeus.geometry import kabsch_rotation_matrix, InternalCoordinates
+from morfeus.geometry import Bond, Angle, Dihedral
+from morfeus.io import CubeParser, D3Parser, D4Parser, VertexParser
 
 class Sterimol:
     """Performs and stores results of Sterimol calculation.
@@ -1376,7 +1376,7 @@ class Dispersion:
     """Calculates and stores the results for the 🍺P_int dispersion descriptor.
 
     The descriptor is defined in Angew. Chemie Int. Ed. 2019.
-    DOI: 10.1002/anie.201905439. Steriplus can compute it based on a surface
+    DOI: 10.1002/anie.201905439. morfeus can compute it based on a surface
     either from vdW radii, surface vertices or electron density. Dispersion can
     be obtained with the D3 or D4 model.
 

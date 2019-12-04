@@ -1,12 +1,12 @@
 """Command line script to calculate dispersion descriptor."""
 import argparse
 
-from steriplus import Dispersion, read_gjf, read_xyz
+from morfeus import Dispersion, read_gjf, read_xyz
 
 def main():
     # Add arguments
     parser = argparse.ArgumentParser(
-        "Steriplus script to calcaulate dispersion descriptor.")
+        "morfeus script to calcaulate dispersion descriptor.")
     parser.add_argument(
         'file', type=str, help='Input file, either .xyz, .gjf or .com')
     parser.add_argument(

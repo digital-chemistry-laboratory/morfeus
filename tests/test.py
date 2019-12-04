@@ -5,9 +5,9 @@ import unittest
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_almost_equal
 
-from steriplus.steriplus import LocalForce, Sterimol, BuriedVolume, ConeAngle, SASA, Dispersion
-from steriplus.io import read_xyz, read_gjf
-from steriplus.helpers import convert_elements
+from morfeus.morfeus import LocalForce, Sterimol, BuriedVolume, ConeAngle, SASA, Dispersion
+from morfeus.io import read_xyz, read_gjf
+from morfeus.helpers import convert_elements
 
 CURR_DIR = Path(__file__).parent
 

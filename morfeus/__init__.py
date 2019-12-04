@@ -7,7 +7,7 @@ Modules:
     helpers: General helper functions.
     io: File parser functions and classes.
     plotting: 3D plotting classes.
-    steriplus: Classes for steric descriptor calculations.
+    morfeus: Classes for steric descriptor calculations.
 
 Scripts:
     script_buried_volume: Calculate buried volume.
@@ -15,12 +15,12 @@ Scripts:
     script_dispersion: Calculate dispersion descriptor.
     script_local_force: Calculate local force constants.
     script_sasa: Calculate solvent accessible surface area.
-    script_steriplus: Calculate Sterimol parameters.
+    script_morfeus: Calculate Sterimol parameters.
 """
 
-# Version of the Steriplus package
+# Version of the morfeus package
 __version__ = "0.4.0"
 
-from steriplus.steriplus import BuriedVolume, ConeAngle, Dispersion
-from steriplus.steriplus import SASA, Sterimol, LocalForce, Pyramidalization
-from steriplus.io import read_gjf, read_xyz
+from morfeus.morfeus import BuriedVolume, ConeAngle, Dispersion
+from morfeus.morfeus import SASA, Sterimol, LocalForce, Pyramidalization
+from morfeus.io import read_gjf, read_xyz

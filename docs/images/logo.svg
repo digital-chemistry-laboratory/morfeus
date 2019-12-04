@@ -1,28 +1,12 @@
 <?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<!--Generator: Xara Designer (www.xara.com), SVG filter version: 6.3.0.23-->
-<svg fill="none" fill-rule="evenodd" stroke="black" stroke-width="0.501" stroke-linejoin="bevel" stroke-miterlimit="10" font-family="Times New Roman" font-size="16" style="font-variant-ligatures:none" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" version="1.1" overflow="visible" width="164.587pt" height="61.924pt" viewBox="183.069 -700.243 164.587 61.924">
+<!--Generator: Xara Designer (www.xara.com), SVG filter version: 6.3.0.31-->
+<svg fill="none" fill-rule="evenodd" stroke="black" stroke-width="0.501" stroke-linejoin="bevel" stroke-miterlimit="10" font-family="Times New Roman" font-size="16" style="font-variant-ligatures:none" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" version="1.1" overflow="visible" width="312.313pt" height="77.541pt" viewBox="74.507 -445.86 312.313 77.541">
  <defs>
 	</defs>
  <g id="Layer 1" transform="scale(1 -1)">
-  <g id="Group" stroke="none">
-   <text xml:space="preserve" transform="translate(179.331 657.523) scale(1 -1)" kerning="auto" font-family="Courier New" style="-moz-font-feature-settings:'liga' on,'dlig' on;-ms-font-feature-settings:'liga' on,'dlig' on;-webkit-font-feature-settings:'liga' on,'dlig' on;font-feature-settings:'liga' on,'dlig' on;font-variant-ligatures: common-ligatures discretionary-ligatures no-historical-ligatures" fill="#000000" stroke-width="0.369" stroke-linejoin="round" stroke-linecap="round"><tspan x="0" y="0" font-size="41.378">S</tspan><tspan x="24.831" y="0" font-size="33.102">TERI</tspan></text>
-   <g id="Group_1" stroke-linejoin="miter">
-    <path d="M 296.823,693.03 C 309.932,703.999 329.474,702.262 340.443,689.152 C 351.412,676.043 349.675,656.501 336.565,645.532 C 323.456,634.563 303.914,636.3 292.945,649.41 C 281.976,662.519 283.713,682.061 296.823,693.03 Z" stroke-width="0.549" fill="#cccccc" marker-start="none" marker-end="none"/>
-    <g id="Group_2" stroke-width="0.479">
-     <g id="Group_3">
-      <path d="M 317.736,690.394 L 315.651,690.394 L 315.651,649.187 L 317.736,649.187 L 317.736,690.394 Z" fill="#000000" marker-start="none" marker-end="none"/>
-      <path d="M 321.458,690.789 C 322.239,688.16 320.739,685.391 318.109,684.61 C 315.48,683.829 312.711,685.329 311.93,687.958 C 311.149,690.588 312.649,693.357 315.279,694.138 C 317.908,694.919 320.677,693.419 321.458,690.789 Z" fill="#00bf02" marker-start="none" marker-end="none"/>
-      <path d="M 321.458,650.604 C 322.239,647.974 320.739,645.205 318.109,644.424 C 315.48,643.643 312.711,645.143 311.93,647.773 C 311.149,650.402 312.649,653.171 315.279,653.952 C 317.908,654.733 320.677,653.233 321.458,650.604 Z" fill="#00bf02" marker-start="none" marker-end="none"/>
-     </g>
-     <g id="Group_4">
-      <path d="M 295.581,670.323 L 295.581,668.238 L 336.788,668.238 L 336.788,670.323 L 295.581,670.323 Z" fill="#000000" marker-start="none" marker-end="none"/>
-      <path d="M 295.186,674.045 C 297.815,674.826 300.584,673.326 301.365,670.696 C 302.146,668.067 300.646,665.298 298.017,664.517 C 295.387,663.736 292.618,665.236 291.837,667.866 C 291.056,670.495 292.556,673.264 295.186,674.045 Z" fill="#00bf02" marker-start="none" marker-end="none"/>
-      <path d="M 315.279,674.045 C 317.908,674.826 320.677,673.326 321.458,670.696 C 322.239,668.067 320.739,665.298 318.109,664.517 C 315.48,663.736 312.711,665.236 311.93,667.866 C 311.149,670.495 312.649,673.264 315.279,674.045 Z" fill="#ffc17f" marker-start="none" marker-end="none"/>
-      <path d="M 335.371,674.045 C 338.001,674.826 340.77,673.326 341.551,670.696 C 342.332,668.067 340.832,665.298 338.202,664.517 C 335.573,663.736 332.804,665.236 332.023,667.866 C 331.242,670.495 332.742,673.264 335.371,674.045 Z" fill="#00bf02" marker-start="none" marker-end="none"/>
-     </g>
-    </g>
-   </g>
-  </g>
+  <text xml:space="preserve" transform="translate(70.697 392.527) scale(1 -1)" kerning="auto" stroke="none" fill="#000000" stroke-width="0.25" stroke-linejoin="round" stroke-linecap="round" font-family="White Rabbit" font-size="80"><tspan x="0" y="0">MORFEUS</tspan></text>
+  <path d="M 130.258,419.453 C 130.258,420.874 131.952,422.028 134.037,422.028 C 135.6,422.028 136.943,421.378 137.517,420.456 L 137.491,420.508 C 138.445,421.005 139.398,421.095 140.328,420.428 C 140.893,421.365 142.247,422.028 143.827,422.028 C 145.912,422.028 147.606,420.874 147.606,419.453 C 147.606,418.033 145.912,416.879 143.827,416.879 C 141.742,416.879 140.048,418.033 140.048,419.453 C 140.048,419.78 140.137,420.092 140.3,420.379 L 140.268,420.335 C 139.38,420.974 138.474,420.895 137.545,420.41 C 137.72,420.114 137.816,419.791 137.816,419.453 C 137.816,418.033 136.122,416.879 134.037,416.879 C 131.952,416.879 130.258,418.033 130.258,419.453 Z" stroke="#000000" fill="#000000" stroke-width="0.553" stroke-linejoin="round" stroke-linecap="round" marker-start="none" marker-end="none"/>
+  <text xml:space="preserve" transform="translate(73.84 369.652) scale(1 -1)" kerning="auto" stroke="none" fill="#00bf02" stroke-width="0.25" stroke-linejoin="round" stroke-linecap="round" font-family="White Rabbit" font-size="14"><tspan x="0" y="0">MOleculaR FEatUreS for machine learning</tspan></text>
  </g>
 </svg>

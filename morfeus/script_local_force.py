@@ -1,12 +1,12 @@
 """Command line script to calculate local force constants."""
 import argparse
 
-from steriplus import LocalForce, read_xyz
+from morfeus import LocalForce, read_xyz
 
 def main():
     # Add arguments
     parser = argparse.ArgumentParser(
-        "Steriplus script to calculate local force constants")
+        "morfeus script to calculate local force constants")
     parser.add_argument(
         'input_file', type=str, help='Input file')
     parser.add_argument(

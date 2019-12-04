@@ -17,7 +17,7 @@ terminal.
 .. code-block:: console
   :caption: Example
   
-  $ steriplus_sterimol tBu.xyz 1 2
+  $ morfeus_sterimol tBu.xyz 1 2
   L         B_1       B_5
   4.21      2.87      3.27
 
@@ -41,7 +41,7 @@ The Sterimol class calculates and stores Sterimol parameters.
 .. code-block:: python
   :caption: Example
   
-  >>> from steriplus import Sterimol, read_xyz
+  >>> from morfeus import Sterimol, read_xyz
   >>> elements, coordinates = read_xyz("tBu.xyz")
   >>> sterimol = Sterimol(elements, coordinates, 1, 2)
   >>> sterimol.L_value
@@ -91,7 +91,7 @@ make up the convex hull of the vdW surface (see `Background`_)
 .. figure:: images/sterimol_3D.png
 
 More information can be found with `help(Sterimol)` or in the API:
-:py:class:`steriplus.steriplus.Sterimol`
+:py:class:`morfeus.morfeus.Sterimol`
 
 **********
 Background
@@ -111,15 +111,15 @@ rotational size of the substituent. They are defined as the shortest and longest
 vectors from atom 2 to a tangent plane of the vdW surface which are
 perpendicular to the L vector, respectively.
 
-Steriplus has been benchmarked against Paton's Sterimol_ package. Using exactly
+morfeus has been benchmarked against Paton's Sterimol_ package. Using exactly
 the same radii (Paton's modified Bondi), almost identical results are obtained.
-(Note that Steriplus normally uses 1.20 Å as the Bondi vdW radius for H).
+(Note that morfeus normally uses 1.20 Å as the Bondi vdW radius for H).
 
 .. figure:: benchmarks/sterimol/correlation.png
   
   Benchmark of Sterimol parameters against Paton's Sterimol code.
 
-Steriplus calculates the B\ :sub:`1` and B\ :sub:`5` paramters by a different
+morfeus calculates the B\ :sub:`1` and B\ :sub:`5` paramters by a different
 approach from the original code. First, atomic spheres are created with a
 certain density of points. Then, the so-called `convex hull`_ is created,
 reducing the number of points drastically. B\ :sub:`1` and B\ :sub:`5` are

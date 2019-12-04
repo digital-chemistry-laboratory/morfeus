@@ -1,12 +1,12 @@
 """Command line script to calculate buried volumes"""
 import argparse
 
-from steriplus import BuriedVolume, read_gjf, read_xyz
+from morfeus import BuriedVolume, read_gjf, read_xyz
 
 def main():
     # Add arguments
     parser = argparse.ArgumentParser(
-        "Steriplus script to calculate buried volumes")
+        "morfeus script to calculate buried volumes")
     parser.add_argument(
         'file', type=str, help='Input file, either .xyz, .gjf or .com')
     parser.add_argument(

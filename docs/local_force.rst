@@ -3,7 +3,7 @@ Local force constants
 =====================
 
 Local force constants can be calculated with the local modes method [1]_ or
-the compliance matrix method [2]_. Steriplus can use the output of Gaussian_,
+the compliance matrix method [2]_. morfeus can use the output of Gaussian_,
 xtb_, or UniMoVib_ programs.
 
 ***************
@@ -12,7 +12,7 @@ Preparing input
 
 The LocalForce class needs input from quantum-chemical frequency calculations.
 Therefore, the instructions are a bit more involved. This input can be read
-using the ``load_file`` method, and Steriplus can also calculate some
+using the ``load_file`` method, and morfeus can also calculate some
 quantities using its built-in normal mode analysis and internal coordinate
 codes.
 
@@ -22,7 +22,7 @@ Local modes
 
 The local modes approach needs the normal modes in internalcoordinates, here
 called *internal modes*, as well as the normal mode force constants. The
-internal modes can either be read from file or calculated with Steriplus.
+internal modes can either be read from file or calculated with morfeus.
 Specifically, the internal modes can be computed from the normal modes and the
 Wilson B matrix. For local frequencies, additional input is needed.
 
@@ -45,7 +45,7 @@ For local frequencies, the elements are also needed (for their atomic masses).
 Recommended input
 #################
 
-The table below summarizes the recommended input to Steriplus from the
+The table below summarizes the recommended input to morfeus from the
 supported programs. More details are given below.
 
 .. table:: Recommended input.
@@ -179,7 +179,7 @@ to use the *hessian* file.
 
   xtb 6.2 has a bug which gives the wrong number of normal modes for linear
   molecules in the *xtb_normalmodes* file. Therefore, the approach of reading
-  the Hessian and doing a normal mode analysis with Steriplus is recommended.  
+  the Hessian and doing a normal mode analysis with morfeus is recommended.  
 
 ######################
 Geometry optimizations
@@ -218,7 +218,7 @@ the terminal.
 .. code-block:: console
   :caption: Example with Gaussian log file.
   
-  $ steriplus_local_force freq-lm.log -p gaussian -t log
+  $ morfeus_local_force freq-lm.log -p gaussian -t log
   Coordinate                            Force constant (mDyne/Å, mDyne Å rad^(-2))             Frequency (cm^-1)
   Bond(1, 2)                                                                 5.364                          3129
   Bond(1, 3)                                                                 5.364                          3129
@@ -238,7 +238,7 @@ the terminal.
 .. code-block:: console
   :caption: Example with xtb and hessian file.
   
-  $ steriplus_local_force hessian -x xtbopt.xyz -p xtb -t hessian -m local -c 1 2 -c 1 5 -c 1 2 3
+  $ morfeus_local_force hessian -x xtbopt.xyz -p xtb -t hessian -m local -c 1 2 -c 1 5 -c 1 2 3
   Coordinate                            Force constant (mDyne/Å, mDyne Å rad^(-2))             Frequency (cm^-1)
   Bond(1, 2)                                                                 5.190                          3078
   Bond(1, 5)                                                                 5.190                          3078
@@ -256,7 +256,7 @@ the terminal.
 -x, --xyz <str>
   Coordinate file in xyz format
 
-More information is given with ``steriplus_local_force --help``
+More information is given with ``morfeus_local_force --help``
 
 ******
 Module
@@ -268,7 +268,7 @@ constants and frequencies.
 .. code-block:: python
   :caption: Example with Gaussian and local modes method.
 
-  >>> from steriplus import LocalForce
+  >>> from morfeus import LocalForce
   >>> lf = LocalForce()
   >>> lf.load_file("freq-lm.log", "gaussian", "log")
   >>> lf.compute_local()
@@ -283,7 +283,7 @@ constants and frequencies.
 .. code-block:: python
   :caption: Example with Gaussian and compliance matrix method.
 
-  >>> from steriplus import LocalForce
+  >>> from morfeus import LocalForce
   >>> lf = LocalForce()
   >>> lf.load_file("freq.fchk", "gaussian", "fchk")
   >>> lf.compute_local()
@@ -298,7 +298,7 @@ constants and frequencies.
 .. code-block:: python
   :caption: Example with xtb and local modes method.
 
-  >>> from steriplus import LocalForce, read_xyz
+  >>> from morfeus import LocalForce, read_xyz
   >>> elements, coordinates = read_xyz("xtbopt.xyz")
   >>> lf = LocalForce(elements, coordinates)
   >>> lf.load_file("hessian", "xtb", "hessian")
@@ -318,7 +318,7 @@ constants and frequencies.
 .. code-block:: python
   :caption: Example with UniMoVib and the local modes method.
 
-  >>> from steriplus import LocalForce
+  >>> from morfeus import LocalForce
   >>> lf = LocalForce()
   >>> lf.load_file("job.out", "unimovib", "log")
   >>> lf.detect_bonds()
@@ -335,7 +335,7 @@ constants and frequencies.
   :caption: Example with adding internal coordinates manually
   :emphasize-lines: 4-7
 
-  >>> from steriplus import LocalForce
+  >>> from morfeus import LocalForce
   >>> lf = LocalForce()
   >>> lf.load_file("job.out", "unimovib", "log")
   >>> lf.add_internal_coordinate([1, 2])
@@ -362,7 +362,7 @@ method. The cutoff for low-freqency modes can be controlled with
 ``add_internal_coordinate`` method.
 
 For more detailed information, use ``help(LocalForce)`` or see the API:
-:py:class:`steriplus.steriplus.LocalForce`
+:py:class:`morfeus.morfeus.LocalForce`
 
 **********
 Background
@@ -372,11 +372,11 @@ Local force constants describe the bond strength based on vibrational
 frequencies. There are two approachces in the literature: the local modes
 method of Cremer [1]_ and the compliance matrix method of Grunenberg.[2]_
 They have been shown to be equivalent within numerical accuracy.[3]_
-Steriplus can use either method, and they give almost identical results except
+morfeus can use either method, and they give almost identical results except
 when there are modes with imaginary or very small frequencies. In these cases,
 the local modes approach can handle the issue with  two methods: (1)
 projecting out imaginary modes, and (2) raising the force constants of
-low-frequency modes to a cutoff value. Steriplus does this projection by
+low-frequency modes to a cutoff value. morfeus does this projection by
 default and uses a cutoff of 0.001 mDyne/Å for low-frequency modes. We
 therefore recommend local modes with default settings as the most robust
 method in cases problematic cases. Expert users can turn off the projection
@@ -385,7 +385,7 @@ and alter the cutoff value.
 Note that interactions involving imaginary modes (such as breaking/forming
 bonds in transition states) cannot be assessed by the local force constants.
 
-Steriplus has been benchmarked against the local force constants and
+morfeus has been benchmarked against the local force constants and
 frequencies given by Cremer [3]_ for small organic molecules. 
 
 .. figure:: benchmarks/local_force/benchmark.png

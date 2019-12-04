@@ -14,7 +14,7 @@ terminal.
 .. code-block:: console
   :caption: Example
   
-  $ steriplus_cone_angle PdPMe3.xyz 1
+  $ morfeus_cone_angle PdPMe3.xyz 1
   Cone angle: 117.1
   No. tangent atoms: 3
 
@@ -23,7 +23,7 @@ The index of the metal atom is given as the second argument.
 --radii <str>
   Choice of vdW radii: ``bondi`` or ``crc`` (default)
 
-More information is given with ``steriplus_cone_angle --help``
+More information is given with ``morfeus_cone_angle --help``
 
 ******
 Module
@@ -34,7 +34,7 @@ The ConeAngle class is provided to calculate and store the cone angles.
 .. code-block:: python
   :caption: Example
   
-  >>> from steriplus import ConeAngle, read_xyz
+  >>> from morfeus import ConeAngle, read_xyz
   >>> elements, coordinates = read_xyz("phosphines/PdPMe3.xyz")
   >>> cone_angle = ConeAngle(elements, coordinates, 1)
   >>> print(cone_angle.cone_angle)
@@ -53,7 +53,7 @@ is the default here. It can be changed with ``radii_type=<str>`` with either
 ``crc`` or ``bondi``. Custom radii can passed with ``radii=<list>``.
 
 For more detailed information, use ``help(ConeAngle)`` or see the API:
-:py:class:`steriplus.steriplus.ConeAngle`
+:py:class:`morfeus.morfeus.ConeAngle`
 
 **********
 Background
@@ -64,7 +64,7 @@ ligands [2]_. The original Tolman cone angles for phosphines have problems with
 asymmetric ligands and are not implemented in this package. Instead, the exact
 cone angles [1]_ are used. These are also defined for multidentate ligands.
 
-The method implemented in Steriplus is taken directly from the article by Allen
+The method implemented in morfeus is taken directly from the article by Allen
 [1]_. The results have been benchmarked against Table 1 of the original article
 and agree within numerical accuracy.
 

@@ -2,7 +2,7 @@
 Installation
 ============
 
-Steriplus can be installed either with pip or conda for Python 3.
+morfeus can be installed either with pip or conda for Python 3.
 
 ************
 Dependencies
@@ -29,13 +29,13 @@ Installation of core functionality with pip
 
 .. code-block:: console
 
-  pip install steriplus
+  pip install morfeus
 
 Installation with extra graphics functionality
 
 .. code-block:: console
 
-  pip install steriplus[extras]
+  pip install morfeus[extras]
 
 
 *****
@@ -46,7 +46,7 @@ Conda currently only supports installation with extra graphics functionality.
 
 .. code-block:: console
 
-  conda install -c conda-forge steriplus
+  conda install -c conda-forge morfeus
 
 
 .. _matplotlib: https://pypi.org/project/matplotlib/

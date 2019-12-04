@@ -8,7 +8,7 @@ Without display
 
 Matplotlib may cause problems on computers without displays, e.g., nodes on
 computer clusters. This can be solved by changing the plotting backend to "agg".
-This could be done at the top of the Python script using steriplus:
+This could be done at the top of the Python script using morfeus:
 
 .. code-block:: python
 

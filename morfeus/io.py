@@ -6,8 +6,8 @@ Functions:
 """
 import numpy as np
 
-from steriplus.helpers import convert_elements
-from steriplus.data import BOHR_TO_ANGSTROM
+from morfeus.helpers import convert_elements
+from morfeus.data import BOHR_TO_ANGSTROM
 
 class CubeParser:
     """Parses Gaussian cube file of electron density

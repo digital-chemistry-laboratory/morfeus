@@ -4,16 +4,16 @@ with open("README.rst", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="steriplus",
-    version="0.4.0",
+    name="morfeus-ml",
+    version="0.5.0",
     author="Kjell Jorner",
     author_email="kjell.jorner@gmail.com",
-    description="A package to calculate steric descriptors.",
+    description="A package to calculate molecular features.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="",
-    packages=["steriplus"],
-    package_data={"steriplus": ['../data/c6_reference_data.pickle']},
+    packages=["morfeus"],
+    package_data={"morfeus": ['../data/c6_reference_data.pickle']},
     install_requires=["numpy", "scipy"],
     extras_require = {'extras': ["vtk", "pyvista", "pymeshfix", "matplotlib"]},
     classifiers=[
@@ -23,11 +23,11 @@ setuptools.setup(
     ],
     entry_points={
         "console_scripts": [
-            "steriplus_sterimol=steriplus.script_sterimol:main",
-            "steriplus_sasa=steriplus.script_sasa:main",
-            "steriplus_buried_volume=steriplus.script_buried_volume:main",
-            "steriplus_cone_angle=steriplus.script_cone_angle:main",
-            "steriplus_dispersion=steriplus.script_dispersion:main",
-            "steriplus_local_force=steriplus.script_local_force:main",
+            "morfeus_sterimol=morfeus.script_sterimol:main",
+            "morfeus_sasa=morfeus.script_sasa:main",
+            "morfeus_buried_volume=morfeus.script_buried_volume:main",
+            "morfeus_cone_angle=morfeus.script_cone_angle:main",
+            "morfeus_dispersion=morfeus.script_dispersion:main",
+            "morfeus_local_force=morfeus.script_local_force:main",
         ]}
 )

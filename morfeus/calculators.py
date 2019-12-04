@@ -4,9 +4,9 @@ import pkg_resources
 import numpy as np
 from scipy.spatial.distance import cdist
 
-from steriplus.helpers import convert_elements, get_radii
-from steriplus.geometry import Atom
-from steriplus.data import r2_r4
+from morfeus.helpers import convert_elements, get_radii
+from morfeus.geometry import Atom
+from morfeus.data import r2_r4
 
 class D3Calculator:
     """Calculates C6(AA) and C8(AA) coefficients based on the procedure in 
@@ -56,7 +56,7 @@ class D3Calculator:
             cn_atom.coordination_number = coordination_number
         
         # Load the reference data
-        data_file = pkg_resources.resource_filename('steriplus',
+        data_file = pkg_resources.resource_filename('morfeus',
             '../data/c6_reference_data.pickle')
         with open(data_file, "rb") as file:
             c6_reference_data = pickle.load(file)

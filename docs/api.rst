@@ -3,48 +3,48 @@ API
 ===
 
 **************
-steriplus.data
+morfeus.data
 **************
 
-.. autodata:: steriplus.data.atomic_symbols
+.. autodata:: morfeus.data.atomic_symbols
    :annotation:
  
-.. autodata:: steriplus.data.atomic_numbers
+.. autodata:: morfeus.data.atomic_numbers
    :annotation:
  
-.. autodata:: steriplus.data.bondi_radii
+.. autodata:: morfeus.data.bondi_radii
    :annotation:
 
-.. autodata:: steriplus.data.crc_radii
+.. autodata:: morfeus.data.crc_radii
    :annotation:
  
-.. autodata:: steriplus.data.jmol_colors
+.. autodata:: morfeus.data.jmol_colors
    :annotation:
     
 ******************
-steriplus.geometry
+morfeus.geometry
 ******************
 
-.. automodule:: steriplus.geometry
+.. automodule:: morfeus.geometry
    :members:
 
 ************
-steriplus.io
+morfeus.io
 ************
 
-.. automodule:: steriplus.io
+.. automodule:: morfeus.io
    :members:
 
 ******************
-steriplus.plotting
+morfeus.plotting
 ******************
 
-.. automodule:: steriplus.plotting
+.. automodule:: morfeus.plotting
    :members:
 
 *******************
-steriplus.steriplus
+morfeus.morfeus
 *******************
 
-.. automodule:: steriplus.steriplus
+.. automodule:: morfeus.morfeus
    :members:

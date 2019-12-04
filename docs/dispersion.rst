@@ -20,7 +20,7 @@ There are two options for using surfaces based on electron density:
    the surface analysis module of the program (option 12 in the main menu).
    After generating the surface, it should be exported to a file using the
    hidden option 66. This generates a file, "vtx.pdb" that can be read by
-   Steriplus. For more information, see Section 3.15.4 of the
+   morfeus. For more information, see Section 3.15.4 of the
    `Multiwfn manual`_. An isodensity of 0.001
 
 *******************
@@ -33,7 +33,7 @@ the terminal.
 .. code-block:: console
   :caption: Example
   
-  $ steriplus_dispersion n-heptane.xyz
+  $ morfeus_dispersion n-heptane.xyz
   Surface area (Å^2): 223.6
   Surface volume (Å^3): 205.0
   P_int (kcal^(1/2) Bohr^(-1/2): 15.6
@@ -55,7 +55,7 @@ the terminal.
 --vertex_file <str>
   Vertex file from Multiwfn
 
-More information is given with ``steriplus_dispersion --help``
+More information is given with ``morfeus_dispersion --help``
 
 ******
 Module
@@ -82,15 +82,15 @@ default of ``rahm`` to either ``bondi`` or ``crc`` with ``radii_type=<str>``.
 Custom raddi can be supplied with ``radii=<list>``. Density of points on the 
 vdW surface is controlled with ``density=<float>``. Dispersion coefficients can
  be read from the output of Grimme's D3 and D4 programs with the
-:py:meth:`steriplus.steriplus.Dispersion.get_coefficients` method. To suppress
+:py:meth:`morfeus.morfeus.Dispersion.get_coefficients` method. To suppress
 the internal D3 code, set ``calculate_coefficients=<bool>`` appropriately. To
 use another surface, suppress the vdW surface creation with
 ``point_surface=<bool>`` and use the
-:py:meth:`steriplus.steriplus.Dispersion.surface_from_cube` or 
-:py:meth:`steriplus.steriplus.Dispersion.surface_from_multiwfn` methods. An
+:py:meth:`morfeus.morfeus.Dispersion.surface_from_cube` or 
+:py:meth:`morfeus.morfeus.Dispersion.surface_from_multiwfn` methods. An
 experimental method for smooth surfaces mimicking electron density isosurfaces
 starting from vdW radii can also be used:
-:py:meth:`steriplus.steriplus.Dispersion.surface_from_radii`.
+:py:meth:`morfeus.morfeus.Dispersion.surface_from_radii`.
 
 .. code-block:: python
   :caption: Example with external cube and coefficients files
@@ -112,14 +112,14 @@ be provied with ``excluded_atoms=<list>``. This can for example be used to
 calculate substitutent P_int values.
 
 For more detailed information, use ``help(Dispersion)`` or see the API:
-:py:class:`steriplus.steriplus.Dispersion`
+:py:class:`morfeus.morfeus.Dispersion`
 
 **********
 Background
 **********
 
 The P_int dispersion descriptor was introduced by Pollice and Chen as a
-quantitative descriptor for dispersion interactions [1]_. Steriplus can
+quantitative descriptor for dispersion interactions [1]_. morfeus can
 calculate P_int based on an electron density isosurface, as in the original
 article. In addition, we have found that a very fast method based on surfaces
 constructed from vdW radii correlate very well with P_int from electron

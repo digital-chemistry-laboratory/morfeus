@@ -13,7 +13,7 @@ The basic functionality is available through the command line script.
 .. code-block:: console
   :caption: Example
 
-  $ steriplus_buried_volume 1.xyz 1 --exclude 1 2 3 4 5 6 7
+  $ morfeus_buried_volume 1.xyz 1 --exclude 1 2 3 4 5 6 7
   V_bur (%): 29.6
 
 --include_hs <True/False>
@@ -28,7 +28,7 @@ The basic functionality is available through the command line script.
   Save steric map with supplied atoms to define z axis.
   Map is saved as "steric_map.png"
 
-More information can be found with ``steriplus_buried_volume --help``
+More information can be found with ``morfeus_buried_volume --help``
 
 ******
 Module
@@ -40,7 +40,7 @@ plotted.
 .. code-block:: python
   :caption: Example
 
-  >>> from steriplus import BuriedVolume, read_xyz
+  >>> from morfeus import BuriedVolume, read_xyz
   >>> elements, coordinates = read_xyz("1.xyz")
   >>> bv = BuriedVolume(elements, coordinates, 1, exclude_list=[1, 2, 3, 4, 5, 6, 7])
   >>> print(bv.buried_volume)
@@ -62,7 +62,7 @@ etiher ``crc`` or ``bondi`` and ``radii_scale=<float>``. Custom radii can be
 supplied as a list with ``radii=<list>``.
 
 For more information, use ``help(BuriedVolume)`` or see the API:
-:py:class:`steriplus.steriplus.BuriedVolume`
+:py:class:`morfeus.morfeus.BuriedVolume`
 
 **********
 Background
@@ -73,7 +73,7 @@ ligand of a transition metal complex [1]_. A web tool to calculate buried
 volumes, SambVca, was made available for scientific purposes by Cavallo and 
 co-workers in 2009 [2]_ with version 2 in 2016 [1]_.
 
-The approach of Steriplus differs somewhat from that in ref. [1]_ in that points
+The approach of morfeus differs somewhat from that in ref. [1]_ in that points
 are generated uniformly in the test sphere rather than considering voxels. The 
 numerical results with standard settings are the same though as shown by
 benchmarks on complexes 1-18 from ref. [1]_. Steric maps also match those in 

@@ -11,9 +11,9 @@ import numpy as np
 from scipy.spatial.distance import cdist
 import scipy.spatial
 
-from steriplus.data import atomic_numbers, atomic_symbols
-from steriplus.data import radii_bondi, radii_crc, radii_rahm
-from steriplus.data import cov_radii_pyykko
+from morfeus.data import atomic_numbers, atomic_symbols
+from morfeus.data import radii_bondi, radii_crc, radii_rahm
+from morfeus.data import cov_radii_pyykko
 
 def check_distances(elements, coordinates, check_atom, radii=[], check_radius=0,
                     exclude_list=[], epsilon=0, radii_type="crc"):

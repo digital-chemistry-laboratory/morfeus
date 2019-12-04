@@ -13,7 +13,7 @@ The command-line script outputs total SASA and volume as well as SASA per atom.
 .. code-block:: console
   :caption: Example
 
-  $ steriplus_sasa n-heptane.xyz
+  $ morfeus_sasa n-heptane.xyz
   Probe radius (Å): 1.4
   Solvent accessible surface area (Å^2): 331.6
   Volume inside solvent accessible surface (Å^3): 475.6
@@ -59,7 +59,7 @@ volume.
 .. code-block:: python
   :caption: Example
 
-  >>> from steriplus import SASA, read_xyz                                                             
+  >>> from morfeus import SASA, read_xyz                                                             
   >>> elements, coordinates = read_xyz("n-heptane.xyz")                                                
   >>> sasa = SASA(elements, coordinates)  
   >>> print(sasa.atom_areas[1])                                                                        
@@ -75,18 +75,18 @@ radii can be changed with the keyword argument ``radii=<str>`` with either
 ``radii=<list>``. The probe radius is change with ``probe_radius=<float>``.
 
 For more information, use ``help(SASA)`` or consult the API:
-:py:class:`steriplus.steriplus.SASA`
+:py:class:`morfeus.morfeus.SASA`
 
 **********
 Background
 **********
 Solvent accessible surface area is a measure of how much of the area of a
 molecule is available to the solvent. The atomic SASA can be used as a
-measure of the steric availability of an atom. Steriplus uses a modified version
+measure of the steric availability of an atom. morfeus uses a modified version
 of the method of Shrake and Rupley [1]_ where a constant surface density of 
 points is used instead of fixed number of points regardless of the atom area.
 The atomic SASA and volumes are computed as described by Eisenhaber *et al.*
-[2]_. Steriplus is not optimzed for larger molecules and other programs are
+[2]_. morfeus is not optimzed for larger molecules and other programs are
 recommended for, *e.g.*, proteins.
 
 
@@ -94,7 +94,7 @@ Results have been compared against FreeSASA [3]_ and GEPOL93 [4]_ on a set of
 transition metal complexes with results that correlate well. FreeSASA uses the
 Shrake and Rupley algorithm while GEPOL93 uses the one by Lee and Richards [5]_.
 Setting were CRC radii, a probe radius of 1.4 Å and a density of 0.1 Å^2/point
-for Steriplus. The same total number of points were used for FreeSASA, while
+for morfeus. The same total number of points were used for FreeSASA, while
 GEPOL93 uses the finest setting (NDIV=5).
 
 .. figure:: benchmarks/SASA/total_areas.png

@@ -14,11 +14,11 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 import scipy.spatial
 
-from steriplus.helpers import convert_elements, get_connectivity_matrix
-from steriplus.data import ANGSTROM_TO_BOHR, cov_radii_pyykko
+from morfeus.helpers import convert_elements, get_connectivity_matrix
+from morfeus.data import ANGSTROM_TO_BOHR, cov_radii_pyykko
 
 class Atom:
-    """Atom common for Steriplus calculations.
+    """Atom common for morfeus calculations.
 
      Args:
         coordinates (ndarray): Coordinates (Å)

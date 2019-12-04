@@ -1,12 +1,12 @@
 """Command line script to calculate exact cone angles"""
 import argparse
 
-from steriplus import ConeAngle, read_gjf, read_xyz
+from morfeus import ConeAngle, read_gjf, read_xyz
 
 def main():
     # Parse the arguments
     parser = argparse.ArgumentParser(
-        "Steriplus script to calcaulate cone angles")
+        "morfeus script to calcaulate cone angles")
     parser.add_argument(
         'file', type=str, help='Input file, either .xyz, .gjf or .com')
     parser.add_argument(
