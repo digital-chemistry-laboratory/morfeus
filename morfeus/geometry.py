@@ -188,7 +188,7 @@ class Sphere:
         """
         # Generate points on unit sphere
         rnd = 1
-        n = round((self.area / density))
+        n = int(round((self.area / density)))
         offset = 2.0 / n
         increment = math.pi * (3.0 - math.sqrt(5.0))
 
@@ -217,7 +217,7 @@ class Sphere:
             points (ndarray): Array of surface points.
         """
         # Calculate number of points
-        n = round((self.area / density / 2)**(1 / 2))
+        n = int(round((self.area / density / 2)**(1 / 2)))
 
         # Set up points along theta and phi
         theta = np.linspace(0, math.pi, n)
@@ -249,9 +249,9 @@ class Sphere:
         """
         # Calculate number of points from density of empty or filled sphere.
         if filled:
-            n = round((self.volume / density * 6 / math.pi)**(1 / 3))
+            n = int(round((self.volume / density * 6 / math.pi)**(1 / 3)))
         else:
-            n = round((self.area / density * 6 / math.pi)**(1 / 3))
+            n = int(round((self.area / density * 6 / math.pi)**(1 / 3)))
 
         # Generate points in box
         r = self.radius

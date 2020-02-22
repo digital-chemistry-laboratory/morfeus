@@ -90,6 +90,7 @@ both academic and commercial use.
    cone_angle
    dispersion
    local_force
+   pyramidalization
    sasa
    sterimol
    api

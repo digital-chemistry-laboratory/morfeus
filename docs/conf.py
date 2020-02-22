@@ -26,7 +26,7 @@ author = 'Kjell Jorner'
 # The short X.Y version
 version = ''
 # The full version, including alpha/beta/rc tags
-release = '0.4.0'
+release = '0.5.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -42,6 +42,8 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
 ]
+
+numfig = True
 
 autodoc_mock_imports = ["numpy", "scipy", "matplotlib", "rdkit", "mpl_toolkits",
                         "vtk", "pyvista", "pymeshfix"]

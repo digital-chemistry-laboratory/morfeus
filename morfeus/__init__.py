@@ -19,7 +19,7 @@ Scripts:
 """
 
 # Version of the morfeus package
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 from morfeus.morfeus import BuriedVolume, ConeAngle, Dispersion
 from morfeus.morfeus import SASA, Sterimol, LocalForce, Pyramidalization
