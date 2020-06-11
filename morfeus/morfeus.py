@@ -1352,7 +1352,8 @@ class ConeAngle:
         
         # Determine direction and extension of cone
         cone_angle = math.degrees(self._cone.angle)
-        coordinates = np.array(coordinates)
+        coordinates = np.array([atom.coordinates for atom in self._atoms])
+        radii = np.array([atom.radius for atom in self._atoms])
         if cone_angle > 180:
             normal = - self._cone.normal 
         else:
@@ -2881,9 +2882,8 @@ class Pyramidalization:
         method (str): Method for detecting neighbors. Either 'connectivity' or 
                       'distance'. Ignored if neighbor_indices is given.
         neighbor_indices (list): Indices of neighbors to pyramidalized atom.
-        radii (list): VdW radii (Å)
-        radii_type (str): Choice of covalent radii: 'pyykko'
-            (default)
+        radii (list): Covalent radii used to determine connectivity (Å)
+        radii_type (str): Choice of covalent radii: 'pyykko' (default)
 
     Attributes:
         alpha (float): Average alpha angle (deg)
