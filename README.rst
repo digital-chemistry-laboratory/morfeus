@@ -9,38 +9,23 @@ either as a command line script or imported as a module.
 Installation
 ************
 
-###
-pip
-###
-
-Installation of core functionality with pip
+Clone the repository and install with
 
 .. code-block:: console
 
-  pip install morfeus
+  pip install .
 
 Installation with extra graphics functionality
 
 .. code-block:: console
 
-  pip install morfeus[extras]
-
-
-#####
-conda
-#####
-
-Conda currently only supports installation with extra graphics functionality.
-
-.. code-block:: console
-
-  conda install -c conda-forge morfeus
+  pip install .[extras]
 
 *************
 Documentation
 *************
 
-https://morfeus.readthedocs.io/en/latest/index.html
+To be added later.
 
 ************
 Dependencies
@@ -51,7 +36,7 @@ Core dependencies:
 * numpy
 * scipy
 
-Optional depedencies:
+Optional depedencies when installed with [extras]:
 
 * matplotlib
 * pyvista
