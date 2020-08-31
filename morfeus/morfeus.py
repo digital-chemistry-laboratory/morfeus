@@ -2676,7 +2676,8 @@ class LocalForce:
         frequencies = []
 
         # Parse file
-        normal_modes_chunk = None
+        normal_modes_chunk = [[]]
+        counter = 0
         for line in lines:
             # Read coordinates, atomic numbers and atomic masses
             if read_coordinates:
