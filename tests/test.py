@@ -82,9 +82,9 @@ class TestSterimol(unittest.TestCase):
 
                 for attribute, value in results.items():
                     if isinstance(value, np.ndarray):
-                        assert_array_almost_equal(getattr(sterimol, attribute), value)
+                        assert_array_almost_equal(getattr(sterimol, attribute), value, decimal=5)
                     else:
-                        self.assertAlmostEqual(getattr(sterimol, attribute), value)                        
+                        self.assertAlmostEqual(getattr(sterimol, attribute), value, decimal=5)                        
 
 class TestLocalForce(unittest.TestCase):
     def setUp(self):
@@ -118,8 +118,8 @@ class TestLocalForce(unittest.TestCase):
         lf.compute_local()
         lf.compute_frequencies()
         
-        assert_array_almost_equal(lf.local_force_constants, ref_force_constants)
-        assert_array_almost_equal(lf.local_frequencies, ref_frequencies)
+        assert_array_almost_equal(lf.local_force_constants, ref_force_constants, decimal=4)
+        assert_array_almost_equal(lf.local_frequencies, ref_frequencies, decimal=2)
 
     def test_gaussian_local(self):
         with open(self.gaussian_dir / "local/force_constants.pickle", "rb") as file:
@@ -132,8 +132,8 @@ class TestLocalForce(unittest.TestCase):
         lf.compute_local()
         lf.compute_frequencies()
         
-        assert_array_almost_equal(lf.local_force_constants, ref_force_constants)
-        assert_array_almost_equal(lf.local_frequencies, ref_frequencies)
+        assert_array_almost_equal(lf.local_force_constants, ref_force_constants, decimal=4)
+        assert_array_almost_equal(lf.local_frequencies, ref_frequencies, decimal=2)
 
     def test_gaussian_hp(self):
         with open(self.gaussian_dir / "hp/force_constants.pickle", "rb") as file:
@@ -146,8 +146,8 @@ class TestLocalForce(unittest.TestCase):
         lf.compute_local()
         lf.compute_frequencies()
         
-        assert_array_almost_equal(lf.local_force_constants, ref_force_constants)
-        assert_array_almost_equal(lf.local_frequencies, ref_frequencies)    
+        assert_array_almost_equal(lf.local_force_constants, ref_force_constants, decimal=4)
+        assert_array_almost_equal(lf.local_frequencies, ref_frequencies, decimal=2)    
 
     def test_misc(self):
         elements, coordinates = read_xyz(self.xtb_dir / "hessian/xtb.xyz")       
@@ -161,17 +161,17 @@ class TestLocalForce(unittest.TestCase):
         lf.compute_frequencies()
 
         assert_almost_equal(lf.get_local_force_constant([1, 2]),
-                            5.190222259808879)
+                            5.190222259808879, decimal=4)
         assert_almost_equal(lf.get_local_force_constant([2, 1, 3]),
-                            2.3714906326401217)
+                            2.3714906326401217, decimal=4)
         assert_almost_equal(lf.get_local_force_constant([1, 2, 3, 4]),
-                            3.5142429141308917)
+                            3.5142429141308917, decimal=4)
         assert_almost_equal(lf.get_local_frequency([1, 2]),
-                            3078.130379468432)
+                            3078.130379468432, decimal=2)
         assert_almost_equal(lf.get_local_frequency([2, 1, 3]),
-                            1457.3466611738797)
+                            1457.3466611738797, decimal=2)
         assert_almost_equal(lf.get_local_frequency([1, 2, 3, 4]),
-                            1457.9180060719998)
+                            1457.9180060719998, decimal=2)
 
     def test_unimovib_local(self):
         with open(self.unimovib_dir / "local/force_constants.pickle", "rb") as file:
@@ -186,8 +186,8 @@ class TestLocalForce(unittest.TestCase):
         lf.compute_local()
         lf.compute_frequencies()
         
-        assert_array_almost_equal(lf.local_force_constants, ref_force_constants)
-        assert_array_almost_equal(lf.local_frequencies, ref_frequencies)
+        assert_array_almost_equal(lf.local_force_constants, ref_force_constants, decimal=4)
+        assert_array_almost_equal(lf.local_frequencies, ref_frequencies, decimal=2)
 
     def test_unimovib_log(self):
         with open(self.unimovib_dir / "log/force_constants.pickle", "rb") as file:
@@ -201,8 +201,8 @@ class TestLocalForce(unittest.TestCase):
         lf.compute_local()
         lf.compute_frequencies()
         
-        assert_array_almost_equal(lf.local_force_constants, ref_force_constants)
-        assert_array_almost_equal(lf.local_frequencies, ref_frequencies)
+        assert_array_almost_equal(lf.local_force_constants, ref_force_constants, decimal=4)
+        assert_array_almost_equal(lf.local_frequencies, ref_frequencies, decimal=2)
 
     def test_unimovib_umv(self):
         with open(self.unimovib_dir / "umv/force_constants.pickle", "rb") as file:
@@ -217,8 +217,8 @@ class TestLocalForce(unittest.TestCase):
         lf.compute_local()
         lf.compute_frequencies()
         
-        assert_array_almost_equal(lf.local_force_constants, ref_force_constants)
-        assert_array_almost_equal(lf.local_frequencies, ref_frequencies)
+        assert_array_almost_equal(lf.local_force_constants, ref_force_constants, decimal=4)
+        assert_array_almost_equal(lf.local_frequencies, ref_frequencies, decimal=2)
 
     def test_xtb_hessian(self):
         with open(self.xtb_dir / "hessian/force_constants.pickle", "rb") as file:
@@ -234,8 +234,8 @@ class TestLocalForce(unittest.TestCase):
         lf.compute_local()
         lf.compute_frequencies()
         
-        assert_array_almost_equal(lf.local_force_constants, ref_force_constants)
-        assert_array_almost_equal(lf.local_frequencies, ref_frequencies)           
+        assert_array_almost_equal(lf.local_force_constants, ref_force_constants, decimal=4)
+        assert_array_almost_equal(lf.local_frequencies, ref_frequencies, decimal=2)           
 
     def test_xtb_compliance(self):
         elements, coordinates = read_xyz(self.xtb_dir / "compliance/xtb.xyz")       
@@ -276,8 +276,8 @@ class TestLocalForce(unittest.TestCase):
         lf.compute_local()
         lf.compute_frequencies()
         
-        assert_array_almost_equal(lf.local_force_constants, ref_force_constants)
-        assert_array_almost_equal(lf.local_frequencies, ref_frequencies)
+        assert_array_almost_equal(lf.local_force_constants, ref_force_constants, decimal=4)
+        assert_array_almost_equal(lf.local_frequencies, ref_frequencies, decimal=2)
 
 class TestBuriedVolume(unittest.TestCase):
     def setUp(self):
@@ -289,7 +289,7 @@ class TestBuriedVolume(unittest.TestCase):
                 (1, 0.2962110976518822),
                 (2, 0.175666231830041),
                 ],
-            "exclude_list": [
+            "excluded_atoms": [
                 ([1, 2, 3, 4, 5, 6, 7], 0.2962110976518822),
                 ([1, 2, 3, 4], 0.5436020778978755),
                 ],
@@ -319,7 +319,7 @@ class TestBuriedVolume(unittest.TestCase):
                 elements, coordinates = read_xyz(self.bv_dir / "1.xyz")
                 parameters = {
                     "central_atom": 1,
-                    "exclude_list": [1, 2, 3, 4, 5, 6, 7],
+                    "excluded_atoms": [1, 2, 3, 4, 5, 6, 7],
                     "include_hs": False,
                     "radius": 3.5,
                     "radii_type": "bondi",
@@ -410,7 +410,7 @@ class TestDispersion(unittest.TestCase):
     
     def test_d3(self):
         elements, coordinates = read_xyz(self.disp_dir / "acetonitrile.xyz")
-        disp = Dispersion(elements, coordinates, calculate_coefficients=False)
+        disp = Dispersion(elements, coordinates, compute_coefficients=False)
         disp.get_coefficients(self.disp_dir / "d3.out", model="d3")
         disp.calculate_p_int()
 
@@ -422,7 +422,7 @@ class TestDispersion(unittest.TestCase):
     
     def test_d4(self):
         elements, coordinates = read_xyz(self.disp_dir / "acetonitrile.xyz")
-        disp = Dispersion(elements, coordinates, calculate_coefficients=False)
+        disp = Dispersion(elements, coordinates, compute_coefficients=False)
         disp.get_coefficients(self.disp_dir / "d4.out", model="d4")
         disp.calculate_p_int()
 
@@ -451,7 +451,7 @@ class TestDispersion(unittest.TestCase):
             with self.subTest(isodensity=isodensity):
                 area, volume, p_int, p_max, p_min = results
                 elements, coordinates = read_xyz(self.disp_dir / "acetonitrile.xyz")
-                disp = Dispersion(elements, coordinates, point_surface=False, calculate_coefficients=False)
+                disp = Dispersion(elements, coordinates, point_surface=False, compute_coefficients=False)
                 disp.surface_from_cube(self.disp_dir / "density.cub", isodensity=isodensity)
                 disp.get_coefficients()
                 disp.calculate_p_int()
@@ -464,7 +464,7 @@ class TestDispersion(unittest.TestCase):
 
     def test_multiwfn(self):
         elements, coordinates = read_xyz(self.disp_dir / "acetonitrile.xyz")
-        disp = Dispersion(elements, coordinates, point_surface=False, calculate_coefficients=False)
+        disp = Dispersion(elements, coordinates, point_surface=False, compute_coefficients=False)
         disp.surface_from_multiwfn(self.disp_dir / "vtx.pdb")
         disp.get_coefficients()
         disp.calculate_p_int()
