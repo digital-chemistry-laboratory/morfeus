@@ -52,9 +52,9 @@ class TestSterimol(unittest.TestCase):
 
                 for attribute, value in results.items():
                     if isinstance(value, np.ndarray):
-                        assert_array_almost_equal(getattr(sterimol, attribute), value)
+                        assert_array_almost_equal(getattr(sterimol, attribute), value, decimal=5))
                     else:
-                        self.assertAlmostEqual(getattr(sterimol, attribute), value)
+                        assert_array_almost_equal(getattr(sterimol, attribute), value, decimal=5))
 
     def test_rot_vectors(self):
         rot_vectors_test = {
@@ -84,7 +84,7 @@ class TestSterimol(unittest.TestCase):
                     if isinstance(value, np.ndarray):
                         assert_array_almost_equal(getattr(sterimol, attribute), value, decimal=5)
                     else:
-                        self.assertAlmostEqual(getattr(sterimol, attribute), value, decimal=5)                        
+                        assert_array_almost_equal(getattr(sterimol, attribute), value, decimal=5)                        
 
 class TestLocalForce(unittest.TestCase):
     def setUp(self):
@@ -334,7 +334,7 @@ class TestBuriedVolume(unittest.TestCase):
                         elements,
                         coordinates,
                         parameters["central_atom"],
-                        exclude_list=parameters["exclude_list"],
+                        excluded_atoms=parameters["excluded_atoms"],
                         include_hs=parameters["include_hs"],
                         radius=parameters["radius"],
                         radii_type=parameters["radii_type"],
@@ -411,8 +411,8 @@ class TestDispersion(unittest.TestCase):
     def test_d3(self):
         elements, coordinates = read_xyz(self.disp_dir / "acetonitrile.xyz")
         disp = Dispersion(elements, coordinates, compute_coefficients=False)
-        disp.get_coefficients(self.disp_dir / "d3.out", model="d3")
-        disp.calculate_p_int()
+        disp.load_coefficients(self.disp_dir / "d3.out", model="d3")
+        disp.compute_p_int()
 
         self.assertAlmostEqual(disp.area, 88.46506645705581)
         self.assertAlmostEqual(disp.volume, 66.64120697173627)
@@ -423,8 +423,8 @@ class TestDispersion(unittest.TestCase):
     def test_d4(self):
         elements, coordinates = read_xyz(self.disp_dir / "acetonitrile.xyz")
         disp = Dispersion(elements, coordinates, compute_coefficients=False)
-        disp.get_coefficients(self.disp_dir / "d4.out", model="d4")
-        disp.calculate_p_int()
+        disp.load_coefficients(self.disp_dir / "d4.out", model="d4")
+        disp.compute_p_int()
 
         self.assertAlmostEqual(disp.area, 88.46506645705581)
         self.assertAlmostEqual(disp.volume, 66.64120697173627)
@@ -453,8 +453,8 @@ class TestDispersion(unittest.TestCase):
                 elements, coordinates = read_xyz(self.disp_dir / "acetonitrile.xyz")
                 disp = Dispersion(elements, coordinates, point_surface=False, compute_coefficients=False)
                 disp.surface_from_cube(self.disp_dir / "density.cub", isodensity=isodensity)
-                disp.get_coefficients()
-                disp.calculate_p_int()
+                disp.compute_coefficients()
+                disp.compute_p_int()
                 
                 self.assertAlmostEqual(disp.area, area)
                 self.assertAlmostEqual(disp.volume, volume)
@@ -466,8 +466,8 @@ class TestDispersion(unittest.TestCase):
         elements, coordinates = read_xyz(self.disp_dir / "acetonitrile.xyz")
         disp = Dispersion(elements, coordinates, point_surface=False, compute_coefficients=False)
         disp.surface_from_multiwfn(self.disp_dir / "vtx.pdb")
-        disp.get_coefficients()
-        disp.calculate_p_int()
+        disp.compute_coefficients()
+        disp.compute_p_int()
         
         self.assertAlmostEqual(disp.area, 84.76678423845655)
         self.assertAlmostEqual(disp.volume, 66.0597847021667)
