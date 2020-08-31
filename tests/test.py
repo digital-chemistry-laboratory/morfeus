@@ -54,7 +54,7 @@ class TestSterimol(unittest.TestCase):
                     if isinstance(value, np.ndarray):
                         assert_array_almost_equal(getattr(sterimol, attribute), value, decimal=5)
                     else:
-                        assert_array_almost_equal(getattr(sterimol, attribute), value, decimal=5)
+                        self.assertAlmostEqual(getattr(sterimol, attribute), value, places=5)
 
     def test_rot_vectors(self):
         rot_vectors_test = {
@@ -84,7 +84,7 @@ class TestSterimol(unittest.TestCase):
                     if isinstance(value, np.ndarray):
                         assert_array_almost_equal(getattr(sterimol, attribute), value, decimal=5)
                     else:
-                        assert_array_almost_equal(getattr(sterimol, attribute), value, decimal=5)                        
+                        self.assertAlmostEqual(getattr(sterimol, attribute), value, places=5)                        
 
 class TestLocalForce(unittest.TestCase):
     def setUp(self):
