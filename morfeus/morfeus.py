@@ -486,7 +486,7 @@ class BuriedVolume:
             z_point = np.mean(z_axis_coordinates, axis=0)
             v_1 = z_point - center
             v_1 = v_1 / np.linalg.norm(v_1)
-            coordinates = rotate_coordinates(coordinates, vector,
+            coordinates = rotate_coordinates(coordinates, v_1,
                                              np.array([0, 0, -1]))
 
         # Save density and coordinates for steric map plotting.
@@ -2324,6 +2324,10 @@ class LocalForce:
         atomic_numbers = []
 
         # Parse through log file content
+        counter = 0
+        internal_names = []
+        internal_vector = []
+        coordinates = []
         for line in lines:
             # Read internal coordinate definitions
             if read_internal:
@@ -2672,6 +2676,7 @@ class LocalForce:
         frequencies = []
 
         # Parse file
+        normal_modes_chunk = None
         for line in lines:
             # Read coordinates, atomic numbers and atomic masses
             if read_coordinates:
@@ -2899,7 +2904,7 @@ class Pyramidalization:
         # Get 3 closest neighbors
         if len(neighbor_indices) > 0:
             if len(neighbor_indices) != 3:
-                raise Exception(f"Only {len(neighbors)} neighbors.")
+                raise Exception(f"Only {len(neighbor_indices)} neighbors.")
             neighbors = np.array(neighbor_indices) - 1
         elif method == "distance":
             # Generate mask for excluded atoms 
