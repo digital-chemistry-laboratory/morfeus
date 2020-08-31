@@ -52,9 +52,9 @@ class TestSterimol(unittest.TestCase):
 
                 for attribute, value in results.items():
                     if isinstance(value, np.ndarray):
-                        assert_array_almost_equal(getattr(sterimol, attribute), value, decimal=5))
+                        assert_array_almost_equal(getattr(sterimol, attribute), value, decimal=5)
                     else:
-                        assert_array_almost_equal(getattr(sterimol, attribute), value, decimal=5))
+                        assert_array_almost_equal(getattr(sterimol, attribute), value, decimal=5)
 
     def test_rot_vectors(self):
         rot_vectors_test = {
