@@ -1593,14 +1593,14 @@ class Dispersion:
 
         # Assign face centers to atoms according to Voronoi partitioning
         coordinates = np.array([atom.coordinates for atom in self._atoms])
-        points = self._surface.cell_centers().points
+        points = np.array(self._surface.cell_centers().points)
         kd_tree = cKDTree(coordinates)
         _, point_regions = kd_tree.query(points, k=1)
         point_regions = point_regions + 1
         
         # Compute faces areas 
         area_data = self._surface.compute_cell_sizes()
-        areas = area_data.cell_arrays["Area"]
+        areas = np.array(area_data.cell_arrays["Area"])
         
         # Assign face centers and areas to atoms
         atom_areas = {}
