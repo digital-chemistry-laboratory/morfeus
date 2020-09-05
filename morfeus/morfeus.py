@@ -810,11 +810,12 @@ class BuriedVolume:
             p.add_mesh(sphere, color=color, opacity=1, name=str(atom.index))
         
         # Add buried points
-        p.add_points(self._buried_points, color=buried_color, opacity=opacity)
+        p.add_points(self._buried_points, color=buried_color, opacity=opacity,
+                     point_size=size)
 
         # Add free points
         p.add_points(self._free_points, color=free_color, opacity=opacity,
-                     size=size)
+                     point_size=size)
 
         if self._octant_limits:
             for name, limits in self._octant_limits.items():
@@ -987,7 +988,7 @@ class SASA:
         surface_points = np.vstack([atom.accessible_points 
                                     for atom in self._atoms])
         p.add_points(surface_points, color=point_color, opacity=opacity,
-                     size=size)
+                     point_size=size)
         
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
