@@ -14,6 +14,7 @@ jobs:
       - name: Build documentation
         run: |
           pip install sphinx
+          pip install sphinx-rtd-theme
           sphinx-build docs public -b html
       - name: Deploy to GitHub Pages
         if: success()

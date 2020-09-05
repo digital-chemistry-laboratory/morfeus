@@ -42,6 +42,7 @@ extensions = [
     'sphinx.ext.githubpages',
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
+    "sphinx_rtd_theme",
 ]
 
 numfig = True
