@@ -29,7 +29,7 @@ from subprocess import Popen, DEVNULL, PIPE
 try:
     import vtk
     import pyvista as pv
-    from pyvista import BackgroundPlotter
+    from pyvistaqt import BackgroundPlotter
     import pymeshfix
     from morfeus.plotting import Arrow_3D, Cone_3D
 except ImportError as e:
