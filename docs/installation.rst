@@ -2,7 +2,7 @@
 Installation
 ============
 
-morfeus can be installed either with pip Python 3.6 and later.
+ᴍᴏʀғᴇᴜs can be installed either with pip Python 3.6 and later.
 
 ************
 Dependencies

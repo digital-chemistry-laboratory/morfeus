@@ -4,6 +4,7 @@ Classes:
     BuriedVolume: Calculates buried volumes.
     ConeAngle: Calculates exact cone angles.
     LocalForce: Calculates local force constants.
+    Pyramidalization: Calculates pyramidalization of tetracoordinated atoms
     SASA: Calculates solvent accessible surface area.
     Sterimol: Calculates Sterimol parameters.
 """

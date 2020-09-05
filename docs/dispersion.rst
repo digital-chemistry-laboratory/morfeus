@@ -20,8 +20,11 @@ There are two options for using surfaces based on electron density:
    the surface analysis module of the program (option 12 in the main menu).
    After generating the surface, it should be exported to a file using the
    hidden option 66. This generates a file, "vtx.pdb" that can be read by
-   morfeus. For more information, see Section 3.15.4 of the
+   ᴍᴏʀғᴇᴜs. For more information, see Section 3.15.4 of the
    `Multiwfn manual`_. An isodensity of 0.001
+
+.. todo::
+  Need to clarify what the isodensity surface refers to
 
 *******************
 Command line script
@@ -73,42 +76,39 @@ descriptors.
   Surface area (Å^2): 284.6
   Surface volume (Å^3): 290.0
   P_int (kcal^(1/2) Bohr^(-1/2): 20.8
-  >>> dispersion.atom_p_ints[1]
+  >>> dispersion.atom_p_int[1]
   30.19400990954629
 
 By default, the molecular surface is constructed from vdW spheres and an
 internal D3 code is used. The choice of vdW radii can be changed from the 
 default of ``rahm`` to either ``bondi`` or ``crc`` with ``radii_type=<str>``.
-Custom raddi can be supplied with ``radii=<list>``. Density of points on the 
+Custom radii can be supplied with ``radii=<list>``. Density of points on the 
 vdW surface is controlled with ``density=<float>``. Dispersion coefficients can
- be read from the output of Grimme's D3 and D4 programs with the
+be read from the output of Grimme's D3 and D4 programs with the
 :py:meth:`morfeus.morfeus.Dispersion.get_coefficients` method. To suppress
-the internal D3 code, set ``calculate_coefficients=<bool>`` appropriately. To
+the internal D3 code, set ``calculate_coefficients=False`` appropriately. To
 use another surface, suppress the vdW surface creation with
-``point_surface=<bool>`` and use the
+``point_surface=False`` and use the
 :py:meth:`morfeus.morfeus.Dispersion.surface_from_cube` or 
-:py:meth:`morfeus.morfeus.Dispersion.surface_from_multiwfn` methods. An
-experimental method for smooth surfaces mimicking electron density isosurfaces
-starting from vdW radii can also be used:
-:py:meth:`morfeus.morfeus.Dispersion.surface_from_radii`.
+:py:meth:`morfeus.morfeus.Dispersion.surface_from_multiwfn` methods.
 
 .. code-block:: python
   :caption: Example with external cube and coefficients files
 
   >>> elements, coordinates = read_xyz("corannulene.xyz")
   >>> dispersion = Dispersion(elements, coordinates, point_surface=False)
-  >>> dispersion.get_coefficients("d4_corannulene")
+  >>> dispersion.load_coefficients("d4_corannulene", "d4")
   >>> dispersion.surface_from_cube("corannulene.cub")
-  >>> dispersion.calculate_p_int()
+  >>> dispersion.compute_p_int()
   >>> dispersion.print_report()
   Surface area (Å^2): 248.0
   Surface volume (Å^3): 247.8
   P_int (kcal^(1/2) Bohr^(-1/2): 25.8
-  >>> dispersion.atom_p_ints[1]
+  >>> dispersion.atom_p_int[1]
   36.344232419525866
 
 To exclude atoms from the calculation, the atom indices (starting at 1) should
-be provied with ``excluded_atoms=<list>``. This can for example be used to
+be provided with ``excluded_atoms=<list>``. This can for example be used to
 calculate substitutent P_int values.
 
 For more detailed information, use ``help(Dispersion)`` or see the API:
@@ -118,8 +118,8 @@ For more detailed information, use ``help(Dispersion)`` or see the API:
 Background
 **********
 
-The P_int dispersion descriptor was introduced by Pollice and Chen as a
-quantitative descriptor for dispersion interactions [1]_. morfeus can
+The 🍺P\ :sub:`int` dispersion descriptor was introduced by Pollice and Chen as a
+quantitative descriptor for dispersion interactions [1]_. ᴍᴏʀғᴇᴜs can
 calculate P_int based on an electron density isosurface, as in the original
 article. In addition, we have found that a very fast method based on surfaces
 constructed from vdW radii correlate very well with P_int from electron

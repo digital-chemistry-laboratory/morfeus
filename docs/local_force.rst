@@ -3,7 +3,7 @@ Local force constants
 =====================
 
 Local force constants can be calculated with the local modes method [1]_ or
-the compliance matrix method [2]_. morfeus can use the output of Gaussian_,
+the compliance matrix method [2]_. ᴍᴏʀғᴇᴜs can use the output of the Gaussian_,
 xtb_, or UniMoVib_ programs.
 
 ***************
@@ -12,7 +12,7 @@ Preparing input
 
 The LocalForce class needs input from quantum-chemical frequency calculations.
 Therefore, the instructions are a bit more involved. This input can be read
-using the ``load_file`` method, and morfeus can also calculate some
+using the ``load_file`` method, and ᴍᴏʀғᴇᴜs can also calculate some
 quantities using its built-in normal mode analysis and internal coordinate
 codes.
 
@@ -20,9 +20,9 @@ codes.
 Local modes
 ###########
 
-The local modes approach needs the normal modes in internalcoordinates, here
+The local modes approach needs the normal modes in internal coordinates, here
 called *internal modes*, as well as the normal mode force constants. The
-internal modes can either be read from file or calculated with morfeus.
+internal modes can either be read from file or calculated with ᴍᴏʀғᴇᴜs.
 Specifically, the internal modes can be computed from the normal modes and the
 Wilson B matrix. For local frequencies, additional input is needed.
 
@@ -45,7 +45,7 @@ For local frequencies, the elements are also needed (for their atomic masses).
 Recommended input
 #################
 
-The table below summarizes the recommended input to morfeus from the
+The table below summarizes the recommended input to ᴍᴏʀғᴇᴜs from the
 supported programs. More details are given below.
 
 .. table:: Recommended input.
@@ -74,9 +74,9 @@ log  ``freq=intmodes iop(7/75=1) iop(1/33=3)``
 fchk ``freq=intmodes``
 ==== =========================================
 
-``iop(7/75=1)`` makes triggers printing of the internal modes with full
-accuracy, while ``iop(1/33=3)`` triggers printing of the Wilson B matrix. The
-table below lists all the quantities read by each approach.
+``iop(7/75=1)`` triggers printing of the internal modes with full accuracy,
+while ``iop(1/33=3)`` triggers printing of the Wilson B matrix. The table below
+lists all the quantities read by each approach.
 
 .. table:: Quantities from Gaussian files.
   :widths: auto
@@ -98,7 +98,7 @@ table below lists all the quantities read by each approach.
 .. note:: 
 
   Additional accuracy for local modes calculations be achieved by loading
-  also the fchk file which contains the normal mode force constants to
+  also the *fchk* file which contains the normal mode force constants to
   higher accuracy.
 
 ########
@@ -179,7 +179,7 @@ to use the *hessian* file.
 
   xtb 6.2 has a bug which gives the wrong number of normal modes for linear
   molecules in the *xtb_normalmodes* file. Therefore, the approach of reading
-  the Hessian and doing a normal mode analysis with morfeus is recommended.  
+  the Hessian and doing a normal mode analysis with ᴍᴏʀғᴇᴜs is recommended.  
 
 ######################
 Geometry optimizations
@@ -197,10 +197,10 @@ compliance matrix method. Therefore, the local modes method is recommended in
 these cases.
 
 For transition states, the imaginary mode corresponding to the reaction is
-projected out with the local modes approach. This also means that forces
-involving the atoms corresponding this imaginary mode are meaningless and
-should not be used. Only the local modes method can be used for transition
-states.
+projected out with the local modes approach. This also means that local force
+constant involving the atoms corresponding to this imaginary mode are
+meaningless and should not be used. Only the local modes method can be used
+for transition states.
 
 .. warning::
 
@@ -286,7 +286,7 @@ constants and frequencies.
   >>> from morfeus import LocalForce
   >>> lf = LocalForce()
   >>> lf.load_file("freq.fchk", "gaussian", "fchk")
-  >>> lf.compute_local()
+  >>> lf.compute_compliance()
   >>> lf.compute_frequencies()
   >>> fc = lf.get_local_force_constant([1, 2])
   >>> print(fc)
@@ -357,35 +357,34 @@ constants and frequencies.
 
 For the local modes method, projection of imaginary frequencies can be
 controlled with the ``project_imag=<bool>`` keyword to the ``compute_local``
-method. The cutoff for low-freqency modes can be controlled with 
+method. The cutoff for low-frequency modes can be controlled with 
 ``cutoff=<float>``. Internal coordinates can be added with the
 ``add_internal_coordinate`` method.
 
-For more detailed information, use ``help(LocalForce)`` or see the API:
-:py:class:`morfeus.morfeus.LocalForce`
+For more detailed information, use ``help(LocalForce)`` or see the API
+documentation: :py:class:`morfeus.morfeus.LocalForce`.
 
 **********
 Background
 **********
 
 Local force constants describe the bond strength based on vibrational
-frequencies. There are two approachces in the literature: the local modes
-method of Cremer [1]_ and the compliance matrix method of Grunenberg.[2]_
-They have been shown to be equivalent within numerical accuracy.[3]_
-morfeus can use either method, and they give almost identical results except
+frequencies. There are two approaches in the literature: the local modes
+method of Cremer [1]_ and the compliance matrix method of Grunenberg [2]_.
+They have been shown to be equivalent within numerical accuracy [3]_. 
+ᴍᴏʀғᴇᴜs can use either method, and they give almost identical results except
 when there are modes with imaginary or very small frequencies. In these cases,
 the local modes approach can handle the issue with  two methods: (1)
 projecting out imaginary modes, and (2) raising the force constants of
-low-frequency modes to a cutoff value. morfeus does this projection by
+low-frequency modes to a cutoff value. ᴍᴏʀғᴇᴜs does this projection by
 default and uses a cutoff of 0.001 mDyne/Å for low-frequency modes. We
 therefore recommend local modes with default settings as the most robust
 method in cases problematic cases. Expert users can turn off the projection
-and alter the cutoff value.
+and alter the cutoff value. Note that interactions involving imaginary modes
+(such as breaking/forming bonds in transition states) cannot be assessed by the
+local force constants.
 
-Note that interactions involving imaginary modes (such as breaking/forming
-bonds in transition states) cannot be assessed by the local force constants.
-
-morfeus has been benchmarked against the local force constants and
+ᴍᴏʀғᴇᴜs has been benchmarked against the local force constants and
 frequencies given by Cremer [3]_ for small organic molecules. 
 
 .. figure:: benchmarks/local_force/benchmark.png

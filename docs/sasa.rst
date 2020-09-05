@@ -82,11 +82,11 @@ Background
 **********
 Solvent accessible surface area is a measure of how much of the area of a
 molecule is available to the solvent. The atomic SASA can be used as a
-measure of the steric availability of an atom. morfeus uses a modified version
+measure of the steric availability of an atom. ᴍᴏʀғᴇᴜs uses a modified version
 of the method of Shrake and Rupley [1]_ where a constant surface density of 
 points is used instead of fixed number of points regardless of the atom area.
 The atomic SASA and volumes are computed as described by Eisenhaber *et al.*
-[2]_. morfeus is not optimzed for larger molecules and other programs are
+[2]_. ᴍᴏʀғᴇᴜs is not optimzed for larger molecules and other programs are
 recommended for, *e.g.*, proteins.
 
 
@@ -94,7 +94,7 @@ Results have been compared against FreeSASA [3]_ and GEPOL93 [4]_ on a set of
 transition metal complexes with results that correlate well. FreeSASA uses the
 Shrake and Rupley algorithm while GEPOL93 uses the one by Lee and Richards
 [5]_. Setting were CRC radii, a probe radius of 1.4 Å and a density of
-0.1 Å\ :sup:`2`/point for morfeus. The same total number of points were used
+0.1 Å\ :sup:`2`/point for ᴍᴏʀғᴇᴜs. The same total number of points were used
 for FreeSASA, while GEPOL93 uses the finest setting (NDIV=5).
 
 .. figure:: benchmarks/SASA/total_areas.png

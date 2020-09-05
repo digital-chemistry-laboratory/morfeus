@@ -62,7 +62,7 @@ ligands [2]_. The original Tolman cone angles for phosphines have problems with
 asymmetric ligands and are not implemented in this package. Instead, the exact
 cone angles [1]_ are used. These are also defined for multidentate ligands.
 
-The method implemented in morfeus is taken directly from the article by Allen
+The method implemented in ᴍᴏʀғᴇᴜs is taken directly from the article by Allen
 [1]_. The results have been benchmarked against Table 1 of the original article
 and agree within numerical accuracy.
 

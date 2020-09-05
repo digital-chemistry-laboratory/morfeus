@@ -1,6 +1,6 @@
 .. figure:: images/logo.svg
 
-Morfeus calculates molecular features from 3D structures with a focus on 
+ᴍᴏʀғᴇᴜs calculates molecular features from 3D structures with a focus on 
 steric descriptors. It can be used as a Python library or through console
 scripts.
 
@@ -8,7 +8,7 @@ scripts.
 Examples
 ********
 
-Morfeus can be imported as a Python module that is easily integrated into
+ᴍᴏʀғᴇᴜs can be imported as a Python module that is easily integrated into
 workflows.
 
 .. code-block:: python
@@ -63,14 +63,14 @@ Features
 About
 *****
 
-Morfeus is developed by Kjell Jorner working as a Post Doc at AstraZeneca
+ᴍᴏʀғᴇᴜs is developed by Kjell Jorner working as a Post Doc at AstraZeneca
 in collaboration with the Aspuru-Guzik group at the University of Toronto.
 
 *******
 License
 *******
 
-Morfeus is released under the `MIT license`_ and is thus completely free for 
+ᴍᴏʀғᴇᴜs is released under the `MIT license`_ and is thus completely free for 
 both academic and commercial use.
 
 .. toctree::

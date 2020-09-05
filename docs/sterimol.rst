@@ -93,15 +93,15 @@ rotational size of the substituent. They are defined as the shortest and
 longest vectors from atom 2 to a tangent plane of the vdW surface which are
 perpendicular to the L vector, respectively.
 
-morfeus has been benchmarked against Paton's Sterimol_ package. Using exactly
+ᴍᴏʀғᴇᴜs has been benchmarked against Paton's Sterimol_ package. Using exactly
 the same radii (Paton's modified Bondi), almost identical results are obtained.
-(Note that morfeus normally uses 1.20 Å as the Bondi vdW radius for H).
+(Note that ᴍᴏʀғᴇᴜs normally uses 1.20 Å as the Bondi vdW radius for H).
 
 .. figure:: benchmarks/sterimol/correlation.png
   
   Benchmark of Sterimol parameters against Paton's Sterimol code.
 
-morfeus calculates the B\ :sub:`1` and B\ :sub:`5` parameters by a different
+ᴍᴏʀғᴇᴜs calculates the B\ :sub:`1` and B\ :sub:`5` parameters by a different
 approach from the original code. First, atomic spheres are created with a
 certain density of points. B\ :sub:`1` and B\ :sub:`5` are then obtained by
 projection of the points of the convex hull onto vectors spanning the whole
