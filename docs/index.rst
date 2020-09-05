@@ -1,7 +1,3 @@
-=======
-Morfeus
-=======
-
 .. figure:: images/logo.svg
 
 Morfeus calculates molecular features from 3D structures with a focus on 
@@ -37,15 +33,19 @@ Command-line scripts are also available for convenience.
 Installation
 ************
 
+Clone the repository from GitHub and install with pip:
+
 .. code-block:: console
   :caption: pip
 
-  pip install morfeus[extras]
+  pip install .
+
+To install with extra graphics functionality:
 
 .. code-block:: console
-  :caption: conda
+  :caption: pip
 
-  conda install -c conda-forge morfeus
+  pip install .[extras]
 
 ********
 Features

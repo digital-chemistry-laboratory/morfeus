@@ -1,7 +1,7 @@
 ===============================
 Solvent accessible surface area
 ===============================
-Solvent accessible surface areas (SASAs), atomic SASAs and volumes under the
+Solvent accessible surface area (SASA), atomic SASA and volumes under the
 SASA can be calculated.
 
 *******************
@@ -45,7 +45,7 @@ The command-line script outputs total SASA and volume as well as SASA per atom.
   H         26        13.7
   H         25        13.7
 
--d, --density <float>  Density of points in Å^2 (default: 0.01)
+-d, --density <float>  Density of points in Å\ :sup:`2` (default: 0.01)
 -p, --probe <float>  Probe radius in Å (default: 1.4)
 --radii <str>  Choice of vdW radii: ``crc`` (default) or ``bondi``
 
@@ -92,10 +92,10 @@ recommended for, *e.g.*, proteins.
 
 Results have been compared against FreeSASA [3]_ and GEPOL93 [4]_ on a set of 
 transition metal complexes with results that correlate well. FreeSASA uses the
-Shrake and Rupley algorithm while GEPOL93 uses the one by Lee and Richards [5]_.
-Setting were CRC radii, a probe radius of 1.4 Å and a density of 0.1 Å^2/point
-for morfeus. The same total number of points were used for FreeSASA, while
-GEPOL93 uses the finest setting (NDIV=5).
+Shrake and Rupley algorithm while GEPOL93 uses the one by Lee and Richards
+[5]_. Setting were CRC radii, a probe radius of 1.4 Å and a density of
+0.1 Å\ :sup:`2`/point for morfeus. The same total number of points were used
+for FreeSASA, while GEPOL93 uses the finest setting (NDIV=5).
 
 .. figure:: benchmarks/SASA/total_areas.png
 

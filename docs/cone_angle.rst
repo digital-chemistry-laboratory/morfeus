@@ -46,8 +46,6 @@ The ConeAngle class is provided to calculate and store the cone angles.
   No. tangent atoms: 3
   >>> cone_angle.plot_3D()
 
-.. image:: images/cone_angle.png
-
 The Bondi vdW radii are used in reference [1]_, but radii from the CRC Handbook
 is the default here. It can be changed with ``radii_type=<str>`` with either
 ``crc`` or ``bondi``. Custom radii can passed with ``radii=<list>``.

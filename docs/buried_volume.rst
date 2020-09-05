@@ -42,7 +42,7 @@ plotted.
 
   >>> from morfeus import BuriedVolume, read_xyz
   >>> elements, coordinates = read_xyz("1.xyz")
-  >>> bv = BuriedVolume(elements, coordinates, 1, exclude_list=[1, 2, 3, 4, 5, 6, 7])
+  >>> bv = BuriedVolume(elements, coordinates, 1, excluded_atoms=[1, 2, 3, 4, 5, 6, 7])
   >>> print(bv.buried_volume)
   0.2962110976518822
   >>> bv.print_report()
@@ -55,11 +55,12 @@ plotted.
 Plots can be saved by passing the ``filename=<str>`` keyword argument.
 
 By default, hydrogen atoms are excluded in the calculation. They can be added
-by giving ``indclude_hs=True``. The default radius sphere is 3.5 Å, but can be
-changed with ``radius=<float>``. Default radii type is Bondi which are scaled
-by a factor of 1.17. This can be changed with ``radii_type=<str>``, choosing
-etiher ``crc`` or ``bondi`` and ``radii_scale=<float>``. Custom radii can be
-supplied as a list with ``radii=<list>``.
+by giving the keyword argument ``indclude_hs=True``. The default sphere radius
+is 3.5 Å, but can be changed with ``radius=<float>``. Default radii type is
+Bondi which are scaled by a factor of 1.17. This can be changed with
+``radii_type=<str>``, choosing etiher ``crc`` or ``bondi`` and
+``radii_scale=<float>``. Custom radii can be supplied as a list with
+``radii=<list>``.
 
 For more information, use ``help(BuriedVolume)`` or see the API:
 :py:class:`morfeus.morfeus.BuriedVolume`

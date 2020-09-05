@@ -3,9 +3,9 @@ Sterimol
 ========
 
 The Sterimol parameters L, B\ :sub:`1` and B\ :sub:`5` as described by
-Verloop [1]_\ [2]_ are implemented. Note that Sterimol parameters should always
-be calculated with H as the dummy atom, otherwise the results for the L
-parameter will not be consistent with the literature (see `Background`_)
+Verloop [1]_\ [2]_ are implemented. Note that Sterimol parameters should be 
+calculated with H as the dummy atom, to be consistent with the literature
+(see `Background`_)
 
 *******************
 Command line script
@@ -72,24 +72,6 @@ the historical addition of 0.40 Å) can also be obtained.
   L         B_1       B_5       L_uncorr  d(a1-a2)
   4.21      2.87      3.27      3.81      1.10
 
-2D and 3D plots can also be obtained to visualize the vectors. The points shown
-make up the convex hull of the vdW surface (see `Background`_)
-
-.. code-block:: python
-  :caption: 2D plot
-  
-  >>> sterimol.plot_2D()
-
-.. figure:: images/sterimol_2D.png
-
-
-.. code-block:: python
-  :caption: 3D plot
-
-  >>> sterimol.plot_3D()
-
-.. figure:: images/sterimol_3D.png
-
 More information can be found with `help(Sterimol)` or in the API:
 :py:class:`morfeus.morfeus.Sterimol`
 
@@ -100,15 +82,15 @@ Background
 The Sterimol parameters were developed by Verloop to describe the steric size
 of substituents. The atom attached to the substituent in the calculation (by 
 definition H) is called atom 1 and the first atom in the substituent is called
-atom 2. L can be described as the depth of the substituent. It is defined as the
-length of the vector going from atom 1, through atom 2 and ending on the tangent
-of the vdW surface. For historical reasons, L is corrected by adding 0.40 Å to
-this length. This  was due to a shift from using C(sp\ :sup:`2`) to H as dummy
-atom.
+atom 2. L can be described as the depth of the substituent. It is defined as
+the length of the vector going from atom 1, through atom 2 and ending on the
+tangent of the vdW surface. For historical reasons, L is corrected by adding
+0.40 Å to this length. This  was due to a shift from using C(sp\ :sup:`2`) to
+H as dummy atom.
 
 B\ :sub:`1` and B\ :sub:`5` can be described as the minimum and maximum
-rotational size of the substituent. They are defined as the shortest and longest
-vectors from atom 2 to a tangent plane of the vdW surface which are
+rotational size of the substituent. They are defined as the shortest and
+longest vectors from atom 2 to a tangent plane of the vdW surface which are
 perpendicular to the L vector, respectively.
 
 morfeus has been benchmarked against Paton's Sterimol_ package. Using exactly
@@ -119,14 +101,13 @@ the same radii (Paton's modified Bondi), almost identical results are obtained.
   
   Benchmark of Sterimol parameters against Paton's Sterimol code.
 
-morfeus calculates the B\ :sub:`1` and B\ :sub:`5` paramters by a different
+morfeus calculates the B\ :sub:`1` and B\ :sub:`5` parameters by a different
 approach from the original code. First, atomic spheres are created with a
-certain density of points. Then, the so-called `convex hull`_ is created,
-reducing the number of points drastically. B\ :sub:`1` and B\ :sub:`5` are
-obtained by projection of the points of the convex hull onto vectors spanning
-the whole 360 degrees in the plane perpendicular to L. B\ :sub:`5` is obtained
-from the largest projection, while B\ :sub:`1` is obtained from the smallest
-maximum projection for the set of vectors.
+certain density of points. B\ :sub:`1` and B\ :sub:`5` are then obtained by
+projection of the points of the convex hull onto vectors spanning the whole
+360 degrees in the plane perpendicular to L. B\ :sub:`5` is obtained from the
+largest projection, while B\ :sub:`1` is obtained from the smallest maximum
+projection for the set of vectors.
 
 **********
 References
