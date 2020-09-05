@@ -29,6 +29,7 @@ from subprocess import Popen, DEVNULL, PIPE
 try:
     import vtk
     import pyvista as pv
+    from pyvista import BackgroundPlotter
     import pymeshfix
     from morfeus.plotting import Arrow_3D, Cone_3D
 except ImportError as e:
@@ -337,7 +338,7 @@ class Sterimol:
             arrow_color (str): Arrow color
         """
         # Set up plotter
-        p = pv.BackgroundPlotter()
+        p = BackgroundPlotter()
         p.set_background(background_color)
 
         # Draw molecule
@@ -797,7 +798,7 @@ class BuriedVolume:
             size (float): Point size
         """
         # Set up plotter
-        p = pv.BackgroundPlotter()
+        p = BackgroundPlotter()
         p.set_background(background_color)
 
         # Draw molecule
@@ -971,7 +972,7 @@ class SASA:
             size (float): Point size
         """
         # Set up plotter
-        p = pv.BackgroundPlotter()
+        p = BackgroundPlotter()
         p.set_background(background_color)
 
         # Draw molecule
@@ -1339,7 +1340,7 @@ class ConeAngle:
             cone_opacity (float): Cone opacity
         """
         # Set up plotter
-        p = pv.BackgroundPlotter()
+        p = BackgroundPlotter()
         p.set_background(background_color)
 
         # Draw molecule
@@ -1800,7 +1801,7 @@ class Dispersion:
             opacity (float): Surface opacity (0-1)
         """
         # Set up plotter
-        p = pv.BackgroundPlotter()
+        p = BackgroundPlotter()
 
         # Draw molecule
         for atom in self._atoms:
