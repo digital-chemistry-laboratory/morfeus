@@ -15,7 +15,12 @@ setuptools.setup(
     packages=["morfeus"],
     package_data={"morfeus": ['../data/c6_reference_data.pickle']},
     install_requires=["numpy", "scipy"],
-    extras_require = {'extras': ["vtk", "pyvista", "pymeshfix", "matplotlib"]},
+    extras_require = {'extras': ["vtk",
+                                 "pyvista",
+                                 "pyvistaqt",
+                                 "pymeshfix",
+                                 "matplotlib"
+                                 ]},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
