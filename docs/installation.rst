@@ -15,7 +15,9 @@ Core dependencies:
 Optional depedencies:
 
 * matplotlib_
+* pymeshfix_
 * pyvista_
+* pyvistaqt_
 * vtk_
 
 The optional dependencies are used for 3D visualization and in some of the
@@ -39,6 +41,8 @@ Install with extra graphics functionality:
 
 .. _matplotlib: https://pypi.org/project/matplotlib/
 .. _numpy: https://pypi.org/project/numpy/
+.. _pymeshfix: https://pypi.org/project/pymeshfix/
 .. _pyvista: https://pypi.org/project/pyvista/
+.. _pyvistaqt: https://pypi.org/project/pyvistaqt/
 .. _scipy: https://pypi.org/project/scipy/
 .. _vtk: https://pypi.org/project/vtk/
