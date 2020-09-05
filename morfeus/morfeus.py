@@ -1748,7 +1748,7 @@ class Dispersion:
     def load_coefficients(self, filename, model):
         """Load the C6 and C8 coefficients.
 
-         Output can be read from the dftd3 and dftd4 programs by giving a
+        Output can be read from the dftd3 and dftd4 programs by giving a
         filename in combination with the corresponding model.
 
         Args:

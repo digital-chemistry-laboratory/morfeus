@@ -11,11 +11,20 @@ morfeus.data
  
 .. autodata:: morfeus.data.atomic_numbers
    :annotation:
+
+.. autodata:: morfeus.data.atomic_masses
+   :annotation:   
  
-.. autodata:: morfeus.data.bondi_radii
+.. autodata:: morfeus.data.radii_bondi
    :annotation:
 
-.. autodata:: morfeus.data.crc_radii
+.. autodata:: morfeus.data.radii_crc
+   :annotation:
+
+.. autodata:: morfeus.data.radii_rahm
+   :annotation:
+
+.. autodata:: morfeus.data.cov_radii_pyykko
    :annotation:
  
 .. autodata:: morfeus.data.jmol_colors

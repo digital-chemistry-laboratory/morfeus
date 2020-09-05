@@ -82,12 +82,11 @@ ref. [1]_.
 
 .. figure:: benchmarks/buried_volume/correlation.png
 
-  Correlation to BVs of ref [X]_
 
-.. figure:: 
-  
-  
 
+.. todo::
+  Correlation to BVs of ref [X]
+  .. figure:: 
 
 **********
 References
