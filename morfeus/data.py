@@ -171,13 +171,13 @@ jmol_colors = {1: '#ffffff', 2: '#ffc0cb', 3: '#b22222', 4: '#ff1493',
 ANGSTROM = scipy.constants.angstrom
 BOHR = scipy.constants.physical_constants["atomic unit of length"][0]
 HARTREE = scipy.constants.physical_constants["atomic unit of energy"][0]
-KCAL = lambda: scipy.constants.calorie * 1000
+KCAL = scipy.constants.calorie * 1000
 MOL = scipy.constants.Avogadro
 C = scipy.constants.speed_of_light
 AMU = scipy.constants.physical_constants["atomic mass constant"][0]
 DYNE = scipy.constants.dyne
 AFU = scipy.constants.physical_constants["atomic unit of force"][0]
 
-ANGSTROM_TO_BOHR = lambda: ANGSTROM / BOHR
-BOHR_TO_ANGSTROM = lambda: BOHR / ANGSTROM
-HARTREE_TO_KCAL = lambda: HARTREE / KCAL * MOL
+ANGSTROM_TO_BOHR = ANGSTROM / BOHR
+BOHR_TO_ANGSTROM = BOHR / ANGSTROM
+HARTREE_TO_KCAL = HARTREE / KCAL * MOL

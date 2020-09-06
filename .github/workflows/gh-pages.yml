@@ -13,8 +13,10 @@ jobs:
           python-version: 3.7      
       - name: Build documentation
         run: |
+          python -m pip install --upgrade pip
           pip install sphinx
           pip install sphinx-rtd-theme
+          pip install .
           sphinx-apidoc --separate --no-toc -o docs/api morfeus
           sphinx-build docs public -b html
       - name: Deploy to GitHub Pages
