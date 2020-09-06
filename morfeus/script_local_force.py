@@ -1,4 +1,5 @@
 """Command line script to calculate local force constants."""
+
 import argparse
 
 from morfeus import LocalForce, read_xyz

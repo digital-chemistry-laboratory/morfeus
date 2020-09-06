@@ -1,9 +1,5 @@
-"""Geometry file parsing functions.
+"""Geometry file parsing functions."""
 
-Functions:
-    read_gjf: Parses Gaussian input files.
-    read_xyz: Parses xyz files.
-"""
 import numpy as np
 
 from morfeus.helpers import convert_elements

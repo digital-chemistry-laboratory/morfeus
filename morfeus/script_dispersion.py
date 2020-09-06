@@ -1,4 +1,5 @@
 """Command line script to calculate dispersion descriptor."""
+
 import argparse
 
 from morfeus import Dispersion, read_gjf, read_xyz

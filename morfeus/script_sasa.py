@@ -1,4 +1,5 @@
-"""Command line script to calculate solvent accessible surface area"""
+"""Command line script to calculate solvent accessible surface area."""
+
 import argparse
 
 from morfeus import read_gjf, read_xyz, SASA

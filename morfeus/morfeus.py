@@ -1,13 +1,5 @@
-"""Classes for performing calculations of steric descriptors of molecules.
+"""Classes for performing calculations of steric descriptors of molecules."""
 
-Classes:
-    BuriedVolume: Calculates buried volumes.
-    ConeAngle: Calculates exact cone angles.
-    LocalForce: Calculates local force constants.
-    Pyramidalization: Calculates pyramidalization of tetracoordinated atoms
-    SASA: Calculates solvent accessible surface area.
-    Sterimol: Calculates Sterimol parameters.
-"""
 import copy
 import math
 import itertools
@@ -1535,56 +1527,7 @@ class Dispersion:
         # Process surface
         self._surface = surface
         self._process_surface()
-
-    @conditional(_has_vtk, _warning_vtk)
-    def surface_from_radii(self, step_size=0.313, smoothing=76,
-                           radii_scale=1.138, method="flying_edges"):
-        """Construct surface by smoothening vdW surface from atomic radii.
-        Method described by Tom Goddard.
-        https://www.cgl.ucsf.edu/chimera/data/surface-oct2013/surface.html        
-
-        Args:
-            step_size (float): Step size of sampling grid for surface
-                               construction (Å)
-            smoothing (int): Iterations of VTK smoothing filter
-            radii_scale (float): Scaling factor for vdW radii
-            method (str): Method for contouring: 'contour' or 'flying_edges
-                          (default)
-        """
-        # Set up coordinates and radii
-        coordinates = np.array([atom.coordinates for atom in self._atoms])
-        radii = np.array([atom.radius for atom in self._atoms]) * radii_scale
-        radii_x3 = np.tile(radii.reshape(-1, 1), (1, 3))
-
-        # Extract boundaries of grid
-        min_x, min_y, min_z = np.min(coordinates - radii_x3, axis=0) - step_size * 5
-        max_x, max_y, max_z = np.max(coordinates + radii_x3, axis=0) + step_size * 5
-
-        # Construct grid and extract points
-        x = np.arange(min_x, max_x + step_size, step_size)
-        y = np.arange(min_y, max_y + step_size, step_size)
-        z = np.arange(min_z, max_z + step_size, step_size)
-        X, Y, Z = np.meshgrid(x, y, z, indexing='ij')
-        points = np.stack((X.flatten(order="F"), Y.flatten(order="F"),
-                           Z.flatten(order="F")), axis=1)
-
-        # Take out distances to vdW surface from to each grid point
-        dists = cdist(points, coordinates) - radii
-        min_dists = np.min(dists, axis=1)
-        min_dists = min_dists
-
-        # Construct grid and add points
-        grid = pv.UniformGrid(X, Y, Z)
-        grid.dimensions = np.array((x.shape, y.shape, z.shape))
-        grid.origin = (min_x, min_y, min_z)
-        grid.spacing = (step_size, step_size, step_size)
-        grid.point_arrays["values"] = min_dists
-
-        # Countour the surface
-        surface = self._contour_surface(grid, method=method, isodensity=0)
-        self._surface = surface.smooth(smoothing)
-        self._process_surface()
-    
+   
     @conditional(_has_vtk, _warning_vtk)
     def _process_surface(self):
         """Extracts face center points and assigns these to atoms based on
@@ -1831,6 +1774,7 @@ class Dispersion:
 
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
+
 
 class LocalForce:
     """Calculates and stores the results from local force constant 

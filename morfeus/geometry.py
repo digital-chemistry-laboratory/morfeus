@@ -1,13 +1,5 @@
-"""Help classes and functions related to geometry
+"""Help classes and functions related to geometry."""
 
-Classes:
-    Atom: Atom class.
-    Cone: Cone used in cone angle calculations.
-    Sphere: Sphere for representing atoms
-
-Functions:
-    rotatate_coordinates: Rotate coordinates given a vector and an axis
-"""
 import math
 
 import numpy as np
@@ -20,7 +12,7 @@ from morfeus.data import ANGSTROM_TO_BOHR, cov_radii_pyykko
 class Atom:
     """Atom common for morfeus calculations.
 
-     Args:
+    Args:
         coordinates (ndarray): Coordinates (Å)
         element (int): Atomic number (starting from 1) 
         index (int): Atom index (starting from 1)

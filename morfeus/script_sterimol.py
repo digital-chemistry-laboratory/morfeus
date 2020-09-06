@@ -1,4 +1,5 @@
 """Command line script to calculate Sterimol parameters."""
+
 import argparse
 
 from morfeus import read_gjf, read_xyz, Sterimol

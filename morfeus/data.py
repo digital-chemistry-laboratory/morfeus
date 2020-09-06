@@ -1,17 +1,4 @@
-"""Data dictionaries. Data taken from the Mendeleev package.
-
-Attributes:
-    atomic_symbols (dict): Atomic symbols.
-    atom_masses (dict): Atom masses
-    atomic_numbers (dict): Atomic numbers.
-    radii_bondi (dict): Bondi vdW radii.
-    radii_crc (dict): CRC vdW radii.
-    radii_rahm (dict): Computed vdW-like radii
-    cov_radii_pyykko (dict): Pyykkö covalent radii.
-    jmol_colors (dict): Jmol colors.
-    angstrom_to_bohr (float): Conversion factor from Ångström to Bohr.
-    au_to_kcal (float): Conversion factor from Hartree to kcal/mol
-"""
+"""Data dictionaries. Data taken from the Mendeleev package."""
 import scipy.constants
 
 atomic_symbols = {1: 'H', 2: 'He', 3: 'Li', 4: 'Be', 5: 'B', 6: 'C', 7: 'N',

@@ -1,3 +1,5 @@
+"""Internal calculators."""
+
 import pickle
 import pkg_resources
 

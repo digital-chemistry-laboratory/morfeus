@@ -1,4 +1,5 @@
-"""Command line script to calculate buried volumes"""
+"""Command line script to calculate buried volumes."""
+
 import argparse
 
 from morfeus import BuriedVolume, read_gjf, read_xyz

@@ -86,7 +86,7 @@ ref. [1]_.
 
 .. todo::
   Correlation to BVs of ref [X]
-  .. figure:: 
+  figure
 
 **********
 References

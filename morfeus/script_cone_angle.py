@@ -1,4 +1,5 @@
-"""Command line script to calculate exact cone angles"""
+"""Command line script to calculate exact cone angles."""
+
 import argparse
 
 from morfeus import ConeAngle, read_gjf, read_xyz

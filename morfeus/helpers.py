@@ -1,10 +1,5 @@
-"""Help functions
+"""Help functions."""
 
-Functions:
-    check_distances: Controls distances for steric clashes.
-    convert_elements: Converts atomic symbols to atomic numbers.
-    get_radii: Returns radii for list of elements.
-"""
 import warnings
 
 import numpy as np
