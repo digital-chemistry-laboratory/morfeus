@@ -15,7 +15,7 @@ jobs:
         run: |
           pip install sphinx
           pip install sphinx-rtd-theme
-          sphinx-apidoc --separate --no-toc -o api/ ../morfeus
+          sphinx-apidoc --separate --no-toc -o docs/api morfeus
           sphinx-build docs public -b html
       - name: Deploy to GitHub Pages
         if: success()
