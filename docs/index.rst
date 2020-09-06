@@ -93,6 +93,15 @@ both academic and commercial use.
    pyramidalization
    sasa
    sterimol
-   api
+
+.. toctree::
+   :maxdepth: 3
+   :caption: API
+   :hidden:   
+   
+   api/morfeus
+
+..
+  api
 
 .. _MIT license: https://en.wikipedia.org/wiki/MIT_License
