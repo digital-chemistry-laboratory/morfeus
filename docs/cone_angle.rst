@@ -57,7 +57,7 @@ For more detailed information, use ``help(ConeAngle)`` or see the API:
 Background
 **********
 
-Cone angles is a method invented by Tolman for assesing the steric size of 
+Cone angles is a method invented by Tolman for assessing the steric size of 
 ligands [2]_. The original Tolman cone angles for phosphines have problems with
 asymmetric ligands and are not implemented in this package. Instead, the exact
 cone angles [1]_ are used. These are also defined for multidentate ligands.

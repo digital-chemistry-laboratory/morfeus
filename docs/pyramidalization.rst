@@ -3,7 +3,10 @@ Pyramidalization
 ================
 
 Pyramidalization can be calculated as described by Agranat and Radhakrishnan
-[1]_. Documentation to be completed.
+[1]_. 
+
+.. note::
+  Documentation to be completed.
 
 *******************
 Command line script

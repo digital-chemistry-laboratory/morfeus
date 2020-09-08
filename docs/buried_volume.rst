@@ -16,16 +16,24 @@ The basic functionality is available through the command line script.
   $ morfeus_buried_volume 1.xyz 1 --exclude 1 2 3 4 5 6 7
   V_bur (%): 29.6
 
+The first argument is the structure file, and the second argument the atom
+index of the metal atom. The list of excluded atoms is also needed (must
+contain at least the metal atom).
+
+--density <float>
+  Density of sphere grid (default 0.001)
+--exclude <list>
+  List of atoms to exclude from the calculation
 --include_hs <True/False>
-  Include H atoms (default: ``False``)
+  Include H atoms (default: False)
 --radii <str>  
-  Type of radii, ``crc`` or ``bondi`` (default)
+  Type of radii, "crc" or "bondi" (default)
 --radii_scale <float>
-  Scaling of the radii (default: ``1.17``)
--r <float>
-  Radius of sphere (default: ``3.5``)
+  Radii scale factor (default: 1.17)
+--radius <float>
+  Radius of sphere (default: 3.5)
 --steric_map <list>
-  Save steric map with supplied atoms to define z axis.
+  Draw steric map with specified atoms to define z axis.
   Map is saved as "steric_map.png"
 
 More information can be found with ``morfeus_buried_volume --help``

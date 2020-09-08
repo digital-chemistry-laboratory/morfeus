@@ -97,7 +97,7 @@ lists all the quantities read by each approach.
 
 .. note:: 
 
-  Additional accuracy for local modes calculations be achieved by loading
+  Additional accuracy for local modes calculations can be achieved by loading
   also the *fchk* file which contains the normal mode force constants to
   higher accuracy.
 
@@ -154,7 +154,7 @@ xtb
 
 The xtb program can provide the Hessian as well as the normal modes and normal
 mode force constants. The files *hessian* and *xtb_normalmodes* are generated
-by the xtb program as a results of a frequency calculation. The recommended
+by the xtb program as a result of a frequency calculation. The recommended
 approach for both the local modes method and the compliance method matrix is
 to use the *hessian* file.
 
@@ -379,7 +379,7 @@ projecting out imaginary modes, and (2) raising the force constants of
 low-frequency modes to a cutoff value. ᴍᴏʀғᴇᴜs does this projection by
 default and uses a cutoff of 0.001 mDyne/Å for low-frequency modes. We
 therefore recommend local modes with default settings as the most robust
-method in cases problematic cases. Expert users can turn off the projection
+method in problematic cases. Expert users can turn off the projection
 and alter the cutoff value. Note that interactions involving imaginary modes
 (such as breaking/forming bonds in transition states) cannot be assessed by the
 local force constants.

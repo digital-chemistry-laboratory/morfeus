@@ -72,7 +72,7 @@ volume.
 The ``atom_areas`` dictionary contains the atomic SASAs indexed from 1. Type of
 radii can be changed with the keyword argument ``radii=<str>`` with either 
 ``crc`` (default) or ``bondi``. Custom radii can be supplied with 
-``radii=<list>``. The probe radius is change with ``probe_radius=<float>``.
+``radii=<list>``. The probe radius is changed with ``probe_radius=<float>``.
 
 For more information, use ``help(SASA)`` or consult the API:
 :py:class:`morfeus.morfeus.SASA`
@@ -84,29 +84,29 @@ Solvent accessible surface area is a measure of how much of the area of a
 molecule is available to the solvent. The atomic SASA can be used as a
 measure of the steric availability of an atom. ᴍᴏʀғᴇᴜs uses a modified version
 of the method of Shrake and Rupley [1]_ where a constant surface density of 
-points is used instead of fixed number of points regardless of the atom area.
+points is used instead of a fixed number of points regardless of the atom area.
 The atomic SASA and volumes are computed as described by Eisenhaber *et al.*
-[2]_. ᴍᴏʀғᴇᴜs is not optimzed for larger molecules and other programs are
+[2]_. ᴍᴏʀғᴇᴜs is not optimized for larger molecules and other programs are
 recommended for, *e.g.*, proteins.
 
 
 Results have been compared against FreeSASA [3]_ and GEPOL93 [4]_ on a set of 
 transition metal complexes with results that correlate well. FreeSASA uses the
 Shrake and Rupley algorithm while GEPOL93 uses the one by Lee and Richards
-[5]_. Setting were CRC radii, a probe radius of 1.4 Å and a density of
+[5]_. Settings were CRC radii, a probe radius of 1.4 Å and a density of
 0.1 Å\ :sup:`2`/point for ᴍᴏʀғᴇᴜs. The same total number of points were used
 for FreeSASA, while GEPOL93 uses the finest setting (NDIV=5).
 
-.. figure:: benchmarks/SASA/total_areas.png
+.. note::
+  Figures to be added
 
+
+.. todo::
+  figure:: benchmarks/SASA/total_areas.png
   Benchmark of total SASA against FreeSASA and GEPOL93.
-
-.. figure:: benchmarks/SASA/atom_areas.png
-  
+  figure:: benchmarks/SASA/atom_areas.png
   Benchmark of atom SASA against FreeSASA and GEPOL93.
-
-.. figure:: benchmarks/SASA/gepol93_volumes.png
-  
+  figure:: benchmarks/SASA/gepol93_volumes.png
   Benchmark of volume against GEPOL93.
 
 **********

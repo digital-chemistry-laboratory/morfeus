@@ -21,10 +21,11 @@ There are two options for using surfaces based on electron density:
    After generating the surface, it should be exported to a file using the
    hidden option 66. This generates a file, "vtx.pdb" that can be read by
    ᴍᴏʀғᴇᴜs. For more information, see Section 3.15.4 of the
-   `Multiwfn manual`_. An isodensity of 0.001
+   `Multiwfn manual`_. 
 
 .. todo::
-  Need to clarify what the isodensity surface refers to
+  Need to clarify what the isodensity surface refers to that could be added to
+  point 2 above: "An isodensity of 0.001"
 
 *******************
 Command line script
@@ -39,7 +40,7 @@ the terminal.
   $ morfeus_dispersion n-heptane.xyz
   Surface area (Å^2): 223.6
   Surface volume (Å^3): 205.0
-  P_int (kcal^(1/2) Bohr^(-1/2): 15.6
+  P_int (kcal^(1/2) mol^(-1/2): 15.6
 
 --cube_file <str>
   Name of cube file of electron density.
@@ -75,7 +76,7 @@ descriptors.
   >>> dispersion.print_report()
   Surface area (Å^2): 284.6
   Surface volume (Å^3): 290.0
-  P_int (kcal^(1/2) Bohr^(-1/2): 20.8
+  P_int (kcal^(1/2) mol^(-1/2): 20.8
   >>> dispersion.atom_p_int[1]
   30.19400990954629
 
@@ -103,7 +104,7 @@ use another surface, suppress the vdW surface creation with
   >>> dispersion.print_report()
   Surface area (Å^2): 248.0
   Surface volume (Å^3): 247.8
-  P_int (kcal^(1/2) Bohr^(-1/2): 25.8
+  P_int (kcal^(1/2) mol^(-1/2): 25.8
   >>> dispersion.atom_p_int[1]
   36.344232419525866
 
@@ -118,17 +119,15 @@ For more detailed information, use ``help(Dispersion)`` or see the API:
 Background
 **********
 
-The 🍺P\ :sub:`int` dispersion descriptor was introduced by Pollice and Chen as a
-quantitative descriptor for dispersion interactions [1]_. ᴍᴏʀғᴇᴜs can
-calculate P_int based on an electron density isosurface, as in the original
-article. In addition, we have found that a very fast method based on surfaces
-constructed from vdW radii correlate very well with P_int from electron
-densities, at a fraction of the cost.   
+The 🍺P\ :sub:`int` dispersion descriptor was introduced by Pollice and Chen as
+a quantitative descriptor for dispersion interactions [1]_. ᴍᴏʀғᴇᴜs can
+calculate P\ :sub:`int` based on an electron density isosurface, as in the
+original article. In addition, we have found that a very fast method based on
+surfaces constructed from vdW radii correlate very well with P\ :sub:`int` from
+electron densities, at a fraction of the cost.   
 
-.. figure:: benchmarks/local_force/benchmark.png
-  
-  Description here
-
+.. todo::
+  add figure here benchmarks/local_force/benchmark.png
 
 **********
 References

@@ -97,8 +97,11 @@ perpendicular to the L vector, respectively.
 the same radii (Paton's modified Bondi), almost identical results are obtained.
 (Note that ᴍᴏʀғᴇᴜs normally uses 1.20 Å as the Bondi vdW radius for H).
 
-.. figure:: benchmarks/sterimol/correlation.png
-  
+.. note::
+  Figure to be added.
+
+.. todo::
+  figure:: benchmarks/sterimol/correlation.png
   Benchmark of Sterimol parameters against Paton's Sterimol code.
 
 ᴍᴏʀғᴇᴜs calculates the B\ :sub:`1` and B\ :sub:`5` parameters by a different

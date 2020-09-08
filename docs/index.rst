@@ -9,7 +9,7 @@ Examples
 ********
 
 ᴍᴏʀғᴇᴜs can be imported as a Python module that is easily integrated into
-workflows.
+workflows. Here is an example for calculating the exact ligand cone angle:
 
 .. code-block:: python
   :caption: Cone angle calculation
@@ -20,7 +20,8 @@ workflows.
   >>> print(cone_angle.cone_angle)
   117.11012922937584  
 
-Command-line scripts are also available for convenience.
+The metal atom here has index 1. Command-line scripts are also available for
+convenience. Here is an example for a Sterimol calculation:
 
 .. code-block:: console
   :caption: Sterimol calculation
@@ -28,6 +29,9 @@ Command-line scripts are also available for convenience.
   $ morfeus_sterimol tBu.xyz 1 2
   L         B_1       B_5
   4.21      2.87      3.27
+
+The dummy atom here has index 1, while the connected atom in the substituent
+has index 2.
 
 ************
 Installation
