@@ -1394,16 +1394,16 @@ class Dispersion:
     Parameters:
         area (float): Area of surface (Å^2)
         atom_areas (dict): Atom areas (Å^2, starting from 1)
-        atom_p_int (dict): P_int value for atoms (kcal^(1/2) Bohr^(-1/2)
+        atom_p_int (dict): P_int value for atoms (kcal^(1/2) mol^(-1/2)
             starting from 1)
-        atom_p_max (dict): P_max value for atoms (kcal^(1/2) Bohr^(-1/2)
+        atom_p_max (dict): P_max value for atoms (kcal^(1/2) mol^(-1/2)
             starting from 1)
-        atom_p_min (dict): P_min value for atoms (kcal^(1/2) Bohr^(-1/2)
+        atom_p_min (dict): P_min value for atoms (kcal^(1/2) mol^(-1/2)
             starting from 1)
-        p_int (float): P_int value for molecule (kcal^(1/2) Bohr^(-1/2)
-        p_max (float): Highest P values (kcal^(1/2) Bohr^(-1/2)
-        p_min (float): Lowest P values (kcal^(1/2) Bohr^(-1/2)
-        p_values (list): All P values (kcal^(1/2) Bohr^(-1/2)
+        p_int (float): P_int value for molecule (kcal^(1/2) mol^(-1/2)
+        p_max (float): Highest P values (kcal^(1/2) mol^(-1/2)
+        p_min (float): Lowest P values (kcal^(1/2) mol^(-1/2)
+        p_values (list): All P values (kcal^(1/2) mol^(-1/2)
         volume (float): Volume of surface (Å^3)
     """
     def __init__(self, elements, coordinates, radii=[], radii_type="rahm",
@@ -1717,9 +1717,9 @@ class Dispersion:
         """
         print(f"Surface area (Å^2): {self.area:.1f}")
         print(f"Surface volume (Å^3): {self.volume:.1f}")
-        print(f"P_int (kcal^(1/2) Bohr^(-1/2): {self.p_int:.1f}")
+        print(f"P_int (kcal^(1/2) mol^(-1/2): {self.p_int:.1f}")
         if verbose:
-            print(f"{'Symbol':<10s}{'Index':<10s}{'P_int (kcal^(1/2) Bohr^(-1/2))':<30s}")
+            print(f"{'Symbol':<10s}{'Index':<10s}{'P_int (kcal^(1/2) mol^(-1/2))':<30s}")
             for atom, (i, p_int) in zip(self._atoms, self.atom_p_int.items()):
                 symbol = atomic_symbols[atom.element]
                 print(f"{symbol:<10s}{i:<10d}{p_int:<10.1f}")
