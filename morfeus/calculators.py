@@ -8,11 +8,93 @@ from scipy.spatial.distance import cdist
 
 from morfeus.helpers import convert_elements, get_radii
 from morfeus.geometry import Atom
-from morfeus.data import r2_r4
+from morfeus.data import r2_r4, HARTREE, BOHR, EV, ANGSTROM
+
+# Matplotlib is required for plotting steric maps for buried volumes
+try:
+    from dftd4.calculators import D4_model, D3_model
+    from dftd4.utils import extrapolate_c_n_coeff
+    import ase.io
+except ImportError:
+    _has_dftd4 = False
+else:
+    _has_dftd4 = True
+_warning_dftd4 = "Install dftd4 and ase python packages for this function."
+
+
+class D3Grimme:
+    """Calculates C6(AA) and C8(AA) coefficients with the dftd4 program.
+
+    Args:
+        elements (list): Elements as atomic symbols or numbers
+        coordinates (list): Coordinates (Å)
+
+    Attributes:
+        c6_coefficients (list): C6(AA) coefficients (au)
+        c8_coefficients (list): C8(AA) coefficients (au)
+    """    
+    def __init__(self, elements, coordinates):
+        # Convert elements to atomic numbers
+        elements = convert_elements(elements)
+
+        # Do calculation 
+        atoms = ase.Atoms(numbers=elements, positions=coordinates)
+        calc = D3_model(energy=False, forces=False)
+        c6_coefficients_all = calc.get_property('c6_coefficients', atoms=atoms) * EV / HARTREE * (ANGSTROM / BOHR) ** 6
+        c6_coefficients = np.diag(c6_coefficients_all)
+
+        # Extrapolate to C8
+        c8_coefficients = [extrapolate_c_n_coeff(c6, element, element, 8) for c6, element in zip(c6_coefficients, elements)]
+
+        # Store attributes
+        self.c6_coefficients = c6_coefficients
+        self.c8_coefficients = c8_coefficients
+        self._atoms = atoms 
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
+
+
+class D4Grimme:
+    """Calculates C6(AA) and C8(AA) coefficients with the D4 method and the
+    dftd4 program.
+
+    Args:
+        elements (list): Elements as atomic symbols or numbers
+        coordinates (list): Coordinates (Å)
+
+    Attributes:
+        c6_coefficients (list): C6(AA) coefficients (au)
+        c8_coefficients (list): C8(AA) coefficients (au)
+    """        
+    def __init__(self, elements, coordinates, charge=0):
+        # Convert elements to atomic numbers
+        elements = convert_elements(elements)
+        
+        # Set up atoms object
+        charges = np.zeros(len(elements))
+        charges[0] = charge
+        atoms = atoms = ase.Atoms(numbers=elements, positions=coordinates, charges=charges)
+
+        # Do calculation
+        calc = D4_model(energy=False, forces=False)
+        c6_coefficients_all = calc.get_property('c6_coefficients', atoms=atoms) * EV / HARTREE * (ANGSTROM / BOHR) ** 6
+        c6_coefficients = np.diag(c6_coefficients_all)
+
+        # Extrapolate to C8
+        c8_coefficients = [extrapolate_c_n_coeff(c6, element, element, 8) for c6, element in zip(c6_coefficients, elements)]
+
+        # Store attributes 
+        self.c6_coefficients = c6_coefficients
+        self.c8_coefficients = c8_coefficients
+        self._atoms = atoms
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
 
 class D3Calculator:
-    """Calculates C6(AA) and C8(AA) coefficients based on the procedure in 
-    J. Chem. Phys. 2010, 132, 154104.
+    """Calculates C6(AA) and C8(AA) coefficients with the D3 method based on
+    the procedure in J. Chem. Phys. 2010, 132, 154104.
 
     Args:
         elements (list): Elements as atomic symbols or numbers

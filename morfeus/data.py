@@ -170,6 +170,7 @@ jmol_colors = {1: '#ffffff', 2: '#ffc0cb', 3: '#b22222', 4: '#ff1493',
 
 ANGSTROM = scipy.constants.angstrom
 BOHR = scipy.constants.physical_constants["atomic unit of length"][0]
+EV = scipy.constants.eV
 HARTREE = scipy.constants.physical_constants["atomic unit of energy"][0]
 KCAL = scipy.constants.calorie * 1000
 MOL = scipy.constants.Avogadro
