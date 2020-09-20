@@ -3,7 +3,7 @@
 import numpy as np
 
 from morfeus.helpers import convert_elements
-from morfeus.data import BOHR_TO_ANGSTROM
+from morfeus.data import BOHR_TO_ANGSTROM, r2_r4
 
 class CubeParser:
     """Parses Gaussian cube file of electron density
@@ -148,7 +148,7 @@ class D4Parser:
         
         # Parse the file and extract the coefficients
         c6_coefficients = []
-        c8_coefficients = []
+        elements = []
         read = False 
         for line in lines:
             if read:
@@ -156,12 +156,13 @@ class D4Parser:
                     read = False
                     break
                 strip_line = line.strip().split()
+                element = int(strip_line[1])
+                elements.append(element)
                 c6 = float(strip_line[5])
-                c8 = float(strip_line[6])
                 c6_coefficients.append(c6)
-                c8_coefficients.append(c8)
             if "C6AA" in line:
                 read = True
+        c8_coefficients = [3 * c6 * r2_r4[element]**2 for c6, element in zip(c6_coefficients, elements)]
         
         # Set up attributes
         self._filename = filename

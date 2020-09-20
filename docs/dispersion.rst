@@ -115,6 +115,11 @@ calculate substitutent P_int values.
 For more detailed information, use ``help(Dispersion)`` or see the API:
 :py:class:`morfeus.morfeus.Dispersion`
 
+.. note::
+
+  Use the command line flag ``--molc6`` to get the dftd4 program to write the
+  dispersion coefficients, 
+
 **********
 Background
 **********

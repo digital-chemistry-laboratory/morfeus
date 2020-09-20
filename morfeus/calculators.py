@@ -91,5 +91,5 @@ class D3Calculator:
         self.c6_coefficients = c6_coefficients
         self.c8_coefficients = c8_coefficients
 
-        def __repr__(self):
-            return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
+    def __repr__(self):
+        return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
