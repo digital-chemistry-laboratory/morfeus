@@ -42,7 +42,7 @@ from morfeus.data import jmol_colors, atomic_masses
 from morfeus.data import ANGSTROM, DYNE, C, AMU, AFU
 from morfeus.helpers import check_distances, convert_elements, get_radii
 from morfeus.helpers import conditional, get_connectivity_matrix
-from morfeus.calculators import D3Calculator
+from morfeus.calculators import D3Calculator, D3Grimme, D4Grimme
 from morfeus.geometry import Atom, Cone, rotate_coordinates, Sphere
 from morfeus.geometry import sphere_line_intersection
 from morfeus.geometry import kabsch_rotation_matrix, InternalCoordinates
@@ -392,6 +392,7 @@ class Sterimol:
 
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
+
 
 class BuriedVolume:
     """Performs and stores the results of a buried volume calculation as
@@ -825,6 +826,7 @@ class BuriedVolume:
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
 
+
 class SASA:
     """Performs and stores results of solvent accessible surface area 
     calculations.
@@ -985,6 +987,7 @@ class SASA:
         
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
+
 
 class ConeAngle:
     """Calculates and stores the results of exact cone angle calculation as
@@ -1368,6 +1371,7 @@ class ConeAngle:
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
 
+
 class Dispersion:
     """Calculates and stores the results for the 🍺P_int dispersion descriptor.
 
@@ -1671,22 +1675,32 @@ class Dispersion:
         # Store points for later use
         self._points = points
 
-    def compute_coefficients(self, model='id3'):
-        """Compute dispersion coefficients. Currently, the D3 model is
-        supported.
+    def compute_coefficients(self, model='id3', charge=0):
+        """Compute dispersion coefficients. Can either use internal D3 model
+        or D4 or D3-like model available through Grimme's dftd4 program.
 
         Args:
-            model (str): Calculation model: 'id3'
+            model (str): Calculation model: 'id3'. 'gd3' or 'gd4'
         """       
+        # Set up atoms and coordinates
+        elements = [atom.element for atom in self._atoms]
+        coordinates = [atom.coordinates for atom in self._atoms]        
+        
+        # Calculate  D3 values with internal model
         if model =="id3":
-            # Set up atoms and coordinates
-            elements = [atom.element for atom in self._atoms]
-            coordinates = [atom.coordinates for atom in self._atoms]
-
-            # Calculate the D3 values
             calc = D3Calculator(elements, coordinates)
             self._c6_coefficients = calc.c6_coefficients
-            self._c8_coefficients = calc.c8_coefficients 
+            self._c8_coefficients = calc.c8_coefficients
+        # Calculate the D3-like values with dftd4
+        if model =="gd3":
+            calc = D3Grimme(elements, coordinates)
+            self._c6_coefficients = calc.c6_coefficients
+            self._c8_coefficients = calc.c8_coefficients
+        # Calculate the D4 values with dftd4     
+        if model =="gd4":
+            calc = D4Grimme(elements, coordinates, charge=charge)
+            self._c6_coefficients = calc.c6_coefficients
+            self._c8_coefficients = calc.c8_coefficients                   
 
     def load_coefficients(self, filename, model):
         """Load the C6 and C8 coefficients.
@@ -2823,6 +2837,7 @@ class LocalForce:
     def __repr__(self):
         n_internal = len(self.internal_coordinates)
         return f"{self.__class__.__name__}({n_internal!r} internal coordinates)"
+
 
 class Pyramidalization:
     """Calculates and stores results of pyramidalization and alpha angle as 

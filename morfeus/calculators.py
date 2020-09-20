@@ -6,7 +6,7 @@ import pkg_resources
 import numpy as np
 from scipy.spatial.distance import cdist
 
-from morfeus.helpers import convert_elements, get_radii
+from morfeus.helpers import convert_elements, get_radii, conditional
 from morfeus.geometry import Atom
 from morfeus.data import r2_r4, HARTREE, BOHR, EV, ANGSTROM
 
@@ -22,6 +22,7 @@ else:
 _warning_dftd4 = "Install dftd4 and ase python packages for this function."
 
 
+@conditional(_has_dftd4, _warning_dftd4)
 class D3Grimme:
     """Calculates C6(AA) and C8(AA) coefficients with the dftd4 program.
 
@@ -54,7 +55,7 @@ class D3Grimme:
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
 
-
+@conditional(_has_dftd4, _warning_dftd4)
 class D4Grimme:
     """Calculates C6(AA) and C8(AA) coefficients with the D4 method and the
     dftd4 program.
