@@ -112,13 +112,34 @@ To exclude atoms from the calculation, the atom indices (starting at 1) should
 be provided with ``excluded_atoms=<list>``. This can for example be used to
 calculate substitutent P_int values.
 
+Grimme's `dftd4 program`_ can be used to calculate the dispersion coefficients
+with the D4 method. The accompanying dftd4 python package must also be
+installed in the same Python environment as Morfeus. An example is given below:
+
+.. code-block:: python
+  :caption: Example with Grimme's dftd4 code
+
+  >>> elements, coordinates = read_xyz("pme3.xyz")
+  >>> dispersion = Dispersion(elements, coordinates, compute_coefficients=False)
+  >>> dispersion.compute_coefficients(model="gd4")
+  >>> dispersion.compute_p_int()
+  >>> dispersion.print_report()
+  Surface area (Å^2): 178.4
+  Surface volume (Å^3): 157.8
+  P_int (kcal^(1/2) mol^(-1/2): 20.1
+
+The D4 model is available with 'gd4', a D3-like model with 'gd3' and the
+internal D3 code with 'id3'. The maximum order of the dispersion coefficients
+can be set with the keyword argument 'order', but should be left by the
+non-expert user at the default setting of 8 (*i.e.* C\ :sub:`6` and C\ :sub:`8`)
+
 For more detailed information, use ``help(Dispersion)`` or see the API:
 :py:class:`morfeus.morfeus.Dispersion`
 
 .. note::
 
   Use the command line flag ``--molc6`` to get the dftd4 program to write the
-  dispersion coefficients, 
+  dispersion coefficients. 
 
 **********
 Background
@@ -144,3 +165,4 @@ References
 .. [4] http://sobereva.com/multiwfn/
 .. _Gaussian: https://gaussian.com/cubegen/
 .. _Multiwfn manual: http://sobereva.com/multiwfn/Multiwfn_manual.html
+.. _dftd4 program: https://github.com/grimme-lab/dftd4
