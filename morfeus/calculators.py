@@ -34,7 +34,9 @@ class D3Grimme:
         c6_coefficients (list): C6(AA) coefficients (au)
         c8_coefficients (list): C8(AA) coefficients (au)
     """    
-    def __init__(self, elements, coordinates):
+    def __init__(self, elements, coordinates, order=6):
+        #if order %
+
         # Convert elements to atomic numbers
         elements = convert_elements(elements)
 
@@ -43,13 +45,15 @@ class D3Grimme:
         calc = D3_model(energy=False, forces=False)
         c6_coefficients_all = calc.get_property('c6_coefficients', atoms=atoms) * EV / HARTREE * (ANGSTROM / BOHR) ** 6
         c6_coefficients = np.diag(c6_coefficients_all)
+        c_n_coefficients = {}
+        c_n_coefficients[6] = c6_coefficients
 
-        # Extrapolate to C8
-        c8_coefficients = [extrapolate_c_n_coeff(c6, element, element, 8) for c6, element in zip(c6_coefficients, elements)]
+        # Extrapolate
+        for i in range(8, order + 1, 2):
+            c_n_coefficients[i] = np.array([extrapolate_c_n_coeff(c6, element, element, i) for c6, element in zip(c6_coefficients, elements)])
 
         # Store attributes
-        self.c6_coefficients = c6_coefficients
-        self.c8_coefficients = c8_coefficients
+        self.c_n_coefficients = c_n_coefficients
         self._atoms = atoms 
 
     def __repr__(self):
@@ -68,7 +72,7 @@ class D4Grimme:
         c6_coefficients (list): C6(AA) coefficients (au)
         c8_coefficients (list): C8(AA) coefficients (au)
     """        
-    def __init__(self, elements, coordinates, charge=0):
+    def __init__(self, elements, coordinates, order=8, charge=0):
         # Convert elements to atomic numbers
         elements = convert_elements(elements)
         
@@ -81,14 +85,16 @@ class D4Grimme:
         calc = D4_model(energy=False, forces=False)
         c6_coefficients_all = calc.get_property('c6_coefficients', atoms=atoms) * EV / HARTREE * (ANGSTROM / BOHR) ** 6
         c6_coefficients = np.diag(c6_coefficients_all)
+        c_n_coefficients = {}
+        c_n_coefficients[6] = c6_coefficients
 
-        # Extrapolate to C8
-        c8_coefficients = [extrapolate_c_n_coeff(c6, element, element, 8) for c6, element in zip(c6_coefficients, elements)]
+        # Extrapolate
+        for i in range(8, order + 1, 2):
+            c_n_coefficients[i] = np.array([extrapolate_c_n_coeff(c6, element, element, i) for c6, element in zip(c6_coefficients, elements)])
 
-        # Store attributes 
-        self.c6_coefficients = c6_coefficients
-        self.c8_coefficients = c8_coefficients
-        self._atoms = atoms
+        # Store attributes
+        self.c_n_coefficients = c_n_coefficients
+        self._atoms = atoms 
 
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
@@ -105,7 +111,7 @@ class D3Calculator:
         c6_coefficients (list): C6(AA) coefficients (au)
         c8_coefficients (list): C8(AA) coefficients (au)
     """
-    def __init__(self, elements, coordinates):
+    def __init__(self, elements, coordinates, order=8):
         # Convert elements to atomic numbers
         elements = convert_elements(elements)
 
@@ -147,15 +153,14 @@ class D3Calculator:
             c6_reference_data = pickle.load(file)
         
         # Calculate the C6 coefficients
-        c6_coefficients = []
-        c8_coefficients = []
+        c_n_coefficients = {i: []  for i in range(6, order + 1, 2)}
         for atom in atoms:
             # Get the reference data for atom
             reference_data = c6_reference_data[atom.element]
             cn = atom.coordination_number
             
             # Take out the coordination numbers and c6(aa) values
-            c6_ref = reference_data[:,0]
+            c_6_ref = reference_data[:,0]
             cn_1 = reference_data[:,1]
             cn_2 = reference_data[:,2]
 
@@ -163,16 +168,28 @@ class D3Calculator:
             r = (cn - cn_1)**2 + (cn - cn_2)**2
             L = np.exp(-k_3 * r)
             W = np.sum(L)
-            Z = np.sum(c6_ref * L)
-            c6 = Z / W
-            c8 = 3 * c6 * r2_r4[atom.element]**2
-            c6_coefficients.append(c6)
-            c8_coefficients.append(c8)
+            Z = np.sum(c_6_ref * L)
+            c_6 = Z / W
+
+            temp_coefficients = {i: None for i in range(6, order + 1, 2)}
+            for i in range(6, order + 1, 2):
+                if i == 6:
+                    temp_coefficients[i] = c_6
+                if i == 8:
+                    c_8 = 3 * c_6 * r2_r4[atom.element]**2
+                    temp_coefficients[i] = c_8
+                elif i == 10:
+                    c_10 = 49.0 / 40.0 * c_8 ** 2 / c_6
+                    temp_coefficients[i] = c_10
+                elif i > 10:
+                    c_n = temp_coefficients[i - 6] * (temp_coefficients[i - 2] / temp_coefficients[i - 4]) ** 3 
+                    temp_coefficients[i] = c_n
+            for key, value in temp_coefficients.items():
+                c_n_coefficients[key].append(value)
 
         # Set up attributes
         self._atoms = atoms
-        self.c6_coefficients = c6_coefficients
-        self.c8_coefficients = c8_coefficients
+        self.c_n_coefficients = c_n_coefficients
 
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"

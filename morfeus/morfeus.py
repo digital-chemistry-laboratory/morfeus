@@ -1609,10 +1609,9 @@ class Dispersion:
                         if atom.index not in self._excluded_atoms])
         coordinates = np.array([atom.coordinates for atom in self._atoms])
         coordinates = coordinates[atom_indices]
-        c6_coefficients = np.array(self._c6_coefficients)
-        c6_coefficients = c6_coefficients[atom_indices] * HARTREE_TO_KCAL
-        c8_coefficients = np.array(self._c8_coefficients)
-        c8_coefficients = c8_coefficients[atom_indices] * HARTREE_TO_KCAL
+        c_n_coefficients = dict(self._c_n_coefficients)
+        for key, value in c_n_coefficients.items():
+            c_n_coefficients[key] = np.array(value) * HARTREE_TO_KCAL
 
         # Take surface points if none are given
         if points.size == 0:
@@ -1622,10 +1621,8 @@ class Dispersion:
             atomic = True
 
         # Calculate p_int for each point
-        dist = cdist(points, coordinates) * ANGSTROM_TO_BOHR 
-        p = np.sum(np.sqrt(c6_coefficients/(dist**6)), axis=1) \
-            + np.sum(np.sqrt(c8_coefficients/(dist**8)), axis=1)
-
+        dist = cdist(points, coordinates) * ANGSTROM_TO_BOHR
+        p = sum([np.sum(np.sqrt(coefficients / (dist ** order)), axis=1) for order, coefficients in c_n_coefficients.items()])        
         self.p_values = p
     
         # Take out atomic p_ints if no points are given
@@ -1675,7 +1672,7 @@ class Dispersion:
         # Store points for later use
         self._points = points
 
-    def compute_coefficients(self, model='id3', charge=0):
+    def compute_coefficients(self, model='id3', order=8, charge=0):
         """Compute dispersion coefficients. Can either use internal D3 model
         or D4 or D3-like model available through Grimme's dftd4 program.
 
@@ -1688,19 +1685,16 @@ class Dispersion:
         
         # Calculate  D3 values with internal model
         if model =="id3":
-            calc = D3Calculator(elements, coordinates)
-            self._c6_coefficients = calc.c6_coefficients
-            self._c8_coefficients = calc.c8_coefficients
+            calc = D3Calculator(elements, coordinates, order=order)
+            self._c_n_coefficients = calc.c_n_coefficients
         # Calculate the D3-like values with dftd4
         if model =="gd3":
-            calc = D3Grimme(elements, coordinates)
-            self._c6_coefficients = calc.c6_coefficients
-            self._c8_coefficients = calc.c8_coefficients
+            calc = D3Grimme(elements, coordinates, order=order)
+            self._c_n_coefficients = calc.c_n_coefficients
         # Calculate the D4 values with dftd4     
         if model =="gd4":
-            calc = D4Grimme(elements, coordinates, charge=charge)
-            self._c6_coefficients = calc.c6_coefficients
-            self._c8_coefficients = calc.c8_coefficients                   
+            calc = D4Grimme(elements, coordinates, order=order, charge=charge)
+            self._c_n_coefficients = calc.c_n_coefficients
 
     def load_coefficients(self, filename, model):
         """Load the C6 and C8 coefficients.
@@ -1715,13 +1709,15 @@ class Dispersion:
         if filename and model == "d3":
             # Read the data
             parser = D3Parser(filename)
-            self._c6_coefficients = parser.c6_coefficients
-            self._c8_coefficients = parser.c8_coefficients
+            self._c_n_coefficients = {}
+            self._c_n_coefficients[6] = parser.c6_coefficients
+            self._c_n_coefficients[8] = parser.c8_coefficients
         elif filename and model == "d4":
             # Read the data
             parser = D4Parser(filename)
-            self._c6_coefficients = parser.c6_coefficients
-            self._c8_coefficients = parser.c8_coefficients            
+            self._c_n_coefficients = {}
+            self._c_n_coefficients[6] = parser.c6_coefficients
+            self._c_n_coefficients[8] = parser.c8_coefficients          
 
     def print_report(self, verbose=False):
         """Print report of results
