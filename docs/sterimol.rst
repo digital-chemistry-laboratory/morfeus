@@ -2,10 +2,10 @@
 Sterimol
 ========
 
-The Sterimol parameters L, B\ :sub:`1` and B\ :sub:`5` as described by
-Verloop [1]_\ [2]_ are implemented. Note that Sterimol parameters should be 
-calculated with H as the dummy atom, to be consistent with the literature
-(see `Background`_)
+The Sterimol parameters L, B\ :sub:`1` and B\ :sub:`5` as described by Verloop
+:cite:`verloop_development_1976,verloop_sterimol_1983` are implemented. Note
+that Sterimol parameters should be calculated with H as the dummy atom, to be
+consistent with the literature (see `Background`_)
 
 *******************
 Command line script
@@ -80,13 +80,13 @@ Background
 **********
 
 The Sterimol parameters were developed by Verloop to describe the steric size
-of substituents. The atom attached to the substituent in the calculation (by 
+of substituents. The atom attached to the substituent in the calculation (by
 definition H) is called atom 1 and the first atom in the substituent is called
 atom 2. L can be described as the depth of the substituent. It is defined as
 the length of the vector going from atom 1, through atom 2 and ending on the
 tangent of the vdW surface. For historical reasons, L is corrected by adding
-0.40 Å to this length. This  was due to a shift from using C(sp\ :sup:`2`) to
-H as dummy atom.
+0.40 Å to this length. This  was due to a shift from using C(sp\ :sup:`2`) to H
+as dummy atom.
 
 B\ :sub:`1` and B\ :sub:`5` can be described as the minimum and maximum
 rotational size of the substituent. They are defined as the shortest and
@@ -101,26 +101,23 @@ the same radii (Paton's modified Bondi), almost identical results are obtained.
   Figure to be added.
 
 .. todo::
-  figure:: benchmarks/sterimol/correlation.png
-  Benchmark of Sterimol parameters against Paton's Sterimol code.
+  figure:: benchmarks/sterimol/correlation.png Benchmark of Sterimol parameters
+  against Paton's Sterimol code.
 
 ᴍᴏʀғᴇᴜs calculates the B\ :sub:`1` and B\ :sub:`5` parameters by a different
 approach from the original code. First, atomic spheres are created with a
 certain density of points. B\ :sub:`1` and B\ :sub:`5` are then obtained by
-projection of the points of the convex hull onto vectors spanning the whole
-360 degrees in the plane perpendicular to L. B\ :sub:`5` is obtained from the
-largest projection, while B\ :sub:`1` is obtained from the smallest maximum
-projection for the set of vectors.
+projection of atoms onto vectors spanning the whole 360 degrees in the plane
+perpendicular to L. B\ :sub:`5` is obtained from the largest projection, while
+B\ :sub:`1` is obtained from the smallest maximum projection for the set of
+vectors.
 
 **********
 References
 **********
 
-.. [1] Verloop, A., Hoogenstraaten, W., Tipker, J. In *Drug Design* Vol. VII;
-       Ariens, E. J., Ed.; Academic Press, **1976**; pp 165-206.  
-.. [2] Verloop, A. In *Pesticide Chemistry: Human Welfare and Environment:
-       Synthesis and Structure-Activity Relationships*;
-       Doyle, P., Fujita, T., Eds.; Pergamon, **1983**; pp 339–344.
+.. bibliography:: refs.bib
+  :style: unsrt
+  :filter: docname in docnames
 
-.. _`convex hull`: https://en.wikipedia.org/wiki/Convex_hull
 .. _Sterimol: https://github.com/bobbypaton/Sterimol

@@ -81,21 +81,22 @@ For more information, use ``help(SASA)`` or consult the API:
 Background
 **********
 Solvent accessible surface area is a measure of how much of the area of a
-molecule is available to the solvent. The atomic SASA can be used as a
-measure of the steric availability of an atom. ᴍᴏʀғᴇᴜs uses a modified version
-of the method of Shrake and Rupley [1]_ where a constant surface density of 
-points is used instead of a fixed number of points regardless of the atom area.
-The atomic SASA and volumes are computed as described by Eisenhaber *et al.*
-[2]_. ᴍᴏʀғᴇᴜs is not optimized for larger molecules and other programs are
-recommended for, *e.g.*, proteins.
+molecule is available to the solvent. The atomic SASA can be used as a measure
+of the steric availability of an atom. ᴍᴏʀғᴇᴜs uses a modified version of the
+method of Shrake and Rupley :cite:`shrake_environment_1973` where a constant
+surface density of points is used instead of a fixed number of points
+regardless of the atom area. The atomic SASA and volumes are computed as
+described by Eisenhaber *et al.* :cite:`eisenhaber_double_1995`. ᴍᴏʀғᴇᴜs is not
+optimized for larger molecules and other programs are recommended for, *e.g.*,
+proteins.
 
-
-Results have been compared against FreeSASA [3]_ and GEPOL93 [4]_ on a set of 
-transition metal complexes with results that correlate well. FreeSASA uses the
-Shrake and Rupley algorithm while GEPOL93 uses the one by Lee and Richards
-[5]_. Settings were CRC radii, a probe radius of 1.4 Å and a density of
-0.1 Å\ :sup:`2`/point for ᴍᴏʀғᴇᴜs. The same total number of points were used
-for FreeSASA, while GEPOL93 uses the finest setting (NDIV=5).
+Results have been compared against FreeSASA :cite:`mitternacht_freesasa_2016`
+and GEPOL93 :cite:`pascual-ahuir_gepol_1994` on a set of transition metal
+complexes with results that correlate well. FreeSASA uses the Shrake and Rupley
+algorithm while GEPOL93 uses the one by Lee and Richards
+:cite:`lee_interpretation_1971`. Settings were CRC radii, a probe radius of 1.4
+Å and a density of 0.1 Å\ :sup:`2`/point for ᴍᴏʀғᴇᴜs. The same total number of
+points were used for FreeSASA, while GEPOL93 uses the finest setting (NDIV=5).
 
 .. note::
   Figures to be added
@@ -113,10 +114,6 @@ for FreeSASA, while GEPOL93 uses the finest setting (NDIV=5).
 References
 **********
 
-.. [1] Shrake, A.; Rupley, J. A. *J. Mol. Biol.* **1973**, *79*, 351.
-.. [2] Eisenhaber, F.; Lijnzaad, P.; Argos, P.; Sander, C.; Scharf, M.
-      *J. Comput. Chem.* **1995**, *16*, 273.
-.. [3] Mitternacht, S. *F1000Research* **2016**, *5*.
-.. [4] Pascual-Ahuir, J. L.; Silla, E.; Tuñon, I.
-       *J. Comput. Chem.* **1994**, *15*, 1127.
-.. [5] Lee, B.; Richards, F. M. *J. Mol. Biol.* **1971**, *55*, 379.
+.. bibliography:: refs.bib
+  :style: unsrt
+  :filter: docname in docnames

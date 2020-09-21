@@ -2,7 +2,8 @@
 Cone angle
 ##########
 
-Exact cone angles are implemented as described by Allen and co-workers [1]_.
+Exact cone angles are implemented as described by Allen and co-workers
+:cite:`bilbrey_exact_2013`.
 
 *******************
 Command line script
@@ -46,9 +47,10 @@ The ConeAngle class is provided to calculate and store the cone angles.
   No. tangent atoms: 3
   >>> cone_angle.plot_3D()
 
-The Bondi vdW radii are used in reference [1]_, but radii from the CRC Handbook
-is the default here. It can be changed with ``radii_type=<str>`` with either
-``crc`` or ``bondi``. Custom radii can passed with ``radii=<list>``.
+The Bondi vdW radii are used in reference :cite:`bilbrey_exact_2013`, but radii
+from the CRC Handbook is the default here. It can be changed with
+``radii_type=<str>`` with either ``crc`` or ``bondi``. Custom radii can passed
+with ``radii=<list>``.
 
 For more detailed information, use ``help(ConeAngle)`` or see the API:
 :py:class:`morfeus.morfeus.ConeAngle`
@@ -58,25 +60,29 @@ Background
 **********
 
 Cone angles is a method invented by Tolman for assessing the steric size of 
-ligands [2]_. The original Tolman cone angles for phosphines have problems with
-asymmetric ligands and are not implemented in this package. Instead, the exact
-cone angles [1]_ are used. These are also defined for multidentate ligands.
+ligands :cite:`tolman_steric_1977`. The original Tolman cone angles for
+phosphines have problems with asymmetric ligands and are not implemented in
+this package. Instead, the exact cone angles :cite:`bilbrey_exact_2013` are
+used. These are also defined for multidentate ligands.
 
 The method implemented in ᴍᴏʀғᴇᴜs is taken directly from the article by Allen
-[1]_. The results have been benchmarked against Table 1 of the original article
-and agree within numerical accuracy.
+:cite:`bilbrey_exact_2013`. The results have been benchmarked against Table 1
+of the original article and agree within numerical accuracy.
 
 .. figure:: benchmarks/cone_angle/cone_angles_min.png
   
-  Benchmark of minimum cone angles from Table 1 of ref. [1]_
+  Benchmark of minimum cone angles from Table 1 of ref.
+  :cite:`bilbrey_exact_2013`
 
 .. figure:: benchmarks/cone_angle/cone_angles_max.png
 
-  Benchmark of maximum cone angles from Table 1 of ref. [1]_
+  Benchmark of maximum cone angles from Table 1 of ref.
+  :cite:`bilbrey_exact_2013`
 
 **********
 References
 **********
-.. [1] Bilbrey, J. A.; Kazez, A. H.; Locklin, J.; Allen, W. D.
-       *J. Comput. Chem.* **2013**, *34*, 1189.
-.. [2] Tolman, C. A. *Chem. Rev.* **1977**, *77*, 313.
+
+.. bibliography:: refs.bib
+  :style: unsrt
+  :filter: docname in docnames

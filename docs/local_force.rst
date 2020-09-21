@@ -2,9 +2,10 @@
 Local force constants
 =====================
 
-Local force constants can be calculated with the local modes method [1]_ or
-the compliance matrix method [2]_. ᴍᴏʀғᴇᴜs can use the output of the Gaussian_,
-xtb_, or UniMoVib_ programs.
+Local force constants can be calculated with the local modes method
+:cite:`konkoli_new_1998` or the compliance matrix method
+:cite:`brandhorst_how_2008`. ᴍᴏʀғᴇᴜs can use the output of the Gaussian_, xtb_,
+or UniMoVib_ programs.
 
 ***************
 Preparing input
@@ -369,37 +370,37 @@ Background
 **********
 
 Local force constants describe the bond strength based on vibrational
-frequencies. There are two approaches in the literature: the local modes
-method of Cremer [1]_ and the compliance matrix method of Grunenberg [2]_.
-They have been shown to be equivalent within numerical accuracy [3]_. 
-ᴍᴏʀғᴇᴜs can use either method, and they give almost identical results except
-when there are modes with imaginary or very small frequencies. In these cases,
-the local modes approach can handle the issue with  two methods: (1)
-projecting out imaginary modes, and (2) raising the force constants of
-low-frequency modes to a cutoff value. ᴍᴏʀғᴇᴜs does this projection by
-default and uses a cutoff of 0.001 mDyne/Å for low-frequency modes. We
-therefore recommend local modes with default settings as the most robust
-method in problematic cases. Expert users can turn off the projection
-and alter the cutoff value. Note that interactions involving imaginary modes
-(such as breaking/forming bonds in transition states) cannot be assessed by the
-local force constants.
+frequencies. There are two approaches in the literature: the local modes method
+of Cremer :cite:`konkoli_new_1998` and the compliance matrix method of
+Grunenberg :cite:`brandhorst_how_2008`. They have been shown to be equivalent
+within numerical accuracy :cite:`zou_relating_2012`. ᴍᴏʀғᴇᴜs can use either
+method, and they give almost identical results except when there are modes with
+imaginary or very small frequencies. In these cases, the local modes approach
+can handle the issue with  two methods: (1) projecting out imaginary modes, and
+(2) raising the force constants of low-frequency modes to a cutoff value.
+ᴍᴏʀғᴇᴜs does this projection by default and uses a cutoff of 0.001 mDyne/Å for
+low-frequency modes. We therefore recommend local modes with default settings
+as the most robust method in problematic cases. Expert users can turn off the
+projection and alter the cutoff value. Note that interactions involving
+imaginary modes (such as breaking/forming bonds in transition states) cannot be
+assessed by the local force constants.
 
-ᴍᴏʀғᴇᴜs has been benchmarked against the local force constants and
-frequencies given by Cremer [3]_ for small organic molecules. 
+ᴍᴏʀғᴇᴜs has been benchmarked against the local force constants and frequencies
+given by Cremer :cite:`zou_relating_2012` for small organic molecules. 
 
 .. figure:: benchmarks/local_force/benchmark.png
   
   Benchmark of local force constants and frequencies against data from Table 1
-  of ref. [3]_. Data obtained with Gaussian log file and the local modes
-  method.
+  of ref. :cite:`zou_relating_2012`. Data obtained with Gaussian log file and
+  the local modes method.
 
 **********
 References
 **********
 
-.. [1] Konkoli, Z.; Cremer, D. Int. J. Quantum Chem. 1998, 67, 1.
-.. [2] Brandhorst, K.; Grunenberg, J. Chem. Soc. Rev. 2008, 37, 1558.
-.. [3] Zou, W.; Kalescky, R.; Kraka, E.; Cremer, D. J. Chem. Phys. 2012, 137, 84114.
+.. bibliography:: refs.bib
+  :style: unsrt
+  :filter: docname in docnames
 
 .. _Gaussian: https://gaussian.com/
 .. _UniMoVib: https://github.com/zorkzou/UniMoVib

@@ -43,6 +43,7 @@ extensions = [
     'sphinx.ext.napoleon',
     "sphinx_rtd_theme",
     "sphinx.ext.todo",
+    'sphinxcontrib.bibtex',
 ]
 
 numfig = True

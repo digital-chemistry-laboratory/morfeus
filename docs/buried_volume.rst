@@ -2,7 +2,8 @@
 Buried volume
 =============
 
-Buried volumes are implemented as described by Cavallo and co-workers [1]_. 
+Buried volumes are implemented as described by Cavallo and co-workers
+:cite:`falivene_sambvca_2016`. 
 
 *******************
 Command line script
@@ -78,19 +79,17 @@ Background
 **********
 
 The percent of buried volume is a measure of the steric hindrance induced by a 
-ligand of a transition metal complex [1]_. A web tool to calculate buried 
-volumes, SambVca, was made available for scientific purposes by Cavallo and 
-co-workers in 2009 [2]_ with version 2 in 2016 [1]_.
+ligand of a transition metal complex :cite:`falivene_sambvca_2016`. A web tool
+to calculate buried volumes, SambVca, was made available for scientific
+purposes by Cavallo and co-workers in 2009 :cite:`poater_sambvca_2009` with
+version 2 in 2016 :cite:`falivene_sambvca_2016`. .
 
-The approach of ᴍᴏʀғᴇᴜs differs somewhat from that in ref. [1]_ in that points
-are generated uniformly in the test sphere rather than considering voxels. The 
-numerical results with standard settings are the same though as shown by
-benchmarks on complexes 1-18 from ref. [1]_. Steric maps also match those in 
-ref. [1]_.
-
-.. figure:: benchmarks/buried_volume/correlation.png
-
-
+The approach of ᴍᴏʀғᴇᴜs differs somewhat from that in ref.
+:cite:`falivene_sambvca_2016` in that points are generated uniformly in the
+test sphere rather than considering voxels. The numerical results with standard
+settings are the same though as shown by benchmarks on complexes 1-18 from ref.
+:cite:`falivene_sambvca_2016`. Steric maps also match those in ref.
+:cite:`falivene_sambvca_2016`.
 
 .. todo::
   Correlation to BVs of ref [X]
@@ -100,8 +99,6 @@ ref. [1]_.
 References
 **********
 
-.. [1] Falivene, L.; Credendino, R.; Poater, A.; Petta, A.; Serra, L.;
-       Oliva, R.; Scarano, V.; Cavallo, L. *Organometallics* **2016**, *35*,
-       2286.
-.. [2] Poater, A.; Cosenza, B.; Correa, A.; Giudice, S.; Ragone, F.;
-       Scarano, V.; Cavallo, L. Eur. J. *Inorg. Chem.* **2009**, *2009*, 1759.
+.. bibliography:: refs.bib
+  :style: unsrt
+  :filter: docname in docnames
