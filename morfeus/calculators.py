@@ -43,6 +43,7 @@ class D3Grimme:
         # Do calculation 
         atoms = ase.Atoms(numbers=elements, positions=coordinates)
         calc = D3_model(energy=False, forces=False)
+        polarizabilities = calc.get_property("polarizibilities", atoms=atoms) * (ANGSTROM / BOHR) ** 3
         c6_coefficients_all = calc.get_property('c6_coefficients', atoms=atoms) * EV / HARTREE * (ANGSTROM / BOHR) ** 6
         c6_coefficients = np.diag(c6_coefficients_all)
         c_n_coefficients = {}
@@ -53,6 +54,7 @@ class D3Grimme:
             c_n_coefficients[i] = np.array([extrapolate_c_n_coeff(c6, element, element, i) for c6, element in zip(c6_coefficients, elements)])
 
         # Store attributes
+        self.polarizabilities = polarizabilities
         self.c_n_coefficients = c_n_coefficients
         self._atoms = atoms 
 
@@ -61,8 +63,7 @@ class D3Grimme:
 
 @conditional(_has_dftd4, _warning_dftd4)
 class D4Grimme:
-    """Calculates C6(AA) and C8(AA) coefficients with the D4 method and the
-    dftd4 program.
+    """Calculates dispersion with the D4 method and the dftd4 program.
 
     Args:
         elements (list): Elements as atomic symbols or numbers
@@ -83,6 +84,8 @@ class D4Grimme:
 
         # Do calculation
         calc = D4_model(energy=False, forces=False)
+        polarizabilities = calc.get_property("polarizibilities", atoms=atoms) * (ANGSTROM / BOHR) ** 3
+        charges = calc.get_property("charges", atoms=atoms)
         c6_coefficients_all = calc.get_property('c6_coefficients', atoms=atoms) * EV / HARTREE * (ANGSTROM / BOHR) ** 6
         c6_coefficients = np.diag(c6_coefficients_all)
         c_n_coefficients = {}
@@ -93,6 +96,8 @@ class D4Grimme:
             c_n_coefficients[i] = np.array([extrapolate_c_n_coeff(c6, element, element, i) for c6, element in zip(c6_coefficients, elements)])
 
         # Store attributes
+        self.polarizabilities = polarizabilities
+        self.charges = charges        
         self.c_n_coefficients = c_n_coefficients
         self._atoms = atoms 
 

@@ -2942,6 +2942,7 @@ class Pyramidalization:
         self.alphas = np.rad2deg(alphas)
 
 
+@conditional(_has_xtb, _warning_xtb)    
 class XTB:
     """Calculates electronic properties with the xtb program using the 
     xtb-python package.
@@ -2955,12 +2956,6 @@ class XTB:
         solvent (str): Solvent. See xtb-python documentation.
         electronic_temperature (float): Electronic temperature (K)
     """
-    _params = {"0": Param.GFN0xTB,
-              "1": Param.GFN1xTB,
-              "2": Param.GFN2xTB,
-              "FF": Param.GFNFF,
-              }
-    
     def __init__(self, elements, coordinates, version="2", charge=0, n_unpaired=None, solvent=None, electronic_temperature=None):
         # Converting elements to atomic numbers if the are symbols
         self._elements = np.array(convert_elements(elements, output="numbers"))
@@ -2978,6 +2973,11 @@ class XTB:
                          0: None,
                          1: None,
                          }
+        self._params = {"0": Param.GFN0xTB,
+                        "1": Param.GFN1xTB,
+                        "2": Param.GFN2xTB,
+                        "FF": Param.GFNFF,
+                        }                         
     
     def get_ea(self):
         """Calculate electron affinity.
