@@ -2956,6 +2956,8 @@ class XTB:
         solvent (str): Solvent. See xtb-python documentation.
         electronic_temperature (float): Electronic temperature (K)
     """
+    _ipea_corrections = {"1": 5.700, "2": 4.846}
+
     def __init__(self, elements, coordinates, version="2", charge=0, n_unpaired=None, solvent=None, electronic_temperature=None):
         # Converting elements to atomic numbers if the are symbols
         self._elements = np.array(convert_elements(elements, output="numbers"))
@@ -2973,32 +2975,43 @@ class XTB:
                          0: None,
                          1: None,
                          }
+
         self._params = {"0": Param.GFN0xTB,
                         "1": Param.GFN1xTB,
                         "2": Param.GFN2xTB,
                         "FF": Param.GFNFF,
                         }                         
     
-    def get_ea(self):
+    def get_ea(self, corrected=False):
         """Calculate electron affinity.
+
+        Args:
+            corrected (bool): Apply correction term
         
         Returns:
             ea (float): Electron affinity (eV)
         """
         energy_neutral = self._get_energy(0)
         energy_anion = self._get_energy(-1)
-        ea = (energy_anion - energy_neutral) * HARTREE_TO_EV
+        ea = (energy_neutral - energy_anion) * HARTREE_TO_EV
+        if corrected:
+            ea -= self._ipea_corrections[self._version]
         return ea
 
-    def get_ip(self):
+    def get_ip(self, corrected=False):
         """Calculate ionization potential.
         
+        Args:
+            corrected (bool): Apply correction term
+
         Returns:
             ip (float): Ionization potential (eV)
         """
         energy_neutral = self._get_energy(0)
         energy_cation = self._get_energy(1)
         ip = (energy_cation - energy_neutral) * HARTREE_TO_EV
+        if corrected:
+            ip -= self._ipea_corrections[self._version]
         return ip
 
     def get_bond_order(self, i, j):
@@ -3055,24 +3068,25 @@ class XTB:
             
         return fukui
     
-    def get_global_descriptor(self, variety):
+    def get_global_descriptor(self, variety, corrected=False):
         """Calculate global reactivity descriptors.
         
-        Args: 
+        Args:
+            corrected (bool): Apply correction term
             variety (str): Type of descriptor: 'electrophilicity',
-            'nucleophilicity', 'electrofugality' or 'nucleofugality'.
+                'nucleophilicity', 'electrofugality' or 'nucleofugality'.
         
         Returns:
             descriptor (float): Global reactivity descriptor (eV).
         """
         if variety == "electrophilicity":
-            descriptor = (self.get_ip() + self.get_ea()) ** 2 / (8 * (self.get_ip() - self.get_ea()))
+            descriptor = (self.get_ip(corrected=corrected) + self.get_ea(corrected=corrected)) ** 2 / (8 * (self.get_ip(corrected=corrected) - self.get_ea(corrected=corrected)))
         elif variety == "nucleophilicity":
-            descriptor = -self.get_ip()
+            descriptor = -self.get_ip(corrected=corrected)
         elif variety == "electrofugality":
-            descriptor = (self.get_ip() - 3 * self.get_ea()) ** 2 / (8 * (self.get_ip() - self.get_ea()))
+            descriptor = (self.get_ip(corrected=corrected) - 3 * self.get_ea(corrected=corrected)) ** 2 / (8 * (self.get_ip(corrected=corrected) - self.get_ea(corrected=corrected)))
         elif variety == "nucleofugality":
-            descriptor = (3 * self.get_ip() - self.get_ea()) ** 2 / (8 * (self.get_ip() - self.get_ea()))
+            descriptor = (3 * self.get_ip(corrected=corrected) - self.get_ea(corrected=corrected)) ** 2 / (8 * (self.get_ip(corrected=corrected) - self.get_ea(corrected=corrected)))
 
         return descriptor
     
