@@ -182,3 +182,4 @@ AFU = scipy.constants.physical_constants["atomic unit of force"][0]
 ANGSTROM_TO_BOHR = ANGSTROM / BOHR
 BOHR_TO_ANGSTROM = BOHR / ANGSTROM
 HARTREE_TO_KCAL = HARTREE / KCAL * MOL
+HARTREE_TO_EV = HARTREE / EV

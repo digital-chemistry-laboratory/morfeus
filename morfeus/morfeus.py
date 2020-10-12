@@ -8,10 +8,9 @@ import itertools
 try:
     import matplotlib.pyplot as plt
     from matplotlib.colors import hex2color
+    _has_matplotlib = True
 except ImportError:
     _has_matplotlib = False
-else:
-    _has_matplotlib = True
 _warning_matplotlib = "Install matplotlib to use this function."
 
 import numpy as np
@@ -25,10 +24,9 @@ try:
     from pyvistaqt import BackgroundPlotter
     import pymeshfix
     from morfeus.plotting import Arrow_3D, Cone_3D
-except ImportError as e:
-    _has_vtk = False
-else:
     _has_vtk = True
+except ImportError:
+    _has_vtk = False   
 _warning_vtk = "Install pyvista and vtk to use this function."
 
 import scipy.spatial
@@ -37,7 +35,15 @@ from scipy.constants import physical_constants
 from scipy.spatial import cKDTree
 from scipy.spatial.distance import cdist, euclidean
 
-from morfeus.data import atomic_symbols, HARTREE_TO_KCAL, ANGSTROM_TO_BOHR, HARTREE, BOHR, BOHR_TO_ANGSTROM
+try:
+    from xtb.interface import Param, Calculator
+    from xtb.utils import get_solvent
+    _has_xtb = True
+except ImportError:
+    _has_xtb = False
+_warning_xtb = "Install xtb-python to use this function."
+
+from morfeus.data import atomic_symbols, HARTREE_TO_KCAL, ANGSTROM_TO_BOHR, HARTREE, BOHR, BOHR_TO_ANGSTROM, HARTREE_TO_EV
 from morfeus.data import jmol_colors, atomic_masses
 from morfeus.data import ANGSTROM, DYNE, C, AMU, AFU
 from morfeus.helpers import check_distances, convert_elements, get_radii
@@ -2934,3 +2940,209 @@ class Pyramidalization:
         self.P = P
         self.alpha = np.rad2deg(np.mean(alphas))
         self.alphas = np.rad2deg(alphas)
+
+
+class XTB:
+    """Calculates electronic properties with the xtb program using the 
+    xtb-python package.
+
+    Args:
+        charge (int): Molecular charge
+        coordinates (list): Coordinates (Å)
+        elements (list): Elements as atomic symbols or numbers. 
+        version (str): Version of xtb to use. Currently works with '1' or '2'.
+        n_unpaired (int): Number of unpaired electrons
+        solvent (str): Solvent. See xtb-python documentation.
+        electronic_temperature (float): Electronic temperature (K)
+    """
+    _params = {"0": Param.GFN0xTB,
+              "1": Param.GFN1xTB,
+              "2": Param.GFN2xTB,
+              "FF": Param.GFNFF,
+              }
+    
+    def __init__(self, elements, coordinates, version="2", charge=0, n_unpaired=None, solvent=None, electronic_temperature=None):
+        # Converting elements to atomic numbers if the are symbols
+        self._elements = np.array(convert_elements(elements, output="numbers"))
+        
+        # Store settings
+        self._coordinates = np.array(coordinates)
+        self._version = version
+        self._charge = charge
+        self._solvent = solvent
+        self._n_unpaired = n_unpaired
+        self._electronic_temperature = electronic_temperature
+
+        # Set up results dictionary
+        self._results = {-1: None,
+                         0: None,
+                         1: None,
+                         }
+    
+    def get_ea(self):
+        """Calculate electron affinity.
+        
+        Returns:
+            ea (float): Electron affinity (eV)
+        """
+        energy_neutral = self._get_energy(0)
+        energy_anion = self._get_energy(-1)
+        ea = (energy_anion - energy_neutral) * HARTREE_TO_EV
+        return ea
+
+    def get_ip(self):
+        """Calculate ionization potential.
+        
+        Returns:
+            ip (float): Ionization potential (eV)
+        """
+        energy_neutral = self._get_energy(0)
+        energy_cation = self._get_energy(1)
+        ip = (energy_cation - energy_neutral) * HARTREE_TO_EV
+        return ip
+
+    def get_bond_order(self, i, j):
+        """Calculate bond order.
+        
+        Args:
+            i (int): Index of atom 1 (0-indexed)
+            j (int): Index of atom 2 (0-indexed)
+        
+        Returns:
+            bond_order (float): Bond order
+        """
+        bo_matrix = self.get_bond_orders()
+        bond_order = bo_matrix[i - 1, j - 1]
+        return bond_order
+    
+    def get_dipole(self):
+        """Calculate dipole vector (a.u.).
+        
+        Returns:
+            dipole (ndarray): Dipole vector. 
+        """
+        self._check_results(0)
+        dipole = self._results[0].get_dipole()
+        return dipole
+
+    def get_fukui(self, variety):
+        """Calculate Fukui coefficients
+        
+        Args:
+            variety (str): Type of Fukui coefficient: 'nucleophilicity', 
+                'electrophilicity', 'radical', 'dual', 'local_nucleophilicity'
+                or 'local_electrophilicity'.
+        
+        Returns
+            fukui (ndarray): Array of atom Fukui coefficients.
+        """
+        if variety == "nucleophilicity":
+            fukui = self.get_charges(0) - self.get_charges(1)
+        elif variety == "electrophilicity":
+            fukui = self.get_charges(-1) - self.get_charges(0)
+        elif variety == "radical":
+            fukui = (self.get_charges(-1) - self.get_charges(0)) / 2
+        elif variety == "dual":
+            fukui = 2 * self.get_charges(0) - self.get_charges(1) - self.get_charges(-1)
+        elif variety == "local_nucleophilicity":
+            fukui = self.get_fukui("nucleophilicity")
+        elif variety == "local_electrophilicity":
+            chem_pot = - (self.get_ip() - self.get_ea()) / 2
+            hardness = self.get_ip() - self.get_ea()
+            fukui = -(chem_pot / hardness) * self.get_fukui("radical") + 1 / 2 * (chem_pot / hardness) ** 2 * self.get_fukui("dual")
+        else:
+            raise Exception("Choose variety.")
+            
+        return fukui
+    
+    def get_global_descriptor(self, variety):
+        """Calculate global reactivity descriptors.
+        
+        Args: 
+            variety (str): Type of descriptor: 'electrophilicity',
+            'nucleophilicity', 'electrofugality' or 'nucleofugality'.
+        
+        Returns:
+            descriptor (float): Global reactivity descriptor (eV).
+        """
+        if variety == "electrophilicity":
+            descriptor = (self.get_ip() + self.get_ea()) ** 2 / (8 * (self.get_ip() - self.get_ea()))
+        elif variety == "nucleophilicity":
+            descriptor = -self.get_ip()
+        elif variety == "electrofugality":
+            descriptor = (self.get_ip() - 3 * self.get_ea()) ** 2 / (8 * (self.get_ip() - self.get_ea()))
+        elif variety == "nucleofugality":
+            descriptor = (3 * self.get_ip() - self.get_ea()) ** 2 / (8 * (self.get_ip() - self.get_ea()))
+
+        return descriptor
+    
+    def get_homo(self):
+        """Calculate HOMO energy.
+        
+        Returns:
+            homo_energy (float): HOMO energy (a.u.)
+        """
+        eigenvalues = self._get_eigenvalues()
+        occupations = self._get_occupations()
+        homo_index = int(occupations.sum().round(0) / 2) - 1
+        homo_energy = eigenvalues[homo_index]
+        
+        return homo_energy
+    
+    def get_lumo(self):
+        """Calculate LUMO energy.
+        
+        Returns:
+            lumo_energy (float): LUMO energy (a.u.)
+        """        
+        eigenvalues = self._get_eigenvalues()
+        occupations = self._get_occupations()
+        homo_index = int(occupations.sum().round(0) / 2) - 1
+        lumo_index = homo_index + 1
+        lumo_energy = eigenvalues[lumo_index]        
+        
+        return lumo_energy
+        
+    def _get_energy(self, charge_state=0):
+        self._check_results(charge_state)
+        return self._results[charge_state].get_energy()
+    
+    def _get_eigenvalues(self):
+        self._check_results(0)
+        return self._results[0].get_orbital_eigenvalues()
+    
+    def _get_occupations(self):
+        self._check_results(0)
+        return self._results[0].get_orbital_occupations()   
+    
+    def get_charges(self, charge_state=0):
+        self._check_results(charge_state)
+        return self._results[charge_state].get_charges()
+    
+    def get_bond_orders(self, charge_state=0):
+        self._check_results(charge_state)
+        return self._results[charge_state].get_bond_orders()
+        
+    def _sp(self, charge_state=0):
+        # Set up calculator
+        calc = Calculator(self._params[self._version], self._elements, self._coordinates * ANGSTROM_TO_BOHR,
+                          charge=self._charge + charge_state, uhf=self._n_unpaired)
+
+        # Set solvent
+        if self._solvent:
+            solvent = get_solvent(self._solvent)
+            if solvent is None:
+                raise Exception(f"Solvent '{self._solvent}' not recognized")
+            calc.set_solvent(solvent)
+        
+        # Set electronic temperature
+        if self._electronic_temperature:
+            calc.set_electronic_temperature(self._electronic_temperature)
+        
+        # Do singlepoint calculation and store the result
+        res = calc.singlepoint()
+        self._results[charge_state] = res    
+    
+    def _check_results(self, charge_state):
+        if self._results[charge_state] is None:
+            self._sp(charge_state)

@@ -22,5 +22,5 @@ Scripts:
 __version__ = "0.5.0"
 
 from morfeus.morfeus import BuriedVolume, ConeAngle, Dispersion
-from morfeus.morfeus import SASA, Sterimol, LocalForce, Pyramidalization
+from morfeus.morfeus import SASA, Sterimol, LocalForce, Pyramidalization, XTB
 from morfeus.io import read_gjf, read_xyz
