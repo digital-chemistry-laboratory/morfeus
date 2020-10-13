@@ -3084,9 +3084,9 @@ class XTB:
         elif variety == "nucleophilicity":
             descriptor = -self.get_ip(corrected=corrected)
         elif variety == "electrofugality":
-            descriptor = (self.get_ip(corrected=corrected) - 3 * self.get_ea(corrected=corrected)) ** 2 / (8 * (self.get_ip(corrected=corrected) - self.get_ea(corrected=corrected)))
-        elif variety == "nucleofugality":
             descriptor = (3 * self.get_ip(corrected=corrected) - self.get_ea(corrected=corrected)) ** 2 / (8 * (self.get_ip(corrected=corrected) - self.get_ea(corrected=corrected)))
+        elif variety == "nucleofugality":
+            descriptor = (self.get_ip(corrected=corrected) - 3 * self.get_ea(corrected=corrected)) ** 2 / (8 * (self.get_ip(corrected=corrected) - self.get_ea(corrected=corrected)))
 
         return descriptor
     
