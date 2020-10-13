@@ -46,6 +46,8 @@ extensions = [
     'sphinxcontrib.bibtex',
 ]
 
+autodoc_mock_imports = ["dftd4", "pyvista", "pymeshfix", "vtk", "xtb"]
+
 numfig = True
 
 # Add any paths that contain templates here, relative to this directory.
