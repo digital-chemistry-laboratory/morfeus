@@ -193,8 +193,11 @@ class D3Calculator:
                 c_n_coefficients[key].append(value)
 
         # Set up attributes
+        coordination_numbers = np.array([atom.coordination_number for atom in self._atoms])
+
         self._atoms = atoms
         self.c_n_coefficients = c_n_coefficients
+        self.coordination_numbers = coordination_numbers
 
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
