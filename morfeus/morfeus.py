@@ -38,6 +38,7 @@ from scipy.spatial.distance import cdist, euclidean
 try:
     from xtb.interface import Param, Calculator
     from xtb.utils import get_solvent
+    from xtb.libxtb import VERBOSITY_MUTED
     _has_xtb = True
 except ImportError:
     _has_xtb = False
@@ -2976,10 +2977,8 @@ class XTB:
                          1: None,
                          }
 
-        self._params = {"0": Param.GFN0xTB,
-                        "1": Param.GFN1xTB,
+        self._params = {"1": Param.GFN1xTB,
                         "2": Param.GFN2xTB,
-                        "FF": Param.GFNFF,
                         }                         
     
     def get_ea(self, corrected=False):
@@ -3141,6 +3140,7 @@ class XTB:
         # Set up calculator
         calc = Calculator(self._params[self._version], self._elements, self._coordinates * ANGSTROM_TO_BOHR,
                           charge=self._charge + charge_state, uhf=self._n_unpaired)
+        calc.set_verbosity(VERBOSITY_MUTED)
 
         # Set solvent
         if self._solvent:

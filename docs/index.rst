@@ -62,6 +62,7 @@ Features
 * Pyramidalization
 * Solvent accessible surface area
 * Sterimol parameters
+* XTB electronic descriptors
 
 *****
 About
@@ -97,6 +98,7 @@ both academic and commercial use.
    pyramidalization
    sasa
    sterimol
+   xtb
 
 .. toctree::
    :maxdepth: 3
