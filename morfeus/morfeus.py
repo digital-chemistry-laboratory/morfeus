@@ -422,18 +422,13 @@ class BuriedVolume:
         buried_volume (float): Buried volume
     """
 
+    # Quadrant and octant signs taken from
+    # https://en.wikipedia.org/wiki/Octant_(solid_geometry)
     quadrant_signs = {
         1: "+,+",
         2: "-,+",
         3: "-,-",
         4: "+,-",
-    }
-
-    quadrant_names = {
-        1: "NE",
-        2: "NW",
-        3: "SW",
-        4: "SE",
     }
 
     octant_signs = {
@@ -447,6 +442,15 @@ class BuriedVolume:
         5: "-,-,-",
     }
 
+    # Conventional names for quadrants
+    quadrant_names = {
+        1: "NE",
+        2: "NW",
+        3: "SW",
+        4: "SE",
+    }
+
+    # Maps octants to quadrants
     octant_quadrant_map = {
             1: (0, 7),
             2: (1, 6),
@@ -523,6 +527,7 @@ class BuriedVolume:
         self._compute_buried_volume(center=center, radius=radius,
                                     density=density)
 
+        # Set up attributes
         self.molecular_volume = None
         self.distal_volume = None
         self.octants = None
@@ -533,6 +538,8 @@ class BuriedVolume:
         self.quadrants = {}
     
     def octant_analysis(self):
+        """Perform octant analysis of the buried volume."""
+        # Set up limits depending on the sphere radius
         lim = self._sphere.radius
         octant_limits = {
             0: ((0, lim), (0, lim), (0, lim)),
@@ -545,6 +552,7 @@ class BuriedVolume:
             5: ((-lim, 0), (-lim, 0), (-lim, 0)),
         }
 
+        # Calculated volume for each octant.
         octant_volume = self._sphere.volume / 8
 
         # Do octant analysis
@@ -594,6 +602,7 @@ class BuriedVolume:
         # Construct sphere at metal center
         sphere = Sphere(center, radius, method="projection", density=density,
                         filled=True)
+
         # Prune sphere points which are within vdW radius of other atoms.
         tree = scipy.spatial.cKDTree(sphere.points, compact_nodes=False,
                                      balanced_tree=False)
@@ -622,8 +631,9 @@ class BuriedVolume:
         Args:
             method (str): Method to get total volume: 'sasa' or 'buried_volume'
             octants (bool): Whether to compute distal volume for quadrants and
-                            octants
-            sasa_density (float): Density of points on SASA surface
+                            octants. Requires method='buried_volume'
+            sasa_density (float): Density of points on SASA surface. Ignored
+                unless method='sasa'
         """
         # Use SASA to calculate total volume of the molecule
         if method == "sasa":
@@ -636,7 +646,7 @@ class BuriedVolume:
                 coordinates.append(atom.coordinates)
                 radii.append(atom.radius)
             coordinates = np.vstack(coordinates)
-            sasa = SASA(elements, coordinates, radii=radii, probe_radius=0,
+            sasa = SASA(elements, coordinates, radii=radii, probe_radius=0.0,
                         density=sasa_density)
             self.molecular_volume = sasa.volume                        
 
