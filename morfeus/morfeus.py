@@ -2945,21 +2945,22 @@ class Pyramidalization:
 
 @conditional(_has_xtb, _warning_xtb)    
 class XTB:
-    """Calculates electronic properties with the xtb program using the 
+    """Calculates electronic properties with the xtb program using the
     xtb-python package.
 
     Args:
         charge (int): Molecular charge
         coordinates (list): Coordinates (Å)
+        electronic_temperature (float): Electronic temperature (K)
         elements (list): Elements as atomic symbols or numbers. 
-        version (str): Version of xtb to use. Currently works with '1' or '2'.
         n_unpaired (int): Number of unpaired electrons
         solvent (str): Solvent. See xtb-python documentation.
-        electronic_temperature (float): Electronic temperature (K)
+        version (str): Version of xtb to use. Currently works with '1' or '2'.
     """
     _ipea_corrections = {"1": 5.700, "2": 4.846}
 
-    def __init__(self, elements, coordinates, version="2", charge=0, n_unpaired=None, solvent=None, electronic_temperature=None):
+    def __init__(self, elements, coordinates, version="2", charge=0,
+                 n_unpaired=None, solvent=None, electronic_temperature=None):
         # Converting elements to atomic numbers if the are symbols
         self._elements = np.array(convert_elements(elements, output="numbers"))
         
@@ -2981,51 +2982,28 @@ class XTB:
                         "2": Param.GFN2xTB,
                         }                         
     
-    def get_ea(self, corrected=False):
-        """Calculate electron affinity.
-
-        Args:
-            corrected (bool): Apply correction term
-        
-        Returns:
-            ea (float): Electron affinity (eV)
-        """
-        energy_neutral = self._get_energy(0)
-        energy_anion = self._get_energy(-1)
-        ea = (energy_neutral - energy_anion) * HARTREE_TO_EV
-        if corrected:
-            ea -= self._ipea_corrections[self._version]
-        return ea
-
-    def get_ip(self, corrected=False):
-        """Calculate ionization potential.
-        
-        Args:
-            corrected (bool): Apply correction term
-
-        Returns:
-            ip (float): Ionization potential (eV)
-        """
-        energy_neutral = self._get_energy(0)
-        energy_cation = self._get_energy(1)
-        ip = (energy_cation - energy_neutral) * HARTREE_TO_EV
-        if corrected:
-            ip -= self._ipea_corrections[self._version]
-        return ip
-
     def get_bond_order(self, i, j):
         """Calculate bond order.
         
         Args:
-            i (int): Index of atom 1 (0-indexed)
-            j (int): Index of atom 2 (0-indexed)
+            i (int): Index of atom 1 (1-indexed)
+            j (int): Index of atom 2 (1-indexed)
         
         Returns:
             bond_order (float): Bond order
         """
         bo_matrix = self.get_bond_orders()
         bond_order = bo_matrix[i - 1, j - 1]
+
         return bond_order
+    
+    def get_bond_orders(self, charge_state=0):
+        self._check_results(charge_state)
+        return self._results[charge_state].get_bond_orders()
+           
+    def get_charges(self, charge_state=0):
+        self._check_results(charge_state)
+        return self._results[charge_state].get_charges()
     
     def get_dipole(self):
         """Calculate dipole vector (a.u.).
@@ -3035,7 +3013,28 @@ class XTB:
         """
         self._check_results(0)
         dipole = self._results[0].get_dipole()
+
         return dipole
+
+    def get_ea(self, corrected=False):
+        """Calculate electron affinity.
+
+        Args:
+            corrected (bool): Apply correction term.
+        
+        Returns:
+            ea (float): Electron affinity (eV)
+        """
+        # Calculate energies
+        energy_neutral = self._get_energy(0)
+        energy_anion = self._get_energy(-1)
+
+        # Calculate electron affinity
+        ea = (energy_neutral - energy_anion) * HARTREE_TO_EV
+        if corrected:
+            ea -= self._ipea_corrections[self._version]
+
+        return ea
 
     def get_fukui(self, variety):
         """Calculate Fukui coefficients
@@ -3055,18 +3054,20 @@ class XTB:
         elif variety == "radical":
             fukui = (self.get_charges(-1) - self.get_charges(0)) / 2
         elif variety == "dual":
-            fukui = 2 * self.get_charges(0) - self.get_charges(1) - self.get_charges(-1)
+            fukui = 2 * self.get_charges(0) - self.get_charges(1) - \
+                self.get_charges(-1)
         elif variety == "local_nucleophilicity":
             fukui = self.get_fukui("nucleophilicity")
         elif variety == "local_electrophilicity":
-            chem_pot = - (self.get_ip() - self.get_ea()) / 2
+            chem_pot = -(self.get_ip() + self.get_ea()) / 2
             hardness = self.get_ip() - self.get_ea()
-            fukui = -(chem_pot / hardness) * self.get_fukui("radical") + 1 / 2 * (chem_pot / hardness) ** 2 * self.get_fukui("dual")
+            fukui = -(chem_pot / hardness) * self.get_fukui("radical") + \
+                1 / 2 * (chem_pot / hardness) ** 2 * self.get_fukui("dual")
         else:
             raise Exception("Choose variety.")
             
         return fukui
-    
+
     def get_global_descriptor(self, variety, corrected=False):
         """Calculate global reactivity descriptors.
         
@@ -3079,16 +3080,25 @@ class XTB:
             descriptor (float): Global reactivity descriptor (eV).
         """
         if variety == "electrophilicity":
-            descriptor = (self.get_ip(corrected=corrected) + self.get_ea(corrected=corrected)) ** 2 / (8 * (self.get_ip(corrected=corrected) - self.get_ea(corrected=corrected)))
+            descriptor = (self.get_ip(corrected=corrected) + \
+                 self.get_ea(corrected=corrected)) ** 2 / \
+                     (8 * (self.get_ip(corrected=corrected) \
+                         - self.get_ea(corrected=corrected)))
         elif variety == "nucleophilicity":
             descriptor = -self.get_ip(corrected=corrected)
         elif variety == "electrofugality":
-            descriptor = (3 * self.get_ip(corrected=corrected) - self.get_ea(corrected=corrected)) ** 2 / (8 * (self.get_ip(corrected=corrected) - self.get_ea(corrected=corrected)))
+            descriptor = (3 * self.get_ip(corrected=corrected) - \
+                self.get_ea(corrected=corrected)) ** 2 / \
+                    (8 * (self.get_ip(corrected=corrected) - \
+                        self.get_ea(corrected=corrected)))
         elif variety == "nucleofugality":
-            descriptor = (self.get_ip(corrected=corrected) - 3 * self.get_ea(corrected=corrected)) ** 2 / (8 * (self.get_ip(corrected=corrected) - self.get_ea(corrected=corrected)))
+            descriptor = (self.get_ip(corrected=corrected) - \
+                3 * self.get_ea(corrected=corrected)) ** 2 / \
+                    (8 * (self.get_ip(corrected=corrected) - \
+                        self.get_ea(corrected=corrected)))
 
         return descriptor
-    
+
     def get_homo(self):
         """Calculate HOMO energy.
         
@@ -3101,7 +3111,27 @@ class XTB:
         homo_energy = eigenvalues[homo_index]
         
         return homo_energy
-    
+
+    def get_ip(self, corrected=False):
+        """Calculate ionization potential.
+        
+        Args:
+            corrected (bool): Apply correction term
+
+        Returns:
+            ip (float): Ionization potential (eV)
+        """
+        # Calculate energies
+        energy_neutral = self._get_energy(0)
+        energy_cation = self._get_energy(1)
+
+        # Calculate ionization potential
+        ip = (energy_cation - energy_neutral) * HARTREE_TO_EV
+        if corrected:
+            ip -= self._ipea_corrections[self._version]
+
+        return ip
+
     def get_lumo(self):
         """Calculate LUMO energy.
         
@@ -3115,31 +3145,28 @@ class XTB:
         lumo_energy = eigenvalues[lumo_index]        
         
         return lumo_energy
+    
+    def _check_results(self, charge_state):
+        if self._results[charge_state] is None:
+            self._sp(charge_state)
+    
+    def _get_eigenvalues(self):
+        self._check_results(0)
+        return self._results[0].get_orbital_eigenvalues()
         
     def _get_energy(self, charge_state=0):
         self._check_results(charge_state)
         return self._results[charge_state].get_energy()
     
-    def _get_eigenvalues(self):
-        self._check_results(0)
-        return self._results[0].get_orbital_eigenvalues()
-    
     def _get_occupations(self):
         self._check_results(0)
         return self._results[0].get_orbital_occupations()   
-    
-    def get_charges(self, charge_state=0):
-        self._check_results(charge_state)
-        return self._results[charge_state].get_charges()
-    
-    def get_bond_orders(self, charge_state=0):
-        self._check_results(charge_state)
-        return self._results[charge_state].get_bond_orders()
-        
+
     def _sp(self, charge_state=0):
         # Set up calculator
-        calc = Calculator(self._params[self._version], self._elements, self._coordinates * ANGSTROM_TO_BOHR,
-                          charge=self._charge + charge_state, uhf=self._n_unpaired)
+        calc = Calculator(self._params[self._version], self._elements,
+            self._coordinates * ANGSTROM_TO_BOHR,
+            charge=self._charge + charge_state, uhf=self._n_unpaired)
         calc.set_verbosity(VERBOSITY_MUTED)
 
         # Set solvent
@@ -3156,7 +3183,3 @@ class XTB:
         # Do singlepoint calculation and store the result
         res = calc.singlepoint()
         self._results[charge_state] = res    
-    
-    def _check_results(self, charge_state):
-        if self._results[charge_state] is None:
-            self._sp(charge_state)

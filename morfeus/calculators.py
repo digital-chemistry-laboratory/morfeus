@@ -24,15 +24,17 @@ _warning_dftd4 = "Install dftd4 and ase python packages for this function."
 
 @conditional(_has_dftd4, _warning_dftd4)
 class D3Grimme:
-    """Calculates C6(AA) and C8(AA) coefficients with the dftd4 program.
+    """Calculates Cᴬᴬ dispersion coefficients with the dftd4 program and a
+    D3-like method.
 
     Args:
         elements (list): Elements as atomic symbols or numbers
         coordinates (list): Coordinates (Å)
+        order (int): Maximum order for the CN coefficients.
 
     Attributes:
-        c6_coefficients (list): C6(AA) coefficients (au)
-        c8_coefficients (list): C8(AA) coefficients (au)
+        c_n_coefficients (dict): Cᴬᴬ coefficients (a.u.)
+        polarizabilities (ndarray): Atomic polarizabilities (a.u.)
     """    
     def __init__(self, elements, coordinates, order=6):
         #if order %
@@ -63,15 +65,17 @@ class D3Grimme:
 
 @conditional(_has_dftd4, _warning_dftd4)
 class D4Grimme:
-    """Calculates dispersion with the D4 method and the dftd4 program.
-
+    """Calculates Cᴬᴬ dispersion coefficients with the D4 method and the dftd4 program.
+    
     Args:
         elements (list): Elements as atomic symbols or numbers
         coordinates (list): Coordinates (Å)
+        order (int): Maximum order for the CN coefficients.
 
     Attributes:
-        c6_coefficients (list): C6(AA) coefficients (au)
-        c8_coefficients (list): C8(AA) coefficients (au)
+        c_n_coefficients (dict): Cᴬᴬ coefficients (a.u.)
+        charges (ndarray): Atomic charges.
+        polarizabilities (ndarray): Atomic polarizabilities (a.u.)
     """        
     def __init__(self, elements, coordinates, order=8, charge=0):
         # Convert elements to atomic numbers
@@ -105,16 +109,18 @@ class D4Grimme:
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
 
 class D3Calculator:
-    """Calculates C6(AA) and C8(AA) coefficients with the D3 method based on
+    """Calculates Cᴬᴬ dispersion coefficients with the D3 method based on
     the procedure in J. Chem. Phys. 2010, 132, 154104.
 
     Args:
         elements (list): Elements as atomic symbols or numbers
         coordinates (list): Coordinates (Å)
+        order (int): Maximum order for the CN coefficients.
 
     Attributes:
-        c6_coefficients (list): C6(AA) coefficients (au)
-        c8_coefficients (list): C8(AA) coefficients (au)
+        c_n_coefficients (dict): Cᴬᴬ coefficients (a.u.)
+        coordination_numbers (ndarray): Atomic coordination numbers.
+        polarizabilities (ndarray): Atomic polarizabilities (a.u.)
     """
     def __init__(self, elements, coordinates, order=8):
         # Convert elements to atomic numbers
@@ -157,7 +163,7 @@ class D3Calculator:
         with open(data_file, "rb") as file:
             c6_reference_data = pickle.load(file)
         
-        # Calculate the C6 coefficients
+        # Calculate the C_N coefficients
         c_n_coefficients = {i: []  for i in range(6, order + 1, 2)}
         for atom in atoms:
             # Get the reference data for atom

@@ -10,8 +10,8 @@ Module
 ******
 
 The XTB class is used to calculate electronic properties. Simple quantities
-such as the ionization potential, electron affinity, HOMO and LUMO energies
-are available as well as the atomic charges and bond orders.
+such as the ionization potential, electron affinity, HOMO, LUMO energies and
+dipole moment are available as well as the atomic charges and bond orders.
 
 .. code-block:: python
   :caption: Example
@@ -32,6 +32,8 @@ are available as well as the atomic charges and bond orders.
   array([-0.42539265,  0.14180091,  0.14179421,  0.14179754])
   >>> xtb.get_bond_order(1, 2)
   0.9786781554103448
+  >>> xtb.get_dipole()
+  array([0.48187417, 0.06877519, 0.55556546])
 
 In addition, global and local descriptors from conceptual density functional
 theory can also be calculated.
@@ -93,7 +95,7 @@ hardness given by
   
   \mu &= - \frac{IP + EA}{2}
 
-  \eta &= \frac{IP - EA}{2}
+  \eta &= IP - EA
 
 
 The Fukui coefficients are calculated calculated via the finite differences
