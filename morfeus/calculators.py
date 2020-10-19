@@ -9,6 +9,7 @@ from scipy.spatial.distance import cdist
 from morfeus.helpers import convert_elements, get_radii, conditional
 from morfeus.geometry import Atom
 from morfeus.data import r2_r4, HARTREE, BOHR, EV, ANGSTROM
+from morfeus.c6_coefficients import c6_reference_data
 
 # Matplotlib is required for plotting steric maps for buried volumes
 try:
@@ -156,12 +157,6 @@ class D3Calculator:
             coordination_number = np.sum(1 / (1 + np.exp(-k_1 * 
                 (k_2 * (cn_atom.radius + radii) / dists - 1))))
             cn_atom.coordination_number = coordination_number
-        
-        # Load the reference data
-        data_file = pkg_resources.resource_filename('morfeus',
-            '../data/c6_reference_data.pickle')
-        with open(data_file, "rb") as file:
-            c6_reference_data = pickle.load(file)
         
         # Calculate the C_N coefficients
         c_n_coefficients = {i: []  for i in range(6, order + 1, 2)}
