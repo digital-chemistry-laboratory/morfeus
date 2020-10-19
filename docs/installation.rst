@@ -19,9 +19,11 @@ Optional depedencies:
 * pyvista_
 * pyvistaqt_
 * vtk_
+* xtb-python_
 
 The optional dependencies are used for 3D visualization and in some of the
-Dispersion descriptor calculations.
+Dispersion descriptor calculations. *xtb* is used for calculation of electronic
+properties.
 
 ***
 pip
@@ -45,4 +47,5 @@ Install with extra graphics functionality:
 .. _pyvista: https://pypi.org/project/pyvista/
 .. _pyvistaqt: https://pypi.org/project/pyvistaqt/
 .. _scipy: https://pypi.org/project/scipy/
-.. _vtk: https://pypi.org/project/vtk/
+.. _vtk:  https://pypi.org/project/vtk/
+.. _xtb-python: https://github.com/grimme-lab/xtb-python

@@ -2,8 +2,8 @@
 XTB
 ===
 
-Electronic parameters can be calculated using thanks to the xtb-python_
-interface at the GFN1-xTB or GFN2-xTB levels.
+Electronic parameters can be calculated at the GFN1-xTB or GFN2-xTB levels
+using the xtb-python_ interface (which needs to be installed). 
 
 ******
 Module
