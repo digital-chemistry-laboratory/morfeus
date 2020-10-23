@@ -7,8 +7,8 @@ from scipy.spatial.distance import cdist
 import scipy.spatial
 
 from morfeus.data import atomic_numbers, atomic_symbols
-from morfeus.data import radii_bondi, radii_crc, radii_rahm
-from morfeus.data import cov_radii_pyykko
+from morfeus.data import (radii_alvarez, radii_bondi, radii_crc, radii_rahm, 
+    radii_truhlar, cov_radii_pyykko)
 
 def check_distances(elements, coordinates, check_atom, radii=[], check_radius=0,
                     exclude_list=[], epsilon=0, radii_type="crc"):
@@ -121,8 +121,8 @@ def get_radii(elements, radii_type="crc", scale=1):
 
     Args:
         elements (list): Elements as atomic symbols or numbers
-        radii_type (str): Type of radius: 'bondi', 'crc' (default), 'rahm' or
-                          'pyykko'
+        radii_type (str): Type of radius: 'bondi', 'crc' (default), 'rahm',
+                          'truhlar' or 'pyykko'
 
     Returns:
         radii (list): vdW radii (Å)
@@ -130,10 +130,12 @@ def get_radii(elements, radii_type="crc", scale=1):
     elements = convert_elements(elements)
 
     # Set up dictionary of radii types
-    radii_choice = {'bondi': radii_bondi,
+    radii_choice = {'alvarez': radii_alvarez,
+                    'bondi': radii_bondi,
                     'crc': radii_crc,
                     'rahm': radii_rahm,
-                    'pyykko': cov_radii_pyykko}
+                    'pyykko': cov_radii_pyykko,
+                    'truhlar': radii_truhlar}
     
     # Get the radii. Replace with 2.0 if it the radius doesn't exist.
     radii = [radii_choice[radii_type].get(element, 2.0) * scale for element in elements]
