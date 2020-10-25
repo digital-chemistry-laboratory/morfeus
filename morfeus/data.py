@@ -213,6 +213,7 @@ jmol_colors = {1: '#ffffff', 2: '#ffc0cb', 3: '#b22222', 4: '#ff1493',
 """dict: Atomic numbers as keys and jmol hexadecimal colors as values."""
 
 ANGSTROM = scipy.constants.angstrom
+K_B = scipy.constants.Boltzmann
 BOHR = scipy.constants.physical_constants["atomic unit of length"][0]
 EV = scipy.constants.eV
 HARTREE = scipy.constants.physical_constants["atomic unit of energy"][0]
@@ -226,4 +227,7 @@ AFU = scipy.constants.physical_constants["atomic unit of force"][0]
 ANGSTROM_TO_BOHR = ANGSTROM / BOHR
 BOHR_TO_ANGSTROM = BOHR / ANGSTROM
 HARTREE_TO_KCAL = HARTREE / KCAL * MOL
+HARTREE_TO_KJ = HARTREE / MOL
 HARTREE_TO_EV = HARTREE / EV
+KCAL_TO_HARTREE = KCAL / MOL / HARTREE
+KJ_TO_HARTREE = MOL / HARTREE

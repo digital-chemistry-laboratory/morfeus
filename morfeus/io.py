@@ -89,6 +89,7 @@ class CubeParser:
         return f"{self.__class__.__name__}({self._filename!r}, " \
             f"{self.S.size!r} points)"
 
+
 class D3Parser:
     """Parses the output of Grimme's D3 program and extracts the C6(AA) and
     C8(AA) coefficients
@@ -129,6 +130,7 @@ class D3Parser:
     
     def __repr__(self):
         return f"{self.__class__.__name__}({self._filename!r})"
+
 
 class D4Parser:
     """Parses the output of Grimme's D4 program and extracts the C6(AA) and
@@ -171,6 +173,7 @@ class D4Parser:
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self._filename!r})"
+
 
 class VertexParser:
     """Parses the contents of a Multiwfn vtx.pdb file and extracts the
@@ -248,6 +251,7 @@ class VertexParser:
         return f"{self.__class__.__name__}({self._filename!r}, " \
         f"{len(self.vertices)!r} points)"
 
+
 def read_gjf(filename):
     """Reads Gaussian gjf/com file and returns elements as they are written in
     the file (either atomic numbers or symbols) as well as coordinates.
@@ -283,6 +287,7 @@ def read_gjf(filename):
             read_counter += 1
     return elements, coordinates
 
+
 def read_xyz(filename):
     """Reads xyz file and returns elements as they are written in the xyz
     file (either atomic numbers or symbols) as well as coordinates.
@@ -314,20 +319,39 @@ def read_xyz(filename):
     
     return elements, coordinates
 
-def write_xyz(xyz_file, elements, coordinates):
+
+def get_xyz_string(symbols, coordinates, comment=""):
+    """Return xyz string.
+
+    Args:
+        comment (str): Comment
+        coordinates (list): Atomic coordinates (Å)
+        symbols (list): Atomic symbols
+    
+    Returns:
+        string (str): XYZ string
+
+    """
+    string = f"{len(symbols)}\n"
+    string += f"{comment}\n"
+    for s, c in zip(symbols, coordinates):
+        string += f"{s:10s}{c[0]:10.5f}{c[1]:10.5f}{c[2]:10.5f}\n"
+
+    return string
+
+
+def write_xyz(xyz_file, elements, coordinates, comment=""):
     """Writes xyz file from elements and coordinates.
     
     Args:
         elements (list): Elements as atomic symbols or numbers
+        comment (str): Comment
         coordinates (list): Coordinates (Å)
     """
     # Convert elements to symbols
     elements = convert_elements(elements, output='symbols')
 
     # Write the xyz file
+    xyz_string = get_xyz_string(elements, coordinates, comment)
     with open(xyz_file, 'w') as file:
-        file.write(f"{len(elements)}\n")
-        file.write("\n")
-        for element, coord in zip(elements, list(coordinates)):
-            file.write(f"{element:10s}{coord[0]:10.6f}" \
-                f"{coord[1]:10.6f}{coord[2]:10.6f}\n")
+        file.write(xyz_string)
