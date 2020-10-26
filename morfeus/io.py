@@ -322,7 +322,7 @@ def read_xyz(filename):
         coordinates.append([float(line[1]), float(line[2]), float(line[3])])
     
     elements = np.array(elements)
-    coordiantes = np.array(coordinates)
+    coordinates = np.array(coordinates)
     
     return elements, coordinates
 

@@ -257,8 +257,10 @@ class ConformerEnsemble:
         # Calculate RMSD. Use spyrmsd with no. heavy atoms < 3 due to unstable
         # performance of spyrmsd.
         if np.sum(self.elements != 1) < 3:
-            molecule_1 = _generate_qcel_molecule(self.elements[mask], conformer_1.coordinates[mask])
-            molecule_2 = _generate_qcel_molecule(self.elements[mask], conformer_2.coordinates[mask])
+            molecule_1 = _generate_qcel_molecule(self.elements[mask],
+                conformer_1.coordinates[mask])
+            molecule_2 = _generate_qcel_molecule(self.elements[mask],
+                conformer_2.coordinates[mask])
             rmsd = molecule_1.align(molecule_2)[1]["rmsd"]
         else:            
             if symmetry:              
@@ -269,7 +271,8 @@ class ConformerEnsemble:
                     self.elements[mask],
                     self.connectivity_matrix[mask,:][:,mask],
                     self.connectivity_matrix[mask,:][:,mask],
-                    center=True, minimize=True
+                    center=True,
+                    minimize=True
                 )
             else:
                 rmsd = spyrmsd.rmsd.rmsd(
@@ -544,7 +547,7 @@ def generate_conformers(smiles, n_confs=None, version=2, optimize=None,
         n_confs (int): Number of conformers to generate. If None, a 
             reasonable number will be set depending on the number of
             rotatable bonds.
-        n_threads (int): Number of threads for force field optimization.
+        n_threads (int): Number of threads.
         optimize (str): Force field used for conformer optimization: 'MMFF',
             'UFF' or None
         prune_rmsd (float): Pruning RMSD threshold (Å).
@@ -554,10 +557,10 @@ def generate_conformers(smiles, n_confs=None, version=2, optimize=None,
         version (int): Version of the experimental torsion-angle preferences.
 
     Returns:
-        conformer_coordinates (ndarray): Coordinates for all conformers (Å)
-        connectivity_matrix (ndarray): Connectivity matrix
         elements (list): Atomic symbols
+        conformer_coordinates (ndarray): Coordinates for all conformers (Å)
         energies (list): Conformer energies (a.u.) 
+        connectivity_matrix (ndarray): Connectivity matrix
     """
     # Generate mol object
     mol = Chem.MolFromSmiles(smiles)
@@ -587,7 +590,8 @@ def generate_conformers(smiles, n_confs=None, version=2, optimize=None,
     AllChem.EmbedMultipleConfs(
         mol, numConfs=n_confs, randomSeed=rdkit_random_seed,
         useSmallRingTorsions=small_rings, useMacrocycleTorsions=macrocycles,
-        ETversion=version, pruneRmsThresh=rdkit_prune_rmsd
+        ETversion=version, pruneRmsThresh=rdkit_prune_rmsd,
+        numThreads=n_threads,
     )
     
     # Optimize with force fields
