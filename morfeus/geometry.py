@@ -4,10 +4,10 @@ import math
 
 import numpy as np
 from scipy.spatial.transform import Rotation
-import scipy.spatial
 
-from morfeus.helpers import convert_elements, get_connectivity_matrix
-from morfeus.data import ANGSTROM_TO_BOHR, cov_radii_pyykko
+from morfeus.helpers import get_connectivity_matrix
+from morfeus.data import ANGSTROM_TO_BOHR
+
 
 class Atom:
     """Atom common for morfeus calculations.
@@ -19,7 +19,7 @@ class Atom:
         radius (float): vdW radius (Å)
 
     Attributes:
-        accessible_points (list): Points accessible to solvent 
+        accessible_points (list): Points accessible to solvent
         area (float): Solvent-accessible surface area (Å**2)
         cone (object): Cone tangent to atom
         coordinates (ndarray): Coordinates (Å)
@@ -45,7 +45,7 @@ class Atom:
         self.point_areas = None
         self.p_values = None
         self.volume = None
-    
+
     def get_cone(self):
         """Construct cone for atom"""
         vector = self.coordinates
@@ -57,6 +57,7 @@ class Atom:
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.index!r})"
+
 
 class Cone:
     """Cone used in cone angle calculations.
@@ -107,6 +108,7 @@ class Cone:
     def __repr__(self):
         atoms = ', '.join([str(atom.index) for atom in self.atoms])
         return f"{self.__class__.__name__}(Tangent atoms: {atoms})"
+
 
 class Sphere:
     """Sphere class for creating and holding points on vdW surface.
@@ -255,11 +257,11 @@ class Sphere:
         # Remove points outside of sphere
         lengths = np.linalg.norm(points, axis=1)
         points = points[lengths <= r]
-        
+
         # Project points onto sphere surface if sphere is empty
         if not filled:
             points = points / np.linalg.norm(points, axis=1).reshape(-1,1) * r
-        
+
         # Adjust with sphere center
         points = points + self.center
 
@@ -269,25 +271,26 @@ class Sphere:
         return (f"{self.__class__.__name__}(center: {self.center}, "
                 f"radius: {self.radius})")
 
+
 class InternalCoordinates:
     def __init__(self):
         self.internal_coordinates = []
-    
+
     def add_bond(self, atom_1, atom_2):
         bond = Bond(atom_1, atom_2)
         if not bond in self.internal_coordinates:
             self.internal_coordinates.append(bond)
-    
+
     def add_angle(self, atom_1, atom_2, atom_3):
         angle = Angle(atom_1, atom_2, atom_3)
         if not angle in self.internal_coordinates:
             self.internal_coordinates.append(angle)
-    
+
     def add_dihedral(self, atom_1, atom_2, atom_3, atom_4):
         dihedral = Dihedral(atom_1, atom_2, atom_3, atom_4)
         if not dihedral in self.internal_coordinates:
             self.internal_coordinates.append(dihedral)
-    
+
     def add_internal_coordinate(self, atoms):
         if len(atoms) == 2:
             self.add_bond(*atoms)
@@ -295,49 +298,53 @@ class InternalCoordinates:
             self.add_angle(*atoms)
         elif len(atoms) == 4:
             self.add_dihedral(*atoms)
-    
+
     def detect_bonds(self, elements, coordinates):
         # Detect bonds based on covalent radii
-        connectivity_matrix = get_connectivity_matrix(elements, coordinates, radii_type="pyykko")
+        connectivity_matrix = get_connectivity_matrix(elements,
+                                                      coordinates,
+                                                      radii_type="pyykko")
         indices = np.where(connectivity_matrix)
 
         bonds = set()
         for i, j in zip(*indices):
             bond = frozenset([i + 1, j + 1])
             bonds.add(bond)
-        
+
         # Add each bond as an internal coordinate
         for bond in bonds:
             i, j = sorted(bond)
             self.add_bond(i, j)
-    
+
     def get_B_matrix(self, coordinates):
         b_vectors = []
         for internal_coordinate in self.internal_coordinates:
             b_vectors.append(internal_coordinate.get_b_vector(coordinates))
         B_matrix = np.vstack(b_vectors)
-        
+
         return B_matrix
-        
+
     def __repr__(self):
-        return (f"{self.__class__.__name__}({len(self.internal_coordinates)} coordinates)")        
+        return (f"{self.__class__.__name__}({len(self.internal_coordinates)} "
+                "coordinates)")
+
 
 class Bond:
     def __init__(self, atom_1, atom_2):
         self.i = atom_1
         self.j = atom_2
         self.atoms = [atom_1, atom_2]
-    
+
     def get_b_vector(self, coordinates):
         i, j = self.i - 1, self.j -1
         v = (coordinates[i] - coordinates[j]) * ANGSTROM_TO_BOHR
         r = np.linalg.norm(v)
         grad  = np.array([v / r, -v / r])
-        
+
         b_vector = np.zeros(coordinates.size)
         b_vector[i * 3:i * 3 + 3] = grad[0]
         b_vector[j * 3:j * 3 + 3] = grad[1]
-        
+
         return b_vector
 
     def __eq__(self, other):
@@ -346,7 +353,7 @@ class Bond:
                    (self.j == other.i or self.j == other.j)
         else:
             return False
-    
+
     def __hash__(self):
         return hash((self.i, self.j))
 
@@ -354,18 +361,20 @@ class Bond:
         atoms = ", ".join(str(i) for i in sorted(self.atoms))
         return (f"{self.__class__.__name__}({atoms})")
 
+
 class Angle:
     def __init__(self, atom_1, atom_2, atom_3):
         self.i = atom_1
         self.j = atom_2
         self.k = atom_3
         self.atoms = [atom_1, atom_2, atom_3]
-    
+
     def get_b_vector(self, coordinates):
         i, j, k = self.i - 1, self.j - 1, self.k - 1
         v_1 = (coordinates[i] - coordinates[j]) * ANGSTROM_TO_BOHR
         v_2 = (coordinates[k] - coordinates[j]) * ANGSTROM_TO_BOHR
-        dot_product = np.dot(v_1, v_2) / (np.linalg.norm(v_1) * np.linalg.norm(v_2))
+        dot_product = np.dot(
+            v_1, v_2) / (np.linalg.norm(v_1) * np.linalg.norm(v_2))
         if dot_product < -1:
             dot_product = -1
         elif dot_product > 1:
@@ -374,24 +383,27 @@ class Angle:
         if abs(phi) > np.pi - 1e-6:
             grad = [
                 (np.pi - phi) / (2 * np.linalg.norm(v_1) ** 2) * v_1,
-                (1 / np.linalg.norm(v_1) - 1 / np.linalg.norm(v_2)) * (np.pi - phi) / (2 * np.linalg.norm(v_1)) * v_1,
+                (1 / np.linalg.norm(v_1) - 1 / np.linalg.norm(v_2)) *
+                (np.pi - phi) / (2 * np.linalg.norm(v_1)) * v_1,
                 (np.pi - phi) / (2 * np.linalg.norm(v_2) ** 2) * v_2,
             ]
         else:
             grad = [
-                1 / np.tan(phi) * v_1 / np.linalg.norm(v_1) ** 2
-                - v_2 / (np.linalg.norm(v_1) * np.linalg.norm(v_2) * np.sin(phi)),
-                (v_1 + v_2) / (np.linalg.norm(v_1) * np.linalg.norm(v_2) * np.sin(phi))
-                - 1 / np.tan(phi) * (v_1 / np.linalg.norm(v_1) ** 2 + v_2 / np.linalg.norm(v_2) ** 2),
-                1 / np.tan(phi) * v_2 / np.linalg.norm(v_2) ** 2
-                - v_1 / (np.linalg.norm(v_1) * np.linalg.norm(v_2) * np.sin(phi)),
+                1 / np.tan(phi) * v_1 / np.linalg.norm(v_1)**2 - v_2 /
+                (np.linalg.norm(v_1) * np.linalg.norm(v_2) * np.sin(phi)),
+                (v_1 + v_2) /
+                (np.linalg.norm(v_1) * np.linalg.norm(v_2) * np.sin(phi)) -
+                1 / np.tan(phi) *
+                (v_1 / np.linalg.norm(v_1)**2 + v_2 / np.linalg.norm(v_2)**2),
+                1 / np.tan(phi) * v_2 / np.linalg.norm(v_2)**2 - v_1 /
+                (np.linalg.norm(v_1) * np.linalg.norm(v_2) * np.sin(phi)),
             ]
-        
+
         b_vector = np.zeros(coordinates.size)
         b_vector[i * 3:i * 3 + 3] = grad[0]
         b_vector[j * 3:j * 3 + 3] = grad[1]
         b_vector[k * 3:k * 3 + 3] = grad[2]
-        
+
         return b_vector
 
     def __eq__(self, other):
@@ -401,7 +413,7 @@ class Angle:
                     self.j == other.j
         else:
             return False
-    
+
     def __hash__(self):
         return hash((self.i, self.j, self.k))
 
@@ -417,7 +429,7 @@ class Dihedral:
         self.l = atom_4
         self.atoms = [atom_1, atom_2, atom_3, atom_4]
 
-    def get_b_vector(self, coordinates):       
+    def get_b_vector(self, coordinates):
         i, j, k, l = self.i - 1, self.j - 1, self.k - 1, self.l - 1
         v_1 = (coordinates[i] - coordinates[j]) * ANGSTROM_TO_BOHR
         v_2 = (coordinates[l] - coordinates[k]) * ANGSTROM_TO_BOHR
@@ -427,7 +439,8 @@ class Dihedral:
         a_2 = v_2 - np.dot(v_2, ew) * ew
         sgn = np.sign(np.linalg.det(np.array([v_2, v_1, w])))
         sgn = sgn or 1
-        dot_product = np.dot(a_1, a_2) / (np.linalg.norm(a_1) * np.linalg.norm(a_2))
+        dot_product = np.dot(
+            a_1, a_2) / (np.linalg.norm(a_1) * np.linalg.norm(a_2))
         if dot_product < -1:
             dot_product = -1
         elif dot_product > 1:
@@ -460,26 +473,26 @@ class Dihedral:
             A = np.dot(v_1, ew) / np.linalg.norm(w)
             B = np.dot(v_2, ew) / np.linalg.norm(w)
             grad = [
-                1 / np.tan(phi) * a_1 / np.linalg.norm(a_1) ** 2
-                - a_2 / (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi)),
-                ((1 - A) * a_2 - B * a_1) / (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi))
-                - 1
-                / np.tan(phi)
-                * ((1 - A) * a_1 / np.linalg.norm(a_1) ** 2 - B * a_2 / np.linalg.norm(a_2) ** 2),
-                ((1 + B) * a_1 + A * a_2) / (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi))
-                - 1
-                / np.tan(phi)
-                * ((1 + B) * a_2 / np.linalg.norm(a_2) ** 2 + A * a_1 / np.linalg.norm(a_1) ** 2),
-                1 / np.tan(phi) * a_2 / np.linalg.norm(a_2) ** 2
-                - a_1 / (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi)),
+                1 / np.tan(phi) * a_1 / np.linalg.norm(a_1)**2 - a_2 /
+                (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi)),
+                ((1 - A) * a_2 - B * a_1) /
+                (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi)) -
+                1 / np.tan(phi) * ((1 - A) * a_1 / np.linalg.norm(a_1)**2 -
+                                   B * a_2 / np.linalg.norm(a_2)**2),
+                ((1 + B) * a_1 + A * a_2) /
+                (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi)) -
+                1 / np.tan(phi) * ((1 + B) * a_2 / np.linalg.norm(a_2)**2 +
+                                   A * a_1 / np.linalg.norm(a_1)**2),
+                1 / np.tan(phi) * a_2 / np.linalg.norm(a_2)**2 - a_1 /
+                (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi)),
             ]
         b_vector = np.zeros(coordinates.size)
         b_vector[i * 3:i * 3 + 3] = grad[0]
         b_vector[j * 3:j * 3 + 3] = grad[1]
         b_vector[k * 3:k * 3 + 3] = grad[2]
         b_vector[l * 3:l * 3 + 3] = grad[3]
-        
-        return b_vector        
+
+        return b_vector
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -559,7 +572,7 @@ def kabsch_rotation_matrix(P, Q, center=True):
 
     # Obtain rotation matrix
     R = V_T.T @ np.array([[1, 0, 0], [0, 1, 0], [0, 0, d]]) @ U.T
-    
+
     return R
 
 def sphere_line_intersection(vector, center, radius):
@@ -596,9 +609,10 @@ def sphere_line_intersection(vector, center, radius):
     elif within_sqrt == 0:
         us = [-b / (2 * a)]
     elif within_sqrt > 0:
-        us = [(-b + math.sqrt(within_sqrt)) / (2 * a), (-b - math.sqrt(within_sqrt)) / (2 * a)]
-    
+        us = [(-b + math.sqrt(within_sqrt)) / (2 * a),
+              (-b - math.sqrt(within_sqrt)) / (2 * a)]
+
     # Calculate intersection points.
     intersection_points = [p_1 + u * (p_2 - p_1) for u in us]
-    
+
     return intersection_points

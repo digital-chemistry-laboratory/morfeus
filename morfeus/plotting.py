@@ -2,36 +2,49 @@
 
 import numpy as np
 
-from morfeus.helpers import conditional
-
-try:
-    import vtk
-    import pyvista as pv
-    _HAS_VTK = True
-except ImportError:
-    _HAS_VTK = False   
-_MSG_VTK = "Install pyvista, pymeshfix and vtk to use this function."
+from morfeus.helpers import requires_dependency
 
 
-@conditional(_HAS_VTK, _MSG_VTK)
-def Arrow_3D(start=[0, 0, 0], direction=[1, 0, 0], length=1, shaft_radius=0.05, shaft_resolution=20, tip_length=0.25, tip_radius=0.1, tip_resolution=20):
+@requires_dependency([("pyvista", "pv")], globals())
+def Arrow_3D(start=[0, 0, 0],
+             direction=[1, 0, 0],
+             length=1,
+             shaft_radius=0.05,
+             shaft_resolution=20,
+             tip_length=0.25,
+             tip_radius=0.1,
+             tip_resolution=20):
     start = np.array(start)
     direction = np.array(direction) / np.linalg.norm(direction)
     cylinder_length = length - tip_length
     cylinder_center = start + length * direction / 2
-    cyl = pv.Cylinder(center=cylinder_center, direction=direction, radius=shaft_radius, height=cylinder_length, resolution=shaft_resolution)
-    
+    cyl = pv.Cylinder(center=cylinder_center,
+                      direction=direction,
+                      radius=shaft_radius,
+                      height=cylinder_length,
+                      resolution=shaft_resolution)
+
     cone_center = start + (cylinder_length + tip_length / 2) * direction
-    cone = Cone_3D(center=cone_center, direction=direction, radius=tip_radius, height=tip_length, resolution=tip_resolution)
+    cone = Cone_3D(center=cone_center,
+                   direction=direction,
+                   radius=tip_radius,
+                   height=tip_length,
+                   resolution=tip_resolution)
     arrow = pv.MultiBlock()
     arrow.append(cyl)
     arrow.append(cone)
-    
+
     return arrow
 
-@conditional(_HAS_VTK, _MSG_VTK)
-def Cone_3D(center=(0., 0., 0.), direction=(1., 0., 0.), height=1.0, radius=None,
-         capping=True, angle=None, resolution=6):
+
+@requires_dependency([("pyvista", "pv"), ("vtk", "vtk")], globals())
+def Cone_3D(center=(0., 0., 0.),
+            direction=(1., 0., 0.),
+            height=1.0,
+            radius=None,
+            capping=True,
+            angle=None,
+            resolution=6):
     """Create a cone
     Parameters
     ----------
@@ -56,7 +69,8 @@ def Cone_3D(center=(0., 0., 0.), direction=(1., 0., 0.), height=1.0, radius=None
     src.SetCenter(center)
     src.SetHeight(height)
     if angle and radius:
-        raise Exception ("Both radius and angle specified. They are mutually exclusive.")
+        raise Exception(
+            "Both radius and angle specified. They are mutually exclusive.")
     elif angle and not radius:
         src.SetAngle(angle)
     elif not angle and radius:

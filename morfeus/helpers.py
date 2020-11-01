@@ -1,15 +1,25 @@
 """Help functions."""
 
+import shutil
+from importlib import import_module
+
 import numpy as np
-from scipy.spatial.distance import cdist
 import scipy.spatial
+from scipy.spatial.distance import cdist
 
-from morfeus.data import atomic_numbers, atomic_symbols
-from morfeus.data import (radii_alvarez, radii_bondi, radii_crc, radii_rahm, 
-    radii_truhlar, cov_radii_pyykko)
+from morfeus.data import (atomic_numbers, atomic_symbols, cov_radii_pyykko,
+                          radii_alvarez, radii_bondi, radii_crc, radii_rahm,
+                          radii_truhlar)
 
-def check_distances(elements, coordinates, check_atom, radii=None,
-    check_radius=0, exclude_list=None, epsilon=0, radii_type="crc"):
+
+def check_distances(elements,
+                    coordinates,
+                    check_atom,
+                    radii=None,
+                    check_radius=0,
+                    exclude_list=None,
+                    epsilon=0,
+                    radii_type="crc"):
     """
     Args:
         elements (list): Elements as atomic symbols or numbers
@@ -23,7 +33,7 @@ def check_distances(elements, coordinates, check_atom, radii=None,
                              1)
         radii (list): vdW radii (Å)
         radii_type (str): Type of radii to use: 'bondi' or 'crc' (default)
-    
+
     Returns:
         within_list (list): List of atoms within vdW distance of check atom.
                             Returns none if list is empty.
@@ -64,32 +74,75 @@ def check_distances(elements, coordinates, check_atom, radii=None,
     else:
         return None
 
-def conditional(condition, msg=None):
-    """Decorator factory to control if packages are present.
+
+def requires_executable(executables):
+    """Decorator factory to control optional executables.
 
     Args:
-        condition (bool): Whether package was imported
-        warning (warning): Warning to print if package cannot be imported
-    
-    Returns:
-        noop_decorator (obj): Decorator that passes the original function
-        neutered_function (obj): Decorator that passes nothing and raises
-            exception.
+        executables (list): Names of executables
 
+    Returns:
+        decorator (function): Either 'noop_decorator' returns the original
+            function or 'error_decorator' which raises an Exception and lists
+            absent executables.
     """
     def noop_decorator(function):
         """Returns function unchanged."""
         return function
 
-    def neutered_function(function):
-        """Returns function that just prints warning"""
-        def neutered(*args, **kw):
-            if msg:
-                raise ImportError(msg)
-            return
-        return neutered
+    def error_decorator(function):
+        """Raises error"""
+        def error(*args, **kwargs):
+            error_msg = "Required executables not found in path:"
+            for exe_error in exe_errors:
+                error_msg += f" {exe_error}"
+            raise Exception(error_msg)
+        return error
 
-    return noop_decorator if condition else neutered_function
+    # Try to find excetubles in path
+    exe_errors = []
+    for executable in executables:
+        if not shutil.which(executable):
+            exe_errors.append(executable)
+
+    return error_decorator if len(exe_errors) > 0 else noop_decorator
+
+
+def requires_dependency(modules, _globals):
+    """Decorator factory to control optional dependencies.
+
+    Args:
+        modules (list): Modules as (module, name) tuple pairs
+        _globals (dict): Global symbol table from calling module.
+
+    Returns:
+        decorator (function): Either 'noop_decorator' returns the original
+            function or 'error_decorator' which raises an ImportError and lists
+            absent dependencies.
+    """
+    def noop_decorator(function):
+        """Returns function unchanged."""
+        return function
+
+    def error_decorator(function):
+        """Raises error"""
+        def error(*args, **kwargs):
+            error_msg = "Install extra requirements to use this function:"
+            for e in import_errors:
+                error_msg += f" {e.name}"
+            raise ImportError(error_msg)
+        return error
+
+    # Try to import dependencies
+    import_errors = []
+    for module, name in modules:
+        try:
+            _globals[name] = import_module(module)
+        except ImportError as import_error:
+            import_errors.append(import_error)
+
+    return error_decorator if len(import_errors) > 0 else noop_decorator
+
 
 def convert_elements(elements, output='numbers'):
     """Converts elements to atomic symbols or numbers.
@@ -108,13 +161,13 @@ def convert_elements(elements, output='numbers'):
 
     if output == "numbers":
         try:
-            elements = [atomic_numbers[element] for 
+            elements = [atomic_numbers[element] for
                                   element in elements]
         except KeyError:
             pass
     if output == "symbols":
         try:
-            elements = [atomic_symbols[element] for 
+            elements = [atomic_symbols[element] for
                                   element in elements]
         except KeyError:
             pass
@@ -141,7 +194,7 @@ def get_radii(elements, radii_type="crc", scale=1):
                     'rahm': radii_rahm,
                     'pyykko': cov_radii_pyykko,
                     'truhlar': radii_truhlar}
-    
+
     # Get the radii. Replace with 2.0 if it the radius doesn't exist.
     radii = [radii_choice[radii_type].get(element, 2.0) * scale for element
         in elements]
@@ -160,4 +213,3 @@ def get_connectivity_matrix(elements, coordinates, radii=[],
         - np.identity(len(elements))
 
     return connectivity_matrix
-

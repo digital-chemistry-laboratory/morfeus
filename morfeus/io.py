@@ -311,20 +311,21 @@ def read_xyz(file):
     elements = []
     coordinates = []
     n_atoms = int(lines[0].strip())
-    for line in lines:
-        strip_line = line.strip().split()
-        if len(strip_line) == 4:
+    line_chunks = zip(*[iter(lines)]*(n_atoms+2))
+    for line_chunk in line_chunks:
+        for line in line_chunk[2:]:
+            strip_line = line.strip().split()
             atom = strip_line[0]
             if atom.isdigit():
                 atom = int(atom)
             elements.append(atom)
             coordinates.append([float(strip_line[1]), float(strip_line[2]),
-                float(strip_line[3])])    
+                float(strip_line[3])])
     elements = np.array(elements)[:n_atoms]
     coordinates = np.array(coordinates).reshape(-1, n_atoms, 3)
     if coordinates.shape[0] == 1:
         coordinates = coordinates[0]
-    
+
     return elements, coordinates
 
 

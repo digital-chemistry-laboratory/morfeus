@@ -13,35 +13,11 @@ import numpy as np
 
 from morfeus.data import (HARTREE, HARTREE_TO_KCAL, HARTREE_TO_KJ, K_B,
                           KCAL_TO_HARTREE, KJ_TO_HARTREE)
-from morfeus.helpers import conditional, convert_elements
+from morfeus.helpers import (
+    convert_elements, requires_dependency, requires_executable)
 from morfeus.io import get_xyz_string
 from morfeus.qc import (_generate_qcel_molecule, optimize_qc_engine,
                         sp_qc_engine)
-
-# Optional dependencies
-try:
-    from openbabel import openbabel as ob, pybel
-    import openbabel
-    _HAS_OPENBABEL = True
-except ImportError:
-    _HAS_OPENBABEL = False
-_MSG_OPENBABEL = "Install OpenBabel to use this function."
-
-try:
-    import rdkit
-    from rdkit import Chem
-    from rdkit.Chem import AllChem
-    _HAS_RDKIT = True
-except ImportError:
-    _HAS_RDKIT = False
-_MSG_RDKIT = "Install RDKit to use this function."
-
-try:
-    import spyrmsd.rmsd
-    _HAS_SPYRMSD = True
-except ImportError:
-    _HAS_SPYRMSD = False
-_MSG_SPYRMSD = "Install spyrmsd to use this function."
 
 
 def boltzmann_average_dT(properties, energies, temperature=298.15):
@@ -381,7 +357,7 @@ class ConformerEnsemble:
 
         return ce
 
-    @conditional(_HAS_RDKIT, _MSG_RDKIT)
+    @requires_dependency([("rdkit.Chem", "Chem")], globals())
     def get_cip_labels(self):
         """Generate tuples of CIP labels for conformer.
 
@@ -843,7 +819,7 @@ class ConformerEnsemble:
         for key, value in properties.items():
             self.set_properties(key, value)
 
-    @conditional(_HAS_OPENBABEL, _MSG_OPENBABEL)
+    @requires_executable(["obrms"])
     def _get_rmsd_obrms_batch(self, i_s, j_s):
         """Calculate RMSD with obrms in batch mode, first calculating the
         matrix of all pairwise RMSDs and then taking out those of interest."""
@@ -859,7 +835,7 @@ class ConformerEnsemble:
         rmsds = rmsds[i_s - 1, :][:, j_s - 1]
         return rmsds
 
-    @conditional(_HAS_OPENBABEL, _MSG_OPENBABEL)
+    @requires_executable(["obrms"])
     def _get_rmsd_obrms_iter(self, i_s, j_s):
         """Calculate RMSD with obrms in iterative row-wise mode for heavy atoms
         and witout symmetry."""
@@ -882,7 +858,7 @@ class ConformerEnsemble:
         rmsds = np.vstack(rmsds)
         return rmsds
 
-    @conditional(_HAS_OPENBABEL, _MSG_OPENBABEL)
+    @requires_dependency([("openbabel.openbabel", "ob")], globals())
     def _get_rmsd_openbabel(self, i_s, j_s, include_hs, symmetry):
         """Calculate RMSD row-wise with openbabel python interface."""
         rmsds = []
@@ -905,7 +881,7 @@ class ConformerEnsemble:
         rmsds = np.array(rmsds)
         return rmsds
 
-    @conditional(_HAS_SPYRMSD, _MSG_SPYRMSD)
+    @requires_dependency([("spyrmsd.rmsd", "spyrmsd.rmsd")], globals())
     def _get_rmsd_spyrmsd(self, i_s, j_s, include_hs, symmetry):
         """Calculate RMSD row-wise with spyrmsd"""
         # Construct mask for H atoms
@@ -965,7 +941,6 @@ class ConformerEnsemble:
             rmsds = np.vstack(rmsds)
         return rmsds
 
-    @conditional(_HAS_RDKIT, _MSG_RDKIT)
     def _reset_mol(self):
         self._mol.RemoveAllConformers()
         conformer_coordinates = self.get_coordinates()
@@ -1029,7 +1004,9 @@ class ConformerEnsemble:
         return f"{self.__class__.__name__}({n_conformers!r} conformers)"
 
 
-@conditional(_HAS_OPENBABEL, _MSG_OPENBABEL)
+@requires_dependency([("openbabel.openbabel", "ob"),
+                      ("openbabel.pybel", "pybel"),
+                      ("openbabel", "openbabel")], globals())
 def generate_conformers_openbabel_ga(
         mol, num_conformers=None, num_children=None, mutability=None,
         convergence=None, score="rmsd", filter_method="steric", cutoff=0.8,
@@ -1133,7 +1110,8 @@ def generate_conformers_openbabel_ga(
             ob_mol)
 
 
-@conditional(_HAS_RDKIT, _MSG_RDKIT)
+@requires_dependency([("rdkit.Chem", "Chem"),
+                      ("rdkit.Chem.AllChem", "AllChem")], globals())
 def generate_conformers_rdkit(
         smiles, n_confs=None, optimize=None, version=2, small_rings=True,
         macrocycles=True, random_seed=None, rmsd_thres=0.35, n_threads=1,
@@ -1233,7 +1211,7 @@ def generate_conformers_rdkit(
             charges, mol)
 
 
-@conditional(_HAS_RDKIT, _MSG_RDKIT)
+@requires_dependency([("rdkit", "rdkit"), ("rdkit.Chem", "Chem")], globals())
 def _add_conformers_to_mol(mol, conformer_coordinates):
     """Add conformers to RDKit Mol object.
 
@@ -1252,7 +1230,7 @@ def _add_conformers_to_mol(mol, conformer_coordinates):
         mol.AddConformer(conformer, assignId=True)
 
 
-@conditional(_HAS_RDKIT, _MSG_RDKIT)
+@requires_dependency([("rdkit.Chem.AllChem", "AllChem")], globals())
 def _add_rotamers_to_mol(mol):
     """Add simple CH₃, NH₂ etc. rotamers to conformers of RDKit Mol object
 
@@ -1271,7 +1249,7 @@ def _add_rotamers_to_mol(mol):
                 AllChem.SetDihedralDeg(conformer, *dihedral, angle + increment)
 
 
-@conditional(_HAS_RDKIT, _MSG_RDKIT)
+@requires_dependency([("rdkit.Chem", "Chem")], globals())
 def _get_dihedrals(mol):
     """Return dihedral which ends in saturated atom of type CH₃, NH₂ etc.
 
@@ -1305,7 +1283,7 @@ def _get_dihedrals(mol):
     return dihedral_indices
 
 
-@conditional(_HAS_OPENBABEL, _MSG_OPENBABEL)
+@requires_dependency([("openbabel.openbabel", "ob")], globals())
 def _get_ob_mol(elements, coordinates, connectivity_matrix, charges=None):
     """Generate OpenBabel OBMol object.
 
@@ -1338,8 +1316,17 @@ def _get_ob_mol(elements, coordinates, connectivity_matrix, charges=None):
                 mol.AddBond(int(i + 1), int(j + 1), int(bo))
     return mol
 
-@conditional(_HAS_RDKIT, _HAS_RDKIT)
+@requires_dependency([("rdkit.Chem", "Chem")], globals())
 def _get_rdkit_mol(elements, coordinates, connectivity_matrix, charges=None):
+    _RDKIT_BOND_TYPES = {
+        1.0: Chem.BondType.SINGLE,
+        1.5: Chem.BondType.AROMATIC,
+        2.0: Chem.BondType.DOUBLE,
+        3.0: Chem.BondType.TRIPLE,
+        4.0: Chem.BondType.QUADRUPLE,
+        5.0: Chem.BondType.QUINTUPLE,
+        6.0: Chem.BondType.HEXTUPLE,
+    }
     if charges is None:
         charges = np.zeros(len(elements))
     elements = convert_elements(elements, output="symbols")
@@ -1367,14 +1354,3 @@ def _get_rdkit_mol(elements, coordinates, connectivity_matrix, charges=None):
     Chem.SanitizeMol(mol)
 
     return mol
-
-
-_RDKIT_BOND_TYPES = {
-    1.0: Chem.BondType.SINGLE,
-    1.5: Chem.BondType.AROMATIC,
-    2.0: Chem.BondType.DOUBLE,
-    3.0: Chem.BondType.TRIPLE,
-    4.0: Chem.BondType.QUADRUPLE,
-    5.0: Chem.BondType.QUINTUPLE,
-    6.0: Chem.BondType.HEXTUPLE,
-}

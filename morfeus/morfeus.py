@@ -1,60 +1,29 @@
 """Classes for performing calculations of steric descriptors of molecules."""
 
 import copy
-import math
 import itertools
-
-# Matplotlib is required for plotting steric maps for buried volumes
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib.colors import hex2color
-    _HAS_MATPLOTLIB = True
-except ImportError:
-    _HAS_MATPLOTLIB = False
-_MSG_MATPLOTLIB = "Install matplotlib to use this function."
+import math
 
 import numpy as np
-from subprocess import Popen, DEVNULL, PIPE
-
-# VTK and PyVista are required for 3D visualization and for generating surfaces
-# for dispersion calculations.
-try:
-    import vtk
-    import pyvista as pv
-    from pyvistaqt import BackgroundPlotter
-    import pymeshfix
-    from morfeus.plotting import Arrow_3D, Cone_3D
-    _HAS_VTK = True
-except ImportError:
-    _HAS_VTK = False
-_MSG_VTK = "Install pyvista, pymeshfix and vtk to use this function."
-
 import scipy.spatial
 from scipy.io import FortranFile
-from scipy.constants import physical_constants
 from scipy.spatial import cKDTree
 from scipy.spatial.distance import cdist, euclidean
 
-try:
-    from xtb.interface import Param, Calculator
-    from xtb.utils import get_solvent
-    from xtb.libxtb import VERBOSITY_MUTED
-    _HAS_XTB = True
-except ImportError:
-    _HAS_XTB = False
-_MSG_XTB = "Install xtb-python to use this function."
-
-from morfeus.data import (atomic_symbols, HARTREE_TO_KCAL, ANGSTROM_TO_BOHR,
-    HARTREE, BOHR, BOHR_TO_ANGSTROM, HARTREE_TO_EV, jmol_colors, atomic_masses,
-    ANGSTROM, DYNE, C, AMU, AFU)
-from morfeus.helpers import check_distances, convert_elements, get_radii
-from morfeus.helpers import conditional, get_connectivity_matrix
 from morfeus.calculators import D3Calculator, D3Grimme, D4Grimme
-from morfeus.geometry import Atom, Cone, rotate_coordinates, Sphere
-from morfeus.geometry import sphere_line_intersection
-from morfeus.geometry import kabsch_rotation_matrix, InternalCoordinates
-from morfeus.geometry import Bond, Angle, Dihedral
+from morfeus.data import (AFU, AMU, ANGSTROM, ANGSTROM_TO_BOHR, BOHR,
+                          BOHR_TO_ANGSTROM, DYNE, HARTREE, HARTREE_TO_EV,
+                          HARTREE_TO_KCAL, C, atomic_masses, atomic_symbols,
+                          jmol_colors)
+from morfeus.geometry import (Angle, Atom, Bond, Cone, Dihedral,
+                              InternalCoordinates, Sphere,
+                              kabsch_rotation_matrix, rotate_coordinates,
+                              sphere_line_intersection)
+from morfeus.helpers import (check_distances, convert_elements,
+                             get_connectivity_matrix, get_radii,
+                             requires_dependency)
 from morfeus.io import CubeParser, D3Parser, D4Parser, VertexParser
+
 
 class Sterimol:
     """Performs and stores results of Sterimol calculation.
@@ -120,20 +89,20 @@ class Sterimol:
                 dummy_atom = atom
             if i == attached_index:
                 attached_atom = atom
-        
+
         # Set up attributes
         self._atoms = atoms
         self._excluded_atoms = set(excluded_atoms)
         self._points = np.array([])
-        
+
         self._dummy_atom = dummy_atom
         self._attached_atom = attached_atom
-        
+
         self.L = None
         self.L_value = None
         self.L_value_uncorrected = None
         self.bond_length = np.linalg.norm(vector_2_to_1)
-        
+
         self.B_1 = None
         self.B_1_value = None
 
@@ -178,11 +147,11 @@ class Sterimol:
 
             new_vectors = []
             for vector, ref_coordinates in [(self.L, atom_1_coordinates), (self.B_1, atom_2_coordinates), (self.B_5, atom_2_coordinates)]:
-                # Get intersection point 
+                # Get intersection point
                 intersection_points = sphere_line_intersection(vector, atom_1_coordinates, sphere_radius)
                 if len(intersection_points) < 1:
                     raise Exception("Sphere so small that vectors don't intersect")
-                
+
                 # Get vector pointing in the right direction
                 trial_vectors = [point - ref_coordinates for point in intersection_points]
                 norm_vector = vector / np.linalg.norm(vector)
@@ -195,22 +164,22 @@ class Sterimol:
                 L = new_vectors[0]
                 L_value = np.linalg.norm(L)
             if np.linalg.norm(self.B_1) > np.linalg.norm(new_vectors[1]):
-                B_1 = new_vectors[1]                
+                B_1 = new_vectors[1]
                 B_1_value = np.linalg.norm(B_1)
             if np.linalg.norm(self.B_5) > np.linalg.norm(new_vectors[2]):
-                B_5 = new_vectors[2]     
+                B_5 = new_vectors[2]
                 B_5_value = np.linalg.norm(B_5)
-            
+
             # Set attributes
             self.L = L
             self.L_value = L_value + 0.40
             self.L_value_uncorrected = L_value
-            
+
             self.B_1 = B_1
             self.B_1_value = B_1_value
-    
+
             self.B_5 = B_5
-            self.B_5_value = B_5_value              
+            self.B_5_value = B_5_value
         elif method == "slice":
             # Remove points outside of sphere
             distances = cdist(self._dummy_atom.coordinates.reshape(1, -1), self._points).reshape(-1)
@@ -220,10 +189,10 @@ class Sterimol:
             self.calculate()
         else:
             raise Exception("Please specify valid method for burying.")
-        
+
         # Set attributes
         self._sphere_radius = sphere_radius
-    
+
     def surface_from_radii(self, density=0.01):
         # Calculate vdW surface for all active atoms
         elements = []
@@ -239,9 +208,9 @@ class Sterimol:
         radii = radii
         sasa = SASA(elements, coordinates, radii=radii, density=density,
                     probe_radius=0)
-        
+
         # Take out points of vdW surface
-        points = np.vstack([atom.accessible_points for atom in sasa._atoms 
+        points = np.vstack([atom.accessible_points for atom in sasa._atoms
                             if atom.index not in self._excluded_atoms and
                             atom.accessible_points.size > 0])
         self._points = points
@@ -273,7 +242,7 @@ class Sterimol:
         L_value = np.max(projected) + bond_length
         L = unit_vector * L_value
         L = L.reshape(-1)
-        
+
         # Get rotation vectors in yz plane
         r = 1
         theta = np.linspace(0, 2 * math.pi, self._n_rot_vectors)
@@ -281,7 +250,7 @@ class Sterimol:
         y = r * np.cos(theta)
         z = r * np.sin(theta)
         rot_vectors = np.column_stack((x, y, z))
-    
+
         # Project coordinates onto rotation vectors
         if not len(self._points) > 0:
             c_values = np.dot(rot_vectors, coordinates.T)
@@ -289,11 +258,11 @@ class Sterimol:
         else:
             projected = np.dot(rot_vectors, self._points.T)
         max_c_values = np.max(projected, axis=1)
-    
+
         # Determine B1 and B5 from the smallest and largest scalar projections
         B_1_value = np.min(max_c_values)
         B_1 = rot_vectors[np.argmin(max_c_values)] * B_1_value
-    
+
         B_5_value = np.max(max_c_values)
         B_5 = rot_vectors[np.argmax(max_c_values)] * B_5_value
 
@@ -301,12 +270,12 @@ class Sterimol:
         self.L = L
         self.L_value = L_value + 0.40
         self.L_value_uncorrected = L_value
-        
+
         self.B_1 = B_1
         self.B_1_value = B_1_value
 
         self.B_5 = B_5
-        self.B_5_value = B_5_value    
+        self.B_5_value = B_5_value
 
     def print_report(self, verbose=False):
         """Prints the values of the Sterimol parameters.
@@ -326,8 +295,9 @@ class Sterimol:
             print(f"{self.L_value:<10.2f}{self.B_1_value:<10.2f}"
                   f"{self.B_5_value:<10.2f}")
 
-    @conditional(_HAS_VTK, _MSG_VTK)
-    @conditional(_HAS_MATPLOTLIB, _MSG_MATPLOTLIB) 
+    @requires_dependency(
+        [("matplotlib.colors.hex2color", "hex2color"), ("pyvista", "pv"),
+         ("pyvistaqt.BacgkgroundPlotter", "BackgroundPlotter")], globals())
     def draw_3D(self, atom_scale=0.5, background_color="white",
                 arrow_color="steelblue"):
         """Draw a 3D representation of the molecule with the Sterimol vectors.
@@ -351,8 +321,11 @@ class Sterimol:
                 opacity = 0.25
             else:
                 opacity = 1
-            p.add_mesh(sphere, color=color, opacity=opacity, name=str(atom.index))
-        
+            p.add_mesh(sphere,
+                       color=color,
+                       opacity=opacity,
+                       name=str(atom.index))
+
         # Draw sphere for Buried Sterimol
         if self._sphere_radius:
             sphere = pv.Sphere(
@@ -360,32 +333,32 @@ class Sterimol:
                 radius=self._sphere_radius
                 )
             p.add_mesh(sphere, opacity=0.25)
-        
+
         if len(self._points) > 0:
             p.add_points(self._points, color="gray")
-        
+
         # Get arrow starting points
         start_L = self._dummy_atom.coordinates
         start_B = self._attached_atom.coordinates
 
-        # Add L arrow with label 
+        # Add L arrow with label
         length = np.linalg.norm(self.L)
         direction = self.L / length
-        stop_L = start_L + length * direction 
+        stop_L = start_L + length * direction
         L_arrow = Arrow_3D(start=start_L, direction=direction, length=length)
         p.add_mesh(L_arrow, color=arrow_color)
 
         # Add B_1 arrow
         length = np.linalg.norm(self.B_1)
         direction = self.B_1 / length
-        stop_B_1 = start_B + length * direction 
+        stop_B_1 = start_B + length * direction
         B_1_arrow = Arrow_3D(start=start_B, direction=direction, length=length)
         p.add_mesh(B_1_arrow, color=arrow_color)
 
         # Add B_5 arrow
         length = np.linalg.norm(self.B_5)
         direction = self.B_5 / length
-        stop_B_5 = start_B + length * direction 
+        stop_B_5 = start_B + length * direction
         B_5_arrow = Arrow_3D(start=start_B, direction=direction, length=length)
         p.add_mesh(B_5_arrow, color=arrow_color)
 
@@ -394,7 +367,7 @@ class Sterimol:
         labels = ["L", "B1", "B5"]
         p.add_point_labels(points, labels, text_color="black", font_size=30,
                            bold=False, show_points=False, point_size=1)
-        
+
         self._plotter = p
 
     def __repr__(self):
@@ -473,10 +446,10 @@ class BuriedVolume:
         if len(z_axis_atoms) > 0 and len(xz_plane_atoms) > 0:
             z_axis_coordinates = coordinates[np.array(z_axis_atoms) - 1]
             z_point = np.mean(z_axis_coordinates, axis=0)
-    
+
             xz_plane_coordinates = coordinates[np.array(xz_plane_atoms) - 1]
             xz_point = np.mean(xz_plane_coordinates, axis=0)
-    
+
             v_1 = z_point - center
             v_2 = xz_point - center
             v_3 = np.cross(v_2, v_1)
@@ -522,7 +495,7 @@ class BuriedVolume:
         # Set variables for outside access and function access.
         self._atoms = atoms
         self._excluded_atoms = set(excluded_atoms)
-    
+
         # Compute buried volume
         self._compute_buried_volume(center=center, radius=radius,
                                     density=density)
@@ -536,7 +509,7 @@ class BuriedVolume:
 
         self.octants = {}
         self.quadrants = {}
-    
+
     def octant_analysis(self):
         """Perform octant analysis of the buried volume."""
         # Set up limits depending on the sphere radius
@@ -583,7 +556,7 @@ class BuriedVolume:
         self.octants["percent_buried_volume"] = percent_buried_volume
         self.octants["buried_volume"] = buried_volume
         self.octants["free_volume"] = free_volume
-        
+
         # Do quadrant analysis
         percent_buried_volume = {}
         buried_volume = {}
@@ -621,9 +594,9 @@ class BuriedVolume:
         self.free_volume = sphere.volume - self.buried_volume
         self._sphere = sphere
         self._buried_points = buried_points
-        self._free_points = free_points        
-    
-    def compute_distal_volume(self, method="sasa", octants=False, 
+        self._free_points = free_points
+
+    def compute_distal_volume(self, method="sasa", octants=False,
                               sasa_density=0.01):
         """Computes the distal volume. Uses either SASA or Buried volume with
         large radius to calculate the molecular volume.
@@ -648,7 +621,7 @@ class BuriedVolume:
             coordinates = np.vstack(coordinates)
             sasa = SASA(elements, coordinates, radii=radii, probe_radius=0.0,
                         density=sasa_density)
-            self.molecular_volume = sasa.volume                        
+            self.molecular_volume = sasa.volume
 
             # Calculate distal volume
             self.distal_volume = self.molecular_volume - self.buried_volume
@@ -674,7 +647,7 @@ class BuriedVolume:
             self.distal_volume = self.molecular_volume - self.buried_volume
             if octants:
                 temp_bv.octant_analysis()
-                # Octant analysis 
+                # Octant analysis
                 distal_volume = {}
                 molecular_volume = {}
                 for name in self.octants["buried_volume"].keys():
@@ -682,7 +655,7 @@ class BuriedVolume:
                     distal_volume[name] = temp_bv.octants["buried_volume"][name] - self.octants["buried_volume"][name]
                 self.octants["distal_volume"] = distal_volume
                 self.octants["molecular_volume"] = molecular_volume
-                
+
                 # Quadrant analyis
                 distal_volume = {}
                 molecular_volume = {}
@@ -693,8 +666,8 @@ class BuriedVolume:
                 self.quadrants["molecular_volume"] = molecular_volume
         else:
             raise Exception("Provide valid method.")
-    
-    @conditional(_HAS_MATPLOTLIB, _MSG_MATPLOTLIB)
+
+    @requires_dependency([("matplotlib.pyplot", "plt")], globals())
     def plot_steric_map(self, z_axis_atoms, filename=None, levels=150, grid=100,
                         all_positive=True, cmap="viridis"):
         """Plots a steric map as in the original article.
@@ -756,14 +729,15 @@ class BuriedVolume:
             if z_list:
                 z_max = max(z_list)
                 # Test if point is inside the sphere. Points with positive z
-                # values are included by default anyway in accordance to article
+                # values are included by default anyway in accordance to
+                # article
                 if all_positive:
                     if z_max < 0:
                         if np.linalg.norm(np.array([x, y, z_max])) >= r:
                             z_max = np.nan
                 else:
-                        if np.linalg.norm(np.array([x, y, z_max])) >= r:
-                            z_max = np.nan
+                    if np.linalg.norm(np.array([x, y, z_max])) >= r:
+                        z_max = np.nan
             else:
                 z_max = np.nan
             z.append(z_max)
@@ -774,7 +748,7 @@ class BuriedVolume:
         # Plot surface
         fig, ax = plt.subplots()
         cf = ax.contourf(x_, y_, z, levels, cmap=cmap)
-        circle = plt.Circle((0,0), r, fill=False)
+        circle = plt.Circle((0, 0), r, fill=False)
         ax.add_patch(circle)
         plt.xlabel("x (Å)")
         plt.ylabel("y (Å)")
@@ -792,10 +766,16 @@ class BuriedVolume:
         """Prints a report of the buried volume for use in shell scripts"""
         print("V_bur (%):", round(self.buried_volume * 100, 1))
 
-    @conditional(_HAS_VTK, _MSG_VTK)
-    @conditional(_HAS_MATPLOTLIB, _MSG_MATPLOTLIB) 
-    def draw_3D(self, atom_scale=1, background_color="white",
-                buried_color="tomato", free_color="steelblue", opacity=0.05,
+    @requires_dependency([("matplotlib.colors.hex2color", "hex2color"),
+                          ("pyvista", "pv"),
+                          ("pyvistaqt.BackgroundPlotter", "BackgroundPloter")],
+                         globals())
+    def draw_3D(self,
+                atom_scale=1,
+                background_color="white",
+                buried_color="tomato",
+                free_color="steelblue",
+                opacity=0.05,
                 size=1):
         """Draw a 3D representation of the molecule with the buried and free
         points.
@@ -819,7 +799,7 @@ class BuriedVolume:
             sphere = pv.Sphere(center=list(atom.coordinates),
                                radius=radius)
             p.add_mesh(sphere, color=color, opacity=1, name=str(atom.index))
-        
+
         # Add buried points
         p.add_points(self._buried_points, color=buried_color, opacity=opacity,
                      point_size=size)
@@ -837,7 +817,7 @@ class BuriedVolume:
                 y = np.array(limits)[2:4][np.argmax(np.abs(limits[2:4]))]
                 z = np.array(limits)[4:][np.argmax(np.abs(limits[4:]))]
                 p.add_point_labels(np.array([x, y, z]), [self.octant_signs[name]], text_color="black")
-        
+
         self._plotter = p
 
     def __repr__(self):
@@ -862,7 +842,7 @@ class SASA:
         atom_volumes (dict): Atom volumes (starting from 1)
         volume (float): Volume of the solvent accessible surface.
     """
-    def __init__(self, elements, coordinates, radii=[], radii_type="crc", 
+    def __init__(self, elements, coordinates, radii=[], radii_type="crc",
                  probe_radius=1.4, density=0.01):
         # Converting elements to atomic numbers if the are symbols
         elements = convert_elements(elements)
@@ -870,18 +850,18 @@ class SASA:
         # Getting radii if they are not supplied
         if not radii:
             radii = get_radii(elements, radii_type=radii_type)
-        
+
         # Increment the radii with the probe radius
         radii = np.array(radii)
         radii = radii + probe_radius
-              
+
         # Construct list of atoms
         atoms = []
         for i, (coordinate, radius, element) in \
                 enumerate(zip(coordinates, radii, elements), start=1):
             atom = Atom(element, coordinate, radius, i)
             atoms.append(atom)
-        
+
         # Determine occluded and accessible points of each atom based on
         # distances to all other atoms (brute force)
         for atom in atoms:
@@ -913,7 +893,7 @@ class SASA:
 
                 atom.occluded_points = sphere.points[min_distances < 0]
                 atom.accessible_points = sphere.points[min_distances >= 0]
-            else: 
+            else:
                 atom.accessible_points = sphere.points
                 atom.occluded_points = np.empty(0)
 
@@ -927,11 +907,11 @@ class SASA:
             # Calculate part occluded and accessible
             ratio_occluded = n_occluded / n_points
             ratio_accessible = 1 - ratio_occluded
-            
+
             # Calculate area
             area = 4 * np.pi * atom.radius ** 2 * ratio_accessible
             atom.area = area
-            
+
             # Center accessible points around origin
             centered_points = np.array(atom.accessible_points) \
                               - atom.coordinates
@@ -940,20 +920,20 @@ class SASA:
             accessible_summed = np.sum(centered_points, axis=0)
 
             # Calculate volume
-            volume = (4 * np.pi / 3 / n_points) * (atom.radius * 
+            volume = (4 * np.pi / 3 / n_points) * (atom.radius *
                       np.dot(atom.coordinates, accessible_summed)
                       + atom.radius ** 3 * n_accesible)
             atom.volume = volume
 
         # Set up attributes
-        self._probe_radius = probe_radius 
+        self._probe_radius = probe_radius
         self.atom_areas = {atom.index: atom.area for atom in atoms}
         self.atom_volumes = {atom.index: atom.volume for atom in atoms}
         self.area = sum([atom.area for atom in atoms])
         self.volume = sum([atom.volume for atom in atoms])
         self._atoms = atoms
         self._density = density
-       
+
     def print_report(self, verbose=False):
         """Print report of results
 
@@ -970,8 +950,9 @@ class SASA:
                 symbol = atomic_symbols[atom.element]
                 print(f"{symbol:<10s}{i:<10d}{area:<10.1f}")
 
-    @conditional(_HAS_VTK, _MSG_VTK)
-    @conditional(_HAS_MATPLOTLIB, _MSG_MATPLOTLIB) 
+    @requires_dependency(
+        [("matplotlib.colors.hex2color", "hex2color"), ("pyvista", "pv"),
+         ("pyvistaqt.BacgkgroundPlotter", "BackgroundPlotter")], globals())
     def draw_3D(self, atom_scale=1, background_color="white",
                 point_color="steelblue", opacity=0.25, size=1):
         """Draw a 3D representation of the molecule with the solvent accessible
@@ -995,13 +976,13 @@ class SASA:
             sphere = pv.Sphere(center=list(atom.coordinates),
                                radius=radius)
             p.add_mesh(sphere, color=color, opacity=1, name=str(atom.index))
-        
+
         # Draw surface points
-        surface_points = np.vstack([atom.accessible_points 
+        surface_points = np.vstack([atom.accessible_points
                                     for atom in self._atoms])
         p.add_points(surface_points, color=point_color, opacity=opacity,
                      point_size=size)
-        
+
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
 
@@ -1055,7 +1036,7 @@ class ConeAngle:
         cone = self._search_one_cones()
 
         # Prune out atoms that lie in the shadow of another atom's cone
-        if not cone:  
+        if not cone:
             loop_atoms = list(atoms)
             remove_atoms = set()
             for cone_atom in loop_atoms:
@@ -1074,7 +1055,7 @@ class ConeAngle:
         # Search for cones over triples of atoms
         if not cone:
             cone = self._search_three_cones()
-        
+
         # Set attributes
         if cone:
             self._cone = cone
@@ -1085,7 +1066,7 @@ class ConeAngle:
 
     def print_report(self):
         """Prints report of results"""
-        tangent_atoms = [atom for atom in self._atoms 
+        tangent_atoms = [atom for atom in self._atoms
                          if atom.index in self.tangent_atoms]
         tangent_labels = [f'{atomic_symbols[atom.element]}{atom.index}' \
                         for atom in tangent_atoms]
@@ -1291,12 +1272,12 @@ class ConeAngle:
         p2 = (A - B)**2 + 4 * C**2
         p1 = 2 * (A - B) * (A + B - 2 * D)
         p0 = (A + B - 2 * D)**2 - 4 * C**2
-        
+
         roots = np.roots([p2, p1, p0])
         roots = np.real_if_close(roots, tol=1e10)
         roots[np.isclose(roots, 1, rtol=1e-9, atol=0.0)] = 1
         roots[np.isclose(roots, -1, rtol=1e-9, atol=0.0)] = -1
-        
+
         cos_roots = [math.acos(roots[0]), 2 * np.pi - math.acos(roots[0]),
                      math.acos(roots[1]), 2 * np.pi - math.acos(roots[1])]
 
@@ -1310,7 +1291,7 @@ class ConeAngle:
             D_test = abs(test - D)
             angles.append(alpha)
             D_tests.append(D_test)
-        angles = np.array(angles)                
+        angles = np.array(angles)
         D_tests = np.array(D_tests)
         physical_angles = angles[np.argsort(D_tests)][:2]
 
@@ -1318,9 +1299,9 @@ class ConeAngle:
         cones = []
         for alpha in physical_angles:
             # Calculate normal vector
-            a_ij = (math.cos(alpha - beta_i) - math.cos(alpha - beta_j) 
+            a_ij = (math.cos(alpha - beta_i) - math.cos(alpha - beta_j)
                     * math.cos(beta_ij)) / math.sin(beta_ij)**2
-            b_ij = (math.cos(alpha - beta_j) - math.cos(alpha - beta_i) 
+            b_ij = (math.cos(alpha - beta_j) - math.cos(alpha - beta_i)
                     * math.cos(beta_ij)) / math.sin(beta_ij)**2
             c_ij_squared = 1 - a_ij**2 - b_ij**2 \
                            - 2 * a_ij * b_ij * math.cos(beta_ij)
@@ -1341,8 +1322,9 @@ class ConeAngle:
 
         return cones
 
-    @conditional(_HAS_VTK, _MSG_VTK)
-    @conditional(_HAS_MATPLOTLIB, _MSG_MATPLOTLIB) 
+    @requires_dependency(
+        [("matplotlib.colors.hex2color", "hex2color"), ("pyvista", "pv"),
+         ("pyvistaqt.BacgkgroundPlotter", "BackgroundPlotter")], globals())
     def draw_3D(self, atom_scale=1, background_color="white",
                 cone_color="steelblue", cone_opacity=0.75):
         """Draw a 3D representation of the molecule with the cone.
@@ -1364,13 +1346,13 @@ class ConeAngle:
             sphere = pv.Sphere(center=list(atom.coordinates),
                                radius=radius)
             p.add_mesh(sphere, color=color, opacity=1, name=str(atom.index))
-        
+
         # Determine direction and extension of cone
         cone_angle = math.degrees(self._cone.angle)
         coordinates = np.array([atom.coordinates for atom in self._atoms])
         radii = np.array([atom.radius for atom in self._atoms])
         if cone_angle > 180:
-            normal = - self._cone.normal 
+            normal = - self._cone.normal
         else:
             normal = self._cone.normal
         projected = np.dot(normal, coordinates.T) + np.array(radii)
@@ -1378,10 +1360,10 @@ class ConeAngle:
         max_extension = np.max(projected)
         if cone_angle > 180:
             max_extension += 1
-        
+
         # Make the cone
         cone = Cone_3D(center=[0, 0, 0] + (max_extension * normal) / 2,
-                       direction=-normal, angle=cone_angle, 
+                       direction=-normal, angle=cone_angle,
                        height=max_extension, capping=False, resolution=100)
         p.add_mesh(cone, opacity=cone_opacity, color=cone_color)
 
@@ -1433,32 +1415,32 @@ class Dispersion:
         # Check that only excluded or included atoms are given
         if len(excluded_atoms) > 0 and len(included_atoms) > 0:
             raise Exception("Give either excluded or included atoms but not both.")
-        
+
         # Set excluded atoms
         all_atoms = set(range(1, len(elements) + 1))
         if len(included_atoms) > 0:
             included_atoms = set(included_atoms)
             excluded_atoms = list(all_atoms - included_atoms)
-            
+
         self._excluded_atoms = excluded_atoms
 
         # Set up
         self._surface = None
         self._density = None
-        
+
         # Converting elements to atomic numbers if the are symbols
         elements = convert_elements(elements)
-        
+
         # Getting radii if they are not supplied
         if not radii:
             radii = get_radii(elements, radii_type=radii_type)
-            
+
         # Get vdW surface if requested
-        if point_surface:  
+        if point_surface:
             sasa = SASA(elements, coordinates, radii=radii, density=density,
                         probe_radius=0)
             self._atoms = sasa._atoms
-            self.area = sum([atom.area for atom in self._atoms 
+            self.area = sum([atom.area for atom in self._atoms
                              if atom.index not in excluded_atoms])
             self.atom_areas = sasa.atom_areas
             self.volume = sum([atom.volume for atom in self._atoms
@@ -1484,19 +1466,19 @@ class Dispersion:
             atoms = []
             for i, (element, coord, radius) in \
                         enumerate(zip(elements, coordinates, radii), start=1):
-                    atom = Atom(element, coord, radius, i)
-                    atoms.append(atom)
+                atom = Atom(element, coord, radius, i)
+                atoms.append(atom)
             self._atoms = atoms
-        
+
         # Calculate coefficients
         if compute_coefficients:
             self.compute_coefficients(model='id3')
-        
+
         # Calculatte P_int values
         if point_surface and compute_coefficients:
             self.compute_p_int()
 
-    @conditional(_HAS_VTK, _MSG_VTK)
+    @requires_dependency([("pyvista", "pv")], globals())
     def surface_from_cube(self, filename, isodensity=0.001,
                               method="flying_edges"):
         """Adds an isodensity surface from a Gaussian cube file.
@@ -1519,12 +1501,13 @@ class Dispersion:
         self.grid = grid
 
         # Contour and process the surface
-        surface = self._contour_surface(grid, method=method, 
+        surface = self._contour_surface(grid, method=method,
                                         isodensity=isodensity)
         self._surface = surface
         self._process_surface()
-    
-    @conditional(_HAS_VTK, _MSG_VTK)
+
+    @requires_dependency([("pymeshfix", "pymeshfix"), ("pyvista", "pv")],
+                         globals())
     def surface_from_multiwfn(self, filename, fix_mesh=True):
         """Adds surface from Multiwfn vertex file with connectivity information.
 
@@ -1537,7 +1520,7 @@ class Dispersion:
         vertices = np.array(parser.vertices)
         faces = np.array(parser.faces)
         faces = np.insert(faces, 0, values=3, axis=1)
-        
+
         # Construct surface and fix it with pymeshfix
         surface = pv.PolyData(vertices, faces, show_edges=True)
         if fix_mesh:
@@ -1548,13 +1531,12 @@ class Dispersion:
         # Process surface
         self._surface = surface
         self._process_surface()
-   
-    @conditional(_HAS_VTK, _MSG_VTK)
+
     def _process_surface(self):
         """Extracts face center points and assigns these to atoms based on
         proximity
         """
-         # Get the area and volume
+        # Get the area and volume
         self.area = self._surface.area
         self.volume = self._surface.volume
 
@@ -1564,11 +1546,11 @@ class Dispersion:
         kd_tree = cKDTree(coordinates)
         _, point_regions = kd_tree.query(points, k=1)
         point_regions = point_regions + 1
-        
-        # Compute faces areas 
+
+        # Compute faces areas
         area_data = self._surface.compute_cell_sizes()
         areas = np.array(area_data.cell_arrays["Area"])
-        
+
         # Assign face centers and areas to atoms
         atom_areas = {}
         for atom in self._atoms:
@@ -1577,13 +1559,13 @@ class Dispersion:
             atom.area = np.sum(point_areas)
             atom.point_areas = point_areas
             atom_areas[atom.index] = atom.area
-        
+
         # Set up attributes
         self.atom_areas = atom_areas
         self._point_areas = areas
-        self._point_map = point_regions       
-    
-    @conditional(_HAS_VTK, _MSG_VTK)
+        self._point_map = point_regions
+
+    @requires_dependency([("pyvista", "pv"), ("vtk", "vtk")], globals())
     @staticmethod
     def _contour_surface(grid, method="flying_edges", isodensity=0.001):
         """
@@ -1601,7 +1583,7 @@ class Dispersion:
             contour_filter = vtk.vtkFlyingEdges3D()
         elif method == "contour":
             contour_filter = vtk.vtkContourFilter()
-        
+
         # Run the contour filter
         isodensity = isodensity
         contour_filter.SetInputData(grid)
@@ -1610,7 +1592,7 @@ class Dispersion:
         surface = contour_filter.GetOutput()
         surface = pv.wrap(surface)
 
-        return surface        
+        return surface
 
     def compute_p_int(self, points=[]):
         """Compute P_int values for surface or points.
@@ -1622,7 +1604,7 @@ class Dispersion:
         points = np.array(points)
 
         # Set up atoms and coefficients that are part of the calculation
-        atom_indices = np.array([atom.index - 1 for atom in self._atoms 
+        atom_indices = np.array([atom.index - 1 for atom in self._atoms
                         if atom.index not in self._excluded_atoms])
         coordinates = np.array([atom.coordinates for atom in self._atoms])
         coordinates = coordinates[atom_indices]
@@ -1632,16 +1614,16 @@ class Dispersion:
 
         # Take surface points if none are given
         if points.size == 0:
-            points = np.vstack([atom.accessible_points for atom in self._atoms 
+            points = np.vstack([atom.accessible_points for atom in self._atoms
                                 if atom.index not in self._excluded_atoms and
                                 atom.accessible_points.size > 0])
             atomic = True
 
         # Calculate p_int for each point
         dist = cdist(points, coordinates) * ANGSTROM_TO_BOHR
-        p = sum([np.sum(np.sqrt(coefficients / (dist ** order)), axis=1) for order, coefficients in c_n_coefficients.items()])        
+        p = sum([np.sum(np.sqrt(coefficients / (dist ** order)), axis=1) for order, coefficients in c_n_coefficients.items()])
         self.p_values = p
-    
+
         # Take out atomic p_ints if no points are given
         if atomic:
             atom_p_max = {}
@@ -1657,7 +1639,7 @@ class Dispersion:
                         atom.p_values = atom_ps
                         atom_p_max[atom.index] = np.max(atom_ps)
                         atom_p_min[atom.index] = np.min(atom_ps)
-                        atom_p_int[atom.index] = np.sum(atom_ps * 
+                        atom_p_int[atom.index] = np.sum(atom_ps *
                             atom.point_areas / atom.area)
                         i_start = i_stop
                     else:
@@ -1673,7 +1655,7 @@ class Dispersion:
                                         atom_indices + 1)]
         self.p_int = np.sum(p * point_areas / self.area)
 
-        # Calculate p_min and p_max with slight modification to Robert's 
+        # Calculate p_min and p_max with slight modification to Robert's
         # definitions
         self.p_min = np.min(p)
         self.p_max = np.max(p)
@@ -1685,7 +1667,7 @@ class Dispersion:
                 if atom.index not in self._excluded_atoms:
                     mapped_p[self._point_map == atom.index] = atom.p_values
             self._surface.cell_arrays['p_int'] = mapped_p
-        
+
         # Store points for later use
         self._points = points
 
@@ -1695,11 +1677,11 @@ class Dispersion:
 
         Args:
             model (str): Calculation model: 'id3'. 'gd3' or 'gd4'
-        """       
+        """
         # Set up atoms and coordinates
         elements = [atom.element for atom in self._atoms]
-        coordinates = [atom.coordinates for atom in self._atoms]        
-        
+        coordinates = [atom.coordinates for atom in self._atoms]
+
         # Calculate  D3 values with internal model
         if model =="id3":
             calc = D3Calculator(elements, coordinates, order=order)
@@ -1708,7 +1690,7 @@ class Dispersion:
         if model =="gd3":
             calc = D3Grimme(elements, coordinates, order=order)
             self._c_n_coefficients = calc.c_n_coefficients
-        # Calculate the D4 values with dftd4     
+        # Calculate the D4 values with dftd4
         if model =="gd4":
             calc = D4Grimme(elements, coordinates, order=order, charge=charge)
             self._c_n_coefficients = calc.c_n_coefficients
@@ -1734,7 +1716,7 @@ class Dispersion:
             parser = D4Parser(filename)
             self._c_n_coefficients = {}
             self._c_n_coefficients[6] = parser.c6_coefficients
-            self._c_n_coefficients[8] = parser.c8_coefficients          
+            self._c_n_coefficients[8] = parser.c8_coefficients
 
     def print_report(self, verbose=False):
         """Print report of results
@@ -1751,7 +1733,6 @@ class Dispersion:
                 symbol = atomic_symbols[atom.element]
                 print(f"{symbol:<10s}{i:<10d}{p_int:<10.1f}")
 
-    @conditional(_HAS_VTK, _MSG_VTK)
     def save_vtk(self, filename):
         """Save surface as .vtk file
 
@@ -1760,8 +1741,10 @@ class Dispersion:
         """
         self._surface.save(filename)
 
-    @conditional(_HAS_VTK, _MSG_VTK)
-    @conditional(_HAS_MATPLOTLIB, _MSG_MATPLOTLIB)
+    @requires_dependency([("matplotlib.colors.hex2color", "hex2color"),
+                          ("pyvista", "pv"),
+                          ("pyvistaqt.BackgroundPlotter", "BackgroundPloter")],
+                         globals())
     def draw_3D(self, opacity=1, display_p_int=True, molecule_opacity=1,
                 atom_scale=1):
         """Draw surface with mapped P_int values.
@@ -1782,7 +1765,7 @@ class Dispersion:
             sphere = pv.Sphere(center=list(atom.coordinates),
                                radius=radius)
             p.add_mesh(sphere, color=color, opacity=molecule_opacity, name=str(atom.index))
-        
+
         # Set up plotting of mapped surface
         if display_p_int == True:
             color = None
@@ -1836,10 +1819,10 @@ class LocalForce:
         if elements:
             elements = convert_elements(elements)
         self._atomic_masses = np.array([atomic_masses[i] for i in elements])
-        
+
         self._elements = elements
         self._coordinates = np.array(coordinates)
-    
+
     def add_internal_coordinate(self, atoms):
         """Add internal coordinate composed of two (bond), three (angle) or four
         atoms (dihedral).
@@ -1862,7 +1845,7 @@ class LocalForce:
         k_s = 1 / np.diag(C) * AFU / BOHR / (DYNE / 1000) * ANGSTROM
 
         self.local_force_constants = k_s
-    
+
     def compute_frequencies(self):
         """Compute local frequencies"""
         # Compute local frequencies
@@ -1871,7 +1854,7 @@ class LocalForce:
         frequencies = np.sqrt((np.diag(G) / AMU \
             * (self.local_force_constants / ANGSTROM * DYNE / 1000)) \
             / (4 * np.pi ** 2 * C ** 2)) / 100
-        
+
         self.local_frequencies = frequencies
 
     def compute_local(self, project_imag=True, cutoff=1e-3):
@@ -1886,17 +1869,17 @@ class LocalForce:
             if len(self._B) == 0:
                 self._B = self._internal_coordinates.get_B_matrix(self._coordinates)
             self._D = self._B @ self._normal_modes.T
-        
+
         # Project out imaginary modes
         if project_imag and self.n_imag:
             # Save full D matrix and force constant vector
             self._D_full = self._D
             self._force_constants_full = self._force_constants
-    
+
             # Remove force constants with imaginary force constants
             self._force_constants = self._force_constants[self.n_imag:]
             self._D = self._D[:, self.n_imag:]
-        
+
         # Add cutoff to modes with low force constants
         if cutoff is not None:
             indices_small = np.where(np.array(self._force_constants)
@@ -1904,10 +1887,10 @@ class LocalForce:
             if len(indices_small) > 0:
                 self._force_constants[indices_small] \
                     = np.array(cutoff).reshape(-1)
-                
+
         # Compute local mode force constants
         K = np.diag(self._force_constants)
-        
+
         k_s = []
         for row in self._D:
             if not np.all(np.isclose(row, 0)):
@@ -1922,7 +1905,7 @@ class LocalForce:
             lengths = np.linalg.norm(self._D, axis=1)
             lengths_full = np.linalg.norm(self._D_full, axis=1)
             k_s *= lengths / lengths_full
-        
+
         self.local_force_constants = k_s
 
     def detect_bonds(self):
@@ -1946,7 +1929,7 @@ class LocalForce:
         if index == None:
             raise Exception(f"No internal coordinate with these atoms.")
         force_constant = self.local_force_constants[index]
-        
+
         return force_constant
 
     def get_local_frequency(self, atoms):
@@ -1963,7 +1946,7 @@ class LocalForce:
         if index == None:
             raise Exception(f"No internal coordinate with these atoms.")
         frequency = self.local_frequencies[index]
-        
+
         return frequency
 
     def load_file(self, filename, program, filetype):
@@ -2007,26 +1990,26 @@ class LocalForce:
         M_plus = np.diag(np.repeat(masses, 3)**(1/2))
         m_plus = np.repeat(masses, 3)**(1/2)
         m_minus = np.repeat(masses, 3)**(-1/2)
-        
+
         # Mass-weight Hessian
         hessian_mw = M_minus @ hessian @ M_minus
-        
+
         # Find center of mass
         com = np.sum(masses.reshape(-1, 1) * coordinates, axis=0) / np.sum(masses)
-        
+
         # Shift origin to center of mass
-        coordinates -= com    
-        
+        coordinates -= com
+
         # Construct translation vectors
         t_x = (np.tile(np.array([1, 0, 0]), n_atoms)).reshape(-1, 3)
         t_y = (np.tile(np.array([0, 1, 0]), n_atoms)).reshape(-1, 3)
         t_z = (np.tile(np.array([0, 0, 1]), n_atoms)).reshape(-1, 3)
-        
+
         # Construct mass-weighted rotation vectors
         R_x = np.cross(coordinates, t_x).flatten() * m_plus
         R_y = np.cross(coordinates, t_y).flatten() * m_plus
         R_z = np.cross(coordinates, t_z).flatten() * m_plus
-        
+
         # Mass-weight translation vectors
         T_x = t_x.flatten() * m_plus
         T_y = t_y.flatten() * m_plus
@@ -2038,39 +2021,39 @@ class LocalForce:
         keep_indices = ~np.isclose(np.diag(R), 0, atol=1e-6, rtol=0)
         TR_vectors = Q.T[keep_indices]
         n_tr = len(TR_vectors)
-        
+
         # Construct P matrix
         P = np.identity(n_atoms * 3)
         for vector in TR_vectors:
             P -= np.outer(vector, vector)
-        
+
         # Project out translations and rotations
         hessian_proj = P.T @ hessian_mw @ P
-        
+
         # Diagonalize
         eigenvalues, eigenvectors = np.linalg.eigh(hessian_proj)
         eigenvalues = eigenvalues[n_tr:]
         eigenvectors = eigenvectors[:, n_tr:]
-        
+
         # Calculate cartesian displacements
         cart = eigenvectors.T * m_minus
         N = 1 / np.linalg.norm(cart, axis=1)
         norm_cart = cart * N.reshape(-1, 1)
         reduced_masses = N ** 2
-        
+
         # Calculate frequencies and force constants
         n_imag = np.sum(eigenvalues < 0 )
         frequencies = np.sqrt(np.abs(eigenvalues) * HARTREE / BOHR ** 2 / AMU) / (2 * np.pi * C) / 100
         frequencies[:n_imag] = -frequencies[:n_imag]
         force_constants = 4 * np.pi ** 2 * (frequencies * 100) ** 2 * C ** 2 * reduced_masses * AMU / (DYNE / 1000) * ANGSTROM
-        
+
         # Set up attributes
         self.n_imag = n_imag
         self._force_constants = force_constants
         self._normal_modes = norm_cart
         if save_hessian:
             self._fc_matrix = M_plus @ hessian_proj @ M_plus
-    
+
     def print_report(self, angles=False, dihedrals=False, angle_units=False):
         """Print report of results.
         
@@ -2089,9 +2072,9 @@ class LocalForce:
         string = f"{'Coordinate':30s}" + \
             f"{'Force constant ' + '(' + unit + ')':>50s}"
         if len(self.local_frequencies) > 0:
-            string += f"{'Frequency (cm^-1)':>30s}"        
+            string += f"{'Frequency (cm^-1)':>30s}"
         print(string)
-        
+
         # Print results for each internal
         sorted_coordinates = sorted(self.internal_coordinates, key=lambda x: (len(x.atoms), *x.atoms))
         for coordinate in sorted_coordinates:
@@ -2108,10 +2091,10 @@ class LocalForce:
             # Convert units for angles and dihedrals
             if len(coordinate.atoms) > 2 and angle_units:
                 force_constant = force_constant * BOHR_TO_ANGSTROM ** 2
-            
+
             # Print out the results
             string = f"{repr(coordinate):30s}" + f"{force_constant:50.3f}"
-            if len(self.local_frequencies) > 0:            
+            if len(self.local_frequencies) > 0:
                 string += f"{frequency:30.0f}"
             print(string)
 
@@ -2211,7 +2194,7 @@ class LocalForce:
                     values = [float(value) for value in split_line]
                     coordinates.extend(values)
                 except ValueError:
-                    read_coordinates = False                
+                    read_coordinates = False
             # Read number of atoms
             if "Number of atoms" in line:
                 n_atoms = int(line.strip().split()[4])
@@ -2221,7 +2204,7 @@ class LocalForce:
             # Read number of internal coordinates
             if "Redundant internal coordinates" in line:
                 n_redundant = int(line.strip().split()[5])
-            # Detect when to read data     
+            # Detect when to read data
             if "Vib-Modes" in line:
                 read_modes = True
             if "Vib-AtMass" in line:
@@ -2240,7 +2223,7 @@ class LocalForce:
         # Take out normal mode force constants
         force_constants = np.array(vib_e2[n_modes * 2:n_modes * 3])
 
-        # Construct force constant matrix from lower triangular matrix     
+        # Construct force constant matrix from lower triangular matrix
         fc_matrix = np.zeros((n_atoms * 3, n_atoms * 3))
         fc_matrix[np.tril_indices_from(fc_matrix)] = hessian
         fc_matrix = np.triu(fc_matrix.T, 1) + fc_matrix
@@ -2255,7 +2238,7 @@ class LocalForce:
 
         # Convert coordinates to right Ångström
         coordinates = np.array(coordinates).reshape(-1, 3) * BOHR_TO_ANGSTROM
-        
+
         # Set up attributes
         self._fc_matrix = fc_matrix
         self._normal_modes = np.array(modes).reshape(n_modes, n_atoms * 3)
@@ -2268,7 +2251,7 @@ class LocalForce:
         # Read the log file
         with open(filename) as file:
             lines = file.readlines()
-        
+
         # Set up read flags
         read_b_atoms = False
         read_b_vectors = False
@@ -2316,14 +2299,14 @@ class LocalForce:
                         atoms = split_line[2][2:].replace(")", "").split(",")
                         atoms = [int(atom) for atom in atoms]
                         internal_indices[frozenset(atoms)] = counter - 2
-                counter += 1 
+                counter += 1
             # Read Cartesian force constant matrix
             if read_fc_matrix:
                 if  " FormGI is forming" in line:
                     read_fc_matrix = False
                     fc_matrix = np.triu(fc_matrix.T, 1) + fc_matrix
                 elif "          " in line:
-                    column_indices = [int(value) for value 
+                    column_indices = [int(value) for value
                                       in line.strip().split()]
                 elif "D" in line:
                     split_line = line.strip().split()
@@ -2333,14 +2316,14 @@ class LocalForce:
                               in values]
                     for i, value in enumerate(values):
                         column_index = column_indices[i] - 1
-                        fc_matrix[row_index, column_index] = value   
-            # Read internal force constant matrix 
+                        fc_matrix[row_index, column_index] = value
+            # Read internal force constant matrix
             if read_ifc_matrix:
                 if  "Leave Link  716" in line:
                     read_ifc_matrix = False
                     ifc_matrix = np.triu(ifc_matrix.T, 1) + ifc_matrix
                 elif "          " in line:
-                    column_indices = [int(value) for value 
+                    column_indices = [int(value) for value
                                       in line.strip().split()]
                 elif "D" in line:
                     split_line = line.strip().split()
@@ -2351,7 +2334,7 @@ class LocalForce:
                     for i, value in enumerate(values):
                         column_index = column_indices[i] - 1
                         ifc_matrix[row_index, column_index] = value
-            # Read atoms for creation of B matrix       
+            # Read atoms for creation of B matrix
             if read_b_atoms:
                 if " B Matrix in FormBX:" in line:
                     read_b_atoms = False
@@ -2361,7 +2344,7 @@ class LocalForce:
                         for atom in atoms:
                             B_atom_map[atom] = []
                     if counter > 0 and counter < 5:
-                        values = [int(value) for value 
+                        values = [int(value) for value
                                   in line.strip().split()[1:]]
                         for atom, value in zip(atoms, values):
                             B_atom_map[atom].append(value)
@@ -2397,7 +2380,7 @@ class LocalForce:
                         input_coordinates.append(values)
                         atomic_numbers.append(int(strip_line[1]))
                 counter += 1
-            # Read atomic coordinates in standard orientation   
+            # Read atomic coordinates in standard orientation
             if read_standard_orientation:
                 if counter > 3:
                     if "---------------------------------------------------------------------" in line:
@@ -2405,7 +2388,7 @@ class LocalForce:
                     else:
                         strip_line = line.strip().split()
                         values = [float(value) for value in strip_line[3:]]
-                        standard_coordinates.append(values)                    
+                        standard_coordinates.append(values)
                 counter += 1
             # Read decomposition of normal modes in internal coordinates
             if read_internal_modes:
@@ -2415,9 +2398,9 @@ class LocalForce:
                         internal_modes.append(internal_vector)
                     else:
                         value = float(line.strip().split()[3])
-                        internal_vector.append(value)    
+                        internal_vector.append(value)
                 counter += 1
-            # Read high-precision normal modes 
+            # Read high-precision normal modes
             if read_hp_modes:
                 if counter < n_atoms * 3:
                     strip_line = line.strip().split()
@@ -2464,33 +2447,33 @@ class LocalForce:
                 counter = 0
             if " Force constants in internal coordinates: " in line:
                 read_ifc_matrix = True
-                ifc_matrix = np.zeros((n_internals, n_internals))                
+                ifc_matrix = np.zeros((n_internals, n_internals))
                 counter = 0
             if "Input orientation: " in line:
                 read_input_orientation = True
                 counter = 0
             if "Standard orientation: " in line:
                 read_standard_orientation = True
-                counter = 0 
+                counter = 0
             if "Normal Mode" in line:
                 read_internal_modes = True
                 counter = 1
-                internal_vector = []           
+                internal_vector = []
             if " Coord Atom Element:" in line:
                 read_hp_modes = True
                 coordinates = []
                 counter = 0
-        
+
         # Process internal coordinates
         if len(internal_indices) > 0:
             for name, indices in zip(internal_names, internal_indices):
                 if name[0] == "R" and len(indices) == 2:
-                    self._internal_coordinates.add_internal_coordinate(indices)                
+                    self._internal_coordinates.add_internal_coordinate(indices)
                 if name[0] == "A" and len(indices) == 3:
                     self._internal_coordinates.add_internal_coordinate(indices)
                 if name[0] == "D" and len(indices) == 4:
-                    self._internal_coordinates.add_internal_coordinate(indices)                    
-        
+                    self._internal_coordinates.add_internal_coordinate(indices)
+
         # Construct the B matrix from atoms and vectors
         if B_vectors:
             n_cartesian = n_atoms * 3
@@ -2505,16 +2488,16 @@ class LocalForce:
             if B.shape[0] == len(force_constants):
                 self._redundant = False
             else:
-                self._redundant = True            
+                self._redundant = True
         else:
             B = np.array([])
             B_inv = np.array([])
-               
+
         # Detect whether the input coordinates have been rotated. If so, rotate
         # B matrix and its inverse.
         input_coordinates = np.array(input_coordinates).reshape(-1, 3)
         standard_coordinates = np.array(standard_coordinates).reshape(-1, 3)
-        
+
         if not np.array_equal(input_coordinates, standard_coordinates) \
                 and standard_coordinates.size > 0:
             rotation_i_to_s = kabsch_rotation_matrix(input_coordinates,
@@ -2523,17 +2506,17 @@ class LocalForce:
                 B = (rotation_i_to_s @ B.reshape(-1, 3).T).T.reshape(
                         n_internals, -1)
                 B_inv = np.linalg.pinv(B)
-        
+
         # Set up attributes
         self._B = B
         self._B_inv = B_inv
         self._fc_matrix = fc_matrix
         if fc_matrix.size == 0 and ifc_matrix.size > 0:
-           self._fc_matrix = B.T @ ifc_matrix @ B
+            self._fc_matrix = B.T @ ifc_matrix @ B
         self._ifc_matrix = ifc_matrix
         self._force_constants = np.array(force_constants)
         if len(normal_modes) > 0:
-            self._normal_modes = np.hstack(normal_modes).T 
+            self._normal_modes = np.hstack(normal_modes).T
         else:
             self._normal_modes = np.array([])
         if len(internal_modes) > 0:
@@ -2556,14 +2539,14 @@ class LocalForce:
         read_coordinates = False
         read_hessian = False
         read_normal_modes = False
-        
+
         # Set up containers for data
         atomic_masses = []
         atomic_numbers = []
         coordinates = []
         hessian = []
         normal_modes = []
-        
+
         # Parse file
         for line in lines:
             # Read atomic masses
@@ -2617,13 +2600,13 @@ class LocalForce:
                 read_hessian = True
             if " $NMMODE  $END" in line:
                 read_normal_modes = True
-        
+
         # Convert data to right format
         coordinates = np.array(coordinates).reshape(-1, 3) * BOHR_TO_ANGSTROM
         hessian = np.array(hessian).reshape(n_atoms * 3, n_atoms * 3)
         normal_modes = np.array(normal_modes).reshape(-1, n_atoms * 3)[:n_modes]
         elements = convert_elements(atomic_numbers)
-    
+
         # Set up attributes
         self._normal_modes = normal_modes
         self._atomic_masses = np.array(atomic_masses)
@@ -2635,12 +2618,12 @@ class LocalForce:
         # Read file
         with open(filename) as file:
             lines = file.readlines()
-        
+
         # Set up read flags
         read_coordinates = False
         read_vibrations = False
         read_normal_modes = False
-        
+
         # Set up data containers
         atomic_numbers = []
         atomic_masses = []
@@ -2687,7 +2670,7 @@ class LocalForce:
                     force_constants.extend([float(value) for value in split_line[2:]])
                 elif "Frequencies" in line:
                     split_line = line.strip().split()
-                    frequencies.extend([float(value) for value in split_line[2:]])                            
+                    frequencies.extend([float(value) for value in split_line[2:]])
                 elif "        Atom  ZA" in line:
                     read_normal_modes = True
             # Detect when to read data
@@ -2696,18 +2679,18 @@ class LocalForce:
                 counter = 0
             if "Results of vibrations:" in line:
                 read_vibrations = True
-        
+
         # Convert quantities to right format
         n_atoms = len(atomic_masses)
         coordinates = np.array(coordinates).reshape(-1, 3)
-        normal_modes = np.array(normal_modes).reshape(-1, n_atoms * 3) 
+        normal_modes = np.array(normal_modes).reshape(-1, n_atoms * 3)
         elements = convert_elements(atomic_numbers)
         force_constants = np.array(force_constants)
         frequencies = np.array(frequencies)
-    
+
         # Detect imaginary modes
         self.n_imag = np.sum(frequencies < 0)
-    
+
         # Set up attributes
         self._elements = elements
         self._coordinates = coordinates
@@ -2726,14 +2709,14 @@ class LocalForce:
         read_atomic_numbers = False
         read_coordinates = False
         read_hessian = False
-        
+
         # Set up containers for data
         n_atoms = None
         atomic_masses = []
         atomic_numbers = []
         coordinates = []
         hessian = []
-        
+
         # Parse file
         for line in lines:
             # Read number of atoms
@@ -2782,12 +2765,12 @@ class LocalForce:
                 read_coordinates = True
             if "FFX" in line:
                 read_hessian = True
-        
+
         # Convert data to right format
         coordinates = np.array(coordinates).reshape(-1, 3) * BOHR_TO_ANGSTROM
         hessian = np.array(hessian).reshape(n_atoms * 3, n_atoms * 3)
         elements = convert_elements(atomic_numbers)
-    
+
         # Set up attributes
         self._atomic_masses = np.array(atomic_masses)
         self._fc_matrix = hessian
@@ -2798,7 +2781,7 @@ class LocalForce:
         # Read hessian file
         with open(filename) as file:
             lines = file.readlines()
-    
+
         # Parse file
         hessian = []
         for line in lines:
@@ -2835,7 +2818,7 @@ class LocalForce:
         N = 1 / np.linalg.norm(cart_disp, axis=1)
         norm_cart_disp = cart_disp * N.reshape(-1, 1)
         reduced_masses = N ** 2
-    
+
         # Calculate force constants
         force_constants = 4 * np.pi ** 2 * (frequencies * 100) ** 2 * C ** 2 * reduced_masses * AMU
         force_constants = force_constants / (DYNE / 1000) * ANGSTROM
@@ -2873,7 +2856,7 @@ class Pyramidalization:
         P (float): Pyramidalization
     """
     def __init__(self, coordinates, atom_index, neighbor_indices=[], elements=[], radii=[], radii_type="pyykko", excluded_atoms=[],
-                 method="distance"):            
+                 method="distance"):
         coordinates = np.array(coordinates)
         atom_coordinates = coordinates[atom_index - 1]
         excluded_atoms = np.array(excluded_atoms)
@@ -2884,7 +2867,7 @@ class Pyramidalization:
                 raise Exception(f"Only {len(neighbor_indices)} neighbors.")
             neighbors = np.array(neighbor_indices) - 1
         elif method == "distance":
-            # Generate mask for excluded atoms 
+            # Generate mask for excluded atoms
             mask = np.zeros(len(coordinates), dtype=bool)
             mask[excluded_atoms - 1] = True
             mask[atom_index - 1] = True
@@ -2921,7 +2904,7 @@ class Pyramidalization:
             normal = np.cross(v_1, v_2)
             normal /= np.linalg.norm(normal)
             cos_alpha = np.dot(v_3, normal)
-            
+
             # Test if normal vector is colinear with v_3
             if cos_alpha < 0:
                 continue
@@ -2937,7 +2920,7 @@ class Pyramidalization:
             alphas.append(alpha)
             cos_alphas.append(cos_alpha)
             vectors.append((v_1, v_2))
-        
+
         # Calculate P
         v_1, v_2 = vectors[0]
         sin_theta = np.linalg.norm(np.cross(v_1, v_2))
@@ -2946,14 +2929,15 @@ class Pyramidalization:
         # Correct P if pyramid is "acute"
         if acute:
             P = 2 - P
-     
+
         # Store attributes
         self.P = P
         self.alpha = np.rad2deg(np.mean(alphas))
         self.alphas = np.rad2deg(alphas)
 
 
-@conditional(_HAS_XTB, _MSG_XTB)    
+@requires_dependency([("xtb", "xtb"), ("xtb.interface", "xtb.interface")],
+                     globals())
 class XTB:
     """Calculates electronic properties with the xtb program using the
     xtb-python package.
@@ -2973,7 +2957,7 @@ class XTB:
                  n_unpaired=None, solvent=None, electronic_temperature=None):
         # Converting elements to atomic numbers if the are symbols
         self._elements = np.array(convert_elements(elements, output="numbers"))
-        
+
         # Store settings
         self._coordinates = np.array(coordinates)
         self._version = version
@@ -2988,10 +2972,10 @@ class XTB:
                          1: None,
                          }
 
-        self._params = {"1": Param.GFN1xTB,
-                        "2": Param.GFN2xTB,
-                        }                         
-    
+        self._params = {"1": xtb.interface.Param.GFN1xTB,
+                        "2": xtb.interface.Param.GFN2xTB,
+                        }
+
     def get_bond_order(self, i, j):
         """Calculate bond order.
         
@@ -3006,15 +2990,15 @@ class XTB:
         bond_order = bo_matrix[i - 1, j - 1]
 
         return bond_order
-    
+
     def get_bond_orders(self, charge_state=0):
         self._check_results(charge_state)
         return self._results[charge_state].get_bond_orders()
-           
+
     def get_charges(self, charge_state=0):
         self._check_results(charge_state)
         return self._results[charge_state].get_charges()
-    
+
     def get_dipole(self):
         """Calculate dipole vector (a.u.).
         
@@ -3075,7 +3059,7 @@ class XTB:
                 1 / 2 * (chem_pot / hardness) ** 2 * self.get_fukui("dual")
         else:
             raise Exception("Choose variety.")
-            
+
         return fukui
 
     def get_global_descriptor(self, variety, corrected=False):
@@ -3119,7 +3103,7 @@ class XTB:
         occupations = self._get_occupations()
         homo_index = int(occupations.sum().round(0) / 2) - 1
         homo_energy = eigenvalues[homo_index]
-        
+
         return homo_energy
 
     def get_ip(self, corrected=False):
@@ -3147,49 +3131,51 @@ class XTB:
         
         Returns:
             lumo_energy (float): LUMO energy (a.u.)
-        """        
+        """
         eigenvalues = self._get_eigenvalues()
         occupations = self._get_occupations()
         homo_index = int(occupations.sum().round(0) / 2) - 1
         lumo_index = homo_index + 1
-        lumo_energy = eigenvalues[lumo_index]        
-        
+        lumo_energy = eigenvalues[lumo_index]
+
         return lumo_energy
-    
+
     def _check_results(self, charge_state):
         if self._results[charge_state] is None:
             self._sp(charge_state)
-    
+
     def _get_eigenvalues(self):
         self._check_results(0)
         return self._results[0].get_orbital_eigenvalues()
-        
+
     def _get_energy(self, charge_state=0):
         self._check_results(charge_state)
         return self._results[charge_state].get_energy()
-    
+
     def _get_occupations(self):
         self._check_results(0)
-        return self._results[0].get_orbital_occupations()   
+        return self._results[0].get_orbital_occupations()
 
     def _sp(self, charge_state=0):
         # Set up calculator
-        calc = Calculator(self._params[self._version], self._elements,
-            self._coordinates * ANGSTROM_TO_BOHR,
-            charge=self._charge + charge_state, uhf=self._n_unpaired)
-        calc.set_verbosity(VERBOSITY_MUTED)
+        calc = xtb.interface.Calculator(self._params[self._version],
+                                        self._elements,
+                                        self._coordinates * ANGSTROM_TO_BOHR,
+                                        charge=self._charge + charge_state,
+                                        uhf=self._n_unpaired)
+        calc.set_verbosity(xtb.libxtb.VERBOSITY_MUTED)
 
         # Set solvent
         if self._solvent:
-            solvent = get_solvent(self._solvent)
+            solvent = xtb.utils.get_solvent(self._solvent)
             if solvent is None:
                 raise Exception(f"Solvent '{self._solvent}' not recognized")
             calc.set_solvent(solvent)
-        
+
         # Set electronic temperature
         if self._electronic_temperature:
             calc.set_electronic_temperature(self._electronic_temperature)
-        
+
         # Do singlepoint calculation and store the result
         res = calc.singlepoint()
-        self._results[charge_state] = res    
+        self._results[charge_state] = res
