@@ -11,7 +11,7 @@ try:
     _has_matplotlib = True
 except ImportError:
     _has_matplotlib = False
-_warning_matplotlib = "Install matplotlib to use this function."
+_msg_matplotlib = "Install matplotlib to use this function."
 
 import numpy as np
 from subprocess import Popen, DEVNULL, PIPE
@@ -27,7 +27,7 @@ try:
     _has_vtk = True
 except ImportError:
     _has_vtk = False   
-_warning_vtk = "Install pyvista and vtk to use this function."
+_msg_vtk = "Install pyvista and vtk to use this function."
 
 import scipy.spatial
 from scipy.io import FortranFile
@@ -42,11 +42,11 @@ try:
     _has_xtb = True
 except ImportError:
     _has_xtb = False
-_warning_xtb = "Install xtb-python to use this function."
+_msg_xtb = "Install xtb-python to use this function."
 
-from morfeus.data import atomic_symbols, HARTREE_TO_KCAL, ANGSTROM_TO_BOHR, HARTREE, BOHR, BOHR_TO_ANGSTROM, HARTREE_TO_EV
-from morfeus.data import jmol_colors, atomic_masses
-from morfeus.data import ANGSTROM, DYNE, C, AMU, AFU
+from morfeus.data import (atomic_symbols, HARTREE_TO_KCAL, ANGSTROM_TO_BOHR,
+    HARTREE, BOHR, BOHR_TO_ANGSTROM, HARTREE_TO_EV, jmol_colors, atomic_masses,
+    ANGSTROM, DYNE, C, AMU, AFU)
 from morfeus.helpers import check_distances, convert_elements, get_radii
 from morfeus.helpers import conditional, get_connectivity_matrix
 from morfeus.calculators import D3Calculator, D3Grimme, D4Grimme
@@ -326,8 +326,8 @@ class Sterimol:
             print(f"{self.L_value:<10.2f}{self.B_1_value:<10.2f}"
                   f"{self.B_5_value:<10.2f}")
 
-    @conditional(_has_vtk, _warning_vtk)
-    @conditional(_has_matplotlib, _warning_matplotlib) 
+    @conditional(_has_vtk, _msg_vtk)
+    @conditional(_has_matplotlib, _msg_matplotlib) 
     def draw_3D(self, atom_scale=0.5, background_color="white",
                 arrow_color="steelblue"):
         """Draw a 3D representation of the molecule with the Sterimol vectors.
@@ -694,7 +694,7 @@ class BuriedVolume:
         else:
             raise Exception("Provide valid method.")
     
-    @conditional(_has_matplotlib, _warning_matplotlib)
+    @conditional(_has_matplotlib, _msg_matplotlib)
     def plot_steric_map(self, z_axis_atoms, filename=None, levels=150, grid=100,
                         all_positive=True, cmap="viridis"):
         """Plots a steric map as in the original article.
@@ -792,8 +792,8 @@ class BuriedVolume:
         """Prints a report of the buried volume for use in shell scripts"""
         print("V_bur (%):", round(self.buried_volume * 100, 1))
 
-    @conditional(_has_vtk, _warning_vtk)
-    @conditional(_has_matplotlib, _warning_matplotlib) 
+    @conditional(_has_vtk, _msg_vtk)
+    @conditional(_has_matplotlib, _msg_matplotlib) 
     def draw_3D(self, atom_scale=1, background_color="white",
                 buried_color="tomato", free_color="steelblue", opacity=0.05,
                 size=1):
@@ -970,8 +970,8 @@ class SASA:
                 symbol = atomic_symbols[atom.element]
                 print(f"{symbol:<10s}{i:<10d}{area:<10.1f}")
 
-    @conditional(_has_vtk, _warning_vtk)
-    @conditional(_has_matplotlib, _warning_matplotlib) 
+    @conditional(_has_vtk, _msg_vtk)
+    @conditional(_has_matplotlib, _msg_matplotlib) 
     def draw_3D(self, atom_scale=1, background_color="white",
                 point_color="steelblue", opacity=0.25, size=1):
         """Draw a 3D representation of the molecule with the solvent accessible
@@ -1341,8 +1341,8 @@ class ConeAngle:
 
         return cones
 
-    @conditional(_has_vtk, _warning_vtk)
-    @conditional(_has_matplotlib, _warning_matplotlib) 
+    @conditional(_has_vtk, _msg_vtk)
+    @conditional(_has_matplotlib, _msg_matplotlib) 
     def draw_3D(self, atom_scale=1, background_color="white",
                 cone_color="steelblue", cone_opacity=0.75):
         """Draw a 3D representation of the molecule with the cone.
@@ -1496,7 +1496,7 @@ class Dispersion:
         if point_surface and compute_coefficients:
             self.compute_p_int()
 
-    @conditional(_has_vtk, _warning_vtk)
+    @conditional(_has_vtk, _msg_vtk)
     def surface_from_cube(self, filename, isodensity=0.001,
                               method="flying_edges"):
         """Adds an isodensity surface from a Gaussian cube file.
@@ -1524,7 +1524,7 @@ class Dispersion:
         self._surface = surface
         self._process_surface()
     
-    @conditional(_has_vtk, _warning_vtk)
+    @conditional(_has_vtk, _msg_vtk)
     def surface_from_multiwfn(self, filename, fix_mesh=True):
         """Adds surface from Multiwfn vertex file with connectivity information.
 
@@ -1549,7 +1549,7 @@ class Dispersion:
         self._surface = surface
         self._process_surface()
    
-    @conditional(_has_vtk, _warning_vtk)
+    @conditional(_has_vtk, _msg_vtk)
     def _process_surface(self):
         """Extracts face center points and assigns these to atoms based on
         proximity
@@ -1583,7 +1583,7 @@ class Dispersion:
         self._point_areas = areas
         self._point_map = point_regions       
     
-    @conditional(_has_vtk, _warning_vtk)
+    @conditional(_has_vtk, _msg_vtk)
     @staticmethod
     def _contour_surface(grid, method="flying_edges", isodensity=0.001):
         """
@@ -1751,7 +1751,7 @@ class Dispersion:
                 symbol = atomic_symbols[atom.element]
                 print(f"{symbol:<10s}{i:<10d}{p_int:<10.1f}")
 
-    @conditional(_has_vtk, _warning_vtk)
+    @conditional(_has_vtk, _msg_vtk)
     def save_vtk(self, filename):
         """Save surface as .vtk file
 
@@ -1760,8 +1760,8 @@ class Dispersion:
         """
         self._surface.save(filename)
 
-    @conditional(_has_vtk, _warning_vtk)
-    @conditional(_has_matplotlib, _warning_matplotlib)
+    @conditional(_has_vtk, _msg_vtk)
+    @conditional(_has_matplotlib, _msg_matplotlib)
     def draw_3D(self, opacity=1, display_p_int=True, molecule_opacity=1,
                 atom_scale=1):
         """Draw surface with mapped P_int values.
@@ -2953,7 +2953,7 @@ class Pyramidalization:
         self.alphas = np.rad2deg(alphas)
 
 
-@conditional(_has_xtb, _warning_xtb)    
+@conditional(_has_xtb, _msg_xtb)    
 class XTB:
     """Calculates electronic properties with the xtb program using the
     xtb-python package.

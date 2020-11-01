@@ -1,7 +1,5 @@
 """Help functions."""
 
-import warnings
-
 import numpy as np
 from scipy.spatial.distance import cdist
 import scipy.spatial
@@ -10,8 +8,8 @@ from morfeus.data import atomic_numbers, atomic_symbols
 from morfeus.data import (radii_alvarez, radii_bondi, radii_crc, radii_rahm, 
     radii_truhlar, cov_radii_pyykko)
 
-def check_distances(elements, coordinates, check_atom, radii=[], check_radius=0,
-                    exclude_list=[], epsilon=0, radii_type="crc"):
+def check_distances(elements, coordinates, check_atom, radii=[],
+    check_radius=0, exclude_list=[], epsilon=0, radii_type="crc"):
     """
     Args:
         elements (list): Elements as atomic symbols or numbers
@@ -60,16 +58,17 @@ def check_distances(elements, coordinates, check_atom, radii=[], check_radius=0,
     else:
         return None
 
-def conditional(condition, warning=None):
-    """Decorator factory to control if functions are presented.
+def conditional(condition, msg=None):
+    """Decorator factory to control if packages are present.
 
     Args:
-        condition (bool): Whether to import function or not  
-        warning (warning): Warning to print if function not imported
+        condition (bool): Whether package was imported
+        warning (warning): Warning to print if package cannot be imported
     
     Returns:
         noop_decorator (obj): Decorator that passes the original function
-        neutered_function (obj): Decorator that passes nothing and prints warning.
+        neutered_function (obj): Decorator that passes nothing and raises
+            exception.
 
     """
     def noop_decorator(function):
@@ -79,8 +78,8 @@ def conditional(condition, warning=None):
     def neutered_function(function):
         """Returns function that just prints warning"""
         def neutered(*args, **kw):
-            if warning:
-                warnings.warn(warning)
+            if msg:
+                raise ImportError(msg)
             return
         return neutered
 
@@ -138,18 +137,21 @@ def get_radii(elements, radii_type="crc", scale=1):
                     'truhlar': radii_truhlar}
     
     # Get the radii. Replace with 2.0 if it the radius doesn't exist.
-    radii = [radii_choice[radii_type].get(element, 2.0) * scale for element in elements]
+    radii = [radii_choice[radii_type].get(element, 2.0) * scale for element
+        in elements]
 
     return radii
 
-def get_connectivity_matrix(elements, coordinates, radii=[], radii_type="pyykko"):
+def get_connectivity_matrix(elements, coordinates, radii=[],
+    radii_type="pyykko"):
     elements = convert_elements(elements)
 
     if len(radii) < 1:
         radii = get_radii(elements, radii_type="pyykko")
     distance_matrix = scipy.spatial.distance_matrix(coordinates, coordinates)
     radii_matrix = np.add.outer(radii, radii) * 1.2
-    connectivity_matrix = (distance_matrix < radii_matrix)  - np.identity(len(elements))
+    connectivity_matrix = (distance_matrix < radii_matrix) \
+        - np.identity(len(elements))
 
     return connectivity_matrix
 

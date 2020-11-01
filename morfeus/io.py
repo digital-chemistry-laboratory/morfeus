@@ -164,7 +164,8 @@ class D4Parser:
                 c6_coefficients.append(c6)
             if "C6AA" in line:
                 read = True
-        c8_coefficients = [3 * c6 * r2_r4[element]**2 for c6, element in zip(c6_coefficients, elements)]
+        c8_coefficients = [3 * c6 * r2_r4[element]**2 for c6, element in
+            zip(c6_coefficients, elements)]
         
         # Set up attributes
         self._filename = filename
@@ -252,20 +253,19 @@ class VertexParser:
         f"{len(self.vertices)!r} points)"
 
 
-def read_gjf(filename):
-    """Reads Gaussian gjf/com file and returns elements as they are written in
-    the file (either atomic numbers or symbols) as well as coordinates.
+def read_gjf(file):
+    """Reads Gaussian gjf/com file and returns elements and coordinates.
 
     Args:
-        filename (str): Name of gjf/com file
+        file (str): Name of gjf/com file or path object.
 
     Returns:
         elements (list): Elements as atomic symbols or numbers
         coordinates (list): Coordinates (Å)
     """
     # Read file and split lines
-    with open(filename) as file:
-        lines = file.readlines()
+    with open(file) as f:
+        lines = f.readlines()
     lines = [line.strip().split() for line in lines]
 
     # Loop over lines and store elements and coordinates 
@@ -292,37 +292,38 @@ def read_gjf(filename):
     return elements, coordinates
 
 
-def read_xyz(filename):
-    """Reads xyz file and returns elements as they are written in the xyz
-    file (either atomic numbers or symbols) as well as coordinates.
+def read_xyz(file):
+    """Reads xyz file and returns elements as written (atomic numbers or
+    symbols) and coordinates.
 
     Args:
-        filename (str): Name of xyz file
+        file (str): Filename or Path object
 
     Returns:
-        elements (list): Elements as atomic symbols or numbers
-        coordinates (list): Coordinates (Å)
+        elements (ndarray): Elements as atomic symbols or numbers
+        coordinates (ndarray): Coordinates (Å)
     """
     # Read file and split lines
-    with open(filename) as file:
-        lines = file.readlines()
-        # Check whether it has number of atoms and comments
-        if len(lines[0].strip().split()) == 1:
-            lines = lines[2:]
-    lines = [line.strip().split() for line in lines if line.strip().split()]
+    with open(file) as f:
+        lines = f.readlines()
 
     # Loop over lines and store elements and coordinates
     elements = []
     coordinates = []
+    n_atoms = int(lines[0].strip())
     for line in lines:
-        atom = line[0]
-        if atom.isdigit():
-            atom = int(atom)
-        elements.append(atom)
-        coordinates.append([float(line[1]), float(line[2]), float(line[3])])
-    
-    elements = np.array(elements)
-    coordinates = np.array(coordinates)
+        strip_line = line.strip().split()
+        if len(strip_line) == 4:
+            atom = strip_line[0]
+            if atom.isdigit():
+                atom = int(atom)
+            elements.append(atom)
+            coordinates.append([float(strip_line[1]), float(strip_line[2]),
+                float(strip_line[3])])    
+    elements = np.array(elements)[:n_atoms]
+    coordinates = np.array(coordinates).reshape(-1, n_atoms, 3)
+    if coordinates.shape[0] == 1:
+        coordinates = coordinates[0]
     
     return elements, coordinates
 
@@ -347,11 +348,12 @@ def get_xyz_string(symbols, coordinates, comment=""):
     return string
 
 
-def write_xyz(xyz_file, elements, coordinates, comment=""):
+def write_xyz(file, elements, coordinates, comment=""):
     """Writes xyz file from elements and coordinates.
     
     Args:
         elements (list): Elements as atomic symbols or numbers
+        file (str): Name of xyz file or path object.
         comment (str): Comment
         coordinates (list): Coordinates (Å)
     """
@@ -360,5 +362,5 @@ def write_xyz(xyz_file, elements, coordinates, comment=""):
 
     # Write the xyz file
     xyz_string = get_xyz_string(elements, coordinates, comment)
-    with open(xyz_file, 'w') as file:
+    with open(file, 'w') as file:
         file.write(xyz_string)

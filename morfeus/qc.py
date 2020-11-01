@@ -1,36 +1,42 @@
+"""Interface to quantum-chemical programs."""
+
 import numpy as np
+
 try:
     import qcengine as qcng
     import qcelemental as qcel
     _has_qcng = True
 except ImportError:
     _has_qcng = False
-_warning_qcng = "Install QCEngine to use this function."
+_msg_qcng = "Install QCEngine to use this function."
 
 from morfeus.data import ANGSTROM_TO_BOHR, BOHR_TO_ANGSTROM
 from morfeus.helpers import convert_elements, conditional
 
-@conditional(_has_qcng, _warning_qcng)    
-def optimize_qc_engine(elements, coordinates, charge=None, multiplicity=None,
-    connectivity_matrix=None, program="xtb", model=None, keywords=None,
-    local_options=None, procedure="berny", return_trajectory=False):
+
+@conditional(_has_qcng, _msg_qcng)    
+def optimize_qc_engine(
+        elements, coordinates, charge=None, multiplicity=None,
+        connectivity_matrix=None, program="xtb", model=None, keywords=None,
+        local_options=None, procedure="berny", return_trajectory=False):
     """Optimize molecule with QCEngine.
 
     Args:
         elements (list): Elements as atomic symbols or numbers
-        charge (int): Molecular charge
-        connectivity_matrix (ndarray): Connectivity matrix
         coordinates (list): Coordinates (Å)
+        charge (int): Molecular charge
+        multiplicity (int): Multiplicity
+        connectivity_matrix (ndarray): Connectivity matrix
+        program (str): QCEngine program
+        model (dict): QCEngine model
         keywords (dict): QCEngine keywords
         local_options (dict): QCEngine local options
-        model (dict): QCEngine model
         procedure (str): QCEngine procedure
-        program (str): QCEngine program
         return_trajectory (bool): Return coordinates for all steps
 
     Returns:
-        energies (ndarray): Energies for all steps (a.u.)
         opt_coordinates (ndarray): Conformer coordinates (Å)
+        energies (ndarray): Energies for all steps (a.u.)
     """
     # Set defaults
     if model is None:
@@ -74,22 +80,24 @@ def optimize_qc_engine(elements, coordinates, charge=None, multiplicity=None,
     
     return opt_coordinates, energies
 
-@conditional(_has_qcng, _warning_qcng)    
-def sp_qc_engine(elements, coordinates, charge=None, multiplicity=None,
-    connectivity_matrix=None, program="xtb", model=None, keywords=None,
-    local_options=None):
+
+@conditional(_has_qcng, _msg_qcng)    
+def sp_qc_engine(
+        elements, coordinates, charge=None, multiplicity=None,
+        connectivity_matrix=None, program="xtb", model=None, keywords=None,
+        local_options=None):
     """Single-point calculation with QCEngine.
 
     Args:
         elements (list): Elements as atomic symbols or numbers
-        charge (int): Molecular charge
-        connectivity_matrix (ndarray): Connectivity matrix
         coordinates (list): Coordinates (Å)
+        charge (int): Molecular charge
+        multiplicity (int); Molecular multiplicity
+        connectivity_matrix (ndarray): Connectivity matrix
+        program (str): QCEngine program
+        model (dict): QCEngine model
         keywords (dict): QCEngine keywords
         local_options (dict): QCEngine local options
-        model (dict): QCEngine model
-        multiplicity (int); Molecular multiplicity
-        program (str): QCEngine program
 
     Returns:
         energy (float): Energy (a.u.)
@@ -125,17 +133,17 @@ def sp_qc_engine(elements, coordinates, charge=None, multiplicity=None,
     return energy
 
 
-@conditional(_has_qcng, _warning_qcng)    
+@conditional(_has_qcng, _msg_qcng)    
 def _generate_qcel_molecule(elements, coordinates, charge=None,
     multiplicity=None, connectivity_matrix=None):
     """Generate QCElemental molecule object.
 
     Args:
         elements (list): Elements as atomic symbols or numbers
-        charge (int): Molecular charge
-        connectivity_matrix (ndarray): Connectivity matrix
         coordinates (list): Coordinates (Å)
+        charge (int): Molecular charge
         multiplicity (int): Molecular multiplicity
+        connectivity_matrix (ndarray): Connectivity matrix
     
     Returns:
         molecule (obj): QCElemental molecule object.
