@@ -5,16 +5,16 @@ import numpy as np
 try:
     import qcengine as qcng
     import qcelemental as qcel
-    _has_qcng = True
+    _HAS_QCNG = True
 except ImportError:
-    _has_qcng = False
-_msg_qcng = "Install QCEngine to use this function."
+    _HAS_QCNG = False
+_MSG_QCNG = "Install QCEngine to use this function."
 
 from morfeus.data import ANGSTROM_TO_BOHR, BOHR_TO_ANGSTROM
 from morfeus.helpers import convert_elements, conditional
 
 
-@conditional(_has_qcng, _msg_qcng)    
+@conditional(_HAS_QCNG, _MSG_QCNG)    
 def optimize_qc_engine(
         elements, coordinates, charge=None, multiplicity=None,
         connectivity_matrix=None, program="xtb", model=None, keywords=None,
@@ -81,7 +81,7 @@ def optimize_qc_engine(
     return opt_coordinates, energies
 
 
-@conditional(_has_qcng, _msg_qcng)    
+@conditional(_HAS_QCNG, _MSG_QCNG)    
 def sp_qc_engine(
         elements, coordinates, charge=None, multiplicity=None,
         connectivity_matrix=None, program="xtb", model=None, keywords=None,
@@ -133,7 +133,7 @@ def sp_qc_engine(
     return energy
 
 
-@conditional(_has_qcng, _msg_qcng)    
+@conditional(_HAS_QCNG, _MSG_QCNG)    
 def _generate_qcel_molecule(elements, coordinates, charge=None,
     multiplicity=None, connectivity_matrix=None):
     """Generate QCElemental molecule object.

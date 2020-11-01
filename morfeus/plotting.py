@@ -1,9 +1,19 @@
 """Plotting functions."""
 
-import vtk
-import pyvista as pv
 import numpy as np
 
+from morfeus.helpers import conditional
+
+try:
+    import vtk
+    import pyvista as pv
+    _HAS_VTK = True
+except ImportError:
+    _HAS_VTK = False   
+_MSG_VTK = "Install pyvista, pymeshfix and vtk to use this function."
+
+
+@conditional(_HAS_VTK, _MSG_VTK)
 def Arrow_3D(start=[0, 0, 0], direction=[1, 0, 0], length=1, shaft_radius=0.05, shaft_resolution=20, tip_length=0.25, tip_radius=0.1, tip_resolution=20):
     start = np.array(start)
     direction = np.array(direction) / np.linalg.norm(direction)
@@ -19,6 +29,7 @@ def Arrow_3D(start=[0, 0, 0], direction=[1, 0, 0], length=1, shaft_radius=0.05, 
     
     return arrow
 
+@conditional(_HAS_VTK, _MSG_VTK)
 def Cone_3D(center=(0., 0., 0.), direction=(1., 0., 0.), height=1.0, radius=None,
          capping=True, angle=None, resolution=6):
     """Create a cone

@@ -17,13 +17,13 @@ try:
     from dftd4.utils import extrapolate_c_n_coeff
     import ase.io
 except ImportError:
-    _has_dftd4 = False
+    _HAS_DFTD4 = False
 else:
-    _has_dftd4 = True
-_msg_dftd4 = "Install dftd4 and ase python packages for this function."
+    _HAS_DFTD4 = True
+_MSG_DFTD4 = "Install dftd4 and ase python packages for this function."
 
 
-@conditional(_has_dftd4, _msg_dftd4)
+@conditional(_HAS_DFTD4, _MSG_DFTD4)
 class D3Grimme:
     """Calculates Cᴬᴬ dispersion coefficients with the dftd4 program and a
     D3-like method.
@@ -64,7 +64,7 @@ class D3Grimme:
     def __repr__(self):
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
 
-@conditional(_has_dftd4, _msg_dftd4)
+@conditional(_HAS_DFTD4, _MSG_DFTD4)
 class D4Grimme:
     """Calculates Cᴬᴬ dispersion coefficients with the D4 method and the dftd4 program.
     
