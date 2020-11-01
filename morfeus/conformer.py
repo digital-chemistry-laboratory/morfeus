@@ -795,7 +795,7 @@ class ConformerEnsemble:
         for key, value in properties.items():
             self.set_properties(key, value)
 
-    @conditional(_HAS_OPENBABEL, _msg_openbabel)
+    @conditional(_HAS_OPENBABEL, _MSG_OPENBABEL)
     def _get_rmsd_obrms_batch(self, i_s, j_s):
         """Calculate RMSD with obrms in batch mode, first calculating the
         matrix of all pairwise RMSDs and then taking out those of interest."""
@@ -811,7 +811,7 @@ class ConformerEnsemble:
         rmsds = rmsds[i_s - 1, :][:, j_s - 1]
         return rmsds
 
-    @conditional(_HAS_OPENBABEL, _msg_openbabel)
+    @conditional(_HAS_OPENBABEL, _MSG_OPENBABEL)
     def _get_rmsd_obrms_iter(self, i_s, j_s):
         """Calculate RMSD with obrms in iterative row-wise mode for heavy atoms
         and witout symmetry."""
@@ -834,7 +834,7 @@ class ConformerEnsemble:
         rmsds = np.vstack(rmsds)
         return rmsds
 
-    @conditional(_HAS_OPENBABEL, _msg_openbabel)
+    @conditional(_HAS_OPENBABEL, _MSG_OPENBABEL)
     def _get_rmsd_openbabel(self, i_s, j_s, include_hs, symmetry):
         """Calculate RMSD row-wise with openbabel python interface."""
         rmsds = []
@@ -1149,7 +1149,7 @@ def _get_dihedrals(mol):
     return dihedral_indices
 
 
-@conditional(_HAS_OPENBABEL, _msg_openbabel)
+@conditional(_HAS_OPENBABEL, _MSG_OPENBABEL)
 def _get_ob_mol(elements, coordinates, connectivity_matrix):
     """Generate OpenBabel OBMol object.
 
