@@ -5,7 +5,9 @@ import subprocess
 import tempfile
 from collections import Counter
 from copy import copy, deepcopy
+from pkg_resources import parse_version
 from pathlib import Path
+import warnings
 
 import numpy as np
 
@@ -18,7 +20,8 @@ from morfeus.qc import (_generate_qcel_molecule, optimize_qc_engine,
 
 # Optional dependencies
 try:
-    from openbabel import openbabel as ob
+    from openbabel import openbabel as ob, pybel
+    import openbabel
     _HAS_OPENBABEL = True
 except ImportError:
     _HAS_OPENBABEL = False
@@ -174,25 +177,30 @@ class ConformerEnsemble:
         properties (dict): Conformers properties.
         charge (int): Molecular charge
         multiplicity (int): Molecular multiplicity.
+        formal_charges (list): Atomic formal charges
         ref_cip_label (tuple): Tuple of CIP labels for all atoms: 'R', 'S'
             or ''
 
     Attributes:
-        elements (list): Elements as atomic symbols or numbers
+        elements (ndarray): Elements as atomic symbols or numbers
         charge (int): Molecular charge
         conformers (list): Conformers
         connectivity_matrix (ndarray): Connectivity matrix
-        elements (list): Elements as atomic symbols or numbers
+        formal_charges (ndarray): Atomic formal charges.
         multiplicity (int): Molecular multiplicity.
         ref_cip_label (tuple): Tuple of CIP labels for all atoms: 'R', 'S'
             or ''
     """
+
     def __init__(
             self, elements, conformer_coordinates=None, energies=None,
             connectivity_matrix=None, degeneracies=None, properties=None,
-            charge=None, multiplicity=None, ref_cip_label=None):
+            charge=None, multiplicity=None, formal_charges=None,
+            ref_cip_label=None):
         if conformer_coordinates is None:
             conformer_coordinates = []
+        if formal_charges is None:
+            formal_charges = np.zeros(len(elements))
 
         # Store conformers
         self.elements = np.array(convert_elements(elements))
@@ -202,6 +210,7 @@ class ConformerEnsemble:
 
         # Set up attributes
         self.charge = charge
+        self.formal_charges = formal_charges
         self.multiplicity = multiplicity
         self.connectivity_matrix = np.array(connectivity_matrix)
         self._mol = None
@@ -328,16 +337,47 @@ class ConformerEnsemble:
             **kwargs Keyword arguments
         """
         # Run RDKit conformer search and generate ensemble.
-        elements, conformer_coordinates, energies, connectivity_matrix, mol = \
-            generate_conformers_rdkit(*args, **kwargs)
-        ce = cls(elements, conformer_coordinates, energies,
-                 connectivity_matrix)
+        elements, conformer_coordinates, energies, connectivity_matrix, \
+            charges, mol = generate_conformers_rdkit(*args, **kwargs)
+        ce = cls(elements, conformer_coordinates, energies=energies,
+                 connectivity_matrix=connectivity_matrix,
+                 formal_charges=charges)
         ce._mol = mol
 
         # Set reference CIP label if enantiomerically pure.
         cip_labels = ce.get_cip_labels()
         if len(set(cip_labels)) == 1:
             ce.ref_cip_label = cip_labels[0]
+
+        return ce
+
+    @classmethod
+    def from_openbabel_ga(cls, *args, generate_rdkit_mol=False, **kwargs):
+        """Generate conformer ensemble from OpenBabel with GA method.
+
+        See the documentation for the function generate_conformers_openbabel_ga
+        for more information.
+
+        Args:
+            *args: Positional arguments
+            **kwargs Keyword arguments
+        """
+        # Run Openbabel conformer search and generate ensemble.
+        elements, conformer_coordinates, connectivity_matrix, charges, \
+            ob_mol = generate_conformers_openbabel_ga(*args, **kwargs)
+        ce = cls(elements, conformer_coordinates,
+                 connectivity_matrix=connectivity_matrix,
+                 formal_charges=charges)
+
+        # Generate RDKit mol object and CIP labels
+        if generate_rdkit_mol:
+            mol = _get_rdkit_mol(
+                elements, conformer_coordinates, connectivity_matrix, charges)
+            ce._mol = mol
+
+            cip_labels = ce.get_cip_labels()
+            if len(set(cip_labels)) == 1:
+                ce.ref_cip_label = cip_labels[0]
 
         return ce
 
@@ -932,6 +972,7 @@ class ConformerEnsemble:
             connectivity_matrix=self.connectivity_matrix,
             charge=self.charge,
             multiplicity=self.multiplicity,
+            formal_charges=self.formal_charges,
             ref_cip_label=self.ref_cip_label,
         )
         ce._mol = self._mol
@@ -950,6 +991,7 @@ class ConformerEnsemble:
             connectivity_matrix=self.connectivity_matrix,
             charge=self.charge,
             multiplicity=self.multiplicity,
+            formal_charges=self.formal_charges,
             ref_cip_label=self.ref_cip_label,
         )
         ce._mol = deepcopy(ce._mol, memo)
@@ -977,6 +1019,110 @@ class ConformerEnsemble:
     def __repr__(self):
         n_conformers = len(self.conformers)
         return f"{self.__class__.__name__}({n_conformers!r} conformers)"
+
+
+@conditional(_HAS_OPENBABEL, _MSG_OPENBABEL)
+def generate_conformers_openbabel_ga(
+        mol, num_conformers=None, num_children=None, mutability=None,
+        convergence=None, score="rmsd", filter_method="steric", cutoff=0.8,
+        vdw_factor=0.5, check_hydrogens=True):
+    """Generates conformers based on the genetic algorithm in OpenBabel.
+
+    Follows the recipe of the command line script obabel --conformer:
+    https://github.com/openbabel/openbabel/blob/master/src/ops/conformer.cpp
+    If an OBMol object with 3D coordinates is given, the conformer search will
+    start from that structure.
+
+    Args:
+        mol (str or OBMol): Molecule either as SMILES string or OBMol object.
+        num_conformers (int): Maximum number of conformers
+        num_children (int): Number of children to generate for each parent
+        mutability (float): Mutation frequency
+        convergence (int): Number of identical generations before convergence
+            is reached
+        score (str): Scoring function: 'rmsd' (default), 'min_rmsd', 'energy',
+            'min_energy'
+        filter_method (str): Filtering algorithm: 'steric' (default)
+        cutoff (float): Absolute distance in Ånström below which atoms are
+            considered to clash.
+        vdw_factor (float): Scale factor applied to van der Waals radii for
+            detecting clashes."
+        check_hydrogens (bool): Detect clashes with hydrogen atoms
+    """
+    # Create 3D structure if not given
+    try:
+        py_mol = pybel.readstring("smi", mol)
+        py_mol.make3D()
+        ob_mol = py_mol.OBMol
+    except TypeError:
+        ob_mol = mol
+        py_mol = pybel.Molecule(ob_mol)
+
+    # Create search object and set parameters
+    conf_search = ob.OBConformerSearch()
+    conf_search.Setup(ob_mol)
+    if num_conformers is not None:
+        conf_search.SetNumConformers(num_conformers)
+    if num_children is not None:
+        conf_search.SetNumChildren(num_children)
+    if convergence is not None:
+        conf_search.SetConvergence(convergence)
+    if mutability is not None:
+        conf_search.SetMutability(mutability)
+    if score is not None:
+        # Scorers don't work with earlier versions of openbabel
+        if not (parse_version(openbabel.__version__) > parse_version("3.1.0")):
+            warnings.warn(
+                "Scorer only works with openbabel version > 3.1.0. "
+                "Proceeding without scorer.")
+        else:
+            if score == "rmsd":
+                scorer = ob.OBRMSDConformerScore()
+            if score == "min_rmsd":
+                scorer = ob.OBMinimizingRMSDConformerScore()
+            if score == "energy":
+                scorer = ob.OBEnergyConformerScore()
+            if score == "min_energy":
+                scorer = ob.OBMinimizingEnergyConformerScore()
+            conf_search.SetScore(scorer)
+    if filter_method == "steric":
+        # Filters don't work with earlier versions of openbabel
+        if not (parse_version(openbabel.__version__) > parse_version("3.1.0")):
+            warnings.warn(
+                "Filter only works with openbabel version > 3.1.0. "
+                "Proceeding without filter.")
+        else:
+            ob_filter = ob.OBStericConformerFilter(
+                cutoff, vdw_factor, check_hydrogens)
+            conf_search.SetFilter(ob_filter)
+
+    # Do conformational search
+    conf_search.Search()
+    conf_search.GetConformers(ob_mol)
+
+    # Calculate molecule properties
+    elements = np.array([atom.atomicnum for atom in py_mol.atoms])
+    charges = np.array([atom.formalcharge for atom in py_mol.atoms])
+
+    n_atoms = len(py_mol.atoms)
+    connectivity_matrix = np.zeros((n_atoms, n_atoms))
+    for bond in ob.OBMolBondIter(ob_mol):
+        i = bond.GetBeginAtomIdx() - 1
+        j = bond.GetEndAtomIdx() - 1
+        bo = bond.GetBondOrder()
+        connectivity_matrix[i, j] = bo
+        connectivity_matrix[j, i] = bo
+
+    # Retrieve conformer coordinates
+    conformer_coordinates = []
+    for i in range(ob_mol.NumConformers()):
+        ob_mol.SetConformer(i)
+        coordinates = np.array([atom.coords for atom in py_mol.atoms])
+        conformer_coordinates.append(coordinates)
+    conformer_coordinates = np.array(conformer_coordinates)
+
+    return (elements, conformer_coordinates, connectivity_matrix, charges,
+            ob_mol)
 
 
 @conditional(_HAS_RDKIT, _MSG_RDKIT)
@@ -1065,6 +1211,7 @@ def generate_conformers_rdkit(
 
     # Take out elements, coordinates and connectivity matrix
     elements = [atom.GetSymbol() for atom in mol.GetAtoms()]
+    charges = [atom.GetFormalCharge() for atom in mol.GetAtoms()]
 
     conformer_coordinates = []
     for conformer in mol.GetConformers():
@@ -1074,7 +1221,8 @@ def generate_conformers_rdkit(
 
     connectivity_matrix = Chem.GetAdjacencyMatrix(mol, useBO=True)
 
-    return elements, conformer_coordinates, energies, connectivity_matrix, mol
+    return (elements, conformer_coordinates, energies, connectivity_matrix,
+            charges, mol)
 
 
 @conditional(_HAS_RDKIT, _MSG_RDKIT)
@@ -1150,7 +1298,7 @@ def _get_dihedrals(mol):
 
 
 @conditional(_HAS_OPENBABEL, _MSG_OPENBABEL)
-def _get_ob_mol(elements, coordinates, connectivity_matrix):
+def _get_ob_mol(elements, coordinates, connectivity_matrix, charges=None):
     """Generate OpenBabel OBMol object.
 
     Args:
@@ -1162,16 +1310,63 @@ def _get_ob_mol(elements, coordinates, connectivity_matrix):
         mol (obj): OpenBabel OBMol object
     """
     elements = convert_elements(elements)
+    if charges is None:
+        charges = np.zeros(len(elements))
 
-    # Construct OBMol object based on atoms and bonds
     mol = ob.OBMol()
-    for element, coordinate in zip(elements, coordinates):
+
+    # Add atoms
+    for element, coordinate, charge in zip(elements, coordinates, charges):
         a = mol.NewAtom()
         a.SetAtomicNum(int(element))
         a.SetVector(*coordinate)
+        a.SetFormalCharge(int(charge))
+
+    # Add bonds
     for i, j in zip(*np.tril_indices_from(connectivity_matrix)):
         if i != j:
             bo = connectivity_matrix[i, j]
             if bo != 0:
                 mol.AddBond(int(i + 1), int(j + 1), int(bo))
     return mol
+
+@conditional(_HAS_RDKIT, _HAS_RDKIT)
+def _get_rdkit_mol(elements, coordinates, connectivity_matrix, charges=None):
+    if charges is None:
+        charges = np.zeros(len(elements))
+    elements = convert_elements(elements, output="symbols")
+
+    mol = Chem.RWMol()
+
+    # Add atoms
+    for element, charge in zip(elements, charges):
+        atom = Chem.Atom(element)
+        atom.SetFormalCharge(int(charge))
+        mol.AddAtom(atom)
+
+    # Add bonds
+    for i, j in zip(*np.tril_indices_from(connectivity_matrix)):
+        if i != j:
+            bo = connectivity_matrix[i, j]
+            if bo != 0:
+                bond_type = _RDKIT_BOND_TYPES[float(bo)]
+                mol.AddBond(int(i), int(j), bond_type)
+
+    # Add conformers
+    _add_conformers_to_mol(mol, coordinates)
+
+    mol = mol.GetMol()
+    Chem.SanitizeMol(mol)
+
+    return mol
+
+
+_RDKIT_BOND_TYPES = {
+    1.0: Chem.BondType.SINGLE,
+    1.5: Chem.BondType.AROMATIC,
+    2.0: Chem.BondType.DOUBLE,
+    3.0: Chem.BondType.TRIPLE,
+    4.0: Chem.BondType.QUADRUPLE,
+    5.0: Chem.BondType.QUINTUPLE,
+    6.0: Chem.BondType.HEXTUPLE,
+}
