@@ -761,7 +761,7 @@ class ConformerEnsemble:
         # Get xyz strings
         write_strings = []
         for conformer, energy in zip(conformers, energies):
-            if energy None:
+            if energy is None:
                 energy = 0.0
             xyz_string = get_xyz_string(symbols, conformer.coordinates,
                                         comment=f"{energy:.5f}")
