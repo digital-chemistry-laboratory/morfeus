@@ -8,8 +8,8 @@ from morfeus.data import atomic_numbers, atomic_symbols
 from morfeus.data import (radii_alvarez, radii_bondi, radii_crc, radii_rahm, 
     radii_truhlar, cov_radii_pyykko)
 
-def check_distances(elements, coordinates, check_atom, radii=[],
-    check_radius=0, exclude_list=[], epsilon=0, radii_type="crc"):
+def check_distances(elements, coordinates, check_atom, radii=None,
+    check_radius=0, exclude_list=None, epsilon=0, radii_type="crc"):
     """
     Args:
         elements (list): Elements as atomic symbols or numbers
@@ -32,9 +32,15 @@ def check_distances(elements, coordinates, check_atom, radii=[],
     elements = convert_elements(elements)
 
     # Get radii if they are not supplied
-    if not radii:
+    if radii is None:
         radii = get_radii(elements, radii_type=radii_type)
-    radii = np.array(radii)
+    else:
+        radii = np.array(radii)
+
+    if exclude_list is None:
+        exclude_list
+    else:
+        exclude_list = list(exclude_list)
 
     atom_coordinates = np.array(coordinates)
     check_coordinates = np.array(coordinates[check_atom - 1]).reshape(-1, 3)
@@ -43,10 +49,10 @@ def check_distances(elements, coordinates, check_atom, radii=[],
     distances = cdist(atom_coordinates, check_coordinates) - \
         radii.reshape(-1, 1) - check_radius - epsilon
     distances = distances.reshape(-1)
-    
+
     # Determine atoms which are within a vdW distance from the check atom
     within_distance = list(np.argwhere(distances < 0).reshape(-1))
-    
+
     # Remove check atom and atoms in the exclude list
     within_distance.remove(check_atom - 1)
     within_distance = [i for i in within_distance if i not in exclude_list]

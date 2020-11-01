@@ -2,16 +2,16 @@
 
 import numpy as np
 
+from morfeus.data import ANGSTROM_TO_BOHR, BOHR_TO_ANGSTROM
+from morfeus.helpers import conditional, convert_elements
+
 try:
-    import qcengine as qcng
     import qcelemental as qcel
+    import qcengine as qcng
     _HAS_QCNG = True
 except ImportError:
     _HAS_QCNG = False
 _MSG_QCNG = "Install QCEngine to use this function."
-
-from morfeus.data import ANGSTROM_TO_BOHR, BOHR_TO_ANGSTROM
-from morfeus.helpers import convert_elements, conditional
 
 
 @conditional(_HAS_QCNG, _MSG_QCNG)    

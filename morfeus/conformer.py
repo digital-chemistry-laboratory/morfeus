@@ -482,94 +482,6 @@ class ConformerEnsemble:
 
         return energies
 
-    @property
-    def n_conformers(self):
-        "n_conformers (int): Number of conformers"
-        n_conformers = len(self.conformers)
-
-        return n_conformers
-
-    def prune_enantiomers(self, keep="original", ref_label=None):
-        """Prune out conformers so that only one enantiomer is present in the
-        ensemble
-
-        Args:
-            keep (str): Which enantiomer to keep: 'original' (default), 'most
-                common' or 'specified'. Choice of 'original' requires that the
-                ref_cip_label attribute is set. Choice of 'specified' requires
-                ref_label to be given.
-            ref_label (tuple): Reference CIP labels for all atoms.
-        """
-        cip_labels = self.get_cip_labels()
-
-        # Set up reference label
-        if keep == "original":
-            ref_label = self.ref_cip_label
-            if ref_label is None:
-                keep = "most common"
-        elif keep == "specified":
-            pass
-        if keep == "most common":
-            counter = Counter(cip_labels)
-            ref_label = counter.most_common(n=1)[0][0]
-
-        # Prune conformers
-        to_keep = []
-        for i, cip_label in enumerate(cip_labels):
-            if cip_label == ref_label:
-                to_keep.append(i)
-        self.conformers = [self.conformers[i] for i in to_keep]
-
-    def set_coordinates(self, conformer_coordinates):
-        """Set conformer coordinates.
-
-        Args:
-            conformer_coordinates (ndarray): Conformer coordinates (Å)
-        """
-        if len(conformer_coordinates) != self.n_conformers:
-            msg = f"Number of coordinates ({len(conformer_coordinates)}) " \
-                f"!= number of conformers ({self.n_conformers})."
-            raise ValueError(msg)
-        for conformer, coordinates in zip(self.conformers,
-                                          conformer_coordinates):
-            conformer.coordinates = coordinates
-
-    def set_degeneracies(self, degeneracies):
-        """Set degeneracies.
-
-        Args:
-            degeneriacies (ndarray): Degeneracies
-        """
-        if len(degeneracies) != self.n_conformers:
-            msg = f"Number of degeneracies ({len(degeneracies)}) " \
-                f"!= number of conformers ({self.n_conformers})."
-            raise ValueError(msg)
-        for conformer, degeneracy in zip(self.conformers, degeneracies):
-            conformer.degeneracy = degeneracy
-
-    def set_energies(self, energies):
-        """Set energies.
-
-        Args:
-            energies (ndarray): Energy (a.u.)
-        """
-        if len(energies) != self.n_conformers:
-            msg = f"Number of energies ({len(energies)}) != number of " \
-                f"conformers ({self.n_conformers})."
-            raise ValueError(msg)
-        for conformer, energy in zip(self.conformers, energies):
-            conformer.energy = energy
-
-    def set_properties(self, key, values):
-        """Set conformer properties.
-
-        Args:
-            key (str): Name of property
-            values (list): Property values
-        """
-        for conformer, value in zip(self.conformers, values):
-            conformer.properties[key] = value
-
     def get_rmsd(self, i_s=None, j_s=None, include_hs=False, symmetry=True,
                  method="openbabel"):
         """Get RSMD between two conformers.
@@ -611,6 +523,13 @@ class ConformerEnsemble:
             rmsds = self._get_rmsd_spyrmsd(i_s, j_s, include_hs, symmetry)
         return rmsds
 
+    @property
+    def n_conformers(self):
+        "n_conformers (int): Number of conformers"
+        n_conformers = len(self.conformers)
+
+        return n_conformers
+
     def optimize_qc_engine(
             self, ids=None, program=None, model=None, keywords=None,
             local_options=None, procedure="berny"):
@@ -625,6 +544,10 @@ class ConformerEnsemble:
             local_options (dict): QCEngine local options
             procedure (str): QCEngine procedure
         """
+        if (np.any(self.formal_charges > 1)
+                or self.charge != 0) and program.lower() == "rdkit":
+            raise Exception("QCEngine using RDKit does not work with charges.")
+
         # Set defaults
         if model is None:
             model = {}
@@ -652,6 +575,62 @@ class ConformerEnsemble:
             )
             conformer.coordinates = opt_coordinates
             conformer.energy = energies[-1]
+
+    def prune_enantiomers(self, keep="original", ref_label=None):
+        """Prune out conformers so that only one enantiomer is present in the
+        ensemble
+
+        Args:
+            keep (str): Which enantiomer to keep: 'original' (default), 'most
+                common' or 'specified'. Choice of 'original' requires that the
+                ref_cip_label attribute is set. Choice of 'specified' requires
+                ref_label to be given.
+            ref_label (tuple): Reference CIP labels for all atoms.
+        """
+        cip_labels = self.get_cip_labels()
+
+        # Set up reference label
+        if keep == "original":
+            ref_label = self.ref_cip_label
+            if ref_label is None:
+                keep = "most common"
+        elif keep == "specified":
+            pass
+        if keep == "most common":
+            counter = Counter(cip_labels)
+            ref_label = counter.most_common(n=1)[0][0]
+
+        # Prune conformers
+        to_keep = []
+        for i, cip_label in enumerate(cip_labels):
+            if cip_label == ref_label:
+                to_keep.append(i)
+        self.conformers = [self.conformers[i] for i in to_keep]
+
+    def prune_energy(self, threshold=3.0, unit="kcal/mol"):
+        """Prune conformers based on energy compared to minimum energy
+        conformer.
+
+        Args:
+            threshold (float): Energy threshold for pruning.
+            unit (str): Unit for input energy threshold 'hartree', 'kcal/mol'
+                (default) or 'kJ/mol.
+        """
+        # Convert threshold to Hartree.
+        if unit.lower() == "hartree":
+            pass
+        if unit.lower() == "kcal/mol":
+            threshold *= KCAL_TO_HARTREE
+        elif unit.lower() == "kJ/mol":
+            threshold *= KJ_TO_HARTREE
+
+        # Prune conformers.
+        energies = self.get_energies()
+        energies -= np.min(energies)
+        remove_list = np.where(energies > threshold)[0]
+
+        for i in reversed(remove_list):
+            del self.conformers[i]
 
     def prune_rmsd(self, thres=0.35, include_hs=False, symmetry=True,
                    method="openbabel"):
@@ -707,30 +686,55 @@ class ConformerEnsemble:
         self.conformers = [conformer for i, conformer in
                            enumerate(self.conformers) if i in keep_list]
 
-    def prune_energy(self, threshold=3.0, unit="kcal/mol"):
-        """Prune conformers based on energy compared to minimum energy
-        conformer.
+    def set_coordinates(self, conformer_coordinates):
+        """Set conformer coordinates.
 
         Args:
-            threshold (float): Energy threshold for pruning.
-            unit (str): Unit for input energy threshold 'hartree', 'kcal/mol'
-                (default) or 'kJ/mol.
+            conformer_coordinates (ndarray): Conformer coordinates (Å)
         """
-        # Convert threshold to Hartree.
-        if unit.lower() == "hartree":
-            pass
-        if unit.lower() == "kcal/mol":
-            threshold *= KCAL_TO_HARTREE
-        elif unit.lower() == "kJ/mol":
-            threshold *= KJ_TO_HARTREE
+        if len(conformer_coordinates) != self.n_conformers:
+            msg = f"Number of coordinates ({len(conformer_coordinates)}) " \
+                f"!= number of conformers ({self.n_conformers})."
+            raise ValueError(msg)
+        for conformer, coordinates in zip(self.conformers,
+                                          conformer_coordinates):
+            conformer.coordinates = coordinates
 
-        # Prune conformers.
-        energies = self.get_energies()
-        energies -= np.min(energies)
-        remove_list = np.where(energies > threshold)[0]
+    def set_degeneracies(self, degeneracies):
+        """Set degeneracies.
 
-        for i in reversed(remove_list):
-            del self.conformers[i]
+        Args:
+            degeneriacies (ndarray): Degeneracies
+        """
+        if len(degeneracies) != self.n_conformers:
+            msg = f"Number of degeneracies ({len(degeneracies)}) " \
+                f"!= number of conformers ({self.n_conformers})."
+            raise ValueError(msg)
+        for conformer, degeneracy in zip(self.conformers, degeneracies):
+            conformer.degeneracy = degeneracy
+
+    def set_energies(self, energies):
+        """Set energies.
+
+        Args:
+            energies (ndarray): Energy (a.u.)
+        """
+        if len(energies) != self.n_conformers:
+            msg = f"Number of energies ({len(energies)}) != number of " \
+                f"conformers ({self.n_conformers})."
+            raise ValueError(msg)
+        for conformer, energy in zip(self.conformers, energies):
+            conformer.energy = energy
+
+    def set_properties(self, key, values):
+        """Set conformer properties.
+
+        Args:
+            key (str): Name of property
+            values (list): Property values
+        """
+        for conformer, value in zip(self.conformers, values):
+            conformer.properties[key] = value
 
     def sort(self):
         """Sort conformers based on energy."""
@@ -748,6 +752,10 @@ class ConformerEnsemble:
             keywords (dict): QCEngine keywords
             local_options (dict): QCEngine local options
         """
+        if (np.any(self.formal_charges > 1)
+                or self.charge != 0) and program.lower() == "rdkit":
+            raise Exception("QCEngine using RDKit does not work with charges.")
+
         # Set defaults
         if model is None:
             model = {"method": "GFN2-xTB"}
