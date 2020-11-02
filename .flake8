@@ -15,6 +15,7 @@ builtins =
     qcel,
     qcng,
     pybel,
+    pymeshfix,
     rdkit,
     spyrmsd,
     vtk,
