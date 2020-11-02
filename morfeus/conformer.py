@@ -186,7 +186,7 @@ class ConformerEnsemble:
 
         # Set up attributes
         self.charge = charge
-        self.formal_charges = formal_charges
+        self.formal_charges = np.array(formal_charges)
         self.multiplicity = multiplicity
         self.connectivity_matrix = np.array(connectivity_matrix)
         self._mol = None
