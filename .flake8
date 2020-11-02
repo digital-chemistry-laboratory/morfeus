@@ -18,3 +18,4 @@ builtins =
     rdkit,
     spyrmsd,
     vtk,
+    xtb,

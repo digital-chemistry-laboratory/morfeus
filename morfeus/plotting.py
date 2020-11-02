@@ -6,14 +6,14 @@ from morfeus.helpers import Import, requires_dependency
 
 
 @requires_dependency([Import(module="pyvista", item="pv")], globals())
-def Arrow_3D(start=[0, 0, 0],
-             direction=[1, 0, 0],
-             length=1,
-             shaft_radius=0.05,
-             shaft_resolution=20,
-             tip_length=0.25,
-             tip_radius=0.1,
-             tip_resolution=20):
+def Arrow3D(start=[0, 0, 0],
+            direction=[1, 0, 0],
+            length=1,
+            shaft_radius=0.05,
+            shaft_resolution=20,
+            tip_length=0.25,
+            tip_radius=0.1,
+            tip_resolution=20):
     start = np.array(start)
     direction = np.array(direction) / np.linalg.norm(direction)
     cylinder_length = length - tip_length
@@ -25,11 +25,11 @@ def Arrow_3D(start=[0, 0, 0],
                       resolution=shaft_resolution)
 
     cone_center = start + (cylinder_length + tip_length / 2) * direction
-    cone = Cone_3D(center=cone_center,
-                   direction=direction,
-                   radius=tip_radius,
-                   height=tip_length,
-                   resolution=tip_resolution)
+    cone = Cone3D(center=cone_center,
+                  direction=direction,
+                  radius=tip_radius,
+                  height=tip_length,
+                  resolution=tip_resolution)
     arrow = pv.MultiBlock()
     arrow.append(cyl)
     arrow.append(cone)
@@ -39,13 +39,13 @@ def Arrow_3D(start=[0, 0, 0],
 
 @requires_dependency([Import(module="pyvista", item="pv"),
                       Import("vtk")], globals())
-def Cone_3D(center=(0., 0., 0.),
-            direction=(1., 0., 0.),
-            height=1.0,
-            radius=None,
-            capping=True,
-            angle=None,
-            resolution=6):
+def Cone3D(center=(0., 0., 0.),
+           direction=(1., 0., 0.),
+           height=1.0,
+           radius=None,
+           capping=True,
+           angle=None,
+           resolution=6):
     """Create a cone
     Parameters
     ----------

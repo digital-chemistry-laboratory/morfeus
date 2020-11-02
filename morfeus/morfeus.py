@@ -23,6 +23,7 @@ from morfeus.helpers import (Import, check_distances, convert_elements,
                              get_connectivity_matrix, get_radii,
                              requires_dependency)
 from morfeus.io import CubeParser, D3Parser, D4Parser, VertexParser
+from morfeus.plotting import Arrow3D, Cone3D
 
 
 class Sterimol:
@@ -349,21 +350,21 @@ class Sterimol:
         length = np.linalg.norm(self.L)
         direction = self.L / length
         stop_L = start_L + length * direction
-        L_arrow = Arrow_3D(start=start_L, direction=direction, length=length)
+        L_arrow = Arrow3D(start=start_L, direction=direction, length=length)
         p.add_mesh(L_arrow, color=arrow_color)
 
         # Add B_1 arrow
         length = np.linalg.norm(self.B_1)
         direction = self.B_1 / length
         stop_B_1 = start_B + length * direction
-        B_1_arrow = Arrow_3D(start=start_B, direction=direction, length=length)
+        B_1_arrow = Arrow3D(start=start_B, direction=direction, length=length)
         p.add_mesh(B_1_arrow, color=arrow_color)
 
         # Add B_5 arrow
         length = np.linalg.norm(self.B_5)
         direction = self.B_5 / length
         stop_B_5 = start_B + length * direction
-        B_5_arrow = Arrow_3D(start=start_B, direction=direction, length=length)
+        B_5_arrow = Arrow3D(start=start_B, direction=direction, length=length)
         p.add_mesh(B_5_arrow, color=arrow_color)
 
         # Add labels
@@ -1372,9 +1373,12 @@ class ConeAngle:
             max_extension += 1
 
         # Make the cone
-        cone = Cone_3D(center=[0, 0, 0] + (max_extension * normal) / 2,
-                       direction=-normal, angle=cone_angle,
-                       height=max_extension, capping=False, resolution=100)
+        cone = Cone3D(center=[0, 0, 0] + (max_extension * normal) / 2,
+                      direction=-normal,
+                      angle=cone_angle,
+                      height=max_extension,
+                      capping=False,
+                      resolution=100)
         p.add_mesh(cone, opacity=cone_opacity, color=cone_color)
 
     def __repr__(self):
