@@ -3,10 +3,10 @@
 import numpy as np
 
 from morfeus.data import ANGSTROM_TO_BOHR, BOHR_TO_ANGSTROM
-from morfeus.helpers import convert_elements, requires_dependency
+from morfeus.helpers import Import, convert_elements, requires_dependency
 
 
-@requires_dependency([("qcengine", "qcng")], globals())
+@requires_dependency([Import(module="qcengine", alias="qcng")], globals())
 def optimize_qc_engine(elements,
                        coordinates,
                        charge=None,
@@ -81,7 +81,7 @@ def optimize_qc_engine(elements,
     return opt_coordinates, energies
 
 
-@requires_dependency([("qcengine", "qcng")], globals())
+@requires_dependency([Import(module="qcengine", alias="qcng")], globals())
 def sp_qc_engine(elements,
                  coordinates,
                  charge=None,
@@ -138,7 +138,7 @@ def sp_qc_engine(elements,
     return energy
 
 
-@requires_dependency([("qcelemental", "qcel")], globals())
+@requires_dependency([Import(module="qcelemental", item="qcel")], globals())
 def _generate_qcel_molecule(elements,
                             coordinates,
                             charge=None,

@@ -3,31 +3,20 @@
 import numpy as np
 from scipy.spatial.distance import cdist
 
-from morfeus.helpers import (
-    requires_dependency, get_radii, convert_elements)
-from morfeus.geometry import Atom
-from morfeus.data import r2_r4, HARTREE, BOHR, EV, ANGSTROM
 from morfeus.c6_coefficients import c6_reference_data
-
-# Matplotlib is required for plotting steric maps for buried volumes
-try:
-    from dftd4.calculators import D4_model, D3_model
-    from dftd4.utils import extrapolate_c_n_coeff
-    import ase.io
-except ImportError:
-    _HAS_DFTD4 = False
-else:
-    _HAS_DFTD4 = True
-_MSG_DFTD4 = "Install dftd4 and ase python packages for this function."
+from morfeus.data import ANGSTROM, BOHR, EV, HARTREE, r2_r4
+from morfeus.geometry import Atom
+from morfeus.helpers import (Import, convert_elements, get_radii,
+                             requires_dependency)
 
 
 @requires_dependency(
-    [("ase", "ase"), ("dftd4.calculators.D3_model", "D3_model"),
-     ("dftd4.utils.extrapolate_c_n_coeff", "extrapolate_c_n_coeff")],
+    [Import("ase"),
+     Import(module="dftd4.calculators", item="D3_model"),
+     Import(module="dftd4.utils", item="extrapolate_c_n_coeff")],
     globals())
 class D3Grimme:
-    """Calculates Cᴬᴬ dispersion coefficients with the dftd4 program and a
-    D3-like method.
+    """Calculates D3-like Cᴬᴬ coefficients with dftd4.
 
     Args:
         elements (list): Elements as atomic symbols or numbers
@@ -71,12 +60,13 @@ class D3Grimme:
 
 
 @requires_dependency(
-    [("ase", "ase"), ("dftd4.calculators.D4_model", "D4_model"),
-     ("dftd4.utils.extrapolate_c_n_coeff", "extrapolate_c_n_coeff")],
+    [Import("ase"),
+     Import(module="dftd4.calculators", item="D4_model"),
+     Import(module="dftd4.utils", item="extrapolate_c_n_coeff")],
     globals())
 class D4Grimme:
-    """Calculates Cᴬᴬ dispersion coefficients with the D4 method and the dftd4 program.
-    
+    """Calculates D4 Cᴬᴬ dispersion coefficients with dftd4.
+
     Args:
         elements (list): Elements as atomic symbols or numbers
         coordinates (list): Coordinates (Å)
@@ -128,8 +118,9 @@ class D4Grimme:
 
 
 class D3Calculator:
-    """Calculates Cᴬᴬ dispersion coefficients with the D3 method based on
-    the procedure in J. Chem. Phys. 2010, 132, 154104.
+    """Calculates D3 Cᴬᴬ coefficients.
+
+    Procedure as described in J. Chem. Phys. 2010, 132, 154104.
 
     Args:
         elements (list): Elements as atomic symbols or numbers

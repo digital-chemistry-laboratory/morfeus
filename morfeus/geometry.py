@@ -278,17 +278,17 @@ class InternalCoordinates:
 
     def add_bond(self, atom_1, atom_2):
         bond = Bond(atom_1, atom_2)
-        if not bond in self.internal_coordinates:
+        if bond not in self.internal_coordinates:
             self.internal_coordinates.append(bond)
 
     def add_angle(self, atom_1, atom_2, atom_3):
         angle = Angle(atom_1, atom_2, atom_3)
-        if not angle in self.internal_coordinates:
+        if angle not in self.internal_coordinates:
             self.internal_coordinates.append(angle)
 
     def add_dihedral(self, atom_1, atom_2, atom_3, atom_4):
         dihedral = Dihedral(atom_1, atom_2, atom_3, atom_4)
-        if not dihedral in self.internal_coordinates:
+        if dihedral not in self.internal_coordinates:
             self.internal_coordinates.append(dihedral)
 
     def add_internal_coordinate(self, atoms):

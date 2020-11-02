@@ -1,6 +1,7 @@
 """Help functions."""
 
 import shutil
+from dataclasses import dataclass
 from importlib import import_module
 
 import numpy as np
@@ -108,11 +109,19 @@ def requires_executable(executables):
     return error_decorator if len(exe_errors) > 0 else noop_decorator
 
 
-def requires_dependency(modules, _globals):
+@dataclass
+class Import:
+    """Class for handling optional dependency imports."""
+    module: str
+    item: str = None
+    alias: str = None
+
+
+def requires_dependency(imports, _globals):
     """Decorator factory to control optional dependencies.
 
     Args:
-        modules (list): Modules as (module, name) tuple pairs
+        imports (list): Imports as Import objects.
         _globals (dict): Global symbol table from calling module.
 
     Returns:
@@ -133,11 +142,28 @@ def requires_dependency(modules, _globals):
             raise ImportError(error_msg)
         return error
 
-    # Try to import dependencies
     import_errors = []
-    for module, name in modules:
+    for imp in imports:
+        # Import module
         try:
-            _globals[name] = import_module(module)
+            module = import_module(imp.module)
+
+            # Try to import item as attribute
+            if imp.item is not None:
+                try:
+                    item = getattr(module, imp.item)
+                except AttributeError:
+                    item = import_module(f"{imp.module}.{imp.item}")
+                name = imp.item
+            else:
+                item = module
+                name = imp.module
+
+            # Convert item name to alias
+            if imp.alias is not None:
+                name = imp.alias
+
+            _globals[name] = item
         except ImportError as import_error:
             import_errors.append(import_error)
 

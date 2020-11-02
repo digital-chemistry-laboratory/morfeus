@@ -1,0 +1,20 @@
+[flake8]
+builtins =
+    AllChem
+    ase,
+    BackgroundPlotter,
+    Chem,
+    D3_model,
+    D4_model,
+    extrapolate_c_n_coeff,
+    hex2color,
+    ob,
+    openbabel,
+    plt,
+    pv,
+    qcel,
+    qcng,
+    pybel,
+    rdkit,
+    spyrmsd,
+    vtk,

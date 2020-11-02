@@ -3,18 +3,18 @@
 import numbers
 import subprocess
 import tempfile
+import warnings
 from collections import Counter
 from copy import copy, deepcopy
-from pkg_resources import parse_version
 from pathlib import Path
-import warnings
 
 import numpy as np
+from pkg_resources import parse_version
 
 from morfeus.data import (HARTREE, HARTREE_TO_KCAL, HARTREE_TO_KJ, K_B,
                           KCAL_TO_HARTREE, KJ_TO_HARTREE)
-from morfeus.helpers import (
-    convert_elements, requires_dependency, requires_executable)
+from morfeus.helpers import (Import, convert_elements, requires_dependency,
+                             requires_executable)
 from morfeus.io import get_xyz_string
 from morfeus.qc import (_generate_qcel_molecule, optimize_qc_engine,
                         sp_qc_engine)
@@ -177,6 +177,10 @@ class ConformerEnsemble:
             conformer_coordinates = []
         if formal_charges is None:
             formal_charges = np.zeros(len(elements))
+        if charge is None:
+            charge = 0
+        if multiplicity is None:
+            multiplicity = 1
 
         # Store conformers
         self.elements = np.array(convert_elements(elements))
@@ -357,7 +361,8 @@ class ConformerEnsemble:
 
         return ce
 
-    @requires_dependency([("rdkit.Chem", "Chem")], globals())
+    @requires_dependency([Import(module="rdkit", item="Chem")],
+                         globals())
     def get_cip_labels(self):
         """Generate tuples of CIP labels for conformer.
 
@@ -858,7 +863,8 @@ class ConformerEnsemble:
         rmsds = np.vstack(rmsds)
         return rmsds
 
-    @requires_dependency([("openbabel.openbabel", "ob")], globals())
+    @requires_dependency([Import(module="openbabel.openbabel", alias="ob")],
+                         globals())
     def _get_rmsd_openbabel(self, i_s, j_s, include_hs, symmetry):
         """Calculate RMSD row-wise with openbabel python interface."""
         rmsds = []
@@ -881,7 +887,8 @@ class ConformerEnsemble:
         rmsds = np.array(rmsds)
         return rmsds
 
-    @requires_dependency([("spyrmsd.rmsd", "spyrmsd.rmsd")], globals())
+    @requires_dependency(
+        [Import("spyrmsd"), Import("spyrmsd.rmsd")], globals())
     def _get_rmsd_spyrmsd(self, i_s, j_s, include_hs, symmetry):
         """Calculate RMSD row-wise with spyrmsd"""
         # Construct mask for H atoms
@@ -1004,13 +1011,23 @@ class ConformerEnsemble:
         return f"{self.__class__.__name__}({n_conformers!r} conformers)"
 
 
-@requires_dependency([("openbabel.openbabel", "ob"),
-                      ("openbabel.pybel", "pybel"),
-                      ("openbabel", "openbabel")], globals())
-def generate_conformers_openbabel_ga(
-        mol, num_conformers=None, num_children=None, mutability=None,
-        convergence=None, score="rmsd", filter_method="steric", cutoff=0.8,
-        vdw_factor=0.5, check_hydrogens=True):
+
+
+@requires_dependency([
+    Import(module="openbabel.openbabel", alias="ob"),
+    Import(module="openbabel.pybel", alias="pybel"),
+    Import("openbabel")
+], globals())
+def generate_conformers_openbabel_ga(mol,
+                                     num_conformers=None,
+                                     num_children=None,
+                                     mutability=None,
+                                     convergence=None,
+                                     score="rmsd",
+                                     filter_method="steric",
+                                     cutoff=0.8,
+                                     vdw_factor=0.5,
+                                     check_hydrogens=True):
     """Generates conformers based on the genetic algorithm in OpenBabel.
 
     Follows the recipe of the command line script obabel --conformer:
@@ -1110,12 +1127,20 @@ def generate_conformers_openbabel_ga(
             ob_mol)
 
 
-@requires_dependency([("rdkit.Chem", "Chem"),
-                      ("rdkit.Chem.AllChem", "AllChem")], globals())
-def generate_conformers_rdkit(
-        smiles, n_confs=None, optimize=None, version=2, small_rings=True,
-        macrocycles=True, random_seed=None, rmsd_thres=0.35, n_threads=1,
-        add_rotamers=False):
+@requires_dependency([
+    Import(module="rdkit", item="Chem"),
+    Import(module="rdkit.Chem", item="AllChem")
+], globals())
+def generate_conformers_rdkit(smiles,
+                              n_confs=None,
+                              optimize=None,
+                              version=2,
+                              small_rings=True,
+                              macrocycles=True,
+                              random_seed=None,
+                              rmsd_thres=0.35,
+                              n_threads=1,
+                              add_rotamers=False):
     """Generates conformers for an RDKit mol object. Recipe based on
     J. Chem. Inf. Modeling 2012, 52, 1146.
 
@@ -1211,7 +1236,10 @@ def generate_conformers_rdkit(
             charges, mol)
 
 
-@requires_dependency([("rdkit", "rdkit"), ("rdkit.Chem", "Chem")], globals())
+@requires_dependency([
+    Import(module="rdkit"),
+    Import(module="rdkit", item="Chem"),
+], globals())
 def _add_conformers_to_mol(mol, conformer_coordinates):
     """Add conformers to RDKit Mol object.
 
@@ -1230,7 +1258,8 @@ def _add_conformers_to_mol(mol, conformer_coordinates):
         mol.AddConformer(conformer, assignId=True)
 
 
-@requires_dependency([("rdkit.Chem.AllChem", "AllChem")], globals())
+@requires_dependency([Import(module="rdkit.Chem", item="AllChem")],
+                     globals())
 def _add_rotamers_to_mol(mol):
     """Add simple CH₃, NH₂ etc. rotamers to conformers of RDKit Mol object
 
@@ -1249,7 +1278,7 @@ def _add_rotamers_to_mol(mol):
                 AllChem.SetDihedralDeg(conformer, *dihedral, angle + increment)
 
 
-@requires_dependency([("rdkit.Chem", "Chem")], globals())
+@requires_dependency([Import(module="rdkit", item="Chem")], globals())
 def _get_dihedrals(mol):
     """Return dihedral which ends in saturated atom of type CH₃, NH₂ etc.
 
@@ -1283,7 +1312,8 @@ def _get_dihedrals(mol):
     return dihedral_indices
 
 
-@requires_dependency([("openbabel.openbabel", "ob")], globals())
+@requires_dependency([Import(module="openbabel.openbabel", alias="ob")],
+                     globals())
 def _get_ob_mol(elements, coordinates, connectivity_matrix, charges=None):
     """Generate OpenBabel OBMol object.
 
@@ -1316,7 +1346,7 @@ def _get_ob_mol(elements, coordinates, connectivity_matrix, charges=None):
                 mol.AddBond(int(i + 1), int(j + 1), int(bo))
     return mol
 
-@requires_dependency([("rdkit.Chem", "Chem")], globals())
+@requires_dependency([Import(module="rdkit", item="Chem")], globals())
 def _get_rdkit_mol(elements, coordinates, connectivity_matrix, charges=None):
     _RDKIT_BOND_TYPES = {
         1.0: Chem.BondType.SINGLE,

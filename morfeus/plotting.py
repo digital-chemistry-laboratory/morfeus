@@ -2,10 +2,10 @@
 
 import numpy as np
 
-from morfeus.helpers import requires_dependency
+from morfeus.helpers import Import, requires_dependency
 
 
-@requires_dependency([("pyvista", "pv")], globals())
+@requires_dependency([Import(module="pyvista", item="pv")], globals())
 def Arrow_3D(start=[0, 0, 0],
              direction=[1, 0, 0],
              length=1,
@@ -37,7 +37,8 @@ def Arrow_3D(start=[0, 0, 0],
     return arrow
 
 
-@requires_dependency([("pyvista", "pv"), ("vtk", "vtk")], globals())
+@requires_dependency([Import(module="pyvista", item="pv"),
+                      Import("vtk")], globals())
 def Cone_3D(center=(0., 0., 0.),
             direction=(1., 0., 0.),
             height=1.0,
