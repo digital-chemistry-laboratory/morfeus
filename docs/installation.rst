@@ -2,7 +2,7 @@
 Installation
 ============
 
-ᴍᴏʀғᴇᴜs can be installed using pip and works with Python>=3.6.
+ᴍᴏʀғᴇᴜs can be installed using pip and works with Python >= 3.7.
 
 ************
 Dependencies

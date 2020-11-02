@@ -37,6 +37,9 @@ def optimize_qc_engine(elements,
         opt_coordinates (ndarray): Conformer coordinates (Å)
         energies (ndarray): Energies for all steps (a.u.)
     """
+    if program.lower() == "rdkit":
+        _check_qcng_rdkit(charge, connectivity_matrix)
+
     # Set defaults
     if model is None:
         model = {"method": "GFN2-xTB"}
@@ -107,6 +110,9 @@ def sp_qc_engine(elements,
     Returns:
         energy (float): Energy (a.u.)
     """
+    if program.lower() == "rdkit":
+        _check_qcng_rdkit(charge, connectivity_matrix)
+
     # Set defaults
     if model is None:
         model = {"method": "GFN2-xTB"}
@@ -138,7 +144,17 @@ def sp_qc_engine(elements,
     return energy
 
 
-@requires_dependency([Import(module="qcelemental", item="qcel")], globals())
+def _check_qcng_rdkit(charge, connectivity_matrix):
+    """Check qncg calculation for RDKit incompatibilities."""
+    if charge != 0:
+        raise Exception(
+            "QCEngine using RDKit does not work with charged molecules.")
+    if np.any(~np.isin(connectivity_matrix, [0, 1, 2, 3])):
+        raise Exception(
+            "QCEngine using RDKit cannot handle bond orders different from "
+            "1, 2 or 3.")
+
+@requires_dependency([Import(module="qcelemental", alias="qcel")], globals())
 def _generate_qcel_molecule(elements,
                             coordinates,
                             charge=None,

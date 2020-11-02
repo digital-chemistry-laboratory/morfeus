@@ -163,6 +163,7 @@ class ConformerEnsemble:
         conformers (list): Conformers
         connectivity_matrix (ndarray): Connectivity matrix
         formal_charges (ndarray): Atomic formal charges.
+        mol (obj): RDKit mol object.
         multiplicity (int): Molecular multiplicity.
         ref_cip_label (tuple): Tuple of CIP labels for all atoms: 'R', 'S'
             or ''
@@ -193,7 +194,7 @@ class ConformerEnsemble:
         self.formal_charges = np.array(formal_charges)
         self.multiplicity = multiplicity
         self.connectivity_matrix = np.array(connectivity_matrix)
-        self._mol = None
+        self.mol = None
         self.ref_cip_label = ref_cip_label
 
     def add_conformers(self, coordinates, energies=None, degeneracies=None,
@@ -274,7 +275,7 @@ class ConformerEnsemble:
 
         return weights
 
-    def detect_enantiomers(self, thres=0.001, method="openbabel"):
+    def detect_enantiomers(self, thres=0.01, method="openbabel"):
         """Detect enantiomers in ensemble.
 
         Args:
@@ -305,6 +306,9 @@ class ConformerEnsemble:
                         enantiomers[j].add(i)
         enantiomers = {key: list(value) for key, value in enantiomers.items()}
 
+        # Reset number of conformers
+        self.conformers = self.conformers[:n_conformers]
+
         return enantiomers
 
     @classmethod
@@ -317,6 +321,9 @@ class ConformerEnsemble:
         Args:
             *args: Positional arguments
             **kwargs Keyword arguments
+        
+        Returns:
+            ce (obj): Conformer ensemble object.
         """
         # Run RDKit conformer search and generate ensemble.
         elements, conformer_coordinates, energies, connectivity_matrix, \
@@ -324,7 +331,7 @@ class ConformerEnsemble:
         ce = cls(elements, conformer_coordinates, energies=energies,
                  connectivity_matrix=connectivity_matrix,
                  formal_charges=charges)
-        ce._mol = mol
+        ce.mol = mol
 
         # Set reference CIP label if enantiomerically pure.
         cip_labels = ce.get_cip_labels()
@@ -334,15 +341,25 @@ class ConformerEnsemble:
         return ce
 
     @classmethod
-    def from_openbabel_ga(cls, *args, generate_rdkit_mol=False, **kwargs):
+    def from_openbabel_ga(
+            cls, *args, generate_rdkit_mol=False, update_charges=True,
+            update_connectivity=True, **kwargs):
         """Generate conformer ensemble from OpenBabel with GA method.
 
         See the documentation for the function generate_conformers_openbabel_ga
         for more information.
 
         Args:
-            *args: Positional arguments
-            **kwargs Keyword arguments
+            *args: Positional arguments for generate_conformers_openbabel_ga
+            generate_rdkit_mol (bool): Generate RDKit mol object for ensemble
+            update_charges (bool): Update formal charges from generated RDKit
+                Mol object. Only used if generate_rdkit_mol is True.
+            update_connectivity (bool): Update connectivity from generate RDKit
+                Mol object. Only used if generate_rdkit_mol is True.
+            **kwargs: Keyword arguments for generate_conformers_openbabel_ga
+        
+        Returns:
+            ce (obj): Conformer ensemble.
         """
         # Run Openbabel conformer search and generate ensemble.
         elements, conformer_coordinates, connectivity_matrix, charges, \
@@ -353,9 +370,8 @@ class ConformerEnsemble:
 
         # Generate RDKit mol object and CIP labels
         if generate_rdkit_mol:
-            mol = _get_rdkit_mol(
-                elements, conformer_coordinates, connectivity_matrix, charges)
-            ce._mol = mol
+            ce.generate_mol(update_charges=update_charges,
+                            update_connectivity=update_connectivity)
 
             cip_labels = ce.get_cip_labels()
             if len(set(cip_labels)) == 1:
@@ -363,8 +379,22 @@ class ConformerEnsemble:
 
         return ce
 
-    @requires_dependency([Import(module="rdkit", item="Chem")],
-                         globals())
+    @requires_dependency([Import(module="rdkit", item="Chem")], globals())
+    def generate_mol(self, update_charges=True, update_connectivity=True):
+        """Generate RDKit Mol object"""
+        mol = _get_rdkit_mol(self.elements, self.get_coordinates(),
+                             self.connectivity_matrix, self.formal_charges)
+        if update_charges:
+            self.formal_charges = np.array([
+                atom.GetFormalCharge() for atom in mol.GetAtoms()
+            ])
+        if update_connectivity:
+            self.connectivity_matrix = np.array(
+                Chem.GetAdjacencyMatrix(mol, useBO=True))
+
+        self.mol = mol
+
+    @requires_dependency([Import(module="rdkit", item="Chem")], globals())
     def get_cip_labels(self):
         """Generate tuples of CIP labels for conformer.
 
@@ -372,11 +402,11 @@ class ConformerEnsemble:
             cip_label (list): Tuples of CIP labels for each conformer.
         """
         # Update RDKit Mol object with current conformers.
-        self._reset_mol()
+        self.update_mol()
 
         # Generate CIP labels with new RDKit
         cip_labels = []
-        mol = self._mol
+        mol = self.mol
         for i in range(mol.GetNumConformers()):
             Chem.AssignStereochemistryFrom3D(mol, i)
             labels = []
@@ -527,8 +557,7 @@ class ConformerEnsemble:
             local_options (dict): QCEngine local options
             procedure (str): QCEngine procedure
         """
-        if (np.any(self.formal_charges > 1)
-                or self.charge != 0) and program.lower() == "rdkit":
+        if np.any(self.formal_charges != 0) and (program.lower() == "rdkit"):
             raise Exception("QCEngine using RDKit does not work with charges.")
 
         # Set defaults
@@ -559,9 +588,26 @@ class ConformerEnsemble:
             conformer.coordinates = opt_coordinates
             conformer.energy = energies[-1]
 
+    def condense_enantiomeric(self, thres=None):
+        cip_labels = self.get_cip_labels()
+        if "".join(["".join(labels) for labels in cip_labels]) != "":
+            raise Exception("Chiral molecule. Not safe to condense.")
+
+        enantiomers = self.detect_enantiomers(thres=0.01)
+        to_keep = []
+        to_remove = []
+        for key, value in enantiomers.items():
+            if key not in to_remove:
+                conformer = self.conformers[key]
+                conformer.degeneracy = len(value) + 1
+                to_keep.append(conformer)
+                to_remove.extend(value)
+
+        self.conformers = to_keep
+
     def prune_enantiomers(self, keep="original", ref_label=None):
         """Prune out conformers so that only one enantiomer is present in the
-        ensemble
+        ensemble.
 
         Args:
             keep (str): Which enantiomer to keep: 'original' (default), 'most
@@ -735,8 +781,7 @@ class ConformerEnsemble:
             keywords (dict): QCEngine keywords
             local_options (dict): QCEngine local options
         """
-        if (np.any(self.formal_charges > 1)
-                or self.charge != 0) and program.lower() == "rdkit":
+        if np.any(self.formal_charges != 0) and (program.lower() == "rdkit"):
             raise Exception("QCEngine using RDKit does not work with charges.")
 
         # Set defaults
@@ -950,10 +995,11 @@ class ConformerEnsemble:
             rmsds = np.vstack(rmsds)
         return rmsds
 
-    def _reset_mol(self):
-        self._mol.RemoveAllConformers()
+    def update_mol(self):
+        """Update Mol object with conformers"""
+        self.mol.RemoveAllConformers()
         conformer_coordinates = self.get_coordinates()
-        _add_conformers_to_mol(self._mol, conformer_coordinates)
+        _add_conformers_to_mol(self.mol, conformer_coordinates)
 
     def __copy__(self):
         # Generate copy where conformers and mol object are shared with old
@@ -967,7 +1013,7 @@ class ConformerEnsemble:
             formal_charges=self.formal_charges,
             ref_cip_label=self.ref_cip_label,
         )
-        ce._mol = self._mol
+        ce.mol = self.mol
         ce.conformers = self.conformers
         return ce
 
@@ -986,7 +1032,7 @@ class ConformerEnsemble:
             formal_charges=self.formal_charges,
             ref_cip_label=self.ref_cip_label,
         )
-        ce._mol = deepcopy(ce._mol, memo)
+        ce.mol = deepcopy(ce.mol, memo)
         return ce
 
     def __delitem__(self, index):
@@ -1133,7 +1179,7 @@ def generate_conformers_openbabel_ga(mol,
     Import(module="rdkit", item="Chem"),
     Import(module="rdkit.Chem", item="AllChem")
 ], globals())
-def generate_conformers_rdkit(smiles,
+def generate_conformers_rdkit(mol,
                               n_confs=None,
                               optimize=None,
                               version=2,
@@ -1147,7 +1193,7 @@ def generate_conformers_rdkit(smiles,
     J. Chem. Inf. Modeling 2012, 52, 1146.
 
     Args:
-        smiles (str): SMILES string of molecule
+        mol (str or Mol): Molecule either as SMILES string or RDKit Mol object.
         n_confs (int): Number of conformers to generate. If None, a
             reasonable number will be set depending on the number of
             rotatable bonds.
@@ -1169,7 +1215,10 @@ def generate_conformers_rdkit(smiles,
         mol (obj): RDKit Mol object. Only returned when `return_mol=True`.
     """
     # Generate mol object
-    mol = Chem.MolFromSmiles(smiles)
+    try:
+        mol = Chem.MolFromSmiles(mol)
+    except TypeError:
+        pass
     mol = Chem.AddHs(mol)
 
     # If n_confs is not set, set number of conformers based on number of
