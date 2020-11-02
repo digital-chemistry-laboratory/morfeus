@@ -1821,7 +1821,7 @@ class LocalForce:
         local_frequencies (ndarray): Local mode frequencies (cm^(-1))
         n_imag (int): Number of normal modes with imaginary frequencies
     """
-    def __init__(self, elements=[], coordinates=[]):
+    def __init__(self, elements=None, coordinates=None):
         # Set up attributes
         self.n_imag = None
         self.local_force_constants = np.array([])
@@ -1833,12 +1833,17 @@ class LocalForce:
         self._internal_coordinates = InternalCoordinates()
         self.internal_coordinates = self._internal_coordinates.internal_coordinates
 
-        if elements:
+        if elements is not None:
             elements = convert_elements(elements)
-        self._atomic_masses = np.array([atomic_masses[i] for i in elements])
+            masses = np.array([atomic_masses[i] for i in elements])
+        else:
+            masses = None
+        if coordinates is not None:
+            coordinates = np.array(coordinates)
 
+        self._masses = masses
         self._elements = elements
-        self._coordinates = np.array(coordinates)
+        self._coordinates = coordinates
 
     def add_internal_coordinate(self, atoms):
         """Add internal coordinate composed of two (bond), three (angle) or four
@@ -1866,7 +1871,7 @@ class LocalForce:
     def compute_frequencies(self):
         """Compute local frequencies"""
         # Compute local frequencies
-        M = np.diag(np.repeat(self._atomic_masses, 3))
+        M = np.diag(np.repeat(self._masses, 3))
         G = self._B @ np.linalg.inv(M) @ self._B.T
         frequencies = np.sqrt((np.diag(G) / AMU \
             * (self.local_force_constants / ANGSTROM * DYNE / 1000)) \
@@ -1997,7 +2002,7 @@ class LocalForce:
         """
         # Set up
         coordinates = np.array(self._coordinates) * ANGSTROM_TO_BOHR
-        masses = self._atomic_masses
+        masses = self._masses
         if not hessian:
             hessian = self._fc_matrix
         n_atoms = len(coordinates)
@@ -2142,7 +2147,7 @@ class LocalForce:
         read_ic = False
         read_atomic_numbers = False
         read_coordinates = False
-        read_atomic_masses = False
+        read_masses = False
 
         # Set up containers for reading data
         modes = []
@@ -2151,7 +2156,7 @@ class LocalForce:
         internal_coordinates = []
         n_atoms = None
         atomic_numbers = []
-        atomic_masses = []
+        masses = []
         coordinates = []
 
         # Parse fchk file
@@ -2197,13 +2202,13 @@ class LocalForce:
                 except ValueError:
                     read_atomic_numbers = False
             # Read atomic masses
-            if read_atomic_masses:
+            if read_masses:
                 try:
                     split_line = line.strip().split()
                     values = [float(value) for value in split_line]
-                    atomic_masses.extend(values)
+                    masses.extend(values)
                 except ValueError:
-                    read_atomic_masses= False
+                    read_masses= False
             # Read coordinates
             if read_coordinates:
                 try:
@@ -2225,7 +2230,7 @@ class LocalForce:
             if "Vib-Modes" in line:
                 read_modes = True
             if "Vib-AtMass" in line:
-                read_atomic_masses = True
+                read_masses = True
             if "Cartesian Force Constants" in line:
                 read_hessian = True
             if "Vib-E2 " in line:
@@ -2262,7 +2267,7 @@ class LocalForce:
         self._force_constants = force_constants
         self._elements = convert_elements(atomic_numbers)
         self._coordinates = coordinates
-        self._atomic_masses = np.array(atomic_masses)
+        self._masses = np.array(masses)
 
     def _parse_gaussian_log(self, filename):
         # Read the log file
@@ -2279,7 +2284,7 @@ class LocalForce:
         read_internal = False
         read_internal_modes = False
         read_hp_modes = False
-        read_atomic_masses = False
+        read_masses = False
 
         # Set up containers for reading data
         B_atom_map = {}
@@ -2287,7 +2292,7 @@ class LocalForce:
         normal_modes = []
         internal_modes = []
         force_constants = []
-        atomic_masses = []
+        masses = []
         fc_matrix = np.array([])
         ifc_matrix = np.array([])
         input_coordinates = []
@@ -2429,11 +2434,11 @@ class LocalForce:
                     read_hp_modes = False
                 counter += 1
             # Read atomic masses
-            if read_atomic_masses:
+            if read_masses:
                 if "Molecular mass: " in line:
-                    read_atomic_masses = False
+                    read_masses = False
                 elif "and mass" in line:
-                    atomic_masses.append(float(line.strip().split()[8]))
+                    masses.append(float(line.strip().split()[8]))
             # Read number of atoms
             if " NAtoms=" in line and not n_atoms :
                 n_atoms = int(line.strip().split()[1])
@@ -2451,7 +2456,7 @@ class LocalForce:
                 counter = 1
                 internal_names = []
             if "- Thermochemistry -" in line:
-                read_atomic_masses = True
+                read_masses = True
             if " IB Matrix in FormBX:" in line:
                 read_b_atoms = True
                 counter = 0
@@ -2539,7 +2544,7 @@ class LocalForce:
         if len(internal_modes) > 0:
             self._D = np.vstack(internal_modes).T
         self.n_imag = n_imag
-        self._atomic_masses = np.array(atomic_masses)
+        self._masses = np.array(masses)
         self._input_coordinates = input_coordinates
         self._standard_coordinates = standard_coordinates
         self._coordinates = input_coordinates
@@ -2551,14 +2556,14 @@ class LocalForce:
             lines = file.readlines()
 
         # Set up flags for reading
-        read_atomic_masses = False
+        read_masses = False
         read_atomic_numbers = False
         read_coordinates = False
         read_hessian = False
         read_normal_modes = False
 
         # Set up containers for data
-        atomic_masses = []
+        masses = []
         atomic_numbers = []
         coordinates = []
         hessian = []
@@ -2567,12 +2572,12 @@ class LocalForce:
         # Parse file
         for line in lines:
             # Read atomic masses
-            if read_atomic_masses:
+            if read_masses:
                 if " $ZA  $END" in line:
-                    read_atomic_masses = False
+                    read_masses = False
                 else:
                     split_line = line.strip().split()
-                    atomic_masses.extend([float(value.replace("D", "E")) for value in split_line])
+                    masses.extend([float(value.replace("D", "E")) for value in split_line])
             # Read atomic numbers
             if read_atomic_numbers:
                 if " $XYZ  $END" in line:
@@ -2608,7 +2613,7 @@ class LocalForce:
                 n_modes = int(split_line[2].split("=")[1])
             # Detect when to read data
             if " $AMASS  $END" in line:
-                read_atomic_masses = True
+                read_masses = True
             if " $ZA  $END" in line:
                 read_atomic_numbers = True
             if " $XYZ  $END" in line:
@@ -2626,7 +2631,7 @@ class LocalForce:
 
         # Set up attributes
         self._normal_modes = normal_modes
-        self._atomic_masses = np.array(atomic_masses)
+        self._masses = np.array(masses)
         self._fc_matrix = hessian
         self._coordinates = coordinates
         self._elements = elements
@@ -2643,7 +2648,7 @@ class LocalForce:
 
         # Set up data containers
         atomic_numbers = []
-        atomic_masses = []
+        masses = []
         coordinates = []
         force_constants = []
         normal_modes = []
@@ -2663,7 +2668,7 @@ class LocalForce:
                         split_line = line.strip().split()
                         atomic_numbers.append(int(split_line[2]))
                         coordinates.extend([float(value) for value in split_line[3:6]])
-                        atomic_masses.append(float(split_line[6]))
+                        masses.append(float(split_line[6]))
                 counter += 1
             # Read normal modes and force constants
             if read_vibrations:
@@ -2698,7 +2703,7 @@ class LocalForce:
                 read_vibrations = True
 
         # Convert quantities to right format
-        n_atoms = len(atomic_masses)
+        n_atoms = len(masses)
         coordinates = np.array(coordinates).reshape(-1, 3)
         normal_modes = np.array(normal_modes).reshape(-1, n_atoms * 3)
         elements = convert_elements(atomic_numbers)
@@ -2711,7 +2716,7 @@ class LocalForce:
         # Set up attributes
         self._elements = elements
         self._coordinates = coordinates
-        self._atomic_masses = atomic_masses
+        self._masses = masses
         self._force_constants = force_constants
         self._normal_modes = normal_modes
 
@@ -2722,14 +2727,14 @@ class LocalForce:
 
         # Set up flags for reading
         read_n_atoms = False
-        read_atomic_masses = False
+        read_masses = False
         read_atomic_numbers = False
         read_coordinates = False
         read_hessian = False
 
         # Set up containers for data
         n_atoms = None
-        atomic_masses = []
+        masses = []
         atomic_numbers = []
         coordinates = []
         hessian = []
@@ -2743,12 +2748,12 @@ class LocalForce:
                 else:
                     n_atoms = int(line.strip())
             # Read atomic masses
-            if read_atomic_masses:
+            if read_masses:
                 if "ZA" in line:
-                    read_atomic_masses = False
+                    read_masses = False
                 else:
                     split_line = line.strip().split()
-                    atomic_masses.extend([float(value.replace("D", "E")) for value in split_line])
+                    masses.extend([float(value.replace("D", "E")) for value in split_line])
             # Read atomic numbers
             if read_atomic_numbers:
                 if "XYZ" in line:
@@ -2775,7 +2780,7 @@ class LocalForce:
                 read_n_atoms = True
             # Detect when to read data
             if "AMASS" in line:
-                read_atomic_masses = True
+                read_masses = True
             if "ZA" in line:
                 read_atomic_numbers = True
             if "XYZ" in line:
@@ -2789,7 +2794,7 @@ class LocalForce:
         elements = convert_elements(atomic_numbers)
 
         # Set up attributes
-        self._atomic_masses = np.array(atomic_masses)
+        self._masses = np.array(masses)
         self._fc_matrix = hessian
         self._coordinates = coordinates
         self._elements = elements
@@ -2830,7 +2835,7 @@ class LocalForce:
             raise Exception("Can't determine the number of translations and rotations.")
 
         # Un-mass-weight normal modes, calculate reduced masses and normalize
-        m_inverse = 1 / np.repeat(self._atomic_masses, 3)
+        m_inverse = 1 / np.repeat(self._masses, 3)
         cart_disp = xtb_normal_modes * np.sqrt(m_inverse)
         N = 1 / np.linalg.norm(cart_disp, axis=1)
         norm_cart_disp = cart_disp * N.reshape(-1, 1)
