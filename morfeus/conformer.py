@@ -270,13 +270,15 @@ class ConformerEnsemble:
 
         return weights
 
-    def detect_enantiomers(self, thres=0.001):
+    def detect_enantiomers(self, thres=0.001, method="openbabel"):
         """Detect enantiomers in ensemble.
 
         Args:
             thres (float): RMSD threshold for detecting enantiomers in terms
                 of coordinates.
-
+            method (str): RMSD calculation method: 'obrms-batch', 'obrms-iter',
+                openbabel' (default) or 'spyrmsd'.
+                
         Returns:
             enantiomers (dict): Mapping of enantiomer with conformer id as keys
                 and enantiomer ids as values.
@@ -287,7 +289,7 @@ class ConformerEnsemble:
 
         # Map conformers to enantiomers
         enantiomers = {i: set() for i in range(n_conformers)}
-        rmsds = self.get_rmsd()
+        rmsds = self.get_rmsd(method=method)
         for i in range(n_conformers):
             # Do test that inverted conformer should have 0 RMSD to be
             # enantiomer
