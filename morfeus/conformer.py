@@ -283,7 +283,7 @@ class ConformerEnsemble:
                 of coordinates.
             method (str): RMSD calculation method: 'obrms-batch', 'obrms-iter',
                 openbabel' (default) or 'spyrmsd'.
-                
+
         Returns:
             enantiomers (dict): Mapping of enantiomer with conformer id as keys
                 and enantiomer ids as values.
@@ -365,8 +365,50 @@ class ConformerEnsemble:
             ce (obj): Conformer ensemble.
         """
         # Run Openbabel conformer search and generate ensemble.
-        elements, conformer_coordinates, connectivity_matrix, charges, \
-            ob_mol = generate_conformers_openbabel_ga(*args, **kwargs)
+        (elements, conformer_coordinates, connectivity_matrix, charges,
+         ob_mol) = generate_conformers_openbabel_ga(*args, **kwargs)
+        ce = cls(elements, conformer_coordinates,
+                 connectivity_matrix=connectivity_matrix,
+                 formal_charges=charges)
+
+        # Generate RDKit mol object and CIP labels
+        if generate_rdkit_mol:
+            ce.generate_mol(update_charges=update_charges,
+                            update_connectivity=update_connectivity,
+                            update_multiplicity=update_multiplicity)
+
+            cip_labels = ce.get_cip_labels()
+            if len(set(cip_labels)) == 1:
+                ce.ref_cip_label = cip_labels[0]
+
+        return ce
+
+    @classmethod
+    def from_openbabel_ff(
+            cls, *args, generate_rdkit_mol=False, update_charges=True,
+            update_connectivity=True, update_multiplicity=True, **kwargs):
+        """Generate conformer ensemble from OpenBabel with FF method.
+
+        See the documentation for the function generate_conformers_openbabel_ff
+        for more information.
+
+        Args:
+            *args: Positional arguments for generate_conformers_openbabel_ga
+            generate_rdkit_mol (bool): Generate RDKit mol object for ensemble
+            update_charges (bool): Update formal charges from generated RDKit
+                Mol object. Only used if generate_rdkit_mol is True.
+            update_connectivity (bool): Update connectivity from generated
+                RDKit Mol object. Only used if generate_rdkit_mol is True.
+            update_multiplicity (bool): Update multiplicity from generated
+                RDKit Mol object. Only used if generate_rdkit_mol is True.
+            **kwargs: Keyword arguments for generate_conformers_openbabel_ga
+
+        Returns:
+            ce (obj): Conformer ensemble.
+        """
+        # Run Openbabel conformer search and generate ensemble.
+        (elements, conformer_coordinates, connectivity_matrix, charges,
+         ob_mol) = generate_conformers_openbabel_ff(*args, **kwargs)
         ce = cls(elements, conformer_coordinates,
                  connectivity_matrix=connectivity_matrix,
                  formal_charges=charges)
@@ -1082,6 +1124,64 @@ class ConformerEnsemble:
         return f"{self.__class__.__name__}({n_conformers!r} conformers)"
 
 
+@requires_dependency([
+    Import(module="openbabel.openbabel", alias="ob"),
+    Import(module="openbabel.pybel", alias="pybel"),
+    Import("openbabel")
+], globals())
+def generate_conformers_openbabel_ff(mol,
+                                     num_conformers=30,
+                                     ff="MMFF94",
+                                     method="systematic",
+                                     rings=False):
+    """Generates conformers based on the force field algorithm in OpenBabel.
+
+    Follows the recipe of the command line script obabel --conformer:
+    https://github.com/openbabel/openbabel/blob/master/src/ops/conformer.cpp
+    If an OBMol object with 3D coordinates is given, the conformer search will
+    start from that structure.
+
+    Args:
+        mol (str or OBMol): Molecule either as SMILES string or OBMol object.
+        num_conformers (int): Maximum number of conformers
+        ff (str): Force field supported by OpenBabel
+        method (str): 'fast', random', 'systematic' (default) or 'weighted'
+        rings (bool): Sample ring torsions.
+
+    """
+    # Create 3D structure if not given
+    try:
+        py_mol = pybel.readstring("smi", mol)
+        py_mol.make3D()
+        ob_mol = py_mol.OBMol
+    except TypeError:
+        ob_mol = mol
+        py_mol = pybel.Molecule(ob_mol)
+
+    # Set up FF
+    ff = ob.OBForceField_FindForceField(ff)
+    ff.EnableCutOff(True)
+    ff.SetVDWCutOff(10.0)
+    ff.SetElectrostaticCutOff(20.0)
+    ff.SetUpdateFrequency(10)
+
+    # Do conformer search
+    if method == "systematic":
+        ff.SystematicRotorSearch(10, rings)
+    elif method == "fast":
+        ff.FastRotorSearch(True)
+    elif method == "random":
+        ff.RandomRotorSearch(num_conformers, 10, rings)
+    elif method == "weighted":
+        ff.WeightedRotorSearch(num_conformers, 10, rings)
+    ff.GetConformers(ob_mol)
+
+    # Extract information
+    (elements, conformer_coordinates, connectivity_matrix,
+     charges) = _extract_from_ob_mol(ob_mol)
+
+    return (elements, conformer_coordinates, connectivity_matrix, charges,
+            ob_mol)
 
 
 @requires_dependency([
@@ -1173,26 +1273,9 @@ def generate_conformers_openbabel_ga(mol,
     conf_search.Search()
     conf_search.GetConformers(ob_mol)
 
-    # Calculate molecule properties
-    elements = np.array([atom.atomicnum for atom in py_mol.atoms])
-    charges = np.array([atom.formalcharge for atom in py_mol.atoms])
-
-    n_atoms = len(py_mol.atoms)
-    connectivity_matrix = np.zeros((n_atoms, n_atoms))
-    for bond in ob.OBMolBondIter(ob_mol):
-        i = bond.GetBeginAtomIdx() - 1
-        j = bond.GetEndAtomIdx() - 1
-        bo = bond.GetBondOrder()
-        connectivity_matrix[i, j] = bo
-        connectivity_matrix[j, i] = bo
-
-    # Retrieve conformer coordinates
-    conformer_coordinates = []
-    for i in range(ob_mol.NumConformers()):
-        ob_mol.SetConformer(i)
-        coordinates = np.array([atom.coords for atom in py_mol.atoms])
-        conformer_coordinates.append(coordinates)
-    conformer_coordinates = np.array(conformer_coordinates)
+    # Extract information
+    (elements, conformer_coordinates, connectivity_matrix,
+     charges) = _extract_from_ob_mol(ob_mol)
 
     return (elements, conformer_coordinates, connectivity_matrix, charges,
             ob_mol)
@@ -1210,8 +1293,7 @@ def generate_conformers_rdkit(mol,
                               macrocycles=True,
                               random_seed=None,
                               rmsd_thres=0.35,
-                              n_threads=1,
-                              add_rotamers=False):
+                              n_threads=1):
     """Generates conformers for an RDKit mol object. Recipe based on
     J. Chem. Inf. Modeling 2012, 52, 1146.
 
@@ -1228,7 +1310,6 @@ def generate_conformers_rdkit(mol,
         random_seed (int): Random seed for conformer generation.
         rmsd_thres (float): Pruning RMSD threshold (Å).
         n_threads (int): Number of threads.
-        add_rotamers (bool): Whether to add H rotamers after RDKit step.
 
     Returns:
         elements (list): Atomic symbols
@@ -1237,12 +1318,16 @@ def generate_conformers_rdkit(mol,
         connectivity_matrix (ndarray): Connectivity matrix with bond orders
         mol (obj): RDKit Mol object. Only returned when `return_mol=True`.
     """
+    if optimize not in ("MMFF94", "MMFF94s", "UFF", None):
+        raise Exception(f"Force field {optimize} not found. Choose one of"
+                        "MMFF94, MMFF94s, UFF.")
     # Generate mol object
     try:
         mol = Chem.MolFromSmiles(mol)
     except TypeError:
         pass
     mol = Chem.AddHs(mol)
+
 
     # If n_confs is not set, set number of conformers based on number of
     # rotatable bonds
@@ -1272,9 +1357,6 @@ def generate_conformers_rdkit(mol,
         numThreads=n_threads,
     )
 
-    if add_rotamers:
-        _add_rotamers_to_mol(mol)
-
     # Optimize with force fields
     results = None
     if optimize is not None:
@@ -1294,17 +1376,9 @@ def generate_conformers_rdkit(mol,
     else:
         energies = None
 
-    # Take out elements, coordinates and connectivity matrix
-    elements = [atom.GetSymbol() for atom in mol.GetAtoms()]
-    charges = [atom.GetFormalCharge() for atom in mol.GetAtoms()]
-
-    conformer_coordinates = []
-    for conformer in mol.GetConformers():
-        coordinates = conformer.GetPositions()
-        conformer_coordinates.append(coordinates)
-    conformer_coordinates = np.array(conformer_coordinates)
-
-    connectivity_matrix = Chem.GetAdjacencyMatrix(mol, useBO=True)
+    # Extract information from mol
+    (elements, conformer_coordinates, connectivity_matrix,
+     charges) = _extract_from_mol(mol)
 
     return (elements, conformer_coordinates, energies, connectivity_matrix,
             charges, mol)
@@ -1332,58 +1406,53 @@ def _add_conformers_to_mol(mol, conformer_coordinates):
         mol.AddConformer(conformer, assignId=True)
 
 
-@requires_dependency([Import(module="rdkit.Chem", item="AllChem")],
-                     globals())
-def _add_rotamers_to_mol(mol):
-    """Add simple CH₃, NH₂ etc. rotamers to conformers of RDKit Mol object
-
-    Args:
-        mol (obj): RDKit Mol object
-    """
-    dihedrals = _get_dihedrals(mol)
-    for conformer in mol.GetConformers():
-        ref_id = conformer.GetId()
-        for dihedral in dihedrals:
-            conformer = mol.GetConformer(ref_id)
-            for increment in [-120, 120]:
-                new_id = mol.AddConformer(conformer, assignId=True)
-                conformer = mol.GetConformer(new_id)
-                angle = AllChem.GetDihedralDeg(conformer, *dihedral)
-                AllChem.SetDihedralDeg(conformer, *dihedral, angle + increment)
-
-
 @requires_dependency([Import(module="rdkit", item="Chem")], globals())
-def _get_dihedrals(mol):
-    """Return dihedral which ends in saturated atom of type CH₃, NH₂ etc.
+def _extract_from_mol(mol):
+    """Extract information from RDKit Mol object with conformers."""
+    # Take out elements, coordinates and connectivity matrix
+    elements = [atom.GetSymbol() for atom in mol.GetAtoms()]
+    charges = [atom.GetFormalCharge() for atom in mol.GetAtoms()]
 
-    Args:
-        mol (obj): Molecule as RDKit Mol object.
+    conformer_coordinates = []
+    for conformer in mol.GetConformers():
+        coordinates = conformer.GetPositions()
+        conformer_coordinates.append(coordinates)
+    conformer_coordinates = np.array(conformer_coordinates)
 
-    Returns:
-        dihedral_indices:
-            (0-indexed)
-    """
-    # Set up SMARTS query and match bonds to satured XH3, XH2, or XH1.
-    smarts = "[Av4H3,Av3H2,Av2H1]-[*!D1]"
-    query = Chem.MolFromSmarts(smarts)
-    matches = mol.GetSubstructMatches(query)
+    connectivity_matrix = Chem.GetAdjacencyMatrix(mol, useBO=True)
 
-    # Take out dihedral indices for match.
-    dihedral_indices = []
-    for match in matches:
-        begin_atom = mol.GetAtomWithIdx(match[0])
-        end_atom = mol.GetAtomWithIdx(match[1])
-        j = begin_atom.GetIdx()
-        k = end_atom.GetIdx()
-        i = [atom for atom in begin_atom.GetNeighbors() if atom.GetIdx()
-             is not end_atom.GetIdx()][0].GetIdx()
-        l = [atom for atom in end_atom.GetNeighbors() if atom.GetIdx()
-             is not begin_atom.GetIdx()][0].GetIdx()
+    return elements, conformer_coordinates, connectivity_matrix, charges
 
-        # Order indices so that the end atom is the saturated AHX group.
-        dihedral_indices.append((l, k, j, i))
 
-    return dihedral_indices
+@requires_dependency([
+    Import(module="openbabel.openbabel", alias="ob"),
+    Import(module="openbabel.pybel", alias="pybel"),
+    Import("openbabel")
+], globals())
+def _extract_from_ob_mol(ob_mol):
+    """Extract information from Openbabel OBMol object with conformers."""
+    py_mol = pybel.Molecule(ob_mol)
+    elements = np.array([atom.atomicnum for atom in py_mol.atoms])
+    charges = np.array([atom.formalcharge for atom in py_mol.atoms])
+
+    n_atoms = len(py_mol.atoms)
+    connectivity_matrix = np.zeros((n_atoms, n_atoms))
+    for bond in ob.OBMolBondIter(ob_mol):
+        i = bond.GetBeginAtomIdx() - 1
+        j = bond.GetEndAtomIdx() - 1
+        bo = bond.GetBondOrder()
+        connectivity_matrix[i, j] = bo
+        connectivity_matrix[j, i] = bo
+
+    # Retrieve conformer coordinates
+    conformer_coordinates = []
+    for i in range(ob_mol.NumConformers()):
+        ob_mol.SetConformer(i)
+        coordinates = np.array([atom.coords for atom in py_mol.atoms])
+        conformer_coordinates.append(coordinates)
+    conformer_coordinates = np.array(conformer_coordinates)
+
+    return elements, conformer_coordinates, connectivity_matrix, charges
 
 
 @requires_dependency([Import(module="openbabel.openbabel", alias="ob")],
@@ -1419,6 +1488,7 @@ def _get_ob_mol(elements, coordinates, connectivity_matrix, charges=None):
             if bo != 0:
                 mol.AddBond(int(i + 1), int(j + 1), int(bo))
     return mol
+
 
 @requires_dependency([Import(module="rdkit", item="Chem")], globals())
 def _get_rdkit_mol(elements, coordinates, connectivity_matrix, charges=None):
