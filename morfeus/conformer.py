@@ -321,7 +321,7 @@ class ConformerEnsemble:
         Args:
             *args: Positional arguments
             **kwargs Keyword arguments
-        
+
         Returns:
             ce (obj): Conformer ensemble object.
         """
@@ -332,6 +332,7 @@ class ConformerEnsemble:
                  connectivity_matrix=connectivity_matrix,
                  formal_charges=charges)
         ce.mol = mol
+        ce.set_multiplicity_from_mol()
 
         # Set reference CIP label if enantiomerically pure.
         cip_labels = ce.get_cip_labels()
@@ -343,7 +344,7 @@ class ConformerEnsemble:
     @classmethod
     def from_openbabel_ga(
             cls, *args, generate_rdkit_mol=False, update_charges=True,
-            update_connectivity=True, **kwargs):
+            update_connectivity=True, update_multiplicity=True, **kwargs):
         """Generate conformer ensemble from OpenBabel with GA method.
 
         See the documentation for the function generate_conformers_openbabel_ga
@@ -354,10 +355,12 @@ class ConformerEnsemble:
             generate_rdkit_mol (bool): Generate RDKit mol object for ensemble
             update_charges (bool): Update formal charges from generated RDKit
                 Mol object. Only used if generate_rdkit_mol is True.
-            update_connectivity (bool): Update connectivity from generate RDKit
-                Mol object. Only used if generate_rdkit_mol is True.
+            update_connectivity (bool): Update connectivity from generated
+                RDKit Mol object. Only used if generate_rdkit_mol is True.
+            update_multiplicity (bool): Update multiplicity from generated
+                RDKit Mol object. Only used if generate_rdkit_mol is True.
             **kwargs: Keyword arguments for generate_conformers_openbabel_ga
-        
+
         Returns:
             ce (obj): Conformer ensemble.
         """
@@ -371,7 +374,8 @@ class ConformerEnsemble:
         # Generate RDKit mol object and CIP labels
         if generate_rdkit_mol:
             ce.generate_mol(update_charges=update_charges,
-                            update_connectivity=update_connectivity)
+                            update_connectivity=update_connectivity,
+                            update_multiplicity=update_multiplicity)
 
             cip_labels = ce.get_cip_labels()
             if len(set(cip_labels)) == 1:
@@ -380,7 +384,10 @@ class ConformerEnsemble:
         return ce
 
     @requires_dependency([Import(module="rdkit", item="Chem")], globals())
-    def generate_mol(self, update_charges=True, update_connectivity=True):
+    def generate_mol(self,
+                     update_charges=True,
+                     update_connectivity=True,
+                     update_multiplicity=True):
         """Generate RDKit Mol object"""
         mol = _get_rdkit_mol(self.elements, self.get_coordinates(),
                              self.connectivity_matrix, self.formal_charges)
@@ -391,6 +398,8 @@ class ConformerEnsemble:
         if update_connectivity:
             self.connectivity_matrix = np.array(
                 Chem.GetAdjacencyMatrix(mol, useBO=True))
+        if update_multiplicity:
+            self.set_multiplicity_from_mol()
 
         self.mol = mol
 
@@ -754,6 +763,20 @@ class ConformerEnsemble:
             raise ValueError(msg)
         for conformer, energy in zip(self.conformers, energies):
             conformer.energy = energy
+
+    @requires_dependency([Import(module="rdkit.Chem", item="Descriptors")],
+                         globals())
+    def set_multiplicity_from_mol(self):
+        """Sets multiplicity based on unpaired electrons in Mol object."""
+        num_radical = Descriptors.NumRadicalElectrons(self.mol)
+
+        # Assume maximum spin pairing
+        if (num_radical % 2) == 0:
+            multiplicity = 1
+        else:
+            multiplicity = 2
+
+        self.multiplicity = multiplicity
 
     def set_properties(self, key, values):
         """Set conformer properties.

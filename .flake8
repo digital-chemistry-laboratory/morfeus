@@ -6,6 +6,7 @@ builtins =
     Chem,
     D3_model,
     D4_model,
+    Descriptors,
     extrapolate_c_n_coeff,
     hex2color,
     ob,
