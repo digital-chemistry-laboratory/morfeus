@@ -882,8 +882,13 @@ class ConformerEnsemble:
                 f"obrms {p_ref.as_posix()} --cross "
                 "--minimize".split(" "),
                 capture_output=True)
-        rmsds = np.genfromtxt(process.stdout.splitlines(),
-                              delimiter=",")[:, 1:]
+        result = np.genfromtxt(process.stdout.splitlines(),
+                              delimiter=",")
+        # Reshape array to 2D if 1D
+        if len(result.shape) == 1:
+            result = result.reshape(1, -1)
+        rmsds = result[:, 1:]
+        
         rmsds = rmsds[i_s - 1, :][:, j_s - 1]
         return rmsds
 
