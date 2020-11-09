@@ -179,7 +179,12 @@ class ConformerEnsemble:
         if formal_charges is None:
             formal_charges = np.zeros(len(elements))
         if charge is None:
-            charge = 0
+            charge = np.sum(formal_charges)
+        else:
+            if charge != np.sum(formal_charges):
+                msg = f"Charge ({charge}) is different from sum of partial " \
+                    f"charges ({np.sum(formal_charges)})"
+                raise Exception(msg)
         if multiplicity is None:
             multiplicity = 1
 
