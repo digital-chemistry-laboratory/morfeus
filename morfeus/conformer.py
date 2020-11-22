@@ -739,7 +739,7 @@ class ConformerEnsemble:
 
         # Prune conformers iteratively if possible to reduce number of RMSD
         # evaluations. For large systems obrms might be faster in batch.
-        if method in ("openbabel", "spyrmsd"):
+        if method in ("openbabel", "spyrmsd", "rdkit"):
             while len(candidates) > 0:
                 keeper = candidates[0]
                 keep_list.append(keeper)
