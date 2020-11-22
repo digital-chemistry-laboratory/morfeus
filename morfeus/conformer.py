@@ -280,7 +280,7 @@ class ConformerEnsemble:
 
         return weights
 
-    def detect_enantiomers(self, thres=0.01, method="openbabel"):
+    def detect_enantiomers(self, thres=0.01, method="rdkit", include_hs=False):
         """Detect enantiomers in ensemble.
 
         Args:
@@ -299,7 +299,9 @@ class ConformerEnsemble:
 
         # Map conformers to enantiomers
         enantiomers = {i: set() for i in range(n_conformers)}
-        rmsds = self.get_rmsd(method=method)
+        rmsds = self.get_rmsd(method=method,
+                              include_hs=include_hs,
+                              symmetry=False)
         for i in range(n_conformers):
             # Do test that inverted conformer should have 0 RMSD to be
             # enantiomer
@@ -551,8 +553,8 @@ class ConformerEnsemble:
 
         return energies
 
-    def get_rmsd(self, i_s=None, j_s=None, include_hs=False, symmetry=True,
-                 method="openbabel"):
+    def get_rmsd(self, i_s=None, j_s=None, include_hs=False, symmetry=False,
+                 method="rdkit"):
         """Get RSMD between two conformers.
 
         For very small systems 'openbabel' or 'spyrmsd' work well. For larger
@@ -719,8 +721,8 @@ class ConformerEnsemble:
         for i in reversed(remove_list):
             del self.conformers[i]
 
-    def prune_rmsd(self, thres=0.35, include_hs=False, symmetry=True,
-                   method="openbabel"):
+    def prune_rmsd(self, thres=0.35, include_hs=False, symmetry=False,
+                   method="rdkit"):
         """Prune conformers based on RMSD.
 
         Args:
@@ -739,7 +741,7 @@ class ConformerEnsemble:
 
         # Prune conformers iteratively if possible to reduce number of RMSD
         # evaluations. For large systems obrms might be faster in batch.
-        if method in ("openbabel", "spyrmsd", "rdkit"):
+        if method in ("obrms-iter", "openbabel", "spyrmsd", "rdkit"):
             while len(candidates) > 0:
                 keeper = candidates[0]
                 keep_list.append(keeper)
@@ -759,15 +761,6 @@ class ConformerEnsemble:
                 mask = rmsd > thres
                 candidates = candidates[mask]
                 working_array = working_array[mask, :][:, mask]
-        elif method == "obrms-iter":
-            while len(candidates) > 0:
-                keeper = candidates[0]
-                keep_list.append(keeper)
-                rmsd = self.get_rmsd(
-                    [keeper + 1],
-                    candidates + 1, include_hs=include_hs, symmetry=symmetry,
-                    method=method)
-                candidates = candidates[rmsd[0] > thres]
 
         # Update conformer list
         self.conformers = [conformer for i, conformer in
@@ -955,7 +948,7 @@ class ConformerEnsemble:
                 "--minimize".split(" "),
                 capture_output=True)
         result = np.genfromtxt(process.stdout.splitlines(),
-                              delimiter=",")
+                               delimiter=",")
         # Reshape array to 2D if 1D
         if len(result.shape) == 1:
             result = result.reshape(1, -1)
@@ -1040,13 +1033,11 @@ class ConformerEnsemble:
             mol.AddConformer(ref_conformer)
             for j in j_s:
                 conformer = conformers[j - 1]
-                if conformer is not ref_conformer:
-                    mol.AddConformer(conformer)
+                mol.AddConformer(conformer)
             rmsds_row = []
             AllChem.AlignMolConformers(
                 mol, atomIds=atom_ids, RMSlist=rmsds_row)
-            rmsds_row.insert(i - 1, 0)
-            rmsds.append(rmsds_row)      
+            rmsds.append(rmsds_row)
         rmsds = np.array(rmsds)
 
         return rmsds
