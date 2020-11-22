@@ -584,10 +584,12 @@ class ConformerEnsemble:
 
         if method == "obrms-batch":
             rmsds = self._get_rmsd_obrms_batch(i_s, j_s)
-        if method == "obrms-iter":
+        elif method == "obrms-iter":
             rmsds = self._get_rmsd_obrms_iter(i_s, j_s)
-        if method == "openbabel":
+        elif method == "openbabel":
             rmsds = self._get_rmsd_openbabel(i_s, j_s, include_hs, symmetry)
+        elif method == "rdkit":
+            rmsds = self._get_rmsd_rdkit(i_s, j_s, include_hs)
         elif method == "spyrmsd":
             rmsds = self._get_rmsd_spyrmsd(i_s, j_s, include_hs, symmetry)
         return rmsds
@@ -958,8 +960,9 @@ class ConformerEnsemble:
         if len(result.shape) == 1:
             result = result.reshape(1, -1)
         rmsds = result[:, 1:]
-        
+
         rmsds = rmsds[i_s - 1, :][:, j_s - 1]
+
         return rmsds
 
     @requires_executable(["obrms"])
@@ -983,6 +986,7 @@ class ConformerEnsemble:
                                       usecols=(-1))
             rmsds.append(row_rmsds)
         rmsds = np.vstack(rmsds)
+
         return rmsds
 
     @requires_dependency([Import(module="openbabel.openbabel", alias="ob")],
@@ -1007,6 +1011,44 @@ class ConformerEnsemble:
                 rmsds_row.append(rmsd)
             rmsds.append(rmsds_row)
         rmsds = np.array(rmsds)
+
+        return rmsds
+
+    @requires_dependency([
+        Import(module="rdkit", item="Chem"),
+        Import(module="rdkit.Chem", item="AllChem")
+    ], globals())
+    def _get_rmsd_rdkit(self, i_s, j_s, include_hs):
+        """Calculate RMSD row-wise with RDKit."""
+        # Update mol object from conformers and make copy.
+        self.update_mol()
+        mol = Chem.Mol(self.mol)
+
+        # Construct atom list for rmsd: heavy atoms or all atoms
+        if include_hs:
+            atom_ids = [atom.GetIdx() for atom in mol.GetAtoms()]
+        else:
+            atom_ids = [atom.GetIdx() for atom in mol.GetAtoms()
+                        if atom.GetAtomicNum() != 1]
+
+        # Calculated RMSD row-wise with RDKit
+        rmsds = []
+        conformers = mol.GetConformers()
+        for i in i_s:
+            ref_conformer = conformers[i - 1]
+            mol.RemoveAllConformers()
+            mol.AddConformer(ref_conformer)
+            for j in j_s:
+                conformer = conformers[j - 1]
+                if conformer is not ref_conformer:
+                    mol.AddConformer(conformer)
+            rmsds_row = []
+            AllChem.AlignMolConformers(
+                mol, atomIds=atom_ids, RMSlist=rmsds_row)
+            rmsds_row.insert(i - 1, 0)
+            rmsds.append(rmsds_row)      
+        rmsds = np.array(rmsds)
+
         return rmsds
 
     @requires_dependency(
@@ -1068,6 +1110,7 @@ class ConformerEnsemble:
                         row_rmsds.append(rmsd)
                 rmsds.append(np.array(row_rmsds))
             rmsds = np.vstack(rmsds)
+
         return rmsds
 
     def update_mol(self):
