@@ -15,9 +15,8 @@ from morfeus.data import (HARTREE, HARTREE_TO_KCAL, HARTREE_TO_KJ, K_B,
                           KCAL_TO_HARTREE, KJ_TO_HARTREE)
 from morfeus.helpers import (Import, convert_elements, requires_dependency,
                              requires_executable)
-from morfeus.io import get_xyz_string
-from morfeus.qc import (_generate_qcel_molecule, optimize_qc_engine,
-                        sp_qc_engine)
+from morfeus.io import write_xyz
+from morfeus.qc import optimize_qc_engine, sp_qc_engine
 
 
 def boltzmann_average_dT(properties, energies, temperature=298.15):
@@ -880,8 +879,8 @@ class ConformerEnsemble:
             )
             conformer.energy = energy
 
-    def write_conformers(self, file, ids=None, unit="kcal/mol", relative=True,
-                         separate=False):
+    def write_xyz(self, file, ids=None, unit="kcal/mol", relative=True,
+                  separate=False, n_decimals=3):
         """Write conformers to xyz file.
 
         Args:
@@ -891,38 +890,30 @@ class ConformerEnsemble:
             unit (str): Output unit for energies in xyz comment field
             relative (bool): Give energies relative to lowest energy conformer
             separate (bool): Write conformers to separate xyz files.
+            n_decimals (int): Number of decimals for energies.
         """
         if ids is None:
             ids = np.arange(len(self.conformers))
         else:
             ids = np.array(ids) - 1
 
-        # Retrieve symbols and energies
+        # Retrieve symbols, coordinates and energies
         symbols = convert_elements(self.elements, output="symbols")
-        conformers = [conformer for i, conformer in
-                      enumerate(self.conformers) if i in ids]
+        conformer_coordinates = self.get_coordinates()[ids]
         energies = self.get_relative_energies(
-            unit=unit, relative=relative)[ids]
+            unit=unit, relative=relative)[ids].round(n_decimals)
 
-        # Get xyz strings
-        write_strings = []
-        for conformer, energy in zip(conformers, energies):
-            if energy is None:
-                energy = 0.0
-            xyz_string = get_xyz_string(symbols, conformer.coordinates,
-                                        comment=f"{energy:.5f}")
-            write_strings.append(xyz_string)
-
-        # Write to file
-        if not separate:
-            with open(file, "w") as f:
-                write_string = "".join(write_strings) + "\n"
-                f.write(write_string)
-        else:
-            for i, write_string in zip(ids, write_strings):
+        # Write conformers
+        if separate:
+            for i, coordinates, energy in zip(ids, conformer_coordinates,
+                                              energies):
                 conf_filename = file.split(".")[0] + f"_{i + 1}.xyz"
-                with open(conf_filename, "w") as f:
-                    f.write(write_string)
+                write_xyz(conf_filename,
+                          symbols,
+                          conformer_coordinates,
+                          comments=energies)
+        else:
+            write_xyz(file, symbols, conformer_coordinates, comments=energies)
 
     def _add_conformers(self, conformer_coordinates, energies=None,
                         properties=None, degeneracies=None):
