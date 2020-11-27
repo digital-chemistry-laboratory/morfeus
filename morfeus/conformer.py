@@ -1057,55 +1057,36 @@ class ConformerEnsemble:
         else:
             mask = np.ones(len(self.elements), dtype=np.bool)
 
-        # Calculate RMSD. Use qcel with no. heavy atoms < 3 due to unstable
-        # performance of spyrmsd.
-        if np.sum(self.elements != 1) < 3:
-            rmsds = []
-            for i in i_s:
-                ref_coordinates = self.conformers[i - 1].coordinates
-                ref_molecule = _generate_qcel_molecule(self.elements[mask],
-                                                       ref_coordinates[mask])
+        # Calculate RMSD row-wise with spyrmsd
+        rmsds = []
+        for i in i_s:
+            ref_coordinates = self.conformers[i - 1].coordinates[mask]
+            if symmetry:
+                test_coordinates = [
+                    self.conformers[j - 1].coordinates[mask] for j in j_s]
+                row_rmsds = spyrmsd.rmsd.symmrmsd(
+                    ref_coordinates,
+                    test_coordinates,
+                    self.elements[mask],
+                    self.elements[mask],
+                    self.connectivity_matrix[mask, :][:, mask],
+                    self.connectivity_matrix[mask, :][:, mask],
+                    center=True,
+                    minimize=True)
+            else:
                 row_rmsds = []
-
                 for j in j_s:
-                    test_coordinates = self.conformers[j - 1].coordinates
-                    test_molecule = _generate_qcel_molecule(
-                        self.elements[mask],
-                        test_coordinates[mask])
-                    rmsd = ref_molecule.align(test_molecule)[1]["rmsd"]
+                    test_coordinates = self.conformers[j -
+                                                       1].coordinates[mask]
+                    rmsd = spyrmsd.rmsd.rmsd(ref_coordinates,
+                                             test_coordinates,
+                                             self.elements[mask],
+                                             self.elements[mask],
+                                             center=True,
+                                             minimize=True)
                     row_rmsds.append(rmsd)
             rmsds.append(np.array(row_rmsds))
-            rmsds = np.vstack(rmsds)
-        else:
-            rmsds = []
-            for i in i_s:
-                ref_coordinates = self.conformers[i - 1].coordinates[mask]
-                if symmetry:
-                    test_coordinates = [
-                        self.conformers[j - 1].coordinates[mask] for j in j_s]
-                    row_rmsds = spyrmsd.rmsd.symmrmsd(
-                        ref_coordinates,
-                        test_coordinates,
-                        self.elements[mask],
-                        self.elements[mask],
-                        self.connectivity_matrix[mask, :][:, mask],
-                        self.connectivity_matrix[mask, :][:, mask],
-                        center=True,
-                        minimize=True)
-                else:
-                    row_rmsds = []
-                    for j in j_s:
-                        test_coordinates = self.conformers[j -
-                                                           1].coordinates[mask]
-                        rmsd = spyrmsd.rmsd.rmsd(ref_coordinates,
-                                                 test_coordinates,
-                                                 self.elements[mask],
-                                                 self.elements[mask],
-                                                 center=True,
-                                                 minimize=True)
-                        row_rmsds.append(rmsd)
-                rmsds.append(np.array(row_rmsds))
-            rmsds = np.vstack(rmsds)
+        rmsds = np.vstack(rmsds)
 
         return rmsds
 
