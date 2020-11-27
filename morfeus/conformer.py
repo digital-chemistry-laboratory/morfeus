@@ -229,6 +229,11 @@ class ConformerEnsemble:
             energies.append(conformer.energy)
         self.add_conformers(conformer_coordinates, energies)
 
+    def align_conformers(self):
+        """Align conformers with RDKit."""
+        self.update_mol()
+        AllChem.AlignMolConformers(self.mol)
+
     def boltzmann_average_dT(self, property_name, temperature=298.15):
         """Calculate temperature derivative of Boltzmann average of property.
 
