@@ -1011,28 +1011,28 @@ class ConformerEnsemble:
         """Calculate RMSD row-wise with RDKit."""
         # Update mol object from conformers and make copy.
         self.update_mol()
-        mol = Chem.Mol(self.mol)
 
         # Construct atom list for rmsd: heavy atoms or all atoms
         if include_hs:
-            atom_ids = [atom.GetIdx() for atom in mol.GetAtoms()]
+            atom_ids = [atom.GetIdx() for atom in self.mol.GetAtoms()]
         else:
-            atom_ids = [atom.GetIdx() for atom in mol.GetAtoms()
+            atom_ids = [atom.GetIdx() for atom in self.mol.GetAtoms()
                         if atom.GetAtomicNum() != 1]
 
         # Calculated RMSD row-wise with RDKit
         rmsds = []
-        conformers = mol.GetConformers()
+        conformers = list(self.mol.GetConformers())
         for i in i_s:
+            ref_mol = Chem.Mol(self.mol)
             ref_conformer = conformers[i - 1]
-            mol.RemoveAllConformers()
-            mol.AddConformer(ref_conformer)
+            ref_mol.RemoveAllConformers()
+            ref_mol.AddConformer(ref_conformer)
             for j in j_s:
                 conformer = conformers[j - 1]
-                mol.AddConformer(conformer)
+                ref_mol.AddConformer(conformer)
             rmsds_row = []
             AllChem.AlignMolConformers(
-                mol, atomIds=atom_ids, RMSlist=rmsds_row)
+                ref_mol, atomIds=atom_ids, RMSlist=rmsds_row)
             rmsds.append(rmsds_row)
         rmsds = np.array(rmsds)
 
