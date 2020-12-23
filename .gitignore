@@ -8,3 +8,4 @@ dist/
 *.egg-info/
 _build
 /docs/api
+bibtex.json
