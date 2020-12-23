@@ -46,6 +46,8 @@ extensions = [
     'sphinxcontrib.bibtex',
 ]
 
+bibtex_bibfiles = ['refs.bib']
+
 autodoc_mock_imports = ["ase", "dftd4", "pyvista", "pymeshfix", "vtk", "xtb"]
 
 numfig = True
