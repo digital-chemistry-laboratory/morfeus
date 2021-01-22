@@ -2881,7 +2881,7 @@ class Pyramidalization:
                  method="distance"):
         coordinates = np.array(coordinates)
         atom_coordinates = coordinates[atom_index - 1]
-        excluded_atoms = np.array(excluded_atoms)
+        excluded_atoms = np.array(excluded_atoms, dtype=int)
 
         # Get 3 closest neighbors
         if len(neighbor_indices) > 0:
