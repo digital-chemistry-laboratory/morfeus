@@ -2859,7 +2859,8 @@ class LocalForce:
 
 class Pyramidalization:
     """Calculates and stores results of pyramidalization and alpha angle as 
-    described in Struct. Chem. 1991, 2, 107.
+    described in Struct. Chem. 1991, 2, 107 and pyramidalization according to
+    bond angles as in J. Comput. Chem. 2012, 33 (27), 2173–2179.
 
     Args:
         atom_index (int): Index of pyramidalized atom (1-indexed)
@@ -2875,7 +2876,8 @@ class Pyramidalization:
     Attributes:
         alpha (float): Average alpha angle (deg)
         alphas (float): Alpha angles for all permutations of neighbors (deg)
-        P (float): Pyramidalization
+        P (float): Pyramidalization according to Radhakrishnan
+        P_angle (float): Pyramidalization according to Gavrish
     """
     def __init__(self, coordinates, atom_index, neighbor_indices=[], elements=[], radii=[], radii_type="pyykko", excluded_atoms=[],
                  method="distance"):
@@ -2920,7 +2922,7 @@ class Pyramidalization:
         alphas = []
         vectors = []
         cos_alphas = []
-        acute = False
+        thetas = []
         for v_1, v_2, v_3 in itertools.permutations([a, b, c], 3):
             # Calculate cos_alpha
             normal = np.cross(v_1, v_2)
@@ -2937,23 +2939,31 @@ class Pyramidalization:
             v_1_2 /= np.linalg.norm(v_1_2)
             cos_angle = np.dot(v_1_2, v_3)
             if cos_angle > 0:
-                acute = True
                 alpha = -alpha
             alphas.append(alpha)
             cos_alphas.append(cos_alpha)
             vectors.append((v_1, v_2))
+
+            # Calculate theta angle
+            cos_theta = np.dot(v_1, v_2)
+            theta = np.rad2deg(np.arccos(cos_theta))
+            thetas.append(theta)
 
         # Calculate P
         v_1, v_2 = vectors[0]
         sin_theta = np.linalg.norm(np.cross(v_1, v_2))
         P = sin_theta * cos_alphas[0]
 
-        # Correct P if pyramid is "acute"
-        if acute:
+        # Correct P if pyramid is "acute" on average
+        if np.mean(alphas) < 0:
             P = 2 - P
+
+        # Calculate P according to Gavrish method
+        P_angle = np.sqrt(360 - sum(thetas))
 
         # Store attributes
         self.P = P
+        self.P_angle = P_angle
         self.alpha = np.rad2deg(np.mean(alphas))
         self.alphas = np.rad2deg(alphas)
 
