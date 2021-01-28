@@ -919,15 +919,17 @@ class SASA:
             area = 4 * np.pi * atom.radius ** 2 * ratio_accessible
             atom.area = area
 
-            # Center accessible points around origin
+            # Center accessible points and normalize
             centered_points = np.array(atom.accessible_points) \
                               - atom.coordinates
+            centered_points /= np.linalg.norm(centered_points,
+                                              axis=1).reshape(-1, 1)
 
             # Add accessible points
             accessible_summed = np.sum(centered_points, axis=0)
 
             # Calculate volume
-            volume = (4 * np.pi / 3 / n_points) * (atom.radius *
+            volume = (4 * np.pi / 3 / n_points) * (atom.radius ** 2 * 
                       np.dot(atom.coordinates, accessible_summed)
                       + atom.radius ** 3 * n_accesible)
             atom.volume = volume
