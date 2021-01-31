@@ -874,13 +874,15 @@ class SASA:
         for atom in atoms:
             # Construct sphere for atom
             sphere = Sphere(atom.coordinates, atom.radius, density=density)
+            atom.points = sphere.points
 
             # Select atoms that are at a distance less than the sum of radii
             #!TODO can be vectorized
             test_atoms = []
             for test_atom in atoms:
                 if test_atom is not atom:
-                    distance = euclidean(atom.coordinates, test_atom.coordinates)
+                    distance = euclidean(
+                        atom.coordinates, test_atom.coordinates)
                     radii_sum = atom.radius + test_atom.radius
                     if distance < radii_sum:
                         test_atoms.append(test_atom)
@@ -897,17 +899,18 @@ class SASA:
                 distances -= test_radii
                 # Take smallest distance and perform check
                 min_distances = np.min(distances, axis=0)
-
-                atom.occluded_points = sphere.points[min_distances < 0]
-                atom.accessible_points = sphere.points[min_distances >= 0]
+                atom.occluded_mask = min_distances < 0
+                atom.accessible_mask = ~atom.occluded_mask
             else:
-                atom.accessible_points = sphere.points
-                atom.occluded_points = np.empty(0)
+                atom.occluded_mask = np.zeros(len(atom.points), dtype=bool)
+                atom.accessible_mask = np.ones(len(atom.points), dtype=bool)
+            atom.occluded_points = sphere.points[atom.occluded_mask]
+            atom.accessible_points = sphere.points[atom.accessible_mask]
 
         # Calculate atom areas and volumes
         for atom in atoms:
             # Get number of points of eache type
-            n_accesible = len(atom.accessible_points)
+            n_accessible = len(atom.accessible_points)
             n_occluded = len(atom.occluded_points)
             n_points = len(atom.accessible_points) + len(atom.occluded_points)
 
@@ -931,8 +934,12 @@ class SASA:
             # Calculate volume
             volume = (4 * np.pi / 3 / n_points) * (atom.radius ** 2 * 
                       np.dot(atom.coordinates, accessible_summed)
-                      + atom.radius ** 3 * n_accesible)
+                      + atom.radius ** 3 * n_accessible)
             atom.volume = volume
+            atom.point_volumes = np.zeros(len(atom.points))
+            if n_accessible > 0:
+                atom.point_volumes[atom.accessible_mask] = atom.volume / \
+                    n_accessible
 
         # Set up attributes
         self._probe_radius = probe_radius
