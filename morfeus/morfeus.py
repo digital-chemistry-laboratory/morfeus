@@ -3241,6 +3241,16 @@ class VisibleVolume:
         if radii is None:
             radii = get_radii(elements, radii_type=radii_type)
 
+        # Check so that no atom is within vdW distance of metal atom
+        within = check_distances(elements,
+                                 coordinates,
+                                 metal_index,
+                                 radii=radii)
+        if within:
+            atom_string = ' '.join([str(i) for i in within])
+            raise Exception("Atoms within vdW radius of central atom:",
+                             atom_string)
+
         # Center coordinate system around metal and remove it
         coordinates -= coordinates[metal_index - 1]
         elements = np.delete(elements, metal_index - 1)
@@ -3298,6 +3308,10 @@ class VisibleVolume:
         invisible_volume = 0
         proximal_visible_volume = 0
         proximal_volume = 0
+        visible_area = 0
+        invisible_area = 0
+        proximal_visible_area = 0
+        proximal_area = 0
         for atom in atoms:
             point_areas = atom.point_areas[atom.accessible_mask]
             point_volumes = atom.point_volumes[atom.accessible_mask]
@@ -3308,6 +3322,12 @@ class VisibleVolume:
                 ~atom.invisible_mask, atom.proximal_mask)].sum()
             proximal_volume += point_volumes[atom.proximal_mask].sum()
 
+            invisible_area += point_areas[atom.invisible_mask].sum()
+            visible_area += point_areas[~atom.invisible_mask].sum()
+            proximal_visible_area += point_areas[np.logical_and(
+                ~atom.invisible_mask, atom.proximal_mask)].sum()
+            proximal_area += point_areas[atom.proximal_mask].sum()
+
         # Store attributes
         self.total_volume = sasa.volume
         self.proximal_volume = proximal_volume
@@ -3316,4 +3336,13 @@ class VisibleVolume:
         self.visible_volume = visible_volume
         self.proximal_visible_volume = proximal_visible_volume
         self.distal_visible_volume = visible_volume - proximal_visible_volume
+
+        self.total_area = sasa.area
+        self.proximal_area = proximal_area
+        self.distal_area = sasa.area - proximal_area
+        self.invisible_area = invisible_area
+        self.visible_area = visible_area
+        self.proximal_visible_area = proximal_visible_area
+        self.distal_visible_area = visible_area - proximal_visible_area
+
         self._atoms = atoms
