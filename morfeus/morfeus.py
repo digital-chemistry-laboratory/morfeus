@@ -921,6 +921,10 @@ class SASA:
             # Calculate area
             area = 4 * np.pi * atom.radius ** 2 * ratio_accessible
             atom.area = area
+            atom.point_areas = np.zeros(n_points)
+            if n_accessible > 0:
+                atom.point_areas[
+                    atom.accessible_mask] = atom.area / n_accessible
 
             # Center accessible points and normalize
             centered_points = np.array(atom.accessible_points) \
@@ -932,11 +936,11 @@ class SASA:
             accessible_summed = np.sum(centered_points, axis=0)
 
             # Calculate volume
-            volume = (4 * np.pi / 3 / n_points) * (atom.radius ** 2 * 
+            volume = (4 * np.pi / 3 / n_points) * (atom.radius ** 2 *
                       np.dot(atom.coordinates, accessible_summed)
                       + atom.radius ** 3 * n_accessible)
             atom.volume = volume
-            atom.point_volumes = np.zeros(len(atom.points))
+            atom.point_volumes = np.zeros(n_points)
             if n_accessible > 0:
                 atom.point_volumes[atom.accessible_mask] = atom.volume / \
                     n_accessible
@@ -3219,3 +3223,97 @@ class XTB:
         # Do singlepoint calculation and store the result
         res = calc.singlepoint()
         self._results[charge_state] = res
+
+
+class VisibleVolume:
+    def __init__(self,
+                 elements,
+                 coordinates,
+                 metal_index,
+                 include_hs=False,
+                 radii=None,
+                 radii_type="pyykko",
+                 radius=3.5,
+                 density=0.01):
+        # Set up arrays and get radii
+        elements = np.array(convert_elements(elements))
+        coordinates = np.array(coordinates)
+        if radii is None:
+            radii = get_radii(elements, radii_type=radii_type)
+
+        # Center coordinate system around metal and remove it
+        coordinates -= coordinates[metal_index - 1]
+        elements = np.delete(elements, metal_index - 1)
+        coordinates = np.delete(coordinates, metal_index - 1, axis=0)
+        radii = np.delete(radii, metal_index - 1)
+
+        # Remove H atoms
+        if include_hs == False:
+            h_mask = (elements == 1)
+            elements = elements[~h_mask]
+            coordinates = coordinates[~h_mask]
+            radii = radii[~h_mask]
+
+        # Construct SASA object
+        sasa = SASA(elements,
+                    coordinates,
+                    radii_type=radii_type,
+                    probe_radius=0.0,
+                    density=density)
+
+        # Set invisible and proximal masks for each atom
+        atoms = sasa._atoms
+        for atom in atoms:
+            atom.invisible_mask = np.zeros(len(atom.accessible_points),
+                                           dtype=bool)
+            atom.proximal_mask = np.linalg.norm(atom.accessible_points,
+                                                axis=1) < radius
+
+        # Check points on other atoms against cone for each atom
+        atom_coordinates = np.array([atom.coordinates for atom in atoms])
+        atoms = np.array(atoms)
+        for atom in atoms:
+            # Calculate distances to other atoms
+            atom.get_cone()
+            cone = Cone(atom.cone.angle, atom.index, atom.cone.normal)
+            atom_dist = np.linalg.norm(atom.coordinates)
+            other_distances = np.dot(atom_coordinates, cone.normal)
+
+            # Check whether points are (1) within cone and (2) beyond atom
+            # center
+            check_atoms = atoms[other_distances >= (atom_dist - atom.radius)]
+            for check_atom in check_atoms:
+                if check_atom == atom:
+                    continue
+                is_inside_mask = cone.is_inside_points(
+                    check_atom.accessible_points, method="cross")
+                is_beyond_mask = np.dot(check_atom.accessible_points,
+                                        cone.normal) >= atom_dist
+                invisible_mask = np.logical_and(is_inside_mask, is_beyond_mask)
+                check_atom.invisible_mask = np.logical_or(
+                    check_atom.invisible_mask, invisible_mask)
+
+        # Calculate visible, invisible and proximal_visible volume
+        visible_volume = 0
+        invisible_volume = 0
+        proximal_visible_volume = 0
+        proximal_volume = 0
+        for atom in atoms:
+            point_areas = atom.point_areas[atom.accessible_mask]
+            point_volumes = atom.point_volumes[atom.accessible_mask]
+
+            invisible_volume += point_volumes[atom.invisible_mask].sum()
+            visible_volume += point_volumes[~atom.invisible_mask].sum()
+            proximal_visible_volume += point_volumes[np.logical_and(
+                ~atom.invisible_mask, atom.proximal_mask)].sum()
+            proximal_volume += point_volumes[atom.proximal_mask].sum()
+
+        # Store attributes
+        self.total_volume = sasa.volume
+        self.proximal_volume = proximal_volume
+        self.distal_volume = sasa.volume - proximal_volume
+        self.invisible_volume = invisible_volume
+        self.visible_volume = visible_volume
+        self.proximal_visible_volume = proximal_visible_volume
+        self.distal_visible_volume = visible_volume - proximal_visible_volume
+        self._atoms = atoms
