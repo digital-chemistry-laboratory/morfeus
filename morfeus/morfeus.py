@@ -3226,11 +3226,40 @@ class XTB:
 
 
 class VisibleVolume:
+    """Calculates and stores visible volume and area.
+
+    Args:
+        elements (list): Elements as atomic symbols or numbers
+        coordinates (list): Coordinates (Å)
+        metal_index (int): Index of metal atom (starting from 1)
+        include_hs (bool): Whether to include H atoms in the calculation
+        radii (list): Atomic radii (Å)
+        radii_type (str): Type of vdW radii: 'bondi', 'crc' or 'pyykko'
+            (default)
+        radius (float): Radius of sphere to divide proximal and distal
+        density (float): Area per point on atom surface (Å²)
+
+    Attributes:
+        total_volume (float): Total volume (Å³)
+        proximal_volume (float): Proximal volume (Å³)
+        distal_volume (float): Distal volume (Å³)
+        invisible_volume (float): Invisible volume (Å³)
+        visible_volume (float): Visible volume (Å³)
+        proximal_visible_volume (float): Proximal visible volume (Å³)
+        distal_visible_volume (float): Distal visible volume (Å³)
+        total_area (float): Total area (Å²)
+        proximal_area (float): Proximal area (Å²)
+        distal_area (float): Distal area (Å²)
+        invisible_area (float): Invisible area (Å²)
+        visible_area (float): Visible area (Å²)
+        proximal_visible_area (float): Proximal visible area (Å²)
+        distal_visible_area (float): Distal visible area (Å²)
+    """
     def __init__(self,
                  elements,
                  coordinates,
                  metal_index,
-                 include_hs=False,
+                 include_hs=True,
                  radii=None,
                  radii_type="pyykko",
                  radius=3.5,
@@ -3346,3 +3375,6 @@ class VisibleVolume:
         self.distal_visible_area = visible_area - proximal_visible_area
 
         self._atoms = atoms
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
