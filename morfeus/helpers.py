@@ -49,7 +49,7 @@ def check_distances(elements,
         radii = np.array(radii)
 
     if exclude_list is None:
-        exclude_list
+        exclude_list = []
     else:
         exclude_list = list(exclude_list)
 
