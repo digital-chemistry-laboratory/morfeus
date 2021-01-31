@@ -104,6 +104,51 @@ class Cone:
             return True
         else:
             return False
+ 
+    def is_inside_points(self, points, method="cross"):
+        """Test if points are inside c one of atom
+        
+        Args:
+            points (ndarray): Points to check
+            method (str): Method for testing: 'angle', 'cross' or 'dot'
+        
+        Returns:
+            is_inside (ndarray): Boolean array with points marked as inside.
+        """
+        if method in ["cross", "dot"]:
+            # Calculate radius of cone at distance of each point
+            cone_distances = np.dot(points, self.normal)
+            cone_radii = np.tan(self.angle) * cone_distances
+
+            # Calculate orthogonal distance of points to cone normal vector
+            if method == "cross":
+                orth_distances = np.linalg.norm(
+                    np.cross(-points, self.normal), axis=1)
+            elif method == "dot":
+                orth_distances = np.linalg.norm(-points - np.dot(
+                    points, self.normal).reshape(-1, 1) * self.normal, axis=1)
+            
+            # Determine if distance is smaller than cone radius.
+            is_inside = orth_distances < cone_radii
+        elif method == "angle":
+            norm_points = points / \
+                np.linalg.norm(points, axis=1).reshape(-1, 1)
+
+            # Calculate angle between cone normal vector and unit vector to
+            # atom
+            cos = np.dot(norm_points, self.normal)
+
+            # Take into account numerical problems that sometimes gives a value
+            # somewhat above 1
+            cos[np.logical_and(1 - cos > 0, 1 - cos < 1e-5)] = 1
+            angle = np.arccos(cos)
+
+            # Check if atom lies inside cone, within numerical reason
+            diff = self.angle - angle
+            
+            is_inside = diff > -1e-5
+            
+        return is_inside
 
     def __repr__(self):
         atoms = ', '.join([str(atom.index) for atom in self.atoms])
