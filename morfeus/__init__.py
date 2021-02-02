@@ -21,6 +21,7 @@ Scripts:
 # Version of the morfeus package
 __version__ = "0.5.0"
 
-from morfeus.morfeus import BuriedVolume, ConeAngle, Dispersion
-from morfeus.morfeus import SASA, Sterimol, LocalForce, Pyramidalization, XTB
 from morfeus.io import read_gjf, read_xyz
+from morfeus.morfeus import (SASA, XTB, BuriedVolume, ConeAngle, Dispersion,
+                             LocalForce, Pyramidalization, Sterimol,
+                             VisibleVolume)
