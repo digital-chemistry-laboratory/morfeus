@@ -4,24 +4,32 @@ import argparse
 
 from morfeus import read_gjf, read_xyz, SASA
 
-def main():
+
+def main() -> None:
+    """Calculate solvent accessible surface area."""
     # Add arguments
     parser = argparse.ArgumentParser(
         "morfeus script to calculate solvent accessible surface areas "
-        "and volumes beneath this area")
+        "and volumes beneath this area"
+    )
+    parser.add_argument("file", type=str, help="Input file, either .xyz, .gjf or .com")
     parser.add_argument(
-        'file', type=str, help='Input file, either .xyz, .gjf or .com')
+        "--density",
+        type=float,
+        help="Density of points on sphere vdW surface (default: 0.01",
+        default=0.01,
+    )
     parser.add_argument(
-        '--density', type=float,
-        help='Density of points on sphere vdW surface (default: 0.01',
-        default=0.01)
+        "--probe", type=float, help="Probe radius (default: 1.4)", default=1.4
+    )
     parser.add_argument(
-        '--probe', type=float, help='Probe radius (default: 1.4)', default=1.4)
-    parser.add_argument(
-        '--radii', type=str, help='Radii type: "bondi" or "crc" (default)',
-        choices=["bondi", "crc"], default="crc")
-    parser.add_argument(
-        '--verbose', help='Print atom areas', action='store_true')
+        "--radii",
+        type=str,
+        help='Radii type: "bondi" or "crc" (default)',
+        choices=["bondi", "crc"],
+        default="crc",
+    )
+    parser.add_argument("--verbose", help="Print atom areas", action="store_true")
 
     # Parse arguments
     args = parser.parse_args()
@@ -40,9 +48,15 @@ def main():
         raise Exception("No valid input file. Use .xyz or .gjf/.com")
 
     # Run calculation and print results
-    sasa = SASA(elements, coordinates, radii_type=radii_type, density=density,
-                probe_radius=probe_radius)
+    sasa = SASA(
+        elements,
+        coordinates,
+        radii_type=radii_type,
+        density=density,
+        probe_radius=probe_radius,
+    )
     sasa.print_report(verbose=verbose)
+
 
 if __name__ == "__main__":
     main()

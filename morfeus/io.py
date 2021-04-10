@@ -1,31 +1,54 @@
 """Geometry file parsing functions."""
 
+from os import PathLike
+from typing import Optional, Sequence, Tuple, Union
+
 import numpy as np
 
-from morfeus.helpers import convert_elements
-from morfeus.data import BOHR_TO_ANGSTROM, r2_r4
+from morfeus.d3_data import r2_r4
+from morfeus.data import BOHR_TO_ANGSTROM
+from morfeus.utils import convert_elements
 
 
 class CubeParser:
-    """Parses Gaussian cube file of electron density
+    """Parses Gaussian cube file of electron density.
+
     Args:
-        filename (str): Name of cube file
-    
+        file: Cube file
+
     Attributes:
-        min_x (float): Minimum x value (Å)
-        min_y (float): Minimum y value (Å)
-        min_z (float): Minimum z value (Å)
-        step_x (float): Step size in x direction (Å)
-        step_y (float): Step size in y direction (Å)
-        step_z (float): Step size in z direction (Å)
-        X (ndarray): 3D array of x values (Å)
-        Y (ndarray): 3D array of y values (Å)
-        Z (ndarray): 3D array of z values (Å)
-        S (ndarray): 3D array of electron density scalars (electorns / Bohr^3)
+        min_x: Minimum x value (Å)
+        min_y: Minimum y value (Å)
+        min_z: Minimum z value (Å)
+        step_x: Step size in x direction (Å)
+        step_y: Step size in y direction (Å)
+        step_z: Step size in z direction (Å)
+        X: 3D array of x values (Å)
+        Y: 3D array of y values (Å)
+        Z: 3D array of z values (Å)
+        S: 3D array of electron density scalars (electorns / Bohr^3)
+        n_points_x: Number of points in the x direction
+        n_points_y: Number of points in the y direction
+        n_points_z: Number of points in the < direction
     """
-    def __init__(self, filename):
+
+    min_x: float
+    min_y: float
+    min_z: float
+    step_x: float
+    step_y: float
+    step_z: float
+    X: np.ndarray
+    Y: np.ndarray
+    Z: np.ndarray
+    S: np.ndarray
+    n_points_x: int
+    n_points_y: int
+    n_points_z: int
+
+    def __init__(self, file: Union[str, PathLike]) -> None:
         # Read the lines from the cube file
-        with open(filename) as file:
+        with open(file) as file:
             lines = file.readlines()
 
         # Skip first two lines which are comments
@@ -56,7 +79,7 @@ class CubeParser:
         X, Y, Z = np.meshgrid(x, y, z, indexing="ij")
 
         # Skips to data lines and read in data
-        lines = lines[(n_atoms + 4):]
+        lines = lines[(n_atoms + 4) :]
 
         data = []
         for line in lines:
@@ -84,27 +107,29 @@ class CubeParser:
         self.n_points_y = n_points_y
         self.n_points_z = n_points_z
 
-        self._filename = filename
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self._filename!r}, " \
-            f"{self.S.size!r} points)"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.S.size!r} points)"
 
 
 class D3Parser:
-    """Parses the output of Grimme's D3 program and extracts the C6(AA) and
-    C8(AA) coefficients
-    
+    """Parses the output of Grimme's D3 program.
+
+    Extracts the C₆ᴬᴬ and C₈ᴬᴬ coefficients
+
     Args:
-        filename (str): File containing output from the D3 program.
-    
+        file: File containing output from the D3 program.
+
     Attributes:
-        c6_coefficients (list): C6(AA) coefficients (au)
-        c8_coefficients (list): C8(AA) coefficients (au)
+        c6_coefficients: C₆ᴬᴬ coefficients (a.u.)
+        c8_coefficients: C₈ᴬᴬ coefficients (a.u.)
     """
-    def __init__(self, filename):
+
+    c6_coefficients: np.ndarray
+    c8_coefficients: np.ndarray
+
+    def __init__(self, file: Union[str, PathLike]) -> None:
         # Read the file
-        with open(filename, encoding="utf-8") as file:
+        with open(file, encoding="utf-8") as file:
             lines = file.readlines()
 
         # Parse the file for the coefficients
@@ -125,28 +150,32 @@ class D3Parser:
                 read = True
 
         # Set attributes
-        self._filename = filename
-        self.c6_coefficients = c6_coefficients
-        self.c8_coefficients = c8_coefficients
+        self.c6_coefficients = np.array(c6_coefficients)
+        self.c8_coefficients = np.array(c8_coefficients)
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self._filename!r})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}"
 
 
 class D4Parser:
-    """Parses the output of Grimme's D4 program and extracts the C6(AA) and
-    C8(AA) coefficients
-    
+    """Parses the output of Grimme's D4 program.
+
+    Extracts the C₆ᴬᴬ and C₈ᴬᴬ coefficients
+
     Args:
-        filename (str): Name of file containing output from the D3 program.
-    
+        file: File containing output from the D4 program.
+
     Attributes:
-        c6_coefficients (list): C6(AA) coefficients (au)
-        c8_coefficients (list): C8(AA) coefficients (au)
+        c6_coefficients: C₆ᴬᴬ coefficients (a.u.)
+        c8_coefficients: C₈ᴬᴬ coefficients (a.u.)
     """
-    def __init__(self, filename):
+
+    c6_coefficients: np.ndarray
+    c8_coefficients: np.ndarray
+
+    def __init__(self, file: str) -> None:
         # Read the file
-        with open(filename, encoding="utf-8") as file:
+        with open(file, encoding="utf-8") as file:
             lines = file.readlines()
 
         # Parse the file and extract the coefficients
@@ -165,33 +194,38 @@ class D4Parser:
                 c6_coefficients.append(c6)
             if "C6AA" in line:
                 read = True
-        c8_coefficients = [3 * c6 * r2_r4[element]**2 for c6, element in
-            zip(c6_coefficients, elements)]
+        c8_coefficients = [
+            3 * c6 * r2_r4[element] ** 2
+            for c6, element in zip(c6_coefficients, elements)
+        ]
 
         # Set up attributes
-        self._filename = filename
         self.c6_coefficients = c6_coefficients
         self.c8_coefficients = c8_coefficients
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self._filename!r})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}"
 
 
 class VertexParser:
-    """Parses the contents of a Multiwfn vtx.pdb file and extracts the
-    vertices and faces of the surface.
+    """Parses the contents of a Multiwfn vtx.pdb file.
+
+    Extracts the vertices and faces of the surface.
 
     Args:
-        filename (str): Name of file containing the vertices.
+        file: Name of file containing the vertices.
 
     Attributes:
-        faces (list): Faces of surface
-        vertices (list): Vertices of surface
-
+        faces: Faces of surface
+        vertices: Vertices of surface
     """
-    def __init__(self, filename):
+
+    faces: Optional[np.ndarray]
+    vertices: np.ndarray
+
+    def __init__(self, file: Union[str, PathLike]) -> None:  # noqa: C901
         # Parse file to see if it containts connectivity
-        with open(filename) as file:
+        with open(file) as file:
             lines = file.readlines()
 
         # Get the number of vertices
@@ -217,12 +251,12 @@ class VertexParser:
                 n_entries = int(len(line.strip()) / 6 - 1)
                 entries = []
                 for i in range(1, n_entries + 1):
-                    entry = int(line[i * 6: i * 6 + 6])
+                    entry = int(line[i * 6 : i * 6 + 6])
                     entries.append(entry)
                 connectivities[entries[0]].update(entries[1:])
 
         # Establish faces based on connectivity
-        # https://stackoverflow.com/questions/1705824/finding-cycle-of-3-nodes-or-triangles-in-a-graph
+        # https://stackoverflow.com/questions/1705824/finding-cycle-of-3-nodes-or-triangles-in-a-graph # noqa: B950
         if any(connectivities.values()):
             faces = []
             visited = set()
@@ -236,33 +270,32 @@ class VertexParser:
                             continue
                         if vertex_1 in connectivities[vertex_3]:
                             triangle_vertices = [vertex_1, vertex_2, vertex_3]
-                            mapped_vertices = [vertex_map[vertex] - 1 for vertex in
-                                               triangle_vertices]
+                            mapped_vertices = [
+                                vertex_map[vertex] - 1 for vertex in triangle_vertices
+                            ]
                             faces.append(mapped_vertices)
                     temp_visited.add(vertex_2)
                 visited.add(vertex_1)
-            self.faces = faces
+            self.faces = np.array(faces)
         else:
             self.faces = None
 
         # Set up attributes.
-        self.vertices = list(vertices.values())
-        self._filename = filename
+        self.vertices = np.array(list(vertices.values()))
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self._filename!r}, " \
-        f"{len(self.vertices)!r} points)"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({len(self.vertices)!r} points)"
 
 
-def read_gjf(file):
+def read_gjf(file: Union[str, PathLike]) -> Tuple[np.ndarray, np.ndarray]:
     """Reads Gaussian gjf/com file and returns elements and coordinates.
 
     Args:
-        file (str): Name of gjf/com file or path object.
+        file: gjf/com file object.
 
     Returns:
-        elements (list): Elements as atomic symbols or numbers
-        coordinates (list): Coordinates (Å)
+        elements: Elements as atomic symbols or numbers
+        coordinates: Coordinates (Å)
     """
     # Read file and split lines
     with open(file) as f:
@@ -283,8 +316,7 @@ def read_gjf(file):
                 if atom.isdigit():
                     atom = int(atom)
                 elements.append(atom)
-                coordinates.append([float(line[1]), float(line[2]),
-                                    float(line[3])])
+                coordinates.append([float(line[1]), float(line[2]), float(line[3])])
             read_counter += 1
 
     elements = np.array(elements)
@@ -293,16 +325,17 @@ def read_gjf(file):
     return elements, coordinates
 
 
-def read_xyz(file):
-    """Reads xyz file and returns elements as written (atomic numbers or
-    symbols) and coordinates.
+def read_xyz(file: Union[str, PathLike]) -> Tuple[np.ndarray, np.ndarray]:
+    """Reads xyz file.
+
+    Returns elements as written (atomic numbers or symbols) and coordinates.
 
     Args:
-        file (str): Filename or Path object
+        file: Filename or Path object
 
     Returns:
-        elements (ndarray): Elements as atomic symbols or numbers
-        coordinates (ndarray): Coordinates (Å)
+        elements: Elements as atomic symbols or numbers
+        coordinates: Coordinates (Å)
     """
     # Read file and split lines
     with open(file) as f:
@@ -312,7 +345,7 @@ def read_xyz(file):
     elements = []
     coordinates = []
     n_atoms = int(lines[0].strip())
-    line_chunks = zip(*[iter(lines)]*(n_atoms+2))
+    line_chunks = zip(*[iter(lines)] * (n_atoms + 2))
     for line_chunk in line_chunks:
         for line in line_chunk[2:]:
             strip_line = line.strip().split()
@@ -320,8 +353,9 @@ def read_xyz(file):
             if atom.isdigit():
                 atom = int(atom)
             elements.append(atom)
-            coordinates.append([float(strip_line[1]), float(strip_line[2]),
-                float(strip_line[3])])
+            coordinates.append(
+                [float(strip_line[1]), float(strip_line[2]), float(strip_line[3])]
+            )
     elements = np.array(elements)[:n_atoms]
     coordinates = np.array(coordinates).reshape(-1, n_atoms, 3)
     if coordinates.shape[0] == 1:
@@ -330,17 +364,18 @@ def read_xyz(file):
     return elements, coordinates
 
 
-def get_xyz_string(symbols, coordinates, comment=""):
+def get_xyz_string(
+    symbols: Sequence[str], coordinates: Sequence[Sequence[float]], comment: str = ""
+) -> str:
     """Return xyz string.
 
     Args:
-        comment (str): Comment
-        coordinates (list): Atomic coordinates (Å)
-        symbols (list): Atomic symbols
-    
-    Returns:
-        string (str): XYZ string
+        symbols: Atomic symbols
+        coordinates: Atomic coordinates (Å)
+        comment: Comment
 
+    Returns:
+        string: XYZ string
     """
     string = f"{len(symbols)}\n"
     string += f"{comment}\n"
@@ -350,17 +385,22 @@ def get_xyz_string(symbols, coordinates, comment=""):
     return string
 
 
-def write_xyz(file, elements, coordinates, comments=None):
+def write_xyz(
+    file: Union[str, PathLike],
+    elements: Sequence[Union[int, str]],
+    coordinates: Union[Sequence[Sequence[float]], Sequence[Sequence[Sequence[float]]]],
+    comments: Sequence[str] = None,
+) -> None:
     """Writes xyz file from elements and coordinates.
-    
+
     Args:
-        file (str): Name of xyz file or path object.
-        elements (list): Elements as atomic symbols or numbers
-        coordinates (list): Coordinates (Å)
-        comments (list): Comments
+        file: xyz file or path object
+        elements: Elements as atomic symbols or numbers
+        coordinates: Coordinates (Å)
+        comments: Comments
     """
     # Convert elements to symbols
-    symbols = convert_elements(elements, output='symbols')
+    symbols = convert_elements(elements, output="symbols")
     coordinates = np.array(coordinates).reshape(-1, len(symbols), 3)
     if comments is None:
         comments = [""] * len(coordinates)
@@ -368,8 +408,6 @@ def write_xyz(file, elements, coordinates, comments=None):
     # Write the xyz file
     with open(file, "w") as f:
         for coord, comment in zip(coordinates, comments):
-            xyz_string = get_xyz_string(symbols,
-                                        coord,
-                                        comment=comment)
+            xyz_string = get_xyz_string(symbols, coord, comment=comment)
             f.write(xyz_string)
             f.write("\n")

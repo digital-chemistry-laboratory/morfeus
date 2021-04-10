@@ -1,0 +1,5 @@
+dependencies:
+- matplotlib
+- pymeshfix
+- pyvista
+- vtk

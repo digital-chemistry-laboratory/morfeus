@@ -4,21 +4,24 @@ import argparse
 
 from morfeus import read_gjf, read_xyz, Sterimol
 
-def main():
+
+def main() -> None:
+    """Calculate Sterimol parameters."""
     # Parse the arguments
-    parser = argparse.ArgumentParser(
-        "morfeus script to calculate Sterimol values")
+    parser = argparse.ArgumentParser("morfeus script to calculate Sterimol values")
+    parser.add_argument("file", type=str, help="Input file, either .xyz, .gjf or .com")
+    parser.add_argument("atom_1", type=int, help="Dummy atom")
     parser.add_argument(
-        'file', type=str, help='Input file, either .xyz, .gjf or .com')
+        "atom_2", type=int, help="Atom of substituent connected to dummy atom"
+    )
     parser.add_argument(
-        'atom_1', type=int, help='Dummy atom')
-    parser.add_argument(
-        'atom_2', type=int, help='Atom of substituent connected to dummy atom')
-    parser.add_argument(
-        '--radii', type=str, help='Radii type: "bondi" or "crc" (default)',
-        choices=["bondi", "crc"], default="crc")
-    parser.add_argument(
-        "--verbose", help='Additional print', action='store_true')
+        "--radii",
+        type=str,
+        help='Radii type: "bondi" or "crc" (default)',
+        choices=["bondi", "crc"],
+        default="crc",
+    )
+    parser.add_argument("--verbose", help="Additional print", action="store_true")
 
     args = parser.parse_args()
     radii_type = args.radii
@@ -36,9 +39,9 @@ def main():
         raise Exception("No valid input file. Use .xyz or .gjf/.com")
 
     # Run the calculations and print the results
-    sterimol = Sterimol(elements, coordinates, atom_1, atom_2,
-                        radii_type=radii_type)
+    sterimol = Sterimol(elements, coordinates, atom_1, atom_2, radii_type=radii_type)
     sterimol.print_report(verbose=verbose)
+
 
 if __name__ == "__main__":
     main()
