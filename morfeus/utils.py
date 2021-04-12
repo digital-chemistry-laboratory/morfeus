@@ -30,7 +30,7 @@ from morfeus.data import (
     radii_rahm,
     radii_truhlar,
 )
-from morfeus.typing import ArrayLike1D, ArrayLike2D
+from morfeus.typing import Array2D, ArrayLike1D, ArrayLike2D
 
 
 # TODO change exclude_list, within_list, return empty list instead of None
@@ -288,7 +288,7 @@ def get_connectivity_matrix(
     radii: Optional[ArrayLike1D] = None,
     radii_type: str = "pyykko",
     scale_factor: float = 1.2,
-) -> np.ndarray:
+) -> Array2D:
     """Get connectivity matrix from covalent radii.
 
     Args:

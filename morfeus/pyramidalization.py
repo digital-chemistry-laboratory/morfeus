@@ -61,10 +61,8 @@ class Pyramidalization:
             neighbor_indices = list(neighbor_indices)
 
         if excluded_atoms is None:
-            excluded_atoms_ = np.array([])
-        else:
-            excluded_atoms_ = np.array(excluded_atoms, dtype=int)
-        excluded_atoms = excluded_atoms_
+            excluded_atoms = []
+        excluded_atoms = excluded_atoms = np.array(excluded_atoms, dtype=bool)
 
         # Get 3 closest neighbors
         if len(neighbor_indices) > 0:

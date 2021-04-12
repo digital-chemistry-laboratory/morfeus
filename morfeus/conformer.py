@@ -368,7 +368,7 @@ class ConformerEnsemble:
 
         return statistic
 
-    def boltzmann_weights(self, temperature: float = 298.15) -> np.ndarray:
+    def boltzmann_weights(self, temperature: float = 298.15) -> Array1D:
         """Calculate Boltzmann weights for ensemble.
 
         Args:

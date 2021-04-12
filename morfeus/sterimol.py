@@ -404,7 +404,7 @@ class Sterimol:
             p.add_mesh(sphere, color=color, opacity=opacity, name=str(atom.index))
 
         # Draw sphere for Buried Sterimol
-        if self._sphere_radius:
+        if hasattr(self, "_sphere_radius"):
             sphere = pv.Sphere(
                 center=self._dummy_atom.coordinates, radius=self._sphere_radius
             )

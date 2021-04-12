@@ -427,7 +427,12 @@ class BuriedVolume:
             grid: Number of points along each axis of plotting grid
             all_positive: Whether to plot only positive values
             cmap: Matplotlib colormap for contour plot
+
+        Raises:
+            ValueError: When z-axis atoms not present
         """
+        if self._z_axis_atoms is None:
+            raise ValueError("Must give z-axis atoms when instantiating BuriedVolume.")
         # Set up coordinates
         atoms = self._atoms
         center = np.array(self._sphere.center)

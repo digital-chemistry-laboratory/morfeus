@@ -25,7 +25,7 @@ from morfeus.geometry import (
     InternalCoordinates,
     kabsch_rotation_matrix,
 )
-from morfeus.typing import Array1D, Array2D, ArrayLike2D
+from morfeus.typing import Array1D, Array2D, ArrayLike1D, ArrayLike2D
 from morfeus.utils import convert_elements
 
 
@@ -134,13 +134,13 @@ class LocalForce:
             cutoff: Cutoff for low force constant (mDyne/Å)
         """
         # Compute D matrix from normal modes and B matrix
-        if len(self._D) == 0:
-            if len(self._B) == 0:
+        if not hasattr(self, "_D"):
+            if not hasattr(self, "_B"):
                 self._B = self._internal_coordinates.get_B_matrix(self._coordinates)
             self._D = self._B @ self._normal_modes.T
 
         # Project out imaginary modes
-        if project_imag and self.n_imag:
+        if project_imag and getattr(self, "n_imag", 0) > 0:
             # Save full D matrix and force constant vector
             self._D_full = self._D
             self._force_constants_full = self._force_constants
@@ -168,17 +168,37 @@ class LocalForce:
         k_s = np.array(k_s)
 
         # Scale force constants due to projection of imaginary normal modes
-        if project_imag and self.n_imag:
+        if project_imag and getattr(self, "n_imag", 0) > 0:
             lengths = np.linalg.norm(self._D, axis=1)
             lengths_full = np.linalg.norm(self._D_full, axis=1)
             k_s *= lengths / lengths_full
 
         self.local_force_constants = k_s
 
-    def detect_bonds(self) -> None:
-        """Detect bonds based on scaled sum of covalent radii."""
+    def detect_bonds(
+        self,
+        radii: Optional[ArrayLike1D] = None,
+        radii_type: str = "pyykko",
+        scale_factor: float = 1.2,
+    ) -> None:
+        """Detect bonds based on scaled sum of covalent radii.
+
+        Args:
+            radii: Covalent radii (Å)
+            radii_type: Covalent radii type: 'pyykko'
+            scale_factor: Scale factor for covalent radii
+
+        Raises:
+            Exception: When elements or coordinates are missing
+        """
         if len(self._elements) > 0 and len(self._coordinates) > 0:
-            self._internal_coordinates.detect_bonds(self._elements, self._coordinates)
+            self._internal_coordinates.detect_bonds(
+                self._coordinates,
+                self._elements,
+                radii=radii,
+                radii_type=radii_type,
+                scale_factor=scale_factor,
+            )
         else:
             raise Exception("Elements or coordinates missing.")
 
@@ -373,8 +393,8 @@ class LocalForce:
             unit = "mDyne/Å"
 
         string = f"{'Coordinate':30s}" + f"{'Force constant ' + '(' + unit + ')':>50s}"
-        if len(self.local_frequencies) > 0:
-            string += f"{'Frequency (cm^-1)':>30s}"
+        if hasattr(self, "local_frequencies"):
+            string += f"{'Frequency (cm⁻¹)':>30s}"
         print(string)
 
         # Print results for each internal
@@ -441,42 +461,42 @@ class LocalForce:
                 except ValueError:
                     read_modes = False
             # Read cartesian force constants
-            if read_hessian:
+            elif read_hessian:
                 try:
                     split_line = line.strip().split()
                     hessian.extend([float(value) for value in split_line])
                 except ValueError:
                     read_hessian = False
             # Read normal mode force constants
-            if read_vib_e2:
+            elif read_vib_e2:
                 try:
                     split_line = line.strip().split()
                     vib_e2.extend([float(value) for value in split_line])
                 except ValueError:
                     read_vib_e2 = False
             # Read internal coordinates
-            if read_ic:
+            elif read_ic:
                 try:
                     split_line = line.strip().split()
                     internal_coordinates.extend([int(value) for value in split_line])
                 except ValueError:
                     read_ic = False
             # Read atomic numbers
-            if read_atomic_numbers:
+            elif read_atomic_numbers:
                 try:
                     split_line = line.strip().split()
                     atomic_numbers.extend([int(value) for value in split_line])
                 except ValueError:
                     read_atomic_numbers = False
             # Read atomic masses
-            if read_masses:
+            elif read_masses:
                 try:
                     split_line = line.strip().split()
                     masses.extend([float(value) for value in split_line])
                 except ValueError:
                     read_masses = False
             # Read coordinates
-            if read_coordinates:
+            elif read_coordinates:
                 try:
                     split_line = line.strip().split()
                     coordinates.extend([float(value) for value in split_line])
@@ -486,27 +506,26 @@ class LocalForce:
             if "Number of atoms" in line:
                 n_atoms = int(line.strip().split()[4])
             # Read number of normal modes
-            if "Number of Normal Modes" in line:
+            elif "Number of Normal Modes" in line:
                 n_modes = int(line.strip().split()[5])
             # Read number of internal coordinates
-            if "Redundant internal coordinates" in line:
+            elif "Redundant internal coordinates" in line:
                 n_redundant = int(line.strip().split()[5])
             # Detect when to read data
-            if "Vib-Modes" in line:
+            elif "Vib-Modes" in line:
                 read_modes = True
-            if "Vib-AtMass" in line:
+            elif "Vib-AtMass" in line:
                 read_masses = True
-            if "Cartesian Force Constants" in line:
+            elif "Cartesian Force Constants" in line:
                 read_hessian = True
-            if "Vib-E2 " in line:
+            elif "Vib-E2 " in line:
                 read_vib_e2 = True
-            if "Redundant internal coordinate indices" in line:
+            elif "Redundant internal coordinate indices" in line:
                 read_ic = True
-            if "Atomic numbers" in line:
+            elif "Atomic numbers" in line:
                 read_atomic_numbers = True
-            if "Current cartesian coordinates " in line:
+            elif "Current cartesian coordinates " in line:
                 read_coordinates = True
-
         # Take out normal mode force constants
         force_constants = np.array(vib_e2[n_modes * 2 : n_modes * 3])
 
@@ -561,7 +580,7 @@ class LocalForce:
         ifc_matrix = np.array([])
         input_coordinates: List[float] = []
         standard_coordinates: List[float] = []
-        n_imag: int
+        n_imag: int = 0
         n_atoms: int = 0
         internal_indices: Dict[FrozenSet[int], int] = {}
         atomic_numbers: List[int] = []
@@ -723,15 +742,17 @@ class LocalForce:
             if " NAtoms=" in line and not n_atoms:
                 n_atoms = int(line.strip().split()[1])
             # Read normal mode force constants
-            if "Frc consts" in line:
+            elif "Frc consts" in line:
                 split_line = line.strip().split()
                 values = [float(value) for value in split_line[3:]]
                 force_constants.extend(values)
             # Read number of imaginary frequencies
-            if "imaginary frequencies (negative Signs)" in line:
+            elif "imaginary frequencies (negative Signs)" in line:
                 n_imag = int(line.strip().split()[1])
             # Detect when to read data
-            if "Name  Definition              Value          Derivative Info." in line:
+            elif (
+                "Name  Definition              Value          Derivative Info." in line
+            ):
                 read_internal = True
                 counter = 1
                 internal_names = []

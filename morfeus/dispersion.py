@@ -2,7 +2,7 @@
 
 from os import PathLike
 import typing
-from typing import Dict, Iterable, List, Optional, Sequence, Union
+from typing import cast, Dict, Iterable, List, Optional, Sequence, Union
 
 import numpy as np
 import scipy.spatial
@@ -352,7 +352,7 @@ class Dispersion:
             ],
             axis=0,
         )
-        p = np.cast(np.ndarray, p)  # typing
+        p = cast(np.ndarray, p)
         self.p_values = p
 
         # Take out atomic p_ints if no points are given
