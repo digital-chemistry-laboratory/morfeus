@@ -10,7 +10,7 @@ import numpy as np
 try:
     from numpy.typing import ArrayLike
 except ImportError:
-    ArrayLike = Any  # type: ignore
+    ArrayLike = Any
 
 ArrayLike1D = ArrayLike
 ArrayLike2D = ArrayLike

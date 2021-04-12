@@ -1,7 +1,7 @@
 """Automated testing linting and formatting apparatus."""
 # external
-import nox  # type: ignore
-from nox.sessions import Session  # type: ignore
+import nox
+from nox.sessions import Session
 
 package = "morfeus"
 nox.options.sessions = "lint", "tests", "mypy"  # default session

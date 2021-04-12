@@ -1,6 +1,5 @@
 """Conformer tools."""
 
-from collections import Counter
 from copy import copy, deepcopy
 import numbers
 from os import PathLike
@@ -11,6 +10,7 @@ import typing
 from typing import (
     Any,
     cast,
+    Counter,
     Dict,
     Iterable,
     List,
