@@ -29,11 +29,6 @@ def main() -> None:  # noqa: C901
         default=0.001,
     )
     parser.add_argument("--verbose", help="Print atom areas", action="store_true")
-    parser.add_argument(
-        "--surface_from_radii",
-        help="Construct pseudo-surface from vdW radii",
-        action="store_true",
-    )
 
     # Parse the arguments
     args = parser.parse_args()
@@ -44,7 +39,6 @@ def main() -> None:  # noqa: C901
     vertex_file = args.vertex_file
     verbose = args.verbose
     isodensity = args.isodensity
-    surface_from_radii = args.surface_from_radii
 
     # Perform checks to ensure no inconsistencies in input
     # TODO fix this
@@ -65,7 +59,7 @@ def main() -> None:  # noqa: C901
     # Check if surface or coefficients files are given
     point_surface = True
     calculate_coefficients = True
-    if cube_file or vertex_file or surface_from_radii:
+    if cube_file or vertex_file:
         point_surface = False
     if d3_file or d4_file:
         calculate_coefficients = False
@@ -76,7 +70,7 @@ def main() -> None:  # noqa: C901
         coordinates,
         density=density,
         point_surface=point_surface,
-        calculate_coefficients=calculate_coefficients,
+        compute_coefficients=calculate_coefficients,
     )
 
     # Set up surface and coefficients if files are given
@@ -84,19 +78,17 @@ def main() -> None:  # noqa: C901
         dispersion.surface_from_cube(cube_file, isodensity=isodensity)
     elif vertex_file:
         dispersion.surface_from_multiwfn(vertex_file)
-    elif surface_from_radii:
-        dispersion.surface_from_radii()
 
     if d3_file:
-        dispersion.get_coefficients(d3_file, model="d3")
+        dispersion.load_coefficients(d3_file, model="d3")
     elif d4_file:
-        dispersion.get_coefficients(d4_file, model="d4")
+        dispersion.load_coefficients(d4_file, model="d4")
     else:
-        dispersion.get_coefficients()
+        dispersion.compute_coefficients()
 
     # Perform the calculations and print the results
     if not point_surface or not calculate_coefficients:
-        dispersion.calculate_p_int()
+        dispersion.compute_p_int()
 
     # Print report
     dispersion.print_report(verbose=verbose)

@@ -1,7 +1,7 @@
 """Internal calculators."""
 
 import typing
-from typing import Sequence, Union
+from typing import Dict, Iterable, List, Sequence, Union
 
 import numpy as np
 from scipy.spatial.distance import cdist
@@ -9,6 +9,7 @@ from scipy.spatial.distance import cdist
 from morfeus.d3_data import c6_reference_data, r2_r4
 from morfeus.data import ANGSTROM, BOHR, EV, HARTREE
 from morfeus.geometry import Atom
+from morfeus.typing import Array1D, ArrayLike2D
 from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
@@ -38,18 +39,18 @@ class D3Grimme:
         polarizabilities: Atomic polarizabilities (a.u.)
     """
 
-    c_n_coefficients: Sequence[float]
-    polarizabilities: Sequence[float]
+    c_n_coefficients: Dict[int, Array1D]
+    polarizabilities: Array1D
     _atoms: Sequence["ase.Atoms"]
 
     def __init__(
         self,
-        elements: Sequence[Union[int, str]],
-        coordinates: Sequence[Sequence[float]],
+        elements: Union[Iterable[int], Iterable[str]],
+        coordinates: ArrayLike2D,
         order: int = 6,
     ) -> None:
         # Convert elements to atomic numbers
-        elements = convert_elements(elements)
+        elements = convert_elements(elements, output="numbers")
 
         # Do calculation
         atoms = ase.Atoms(numbers=elements, positions=coordinates)
@@ -108,20 +109,20 @@ class D4Grimme:
         polarizabilities: Atomic polarizabilities (a.u.)
     """
 
-    charges: Sequence[float]
-    c_n_coefficients: Sequence[float]
-    polarizabilities: Sequence[float]
+    c_n_coefficients: Dict[int, Array1D]
+    charges: Array1D
+    polarizabilities: Array1D
     _atoms: Sequence["ase.Atoms"]
 
     def __init__(
         self,
-        elements: Sequence[Union[int, str]],
-        coordinates: Sequence[Sequence[float]],
+        elements: Union[Iterable[int], Iterable[str]],
+        coordinates: ArrayLike2D,
         order: int = 8,
         charge: int = 0,
     ) -> None:
         # Convert elements to atomic numbers
-        elements = convert_elements(elements)
+        elements = convert_elements(elements, output="numbers")
 
         # Set up atoms object
         charges = np.zeros(len(elements))
@@ -178,21 +179,21 @@ class D3Calculator:
     Attributes:
         c_n_coefficients: Cᴬᴬ coefficients (a.u.)
         coordination_numbers: Atomic coordination numbers.
-        polarizabilities: Atomic polarizabilities (a.u.)
     """
 
-    c_n_coefficients: Sequence[float]
-    coordination_numbers: Sequence[float]
-    _atoms: Sequence[Atom]
+    c_n_coefficients: Dict[int, Array1D]
+    coordination_numbers: Array1D
+    _atoms: List[Atom]
 
     def __init__(
         self,
-        elements: Sequence[Union[int, str]],
-        coordinates: Sequence[Sequence[float]],
+        elements: Union[Iterable[int], Iterable[str]],
+        coordinates: ArrayLike2D,
         order: int = 8,
     ) -> None:
         # Convert elements to atomic numbers
-        elements = convert_elements(elements)
+        elements = convert_elements(elements, output="numbers")
+        coordinates = np.array(coordinates)
 
         # Load the covalent radii
         radii = get_radii(elements, radii_type="pyykko")
@@ -212,24 +213,33 @@ class D3Calculator:
         k_3 = 4
         for cn_atom in atoms:
             # Get coordinates and radii of all other atoms
-            coordinates = np.array(
+            other_coordinates = np.array(
                 [atom.coordinates for atom in atoms if atom is not cn_atom]
             )
-            radii = np.array([atom.radius for atom in atoms if atom is not cn_atom])
+            other_radii = np.array(
+                [atom.radius for atom in atoms if atom is not cn_atom]
+            )
 
             # Calculate distances
             dists = cdist(
-                np.array(cn_atom.coordinates).reshape(-1, 3), coordinates.reshape(-1, 3)
+                np.array(cn_atom.coordinates).reshape(-1, 3),
+                other_coordinates.reshape(-1, 3),
             )
 
             # Calculate coordination number
             coordination_number = np.sum(
-                1 / (1 + np.exp(-k_1 * (k_2 * (cn_atom.radius + radii) / dists - 1)))
+                1
+                / (
+                    1
+                    + np.exp(-k_1 * (k_2 * (cn_atom.radius + other_radii) / dists - 1))
+                )
             )
             cn_atom.coordination_number = coordination_number
 
         # Calculate the C_N coefficients
-        c_n_coefficients = {i: [] for i in range(6, order + 1, 2)}
+        c_n_coefficients: Dict[int, List[float]] = {
+            i: [] for i in range(6, order + 1, 2)
+        }
         for atom in atoms:
             # Get the reference data for atom
             reference_data = c6_reference_data[atom.element]
@@ -247,7 +257,9 @@ class D3Calculator:
             Z = np.sum(c_6_ref * L)
             c_6 = Z / W
 
-            temp_coefficients = {i: None for i in range(6, order + 1, 2)}
+            temp_coefficients: Dict[int, float] = {
+                i: np.nan for i in range(6, order + 1, 2)
+            }
             for i in range(6, order + 1, 2):
                 if i == 6:
                     temp_coefficients[i] = c_6
@@ -270,6 +282,9 @@ class D3Calculator:
         coordination_numbers = np.array(
             [atom.coordination_number for atom in self._atoms]
         )
+        c_n_coefficients = {
+            key: np.array(value) for key, value in c_n_coefficients.items()
+        }
 
         self._atoms = atoms
         self.c_n_coefficients = c_n_coefficients

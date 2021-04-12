@@ -1,11 +1,12 @@
 """Interface to quantum-chemical programs."""
 
 import typing
-from typing import Any, Dict, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
 from morfeus.data import ANGSTROM_TO_BOHR, BOHR_TO_ANGSTROM
+from morfeus.typing import ArrayLike2D
 from morfeus.utils import convert_elements, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
@@ -15,11 +16,11 @@ if typing.TYPE_CHECKING:
 
 @requires_dependency([Import(module="qcengine", alias="qcng")], globals())
 def optimize_qc_engine(
-    elements: Sequence[Union[int, str]],
-    coordinates: Sequence[Sequence[float]],
+    elements: Union[Iterable[int], Iterable[str]],
+    coordinates: ArrayLike2D,
     charge: Optional[int] = None,
     multiplicity: Optional[int] = None,
-    connectivity_matrix: Optional[Sequence[Sequence[int]]] = None,
+    connectivity_matrix: Optional[ArrayLike2D] = None,
     program: str = "xtb",
     model: Optional[dict[str, Any]] = None,
     keywords: Optional[dict[str, Any]] = None,
@@ -49,7 +50,11 @@ def optimize_qc_engine(
     Raises:
         Exception: When QCEngine calculation fails
     """
-    if program.lower() == "rdkit":
+    if (
+        program.lower() == "rdkit"
+        and charge is not None
+        and connectivity_matrix is not None
+    ):
         _check_qcng_rdkit(charge, connectivity_matrix)
 
     # Set defaults
@@ -98,7 +103,7 @@ def optimize_qc_engine(
 
 @requires_dependency([Import(module="qcengine", alias="qcng")], globals())
 def sp_qc_engine(
-    elements: Sequence[Union[int, str]],
+    elements: Union[Iterable[int], Iterable[str]],
     coordinates: Sequence[Sequence[float]],
     charge: Optional[int] = None,
     multiplicity: Optional[int] = None,
@@ -127,7 +132,11 @@ def sp_qc_engine(
     Raises:
         Exception: When QCEngine calculation fails
     """
-    if program.lower() == "rdkit":
+    if (
+        program.lower() == "rdkit"
+        and charge is not None
+        and connectivity_matrix is not None
+    ):
         _check_qcng_rdkit(charge, connectivity_matrix)
 
     # Set defaults
@@ -157,14 +166,12 @@ def sp_qc_engine(
         raise Exception(sp.error.error_message)
 
     # Take out results
-    energy = sp.return_result
+    energy: float = sp.return_result
 
     return energy
 
 
-def _check_qcng_rdkit(
-    charge: int, connectivity_matrix: Sequence[Sequence[int]]
-) -> None:
+def _check_qcng_rdkit(charge: int, connectivity_matrix: ArrayLike2D) -> None:
     """Check qncg calculation for RDKit incompatibilities."""
     if charge != 0:
         raise Exception("QCEngine using RDKit does not work with charged molecules.")
@@ -177,11 +184,11 @@ def _check_qcng_rdkit(
 
 @requires_dependency([Import(module="qcelemental", alias="qcel")], globals())
 def _generate_qcel_molecule(
-    elements: Sequence[Union[int, str]],
-    coordinates: Sequence[Sequence[float]],
+    elements: Union[Iterable[int], Iterable[str]],
+    coordinates: ArrayLike2D,
     charge: Optional[int] = None,
     multiplicity: Optional[int] = None,
-    connectivity_matrix: Optional[Sequence[Sequence[int]]] = None,
+    connectivity_matrix: Optional[ArrayLike2D] = None,
 ) -> qcel.models.Molecule:
     """Generate QCElemental molecule object.
 
@@ -196,7 +203,9 @@ def _generate_qcel_molecule(
         molecule: QCElemental molecule object.
     """
     # Generate bond order list from connectivity matrix
+    bos: Optional[List[Tuple[int, int, int]]]
     if connectivity_matrix is not None:
+        connectivity_matrix = np.array(connectivity_matrix)
         bos = []
         i, j = np.tril_indices_from(connectivity_matrix)
         for k, l in zip(i, j):

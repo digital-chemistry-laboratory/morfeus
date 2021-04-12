@@ -2,12 +2,23 @@
 
 from dataclasses import dataclass
 from importlib import import_module
+from numbers import Integral
 import shutil
-from typing import Any, Callable, Optional, Sequence, Union
+from typing import (
+    Any,
+    Callable,
+    cast,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    overload,
+    Sequence,
+    Union,
+)
 
 import numpy as np
 import scipy.spatial
-from scipy.spatial.distance import cdist
 
 from morfeus.data import (
     atomic_numbers,
@@ -19,19 +30,20 @@ from morfeus.data import (
     radii_rahm,
     radii_truhlar,
 )
+from morfeus.typing import ArrayLike1D, ArrayLike2D
 
 
 # TODO change exclude_list, within_list, return empty list instead of None
 def check_distances(
-    elements: Sequence[Union[str, float]],
-    coordinates: Sequence[Sequence[float]],
+    elements: Union[Iterable[int], Iterable[str]],
+    coordinates: ArrayLike2D,
     check_atom: int,
-    radii: Sequence[float] = None,
+    radii: Optional[ArrayLike1D] = None,
     check_radius: float = 0,
-    exclude_list: int = None,
+    exclude_list: Optional[Sequence[int]] = None,
     epsilon: float = 0,
     radii_type: str = "crc",
-) -> Sequence[int]:
+) -> Optional[List[int]]:
     """Check which atoms are within clashing vdW radii distances.
 
     Args:
@@ -49,25 +61,25 @@ def check_distances(
             Returns none if list is empty.
     """
     # Convert elements to atomic numbers if the are symbols
-    elements = convert_elements(elements)
+    elements = convert_elements(elements, output="numbers")
 
     # Get radii if they are not supplied
     if radii is None:
         radii = get_radii(elements, radii_type=radii_type)
-    else:
-        radii = np.array(radii)
+    radii = np.array(radii)
 
     if exclude_list is None:
         exclude_list = []
     else:
         exclude_list = list(exclude_list)
 
+    coordinates = np.array(coordinates)
     atom_coordinates = np.array(coordinates)
     check_coordinates = np.array(coordinates[check_atom - 1]).reshape(-1, 3)
 
     # Calculate distances between check atom and all atoms
     distances = (
-        cdist(atom_coordinates, check_coordinates)
+        scipy.spatial.distance.cdist(atom_coordinates, check_coordinates)
         - radii.reshape(-1, 1)
         - check_radius
         - epsilon
@@ -129,8 +141,8 @@ class Import:
     """Class for handling optional dependency imports."""
 
     module: str
-    item: str = None
-    alias: str = None
+    item: Optional[str] = None
+    alias: Optional[str] = None
 
 
 def requires_dependency(  # noqa: C901
@@ -190,9 +202,23 @@ def requires_dependency(  # noqa: C901
     return error_decorator if len(import_errors) > 0 else noop_decorator
 
 
+@overload
 def convert_elements(
-    elements: Sequence[Union[int, str]], output: str = "numbers"
-) -> Sequence[Union[int, str]]:
+    elements: Union[Iterable[int], Iterable[str]], output: Literal["numbers"]
+) -> List[int]:
+    ...
+
+
+@overload
+def convert_elements(
+    elements: Union[Iterable[int], Iterable[str]], output: Literal["symbols"]
+) -> List[str]:
+    ...
+
+
+def convert_elements(
+    elements: Union[Iterable[int], Iterable[str]], output: str = "numbers"
+) -> Union[List[int], List[str]]:
     """Converts elements to atomic symbols or numbers.
 
     Args:
@@ -201,29 +227,33 @@ def convert_elements(
 
     Returns:
         elements: Converted elements
+
+    Raises:
+        TypeError: When input type not supported
+        ValueError: When output not supported
     """
-    try:
-        elements = [element.capitalize() for element in elements]
-    except AttributeError:
-        pass
+    if output not in ["numbers", "symbols"]:
+        raise ValueError(f"ouput={output} not supported. Use 'numbers' or 'symbols'")
 
-    if output == "numbers":
-        try:
-            elements = [atomic_numbers[element] for element in elements]
-        except KeyError:
-            pass
-    if output == "symbols":
-        try:
+    if all(isinstance(element, str) for element in elements):
+        elements = cast(List[str], elements)
+        if output == "numbers":
+            elements = [atomic_numbers[element.capitalize()] for element in elements]
+        return elements
+    elif all(isinstance(element, Integral) for element in elements):
+        elements = cast(List[int], elements)
+        if output == "symbols":
             elements = [atomic_symbols[element] for element in elements]
-        except KeyError:
-            pass
-
-    return elements
+        return elements
+    else:
+        raise TypeError("elements must be all integers or all strings.")
 
 
 def get_radii(
-    elements: Sequence[Union[int, str]], radii_type: str = "crc", scale: float = 1
-) -> Sequence[float]:
+    elements: Union[Iterable[int], Iterable[str]],
+    radii_type: str = "crc",
+    scale: float = 1,
+) -> List[float]:
     """Gets radii from element identifiers.
 
     Args:
@@ -234,7 +264,7 @@ def get_radii(
     Returns:
         radii: Radii (Å)
     """
-    elements = convert_elements(elements)
+    elements = convert_elements(elements, output="numbers")
 
     # Set up dictionary of radii types
     radii_choice = {
@@ -253,11 +283,12 @@ def get_radii(
 
 
 def get_connectivity_matrix(
-    elements: Sequence[Union[int, str]],
-    coordinates: Sequence[Sequence[float]],
-    radii: Optional[Sequence[float]] = None,
+    coordinates: ArrayLike2D,
+    elements: Optional[Union[Iterable[int], Iterable[str]]] = None,
+    radii: Optional[ArrayLike1D] = None,
     radii_type: str = "pyykko",
-) -> Sequence[Sequence[int]]:
+    scale_factor: float = 1.2,
+) -> np.ndarray:
     """Get connectivity matrix from covalent radii.
 
     Args:
@@ -265,18 +296,26 @@ def get_connectivity_matrix(
         coordinates: Coordinates (Å)
         radii: Radii (Å)
         radii_type: Radii type: 'pyykko'
+        scale_factor: Factor for scaling covalent radii
 
     Returns:
         connectivity_matrix: Connectivity matrix
-    """
-    elements = convert_elements(elements)
 
+    Raises:
+        RuntimeError: When neither elements nor radii given
+    """
+    coordinates = np.array(coordinates)
+    n_atoms = len(coordinates)
     if radii is None:
-        radii = get_radii(elements, radii_type="pyykko")
+        if elements is None:
+            raise RuntimeError("Either elements or radii needed.")
+        elements = convert_elements(elements, output="numbers")
+        radii = get_radii(elements, radii_type=radii_type)
+    radii = np.array(radii)
     distance_matrix = scipy.spatial.distance_matrix(coordinates, coordinates)
-    radii_matrix = np.add.outer(radii, radii) * 1.2
-    connectivity_matrix = (distance_matrix < radii_matrix) - np.identity(
-        len(elements)
+    radii_matrix = np.add.outer(radii, radii) * scale_factor
+    connectivity_matrix: np.ndarray = (distance_matrix < radii_matrix) - np.identity(
+        n_atoms
     ).astype(int)
 
     return connectivity_matrix

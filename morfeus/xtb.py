@@ -1,11 +1,12 @@
 """xtb interface code."""
 
 import typing
-from typing import Optional, Sequence, Union
+from typing import Any, Iterable, Optional, Union
 
 import numpy as np
 
 from morfeus.data import ANGSTROM_TO_BOHR, HARTREE_TO_EV
+from morfeus.typing import Array1D, ArrayLike2D
 from morfeus.utils import convert_elements, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
@@ -31,17 +32,17 @@ class XTB:
 
     _charge: int
     _coordinates: np.ndarray
-    _solvent: str
-    _n_unpaired: int
-    _electronic_temperature: int
-    _version: str
+    _electronic_temperature: Optional[int]
     _elements: np.ndarray
-    _results: object
+    _n_unpaired: Optional[int]
+    _results: Any
+    _solvent: Optional[str]
+    _version: str
 
     def __init__(
         self,
-        elements: Sequence[Union[int, str]],
-        coordinates: Sequence[Sequence[float]],
+        elements: Union[Iterable[int], Iterable[str]],
+        coordinates: ArrayLike2D,
         version: str = "2",
         charge: int = 0,
         n_unpaired: Optional[int] = None,
@@ -82,11 +83,11 @@ class XTB:
             bond_order: Bond order
         """
         bo_matrix = self.get_bond_orders()
-        bond_order = bo_matrix[i - 1, j - 1]
+        bond_order: float = bo_matrix[i - 1, j - 1]
 
         return bond_order
 
-    def get_bond_orders(self, charge_state: int = 0) -> np.ndarray:
+    def get_bond_orders(self, charge_state: int = 0) -> Array1D:
         """Returns bond orders.
 
         Args:
@@ -96,11 +97,11 @@ class XTB:
             bond_orders: Bond orders
         """
         self._check_results(charge_state)
-        bond_orders = self._results[charge_state].get_bond_orders()
+        bond_orders: np.ndarray = self._results[charge_state].get_bond_orders()
 
         return bond_orders
 
-    def get_charges(self, charge_state: int = 0) -> np.ndarray:
+    def get_charges(self, charge_state: int = 0) -> Array1D:
         """Returns atomic charges.
 
         Args:
@@ -110,11 +111,11 @@ class XTB:
             bond_orders: Atomic charges
         """
         self._check_results(charge_state)
-        charges = self._results[charge_state].get_charges()
+        charges: np.ndarray = self._results[charge_state].get_charges()
 
         return charges
 
-    def get_dipole(self, charge_state: int = 0) -> np.ndarray:
+    def get_dipole(self, charge_state: int = 0) -> Array1D:
         """Calculate dipole vector (a.u.).
 
         Args:
@@ -124,7 +125,7 @@ class XTB:
             dipole: Dipole vector
         """
         self._check_results(charge_state)
-        dipole = self._results[charge_state].get_dipole()
+        dipole: np.ndarray = self._results[charge_state].get_dipole()
 
         return dipole
 
@@ -148,7 +149,7 @@ class XTB:
 
         return ea
 
-    def get_fukui(self, variety: str) -> np.ndarray:
+    def get_fukui(self, variety: str) -> Array1D:
         """Calculate Fukui coefficients.
 
         Args:
@@ -161,6 +162,7 @@ class XTB:
         Raises:
             ValueError: When variety does not exist
         """
+        fukui: np.ndarray
         if variety == "nucleophilicity":
             fukui = self.get_charges(0) - self.get_charges(1)
         elif variety == "electrophilicity":
@@ -233,7 +235,7 @@ class XTB:
         eigenvalues = self._get_eigenvalues()
         occupations = self._get_occupations()
         homo_index = int(occupations.sum().round(0) / 2) - 1
-        homo_energy = eigenvalues[homo_index]
+        homo_energy: float = eigenvalues[homo_index]
 
         return homo_energy
 
@@ -253,7 +255,7 @@ class XTB:
         # Calculate ionization potential
         ip = (energy_cation - energy_neutral) * HARTREE_TO_EV
         if corrected:
-            ip -= self._ipea_corrections[self._version]
+            ip -= IPEA_CORRECTIONS[self._version]
 
         return ip
 
@@ -267,7 +269,7 @@ class XTB:
         occupations = self._get_occupations()
         homo_index = int(occupations.sum().round(0) / 2) - 1
         lumo_index = homo_index + 1
-        lumo_energy = eigenvalues[lumo_index]
+        lumo_energy: float = eigenvalues[lumo_index]
 
         return lumo_energy
 
@@ -276,20 +278,23 @@ class XTB:
         if self._results[charge_state] is None:
             self._sp(charge_state)
 
-    def _get_eigenvalues(self) -> np.ndarray:
+    def _get_eigenvalues(self) -> Array1D:
         """Get orbital eigenvalues."""
         self._check_results(0)
-        return self._results[0].get_orbital_eigenvalues()
+        eigenvalues: np.ndarray = self._results[0].get_orbital_eigenvalues()
+        return eigenvalues
 
     def _get_energy(self, charge_state: int = 0) -> float:
         """Get total energy."""
         self._check_results(charge_state)
-        return self._results[charge_state].get_energy()
+        energy: float = self._results[charge_state].get_energy()
+        return energy
 
-    def _get_occupations(self) -> np.ndarray:
+    def _get_occupations(self) -> Array1D:
         """Get occupation numbers."""
         self._check_results(0)
-        return self._results[0].get_orbital_occupations()
+        occupations: np.ndarray = self._results[0].get_orbital_occupations()
+        return occupations
 
     def _sp(self, charge_state: int = 0) -> None:
         """Perform single point calculation."""

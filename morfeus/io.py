@@ -1,12 +1,13 @@
 """Geometry file parsing functions."""
 
 from os import PathLike
-from typing import Optional, Sequence, Tuple, Union
+from typing import Dict, Iterable, Optional, Sequence, Set, Tuple, Union
 
 import numpy as np
 
 from morfeus.d3_data import r2_r4
 from morfeus.data import BOHR_TO_ANGSTROM
+from morfeus.typing import Array1D, Array2D, Array3D, ArrayLike2D, ArrayLike3D
 from morfeus.utils import convert_elements
 
 
@@ -38,10 +39,10 @@ class CubeParser:
     step_x: float
     step_y: float
     step_z: float
-    X: np.ndarray
-    Y: np.ndarray
-    Z: np.ndarray
-    S: np.ndarray
+    X: Array3D
+    Y: Array3D
+    Z: Array3D
+    S: Array3D
     n_points_x: int
     n_points_y: int
     n_points_z: int
@@ -124,8 +125,8 @@ class D3Parser:
         c8_coefficients: C₈ᴬᴬ coefficients (a.u.)
     """
 
-    c6_coefficients: np.ndarray
-    c8_coefficients: np.ndarray
+    c6_coefficients: Array1D
+    c8_coefficients: Array1D
 
     def __init__(self, file: Union[str, PathLike]) -> None:
         # Read the file
@@ -170,10 +171,10 @@ class D4Parser:
         c8_coefficients: C₈ᴬᴬ coefficients (a.u.)
     """
 
-    c6_coefficients: np.ndarray
-    c8_coefficients: np.ndarray
+    c6_coefficients: Array1D
+    c8_coefficients: Array1D
 
-    def __init__(self, file: str) -> None:
+    def __init__(self, file: Union[str, PathLike]) -> None:
         # Read the file
         with open(file, encoding="utf-8") as file:
             lines = file.readlines()
@@ -194,10 +195,13 @@ class D4Parser:
                 c6_coefficients.append(c6)
             if "C6AA" in line:
                 read = True
-        c8_coefficients = [
-            3 * c6 * r2_r4[element] ** 2
-            for c6, element in zip(c6_coefficients, elements)
-        ]
+        c6_coefficients = np.array(c6_coefficients)
+        c8_coefficients = np.array(
+            [
+                3 * c6 * r2_r4[element] ** 2
+                for c6, element in zip(c6_coefficients, elements)
+            ]
+        )
 
         # Set up attributes
         self.c6_coefficients = c6_coefficients
@@ -234,7 +238,9 @@ class VertexParser:
         # Parse the vertex positions and their connectivities
         vertices = {}
         vertex_map = {}
-        connectivities = {i: set() for i in range(1, n_vertices + 1)}
+        connectivities: Dict[int, Set[int]] = {
+            i: set() for i in range(1, n_vertices + 1)
+        }
         vertex_counter = 1
         included_vertex_counter = 1
         for line in lines:
@@ -300,7 +306,6 @@ def read_gjf(file: Union[str, PathLike]) -> Tuple[np.ndarray, np.ndarray]:
     # Read file and split lines
     with open(file) as f:
         lines = f.readlines()
-    lines = [line.strip().split() for line in lines]
 
     # Loop over lines and store elements and coordinates
     elements = []
@@ -312,11 +317,14 @@ def read_gjf(file: Union[str, PathLike]) -> Tuple[np.ndarray, np.ndarray]:
             empty_counter += 1
         if empty_counter == 2:
             if read_counter > 1:
-                atom = line[0]
-                if atom.isdigit():
-                    atom = int(atom)
+                strip_line = line.strip().split()
+                atom_char = strip_line[0]
+                if atom_char.isdigit():
+                    atom = int(atom_char)
                 elements.append(atom)
-                coordinates.append([float(line[1]), float(line[2]), float(line[3])])
+                coordinates.append(
+                    [float(strip_line[1]), float(strip_line[2]), float(strip_line[3])]
+                )
             read_counter += 1
 
     elements = np.array(elements)
@@ -325,7 +333,7 @@ def read_gjf(file: Union[str, PathLike]) -> Tuple[np.ndarray, np.ndarray]:
     return elements, coordinates
 
 
-def read_xyz(file: Union[str, PathLike]) -> Tuple[np.ndarray, np.ndarray]:
+def read_xyz(file: Union[str, PathLike]) -> Tuple[Array1D, Union[Array2D, Array3D]]:
     """Reads xyz file.
 
     Returns elements as written (atomic numbers or symbols) and coordinates.
@@ -387,9 +395,9 @@ def get_xyz_string(
 
 def write_xyz(
     file: Union[str, PathLike],
-    elements: Sequence[Union[int, str]],
-    coordinates: Union[Sequence[Sequence[float]], Sequence[Sequence[Sequence[float]]]],
-    comments: Sequence[str] = None,
+    elements: Union[Iterable[int], Iterable[str]],
+    coordinates: Union[ArrayLike2D, ArrayLike3D],
+    comments: Optional[Sequence[str]] = None,
 ) -> None:
     """Writes xyz file from elements and coordinates.
 

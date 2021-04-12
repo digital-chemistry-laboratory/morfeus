@@ -8,7 +8,21 @@ from pathlib import Path
 import subprocess
 import tempfile
 import typing
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    cast,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 import warnings
 
 import numpy as np
@@ -22,14 +36,22 @@ from morfeus.data import (
     KCAL_TO_HARTREE,
     KJ_TO_HARTREE,
 )
+from morfeus.io import write_xyz
+from morfeus.qc import optimize_qc_engine, sp_qc_engine
+from morfeus.typing import (
+    Array1D,
+    Array2D,
+    Array3D,
+    ArrayLike1D,
+    ArrayLike2D,
+    ArrayLike3D,
+)
 from morfeus.utils import (
     convert_elements,
     Import,
     requires_dependency,
     requires_executable,
 )
-from morfeus.io import write_xyz
-from morfeus.qc import optimize_qc_engine, sp_qc_engine
 
 if typing.TYPE_CHECKING:
     import openbabel
@@ -42,7 +64,7 @@ if typing.TYPE_CHECKING:
 
 
 def boltzmann_average_dT(
-    properties: Sequence[float], energies: Sequence[float], temperature: float = 298.15
+    properties: ArrayLike1D, energies: ArrayLike1D, temperature: float = 298.15
 ) -> float:
     """Return the derivative of the Boltzmann average.
 
@@ -77,8 +99,8 @@ def boltzmann_average_dT(
 
 
 def boltzmann_statistic(
-    properties: Sequence[float],
-    energies: Sequence[float],
+    properties: ArrayLike1D,
+    energies: ArrayLike1D,
     temperature: float = 298.15,
     statistic: str = "avg",
 ) -> float:
@@ -99,6 +121,7 @@ def boltzmann_statistic(
     weights = boltzmann_weights(energies, temperature)
 
     # Compute Boltzmann weighted statistic
+    result: float
     if statistic == "avg":
         result = np.average(properties, weights=weights)
     elif statistic == "var":
@@ -112,9 +135,7 @@ def boltzmann_statistic(
     return result
 
 
-def boltzmann_weights(
-    energies: Sequence[float], temperature: float = 298.15
-) -> np.ndarray:
+def boltzmann_weights(energies: ArrayLike1D, temperature: float = 298.15) -> Array1D:
     """Compute Boltzmann weights.
 
     Args:
@@ -127,7 +148,7 @@ def boltzmann_weights(
     energies = np.array(energies)
     energies -= energies.min()
     terms = np.exp(-energies / (K_B / HARTREE * temperature))
-    weights = terms / np.sum(terms)
+    weights: np.ndarray = terms / np.sum(terms)
 
     return weights
 
@@ -153,16 +174,16 @@ class Conformer:
     """
 
     cip_label: Optional[Tuple[str, ...]]
-    coordinates: np.ndarray
+    coordinates: Array2D
     degeneracy: int
-    elements: np.ndarray
+    elements: Array1D
     energy: Optional[float]
     properties: Dict[str, float]
 
     def __init__(
         self,
-        elements: Sequence[Union[int, str]],
-        coordinates: Sequence[Sequence[float]],
+        elements: Union[Iterable[int], Iterable[str]],
+        coordinates: ArrayLike2D,
         energy: Optional[float] = None,
         degeneracy: int = 1,
         properties: Optional[Dict[str, float]] = None,
@@ -215,32 +236,35 @@ class ConformerEnsemble:
 
     charge: int
     confomers: List[Conformer]
-    connectivity_matrix: np.ndarray
-    elements: np.ndarray
-    formal_charges: np.ndarray
-    mol: Optional["Chem.Mol"]
+    connectivity_matrix: Array2D
+    elements: Array1D
+    formal_charges: Array1D
+    mol: "Chem.Mol"
     multiplicity: int
     ref_cip_label: Optional[Tuple[str, ...]]
 
     def __init__(
         self,
-        elements: Sequence[Union[int, str]],
-        conformer_coordinates: Optional[Sequence[Sequence[Sequence[float]]]] = None,
-        energies: Optional[Sequence[float]] = None,
-        connectivity_matrix: Optional[Sequence[Sequence[int]]] = None,
-        degeneracies: Optional[Sequence[int]] = None,
-        properties: Optional[Dict[str, Sequence[float]]] = None,
+        elements: Union[Iterable[int], Iterable[str]],
+        conformer_coordinates: Optional[ArrayLike3D] = None,
+        energies: Optional[ArrayLike1D] = None,
+        connectivity_matrix: Optional[ArrayLike2D] = None,
+        degeneracies: Optional[ArrayLike1D] = None,
+        properties: Optional[Mapping[str, ArrayLike1D]] = None,
         charge: Optional[int] = None,
         multiplicity: Optional[int] = None,
-        formal_charges: Optional[Sequence[int]] = None,
+        formal_charges: Optional[ArrayLike1D] = None,
         ref_cip_label: Optional[Tuple[str, ...]] = None,
     ) -> None:
+        elements = np.array(convert_elements(elements, output="numbers"))
+        self.elements = elements
+
         if conformer_coordinates is None:
             conformer_coordinates = []
         if formal_charges is None:
             formal_charges = np.zeros(len(elements), dtype=int)
         if charge is None:
-            charge = np.sum(formal_charges)
+            charge = int(np.sum(formal_charges))
         else:
             if charge != np.sum(formal_charges):
                 msg = (
@@ -252,9 +276,8 @@ class ConformerEnsemble:
             multiplicity = 1
 
         # Store conformers
-        self.elements = np.array(convert_elements(elements))
-        self.conformers = []
-        self._add_conformers(conformer_coordinates, energies, properties, degeneracies)
+        self.conformers: List[Conformer] = []
+        self._add_conformers(conformer_coordinates, energies, degeneracies, properties)
 
         # Set up attributes
         self.charge = charge
@@ -266,20 +289,20 @@ class ConformerEnsemble:
 
     def add_conformers(
         self,
-        coordinates: Sequence[Sequence[Sequence[float]]],
-        energies: Optional[Sequence[float]] = None,
-        degeneracies: Optional[Sequence[int]] = None,
-        properties: Optional[Dict[str, Sequence[float]]] = None,
+        conformer_coordinates: ArrayLike3D,
+        energies: Optional[ArrayLike1D] = None,
+        degeneracies: Optional[ArrayLike1D] = None,
+        properties: Optional[Mapping[str, ArrayLike1D]] = None,
     ) -> None:
         """Add conformer to ensemble.
 
         Args:
-            coordinates: Conformer coordinates (Å)
+            conformer_coordinates: Conformer coordinates (Å)
             energies: Energies (a.u.)
             degeneracies: Degeneracies
             properties: Conformer properties.
         """
-        self._add_conformers(coordinates, energies, degeneracies, properties)
+        self._add_conformers(conformer_coordinates, energies, degeneracies, properties)
 
     def add_inverted(self) -> None:
         """Add inverted images of all conformers.
@@ -288,12 +311,16 @@ class ConformerEnsemble:
         care and prune based on RMSD as postprocessing.
         """
         conformers = self.conformers
-        conformer_coordinates = []
-        energies = []
+        conformer_coordinates: List[List[float]] = []
+        energies: List[Optional[float]] = []
         for conformer in conformers:
             coordinates = conformer.coordinates * np.array([-1, -1, -1])
             conformer_coordinates.append(coordinates)
             energies.append(conformer.energy)
+
+        if not all([isinstance(energy, float) for energy in energies]):
+            self._add_conformers(conformer_coordinates)
+        energies = cast(float, energies)  # typing
         self.add_conformers(conformer_coordinates, energies)
 
     @requires_dependency([Import(module="rdkit.Chem", item="AllChem")], globals())
@@ -357,7 +384,7 @@ class ConformerEnsemble:
 
     def detect_enantiomers(
         self, thres: float = 0.01, method: str = "rdkit", include_hs: bool = False
-    ) -> Dict[int, int]:
+    ) -> Dict[int, List[int]]:
         """Detect enantiomers in ensemble.
 
         Args:
@@ -375,7 +402,7 @@ class ConformerEnsemble:
         self.add_inverted()
 
         # Map conformers to enantiomers
-        enantiomers = {i: set() for i in range(n_conformers)}
+        enantiomer_map: Dict[int, Set[int]] = {i: set() for i in range(n_conformers)}
         rmsds = self.get_rmsd(method=method, include_hs=include_hs, symmetry=False)
         for i in range(n_conformers):
             # Do test that inverted conformer should have 0 RMSD to be
@@ -383,10 +410,10 @@ class ConformerEnsemble:
             test = np.where(rmsds[i, n_conformers:] < thres)[0]
             if len(test) > 0:
                 if i not in test:
-                    enantiomers[i].update(test)
+                    enantiomer_map[i].update(test)
                     for j in test:
-                        enantiomers[j].add(i)
-        enantiomers = {key: list(value) for key, value in enantiomers.items()}
+                        enantiomer_map[j].add(i)
+        enantiomers = {key: list(value) for key, value in enantiomer_map.items()}
 
         # Reset number of conformers
         self.conformers = self.conformers[:n_conformers]
@@ -394,7 +421,7 @@ class ConformerEnsemble:
         return enantiomers
 
     @classmethod
-    def from_rdkit(cls: Type[T], *args: Any, **kwargs: Any) -> Type[T]:
+    def from_rdkit(cls: Type[T], *args: Any, **kwargs: Any) -> T:
         """Generate conformer ensemble from RDKit.
 
         See the documentation for the function generate_conformers_rdkit for
@@ -442,7 +469,7 @@ class ConformerEnsemble:
         update_connectivity: bool = True,
         update_multiplicity: bool = True,
         **kwargs: Any,
-    ) -> Type[T]:
+    ) -> T:
         """Generate conformer ensemble from OpenBabel with GA method.
 
         See the documentation for the function generate_conformers_openbabel_ga
@@ -500,7 +527,7 @@ class ConformerEnsemble:
         update_connectivity: bool = True,
         update_multiplicity: bool = True,
         **kwargs: Any,
-    ) -> Type[T]:
+    ) -> T:
         """Generate conformer ensemble from OpenBabel with FF method.
 
         See the documentation for the function generate_conformers_openbabel_ff
@@ -608,7 +635,7 @@ class ConformerEnsemble:
 
         return cip_labels
 
-    def get_coordinates(self) -> np.ndarray:
+    def get_coordinates(self) -> Array1D:
         """Get conformers coordinates.
 
         Returns:
@@ -620,7 +647,7 @@ class ConformerEnsemble:
 
         return conformer_coordinates
 
-    def get_degeneracies(self) -> np.ndarray:
+    def get_degeneracies(self) -> Array1D:
         """Get conformer degeneracies.
 
         Returns:
@@ -630,7 +657,7 @@ class ConformerEnsemble:
 
         return degeneracies
 
-    def get_energies(self) -> np.ndarray:
+    def get_energies(self) -> Array1D:
         """Get conformer energies.
 
         Returns:
@@ -639,25 +666,25 @@ class ConformerEnsemble:
         energies = np.array([conformer.energy for conformer in self.conformers])
         return energies
 
-    def get_properties(self) -> Dict[str, np.ndarray]:
+    def get_properties(self) -> Dict[str, Array1D]:
         """Get conformer properties.
 
         Returns:
             properties: Conformer properties
         """
-        properties = {}
+        properties: Dict[str, List[float]] = {}
         for conformer in self.conformers:
             for key, value in conformer.properties.items():
                 properties.setdefault(key, []).append(value)
-
-        for key, value in properties.items():
-            properties[key] = np.array(value)
+        properties: Dict[str, np.ndarray] = {
+            key: np.array(value) for key, value in properties.items()
+        }
 
         return properties
 
     def get_relative_energies(
         self, unit: str = "kcal/mol", relative: bool = True
-    ) -> np.ndarray:
+    ) -> Array1D:
         """Get conformer energies with choice of units and reference value.
 
         Args:
@@ -689,7 +716,7 @@ class ConformerEnsemble:
         include_hs: bool = False,
         symmetry: bool = False,
         method: str = "rdkit",
-    ) -> np.ndarray:
+    ) -> Array1D:
         """Get RSMD between conformers.
 
         For very small systems 'openbabel' or 'spyrmsd' work well. For larger systems a
@@ -709,14 +736,17 @@ class ConformerEnsemble:
             rmsds: RSMDs (Å)
         """
         if i_s is None:
-            i_s = np.arange(1, len(self.conformers) + 1)
+            i_s_ = np.arange(1, len(self.conformers) + 1)
         else:
-            i_s = np.array(i_s)
+            i_s_ = np.array(i_s)
+        i_s = i_s_
         if j_s is None:
-            j_s = np.arange(1, len(self.conformers) + 1)
+            j_s_ = np.arange(1, len(self.conformers) + 1)
         else:
-            j_s = np.array(j_s)
+            j_s_ = np.array(j_s)
+        j_s = j_s_
 
+        rmsds: np.ndarray
         if method == "obrms-batch":
             rmsds = self._get_rmsd_obrms_batch(i_s, j_s)
         elif method == "obrms-iter":
@@ -758,8 +788,9 @@ class ConformerEnsemble:
         Raises:
             Exception: When RDKit requested without formal charges.
         """
-        if np.any(self.formal_charges != 0) and (program.lower() == "rdkit"):
-            raise Exception("QCEngine using RDKit does not work with charges.")
+        if program is not None:
+            if np.any(self.formal_charges != 0) and (program.lower() == "rdkit"):
+                raise Exception("QCEngine using RDKit does not work with charges.")
 
         # Set defaults
         if model is None:
@@ -835,7 +866,7 @@ class ConformerEnsemble:
         elif keep == "specified":
             pass
         if keep == "most common":
-            counter = Counter(cip_labels)
+            counter: Counter[Tuple[str, ...]] = Counter(cip_labels)
             ref_label = counter.most_common(n=1)[0][0]
 
         # Prune conformers
@@ -922,9 +953,7 @@ class ConformerEnsemble:
             conformer for i, conformer in enumerate(self.conformers) if i in keep_list
         ]
 
-    def set_coordinates(
-        self, conformer_coordinates: Sequence[Sequence[Sequence[float]]]
-    ) -> None:
+    def set_coordinates(self, conformer_coordinates: ArrayLike3D) -> None:
         """Set conformer coordinates.
 
         Args:
@@ -934,6 +963,7 @@ class ConformerEnsemble:
             ValueError: When Number of conformer coordinates is different from number of
                 conformers
         """
+        conformer_coordinates = np.array(conformer_coordinates)
         if len(conformer_coordinates) != self.n_conformers:
             msg = (
                 f"Number of coordinates ({len(conformer_coordinates)}) "
@@ -943,7 +973,7 @@ class ConformerEnsemble:
         for conformer, coordinates in zip(self.conformers, conformer_coordinates):
             conformer.coordinates = np.array(coordinates)
 
-    def set_degeneracies(self, degeneracies: Sequence[int]) -> None:
+    def set_degeneracies(self, degeneracies: ArrayLike1D) -> None:
         """Set degeneracies.
 
         Args:
@@ -953,6 +983,7 @@ class ConformerEnsemble:
             ValueError: When number of degeneracies is different from number of
                 conformers
         """
+        degeneracies = np.array(degeneracies)
         if len(degeneracies) != self.n_conformers:
             msg = (
                 f"Number of degeneracies ({len(degeneracies)}) "
@@ -962,7 +993,7 @@ class ConformerEnsemble:
         for conformer, degeneracy in zip(self.conformers, degeneracies):
             conformer.degeneracy = degeneracy
 
-    def set_energies(self, energies: Sequence[float]) -> None:
+    def set_energies(self, energies: ArrayLike1D) -> None:
         """Set energies.
 
         Args:
@@ -972,6 +1003,7 @@ class ConformerEnsemble:
             ValueError: When number of energies is different from number of
                 conformers
         """
+        energies = np.array(energies)
         if len(energies) != self.n_conformers:
             msg = (
                 f"Number of energies ({len(energies)}) != number of "
@@ -994,7 +1026,7 @@ class ConformerEnsemble:
 
         self.multiplicity = multiplicity
 
-    def set_properties(self, key: str, values: Sequence[float]) -> None:
+    def set_properties(self, key: str, values: Iterable[float]) -> None:
         """Set conformer properties.
 
         Args:
@@ -1006,7 +1038,12 @@ class ConformerEnsemble:
 
     def sort(self) -> None:
         """Sort conformers based on energy."""
-        self.conformers = sorted(self.conformers, key=lambda x: x.energy)
+        energies = [conformer.energy for conformer in self.conformers]
+        if not all([isinstance(energy, float) for energy in energies]):
+            raise ValueError("Not all conformers have energies.")
+        energies = cast(List[float], energies)  # typing
+        indices = np.argsort(energies)
+        self.conformers = [self.conformers[i] for i in indices]
 
     def sp_qc_engine(
         self,
@@ -1060,7 +1097,7 @@ class ConformerEnsemble:
     def write_xyz(
         self,
         file: Union[str, PathLike],
-        ids: Optional[Sequence[int]] = None,
+        ids: Optional[Iterable[int]] = None,
         unit: str = "kcal/mol",
         relative: bool = True,
         separate: bool = False,
@@ -1076,11 +1113,15 @@ class ConformerEnsemble:
             relative: Whether to give energies relative to lowest energy conformer
             separate: Whether to write conformers to separate xyz files
             n_decimals: Number of decimals for energies
+
+        Raises:
+            TypeError: When separate=True and file is not str
         """
         if ids is None:
-            ids = np.arange(len(self.conformers))
+            ids_ = np.arange(len(self.conformers))
         else:
-            ids = np.array(ids) - 1
+            ids_ = np.array(ids) - 1
+        ids = ids_
 
         # Retrieve symbols, coordinates and energies
         symbols = convert_elements(self.elements, output="symbols")
@@ -1091,6 +1132,8 @@ class ConformerEnsemble:
 
         # Write conformers
         if separate:
+            if not isinstance(file, str):
+                raise TypeError("file must be str when separate=True")
             for i, coordinates, energy in zip(ids, conformer_coordinates, energies):
                 conf_filename = file.split(".")[0] + f"_{i + 1}.xyz"
                 write_xyz(conf_filename, symbols, coordinates, comments=[energy])
@@ -1099,30 +1142,38 @@ class ConformerEnsemble:
 
     def _add_conformers(
         self,
-        conformer_coordinates: Sequence[Sequence[Sequence[float]]],
-        energies: Optional[Sequence[float]] = None,
-        properties: Optional[Dict[str, Sequence[float]]] = None,
-        degeneracies: Optional[Sequence[int]] = None,
+        conformer_coordinates: ArrayLike3D,
+        energies: Optional[ArrayLike1D] = None,
+        degeneracies: Optional[ArrayLike1D] = None,
+        properties: Optional[Mapping[str, ArrayLike1D]] = None,
     ) -> None:
+        conformer_coordinates = np.array(conformer_coordinates)
         n_conformers = len(conformer_coordinates)
-        if properties is None:
-            properties = {}
+
         if energies is None:
-            energies = [np.nan] * n_conformers
+            energies_ = np.full(n_conformers, np.nan)
+        else:
+            energies_ = np.array(energies)
+        energies = energies_
+
         if degeneracies is None:
-            degeneracies = np.ones(n_conformers)
+            degeneracies_ = np.ones(n_conformers)
+        else:
+            degeneracies_ = np.array(energies)
+        degeneracies = degeneracies_
+
         for coordinates, energy, degeneracy in zip(
             conformer_coordinates, energies, degeneracies
         ):
             conformer = Conformer(self.elements, coordinates, energy, degeneracy)
             self.conformers.append(conformer)
-        for key, value in properties.items():
-            self.set_properties(key, value)
+        if properties is not None:
+            properties_ = {key: np.array(value) for key, value in properties.items()}
+            for key, value in properties_.items():
+                self.set_properties(key, value)
 
     @requires_executable(["obrms"])
-    def _get_rmsd_obrms_batch(
-        self, i_s: Sequence[int], j_s: Sequence[int]
-    ) -> np.ndarray:
+    def _get_rmsd_obrms_batch(self, i_s: Array1D, j_s: Array1D) -> Array2D:
         """Calculate RMSD with obrms in batch mode.
 
         First calculates matrix of all pairwise RMSDs and then takes those of interest.
@@ -1136,7 +1187,7 @@ class ConformerEnsemble:
         """
         with tempfile.NamedTemporaryFile(suffix=".xyz") as ref_file:
             p_ref = Path(ref_file.name)
-            self.write_conformers(p_ref, unit="hartree", relative=False)
+            self.write_xyz(p_ref, unit="hartree", relative=False)
             process = subprocess.run(
                 f"obrms {p_ref.as_posix()} --cross " "--minimize".split(" "),
                 capture_output=True,
@@ -1147,14 +1198,12 @@ class ConformerEnsemble:
             result = result.reshape(1, -1)
         rmsds = result[:, 1:]
 
-        rmsds = rmsds[i_s - 1, :][:, j_s - 1]
+        rmsds: np.ndarray = rmsds[i_s - 1, :][:, j_s - 1]
 
         return rmsds
 
     @requires_executable(["obrms"])
-    def _get_rmsd_obrms_iter(
-        self, i_s: Sequence[int], j_s: Sequence[int]
-    ) -> np.ndarray:
+    def _get_rmsd_obrms_iter(self, i_s: Array1D, j_s: Array1D) -> Array2D:
         """Calculate RMSD with obrms.
 
         Does iterative row-wise mode for heavy atoms and without symmetry.
@@ -1173,8 +1222,8 @@ class ConformerEnsemble:
             ) as ref_file, tempfile.NamedTemporaryFile(suffix=".xyz") as test_file:
                 p_ref = Path(ref_file.name)
                 p_test = Path(test_file.name)
-                self.write_conformers(p_ref, ids=j_s)
-                self.write_conformers(p_test, ids=[i])
+                self.write_xyz(p_ref, ids=j_s)
+                self.write_xyz(p_test, ids=[i])
                 process = subprocess.run(
                     f"obrms {p_ref.as_posix()} "
                     f"{p_test.as_posix()} --minimize".split(" "),
@@ -1188,8 +1237,8 @@ class ConformerEnsemble:
 
     @requires_dependency([Import(module="openbabel.openbabel", alias="ob")], globals())
     def _get_rmsd_openbabel(
-        self, i_s: Sequence[int], j_s: Sequence[int], include_hs: bool, symmetry: bool
-    ) -> np.ndarray:
+        self, i_s: Array1D, j_s: Array1D, include_hs: bool, symmetry: bool
+    ) -> Array2D:
         """Calculate RMSD row-wise with openbabel python interface.
 
         Args:
@@ -1231,9 +1280,7 @@ class ConformerEnsemble:
         ],
         globals(),
     )
-    def _get_rmsd_rdkit(
-        self, i_s: Sequence[int], j_s: Sequence[int], include_hs: bool
-    ) -> np.ndarray:
+    def _get_rmsd_rdkit(self, i_s: Array1D, j_s: Array1D, include_hs: bool) -> Array2D:
         """Calculate RMSD row-wise with RDKit.
 
         Args:
@@ -1268,7 +1315,7 @@ class ConformerEnsemble:
             for j in j_s:
                 conformer = conformers[j - 1]
                 ref_mol.AddConformer(conformer)
-            rmsds_row = []
+            rmsds_row: List[float] = []
             AllChem.AlignMolConformers(ref_mol, atomIds=atom_ids, RMSlist=rmsds_row)
             rmsds.append(rmsds_row)
         rmsds = np.array(rmsds)
@@ -1277,8 +1324,8 @@ class ConformerEnsemble:
 
     @requires_dependency([Import("spyrmsd"), Import("spyrmsd.rmsd")], globals())
     def _get_rmsd_spyrmsd(
-        self, i_s: Sequence[int], j_s: Sequence[int], include_hs: bool, symmetry: bool
-    ) -> np.ndarray:
+        self, i_s: Array1D, j_s: Array1D, include_hs: bool, symmetry: bool
+    ) -> Array2D:
         """Calculate RMSD row-wise with spyrmsd.
 
         Args:
@@ -1294,7 +1341,7 @@ class ConformerEnsemble:
         if not include_hs:
             mask = self.elements != 1
         else:
-            mask = np.ones(len(self.elements), dtype=np.bool)
+            mask = np.ones(len(self.elements), dtype=bool)
 
         # Calculate RMSD row-wise with spyrmsd
         rmsds = []
@@ -1361,9 +1408,9 @@ class ConformerEnsemble:
             self.elements,
             conformer_coordinates=self.get_coordinates(),
             energies=self.get_energies(),
-            properties=self.get_properties(),
-            degeneracies=self.get_degeneracies(),
             connectivity_matrix=self.connectivity_matrix,
+            degeneracies=self.get_degeneracies(),
+            properties=self.get_properties(),
             charge=self.charge,
             multiplicity=self.multiplicity,
             formal_charges=self.formal_charges,
@@ -1375,7 +1422,9 @@ class ConformerEnsemble:
     def __delitem__(self, index: int) -> None:
         del self.conformers[index]
 
-    def __getitem__(self, index: int) -> Union["ConformerEnsemble", Conformer]:
+    def __getitem__(
+        self, index: Union[slice, numbers.Integral]
+    ) -> Union["ConformerEnsemble", Conformer]:
         cls = type(self)
         if isinstance(index, slice):
             # Generate copy of ensemble with selected conformers.
@@ -1383,10 +1432,10 @@ class ConformerEnsemble:
             ce.conformers = ce.conformers[index]
             return ce
         elif isinstance(index, numbers.Integral):
-            return self.conformers[index]
+            conformer = self.conformers[int(index)]
+            return conformer
         else:
-            msg = f"{cls.__name__} indices must be integers"
-            raise TypeError(msg)
+            raise TypeError(f"{cls.__name__} indices must be integers")
 
     def __len__(self) -> int:
         return len(self.conformers)
@@ -1410,13 +1459,7 @@ def generate_conformers_openbabel_ff(
     ff: str = "MMFF94",
     method: str = "systematic",
     rings: bool = False,
-) -> Tuple[
-    Sequence[int],
-    Sequence[Sequence[Sequence[float]]],
-    Sequence[Sequence[int]],
-    Sequence[int],
-    ob.OBMol,
-]:
+) -> Tuple[Array1D, Array3D, Array2D, Array1D, ob.OBMol]:
     """Generates conformers based on the force field algorithm in OpenBabel.
 
     Follows the recipe of the command line script obabel --conformer:
@@ -1486,22 +1529,16 @@ def generate_conformers_openbabel_ff(
 )
 def generate_conformers_openbabel_ga(  # noqa: C901
     mol: Union[str, ob.OBMol],
-    num_conformers: int = None,
-    num_children: int = None,
-    mutability: float = None,
-    convergence: int = None,
+    num_conformers: Optional[int] = None,
+    num_children: Optional[int] = None,
+    mutability: Optional[float] = None,
+    convergence: Optional[int] = None,
     score: str = "rmsd",
     filter_method: str = "steric",
     cutoff: float = 0.8,
     vdw_factor: float = 0.5,
     check_hydrogens: bool = True,
-) -> Tuple[
-    Sequence[int],
-    Sequence[Sequence[Sequence[float]]],
-    Sequence[Sequence[int]],
-    Sequence[int],
-    ob.OBMol,
-]:
+) -> Tuple[Array1D, Array3D, Array2D, Array1D, ob.OBMol]:
     """Generates conformers based on the genetic algorithm in OpenBabel.
 
     Follows the recipe of the command line script obabel --conformer:
@@ -1603,17 +1640,10 @@ def generate_conformers_rdkit(  # noqa: C901
     small_rings: bool = True,
     macrocycles: bool = True,
     random_seed: Optional[int] = None,
-    rmsd_thres: float = 0.35,
+    rmsd_thres: Optional[float] = 0.35,
     rmsd_symmetry: bool = False,
     n_threads: int = 1,
-) -> Tuple[
-    Sequence[int],
-    Sequence[Sequence[Sequence[float]]],
-    Sequence[float],
-    Sequence[Sequence[int]],
-    Sequence[int],
-    ob.OBMol,
-]:
+) -> Tuple[Array1D, Array3D, Optional[Array1D], Array2D, Array1D, Chem.Mol]:
     """Generates conformers for an RDKit mol object.
 
     Recipe based on J. Chem. Inf. Modeling 2012, 52, 1146.
@@ -1728,9 +1758,7 @@ def generate_conformers_rdkit(  # noqa: C901
     ],
     globals(),
 )
-def _add_conformers_to_mol(
-    mol: Chem.Mol, conformer_coordinates: Sequence[Sequence[Sequence[float]]]
-) -> None:
+def _add_conformers_to_mol(mol: Chem.Mol, conformer_coordinates: ArrayLike3D) -> None:
     """Add conformers to RDKit Mol object.
 
     Args:
@@ -1752,16 +1780,11 @@ def _add_conformers_to_mol(
 @requires_dependency([Import(module="rdkit", item="Chem")], globals())
 def _extract_from_mol(
     mol: Chem.Mol,
-) -> Tuple[
-    Sequence[str],
-    Sequence[Sequence[Sequence[float]]],
-    Sequence[Sequence[int]],
-    Sequence[int],
-]:
+) -> Tuple[List[str], Array3D, Array2D, Array1D]:
     """Extract information from RDKit Mol object with conformers."""
     # Take out elements, coordinates and connectivity matrix
     elements = [atom.GetSymbol() for atom in mol.GetAtoms()]
-    charges = [atom.GetFormalCharge() for atom in mol.GetAtoms()]
+    charges = np.array([atom.GetFormalCharge() for atom in mol.GetAtoms()])
 
     conformer_coordinates = []
     for conformer in mol.GetConformers():
@@ -1784,12 +1807,7 @@ def _extract_from_mol(
 )
 def _extract_from_ob_mol(
     ob_mol: ob.OBMol,
-) -> Tuple[
-    Sequence[int],
-    Sequence[Sequence[Sequence[float]]],
-    Sequence[Sequence[int]],
-    Sequence[int],
-]:
+) -> Tuple[Array1D, Array3D, Array2D, Array1D]:
     """Extract information from Openbabel OBMol object with conformers."""
     py_mol = pybel.Molecule(ob_mol)
     elements = np.array([atom.atomicnum for atom in py_mol.atoms])
@@ -1817,10 +1835,10 @@ def _extract_from_ob_mol(
 
 @requires_dependency([Import(module="openbabel.openbabel", alias="ob")], globals())
 def _get_ob_mol(
-    elements: Sequence[Union[int, str]],
-    coordinates: Sequence[Sequence[float]],
-    connectivity_matrix: Sequence[Sequence[int]],
-    charges: Optional[Sequence[int]] = None,
+    elements: Union[Iterable[int], Iterable[str]],
+    coordinates: ArrayLike2D,
+    connectivity_matrix: ArrayLike2D,
+    charges: Optional[ArrayLike1D] = None,
 ) -> ob.OBMol:
     """Generate OpenBabel OBMol object.
 
@@ -1833,9 +1851,15 @@ def _get_ob_mol(
     Returns:
         mol: OpenBabel OBMol object
     """
-    elements = convert_elements(elements)
+    elements = convert_elements(elements, output="numbers")
     if charges is None:
-        charges = np.zeros(len(elements))
+        charges_ = np.zeros(len(elements))
+    else:
+        charges_ = np.array(charges)
+    charges = charges_
+
+    connectivity_matrix = np.array(connectivity_matrix)
+    coordinates = np.array(coordinates)
 
     mol = ob.OBMol()
 
@@ -1857,10 +1881,10 @@ def _get_ob_mol(
 
 @requires_dependency([Import(module="rdkit", item="Chem")], globals())
 def _get_rdkit_mol(
-    elements: Sequence[Union[int, str]],
-    conformer_coordinates: Sequence[Sequence[Sequence[float]]],
-    connectivity_matrix: Sequence[Sequence[int]],
-    charges: Optional[Sequence[int]] = None,
+    elements: Union[Iterable[int], Iterable[str]],
+    conformer_coordinates: ArrayLike3D,
+    connectivity_matrix: ArrayLike2D,
+    charges: Optional[ArrayLike1D] = None,
 ) -> Chem.Mol:
     _RDKIT_BOND_TYPES = {
         1.0: Chem.BondType.SINGLE,
@@ -1871,9 +1895,15 @@ def _get_rdkit_mol(
         5.0: Chem.BondType.QUINTUPLE,
         6.0: Chem.BondType.HEXTUPLE,
     }
-    if charges is None:
-        charges = np.zeros(len(elements))
     elements = convert_elements(elements, output="symbols")
+
+    if charges is None:
+        charges_ = np.zeros(len(elements))
+    else:
+        charges_ = np.array(charges)
+    charges = charges_
+    conformer_coordinates = np.array(conformer_coordinates)
+    connectivity_matrix = np.array(connectivity_matrix)
 
     mol = Chem.RWMol()
 

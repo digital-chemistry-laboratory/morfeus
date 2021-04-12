@@ -2,7 +2,7 @@
 
 from os import PathLike
 import typing
-from typing import Dict, List, Optional, Sequence, Union
+from typing import Dict, Iterable, List, Optional, Sequence, Union
 
 import numpy as np
 import scipy.spatial
@@ -10,9 +10,10 @@ import scipy.spatial
 from morfeus.calculators import D3Calculator, D3Grimme, D4Grimme
 from morfeus.data import ANGSTROM_TO_BOHR, atomic_symbols, HARTREE_TO_KCAL, jmol_colors
 from morfeus.geometry import Atom
-from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
 from morfeus.io import CubeParser, D3Parser, D4Parser, VertexParser
 from morfeus.sasa import SASA
+from morfeus.typing import Array1D, Array2D, ArrayLike1D, ArrayLike2D
+from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
     from matplotlib.colors import hex2color
@@ -40,7 +41,7 @@ class Dispersion:
         excluded_atoms: Atoms to exclude (1-indexed). Used for substituent P_ints
         included_atoms: Atoms to include. Used for functional group P_ints
 
-    Parameters:
+    Attributes:
         area: Area of surface (Å²)
         atom_areas: Atom indices as keys and atom areas as values (Å²)
         atom_p_int: Atom indices as keys and P_int as values (kcal**(1/2) mol**(-1/2))
@@ -50,7 +51,7 @@ class Dispersion:
         p_max: Highest P value (kcal**(1/2) mol**(-1/2))
         p_min: Lowest P value (kcal**(1/2) mol**(-1/2))
         p_values: All P values (kcal**(1/2) mol**(-1/2))
-        volume): Volume of surface (Å³)
+        volume: Volume of surface (Å³)
 
     Raises:
         Exception: When both exluded_atoms and included_atom are given
@@ -64,23 +65,23 @@ class Dispersion:
     p_int: float
     p_max: float
     p_min: float
-    p_values: np.ndarray
+    p_values: Array1D
     volume: float
     _atoms: List[Atom]
-    _excluded_atoms: List[int]
+    _c_n_coefficients: Dict[int, Array1D]
     _density: float
-    _c_n_coefficients: Dict[int, List]
-    _point_areas: np.ndarray
-    _point_map: np.ndarray
-    _points: np.ndarray
-    _radii: np.ndarray
+    _excluded_atoms: List[int]
+    _point_areas: Array1D
+    _point_map: Array1D
+    _points: Array2D
+    _radii: Array1D
     _surface: "pv.PolyData"
 
     def __init__(
         self,
-        elements: Sequence[Union[int, str]],
-        coordinates: Sequence[Sequence[float]],
-        radii: Optional[Sequence[float]] = None,
+        elements: Union[Iterable[int], Iterable[str]],
+        coordinates: ArrayLike2D,
+        radii: Optional[ArrayLike1D] = None,
         radii_type: str = "rahm",
         point_surface: bool = True,
         compute_coefficients: bool = True,
@@ -92,13 +93,19 @@ class Dispersion:
         if excluded_atoms is not None and included_atoms is not None:
             raise Exception("Give either excluded or included atoms but not both.")
 
+        # Converting elements to atomic numbers if the are symbols
+        elements = convert_elements(elements, output="numbers")
+        coordinates = np.array(coordinates)
+
         # Set excluded atoms
         all_atoms = set(range(1, len(elements) + 1))
         if included_atoms is not None:
-            included_atoms = set(included_atoms)
-            excluded_atoms = list(all_atoms - included_atoms)
+            included_atoms_ = set(included_atoms)
+            excluded_atoms = list(all_atoms - included_atoms_)
         elif excluded_atoms is None:
             excluded_atoms = []
+        else:
+            excluded_atoms = list(excluded_atoms)
 
         self._excluded_atoms = excluded_atoms
 
@@ -106,21 +113,19 @@ class Dispersion:
         self._surface = None
         self._density = density
 
-        # Converting elements to atomic numbers if the are symbols
-        elements = convert_elements(elements)
-
         # Getting radii if they are not supplied
         if radii is None:
             radii = get_radii(elements, radii_type=radii_type)
+        radii = np.array(radii)
 
-        self._radii = np.array(radii)
+        self._radii = radii
 
         # Get vdW surface if requested
         if point_surface:
             self._surface_from_sasa(elements, coordinates)
         else:
             # Get list of atoms as Atom objects
-            atoms = []
+            atoms: List[Atom] = []
             for i, (element, coord, radius) in enumerate(
                 zip(elements, coordinates, radii), start=1
             ):
@@ -138,8 +143,8 @@ class Dispersion:
 
     def _surface_from_sasa(
         self,
-        elements: Sequence[Union[int, str]],
-        coordinates: Sequence[Sequence[float]],
+        elements: Union[Iterable[int], Iterable[str]],
+        coordinates: ArrayLike2D,
     ) -> None:
         """Get surface from SASA."""
         sasa = SASA(
@@ -167,7 +172,7 @@ class Dispersion:
         )
 
         # Get point areas and map from point to atom
-        point_areas = []
+        point_areas: List[np.ndarray] = []
         point_map = []
         for atom in self._atoms:
             n_points = len(atom.accessible_points)
@@ -304,7 +309,7 @@ class Dispersion:
 
         return surface
 
-    def compute_p_int(self, points: Optional[Sequence[Sequence[float]]] = None) -> None:
+    def compute_p_int(self, points: Optional[ArrayLike2D] = None) -> None:
         """Compute P_int values for surface or points.
 
         Args:
@@ -340,12 +345,14 @@ class Dispersion:
 
         # Calculate p_int for each point
         dist = scipy.spatial.distance.cdist(points, coordinates) * ANGSTROM_TO_BOHR
-        p = sum(
+        p = np.sum(
             [
                 np.sum(np.sqrt(coefficients / (dist ** order)), axis=1)
                 for order, coefficients in c_n_coefficients.items()
-            ]
+            ],
+            axis=0,
         )
+        p = np.cast(np.ndarray, p)  # typing
         self.p_values = p
 
         # Take out atomic p_ints if no points are given
@@ -408,23 +415,28 @@ class Dispersion:
             model: Calculation model: 'id3'. 'gd3' or 'gd4'
             order: Order of the Cᴬᴬ coefficients
             charge: Molecular charge for D4 model
+
+        Raises:
+            ValueError: When model not supported
         """
         # Set up atoms and coordinates
         elements = [atom.element for atom in self._atoms]
-        coordinates = [atom.coordinates for atom in self._atoms]
+        coordinates = np.array([atom.coordinates for atom in self._atoms])
 
+        calculators = {
+            "id3": D3Calculator,
+            "gd3": D3Grimme,
+            "gd4": D4Grimme,
+        }
+        calc: Union[D3Calculator, D3Grimme, D4Grimme]
         # Calculate  D3 values with internal model
-        if model == "id3":
-            calc = D3Calculator(elements, coordinates, order=order)
-            self._c_n_coefficients = calc.c_n_coefficients
-        # Calculate the D3-like values with dftd4
-        if model == "gd3":
-            calc = D3Grimme(elements, coordinates, order=order)
-            self._c_n_coefficients = calc.c_n_coefficients
-        # Calculate the D4 values with dftd4
-        if model == "gd4":
-            calc = D4Grimme(elements, coordinates, order=order, charge=charge)
-            self._c_n_coefficients = calc.c_n_coefficients
+        if model in ["id3", "gd3"]:
+            calc = calculators[model](elements, coordinates, order=order)
+        elif model in ["gd4"]:
+            calc = calculators[model](elements, coordinates, order=order, charge=charge)
+        else:
+            raise ValueError(f"model={model} not supported.")
+        self._c_n_coefficients = calc.c_n_coefficients
 
     def load_coefficients(self, file: Union[str, PathLike], model: str) -> None:
         """Load the C₆ and C₈ coefficients.
@@ -434,20 +446,21 @@ class Dispersion:
 
         Args:
             file: Output file from the dftd3 or dftd4 programs
-            model: Calculation model: 'd3' or 'd4'.
+            model: Calculation model: 'd3' or 'd4'
+
+        Raises:
+            ValueError: When model not supported
         """
+        parser: Union[D3Parser, D4Parser]
         if model == "d3":
-            # Read the data
             parser = D3Parser(file)
-            self._c_n_coefficients = {}
-            self._c_n_coefficients[6] = parser.c6_coefficients
-            self._c_n_coefficients[8] = parser.c8_coefficients
         elif model == "d4":
-            # Read the data
             parser = D4Parser(file)
-            self._c_n_coefficients = {}
-            self._c_n_coefficients[6] = parser.c6_coefficients
-            self._c_n_coefficients[8] = parser.c8_coefficients
+        else:
+            raise ValueError(f"model={model} not supported.")
+        self._c_n_coefficients = {}
+        self._c_n_coefficients[6] = parser.c6_coefficients
+        self._c_n_coefficients[8] = parser.c8_coefficients
 
     def print_report(self, verbose: bool = False) -> None:
         """Print report of results.
@@ -509,6 +522,7 @@ class Dispersion:
                 sphere, color=color, opacity=molecule_opacity, name=str(atom.index)
             )
 
+        cmap: Optional[str]
         # Set up plotting of mapped surface
         if display_p_int is True:
             color = None

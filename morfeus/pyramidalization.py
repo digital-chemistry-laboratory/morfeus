@@ -1,12 +1,12 @@
 """Pyramidalization code."""
 
 import itertools
-from typing import List, Optional, Sequence, Union
+from typing import Iterable, List, Optional, Sequence, Union
 
 import numpy as np
 import scipy.spatial
 
-from morfeus.geometry import get_connectivity_matrix
+from morfeus.utils import get_connectivity_matrix
 
 
 class Pyramidalization:
@@ -45,20 +45,26 @@ class Pyramidalization:
         coordinates: Sequence[Sequence[float]],
         atom_index: int,
         neighbor_indices: Optional[Sequence[int]] = None,
-        elements: Optional[Sequence[Union[int, str]]] = None,
+        elements: Optional[Union[Iterable[int], Iterable[str]]] = None,
         radii: Optional[Sequence[float]] = None,
         radii_type: str = "pyykko",
         excluded_atoms: Optional[Sequence[int]] = None,
         method: str = "distance",
+        scale_factor: float = 1.2,
     ) -> None:
         coordinates = np.array(coordinates)
         atom_coordinates = coordinates[atom_index - 1]
-        excluded_atoms = np.array(excluded_atoms, dtype=int)
 
         if neighbor_indices is None:
             neighbor_indices = []
+        else:
+            neighbor_indices = list(neighbor_indices)
+
         if excluded_atoms is None:
-            excluded_atoms = []
+            excluded_atoms_ = np.array([])
+        else:
+            excluded_atoms_ = np.array(excluded_atoms, dtype=int)
+        excluded_atoms = excluded_atoms_
 
         # Get 3 closest neighbors
         if len(neighbor_indices) > 0:
@@ -84,7 +90,11 @@ class Pyramidalization:
             # if radii is None:
             #    radii = get_radii(elements, radii_type="pyykko")
             connectivity_matrix = get_connectivity_matrix(
-                elements, coordinates, radii=radii, radii_type=radii_type
+                coordinates,
+                elements=elements,
+                radii=radii,
+                radii_type=radii_type,
+                scale_factor=scale_factor,
             )
             connected_atoms = np.where(connectivity_matrix[atom_index - 1, :])[0]
             neighbors = connected_atoms[~np.isin(connected_atoms, excluded_atoms - 1)]

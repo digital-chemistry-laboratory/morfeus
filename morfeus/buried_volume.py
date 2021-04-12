@@ -4,15 +4,16 @@ import copy
 import itertools
 import math
 import typing
-from typing import Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
 
 import numpy as np
 import scipy.spatial
 
 from morfeus.data import jmol_colors
 from morfeus.geometry import Atom, kabsch_rotation_matrix, rotate_coordinates, Sphere
-from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
 from morfeus.sasa import SASA
+from morfeus.typing import ArrayLike1D, ArrayLike2D
+from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
     from matplotlib.colors import hex2color
@@ -89,9 +90,9 @@ class BuriedVolume:
     """
 
     buried_volume: float
-    distal_volume: float
+    distal_volume: Optional[float]
     free_volume: float
-    molecular_volume: float
+    molecular_volume: Optional[float]
     octants: Dict[str, Dict[int, float]]
     percent_buried_volume: float
     quadrants: Dict[str, Dict[int, float]]
@@ -101,18 +102,18 @@ class BuriedVolume:
     _density: float
     _excluded_atoms: Set[int]
     _free_points: np.ndarray
-    _octant_limits: Dict[
-        int, Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]
+    _octant_limits: Optional[
+        Dict[int, Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]]
     ]
     _sphere: Sphere
 
     def __init__(
         self,
-        elements: Sequence[Union[int, str]],
-        coordinates: Sequence[Sequence[float]],
+        elements: Union[Iterable[int], Iterable[str]],
+        coordinates: ArrayLike2D,
         metal_index: int,
         excluded_atoms: Optional[Sequence[int]] = None,
-        radii: Optional[Sequence[float]] = None,
+        radii: Optional[ArrayLike1D] = None,
         include_hs: bool = False,
         radius: float = 3.5,
         radii_type: str = "bondi",
@@ -128,6 +129,7 @@ class BuriedVolume:
 
         if excluded_atoms is None:
             excluded_atoms = []
+        excluded_atoms = list(excluded_atoms)
 
         if metal_index not in excluded_atoms:
             excluded_atoms.append(metal_index)
@@ -164,11 +166,12 @@ class BuriedVolume:
         self._all_coordinates = coordinates
 
         # Converting element ids to atomic numbers if the are symbols
-        elements = convert_elements(elements)
+        elements = convert_elements(elements, output="numbers")
 
         # Getting radii if they are not supplied
         if radii is None:
             radii = get_radii(elements, radii_type=radii_type, scale=radii_scale)
+        radii = np.array(radii)
 
         # Get list of atoms as Atom objects
         atoms = []
@@ -193,10 +196,7 @@ class BuriedVolume:
         # Set up attributes
         self.molecular_volume = None
         self.distal_volume = None
-        self.octants = None
-        self.quadrants = None
         self._octant_limits = None
-
         self.octants = {}
         self.quadrants = {}
 
@@ -284,9 +284,10 @@ class BuriedVolume:
         self._octant_limits = octant_limits
 
     def _compute_buried_volume(
-        self, center: Sequence[float], radius: float, density: float
+        self, center: ArrayLike1D, radius: float, density: float
     ) -> None:
         """Compute buried volume."""
+        center = np.array(center)
         # Construct sphere at metal center
         sphere = Sphere(
             center, radius, method="projection", density=density, filled=True
@@ -330,17 +331,18 @@ class BuriedVolume:
         Raises:
             ValueError: When method is not specified correctly.
         """
+        loop_coordinates: List[np.ndarray]
         # Use SASA to calculate total volume of the molecule
         if method == "sasa":
             # Calculate total volume
-            elements = []
-            coordinates = []
-            radii = []
+            elements: List[int] = []
+            loop_coordinates = []
+            radii: List[float] = []
             for atom in self._atoms:
                 elements.append(atom.element)
-                coordinates.append(atom.coordinates)
+                loop_coordinates.append(atom.coordinates)
                 radii.append(atom.radius)
-            coordinates = np.vstack(coordinates)
+            coordinates = np.vstack(loop_coordinates)
             sasa = SASA(
                 elements,
                 coordinates,
@@ -357,12 +359,12 @@ class BuriedVolume:
             temp_bv = copy.deepcopy(self)
 
             # Determine sphere radius to cover the whole molecule
-            coordinates = []
+            loop_coordinates = []
             radii = []
             for atom in self._atoms:
-                coordinates.append(atom.coordinates)
+                loop_coordinates.append(atom.coordinates)
                 radii.append(atom.radius)
-            coordinates = np.vstack(coordinates)
+            coordinates = np.vstack(loop_coordinates)
             distances = scipy.spatial.distance.cdist(
                 self._sphere.center.reshape(1, -1), coordinates
             )
@@ -393,12 +395,15 @@ class BuriedVolume:
                 # Quadrant analyis
                 distal_volume = {}
                 molecular_volume = {}
-                for name, octants in self.quadrant_octant_map.items():
+                for name, octants_ in quadrant_octant_map.items():
                     distal_volume[name] = sum(
-                        [self.octants["distal_volume"][octant] for octant in octants]
+                        [self.octants["distal_volume"][octant] for octant in octants_]
                     )
                     molecular_volume[name] = sum(
-                        [self.octants["molecular_volume"][octant] for octant in octants]
+                        [
+                            self.octants["molecular_volume"][octant]
+                            for octant in octants_
+                        ]
                     )
                 self.quadrants["distal_volume"] = distal_volume
                 self.quadrants["molecular_volume"] = molecular_volume
@@ -556,8 +561,8 @@ class BuriedVolume:
         )
 
         if self._octant_limits:
-            for name, limits in self._octant_limits.items():
-                limits = tuple(itertools.chain(*limits))
+            for name, limits_ in self._octant_limits.items():
+                limits = tuple(itertools.chain(*limits_))
                 box = pv.Box(limits)
                 p.add_mesh(box, style="wireframe")
                 x = np.array(limits)[:2][np.argmax(np.abs(limits[:2]))]

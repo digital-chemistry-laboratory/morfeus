@@ -62,7 +62,7 @@ def main() -> None:
     radius = args.radius
     density = args.density
     include_hs = args.include_hs
-    exclude_list = args.exclude
+    excluded_atoms = args.exclude
     atom_1 = args.atom_1
 
     # Parse the geometry file
@@ -79,7 +79,7 @@ def main() -> None:
         elements,
         coordinates,
         atom_1,
-        exclude_list=exclude_list,
+        excluded_atoms=excluded_atoms,
         include_hs=include_hs,
         radius=radius,
         radii_type=radii_type,

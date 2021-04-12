@@ -3,12 +3,14 @@
 import itertools
 import math
 import typing
-from typing import List, Optional, Sequence, Union
+from typing import Iterable, List, Optional, Set, Union
 
 import numpy as np
 
 from morfeus.data import atomic_symbols, jmol_colors
 from morfeus.geometry import Atom, Cone
+from morfeus.plotting import Cone3D
+from morfeus.typing import ArrayLike1D, ArrayLike2D
 from morfeus.utils import (
     check_distances,
     convert_elements,
@@ -16,7 +18,6 @@ from morfeus.utils import (
     Import,
     requires_dependency,
 )
-from morfeus.plotting import Cone3D
 
 if typing.TYPE_CHECKING:
     from matplotlib.colors import hex2color
@@ -51,18 +52,20 @@ class ConeAngle:
 
     def __init__(  # noqa: C901
         self,
-        elements: Sequence[Union[int, str]],
-        coordinates: Sequence[Sequence[float]],
+        elements: Union[Iterable[int], Iterable[str]],
+        coordinates: ArrayLike2D,
         atom_1: int,
-        radii: Optional[Sequence[float]] = None,
+        radii: Optional[ArrayLike1D] = None,
         radii_type: str = "crc",
     ) -> None:
         # Convert elements to atomic numbers if the are symbols
-        elements = convert_elements(elements)
+        elements = convert_elements(elements, output="numbers")
+        coordinates = np.array(coordinates)
 
         # Get radii if they are not supplied
         if radii is None:
             radii = get_radii(elements, radii_type=radii_type)
+        radii = np.array(radii)
 
         # Check so that no atom is within vdW distance of atom 1
         within = check_distances(elements, coordinates, atom_1, radii=radii)
@@ -71,11 +74,10 @@ class ConeAngle:
             raise Exception("Atoms within vdW radius of central atom:", atom_string)
 
         # Set up coordinate array and translate coordinates
-        coordinates = np.array(coordinates)
         coordinates -= coordinates[atom_1 - 1]
 
         # Get list of atoms as Atom objects
-        atoms = []
+        atoms: List[Atom] = []
         for i, (element, coord, radius) in enumerate(
             zip(elements, coordinates, radii), start=1
         ):
@@ -89,33 +91,30 @@ class ConeAngle:
         cone = self._search_one_cones()
 
         # Prune out atoms that lie in the shadow of another atom's cone
-        if not cone:
+        if cone is None:
             loop_atoms = list(atoms)
-            remove_atoms = set()
+            remove_atoms: Set[Atom] = set()
             for cone_atom in loop_atoms:
                 for test_atom in loop_atoms:
                     if cone_atom != test_atom:
                         if cone_atom.cone.is_inside(test_atom):
                             remove_atoms.add(test_atom)
-            for i in remove_atoms:
-                loop_atoms.remove(i)
+            for atom in remove_atoms:
+                loop_atoms.remove(atom)
             self._loop_atoms = loop_atoms
 
         # Search for cone over pairs of atoms
-        if not cone:
+        if cone is None:
             cone = self._search_two_cones()
 
         # Search for cones over triples of atoms
-        if not cone:
+        if cone is None:
             cone = self._search_three_cones()
 
         # Set attributes
-        if cone:
-            self._cone = cone
-            self.cone_angle = math.degrees(cone.angle * 2)
-            self.tangent_atoms = [atom.index for atom in cone.atoms]
-        else:
-            raise Exception("Cone could not be found.")
+        self._cone = cone
+        self.cone_angle = math.degrees(cone.angle * 2)
+        self.tangent_atoms = [atom.index for atom in cone.atoms]
 
     def print_report(self) -> None:
         """Prints report of results."""
@@ -155,7 +154,7 @@ class ConeAngle:
 
         return upper_bound
 
-    def _search_one_cones(self) -> Cone:
+    def _search_one_cones(self) -> Optional[Cone]:
         """Searches over cones tangent to one atom.
 
         Returns:
@@ -163,8 +162,9 @@ class ConeAngle:
         """
         # Get the largest cone
         atoms = self._atoms
-        alphas = np.array([atom.cone.angle for atom in atoms])
-        max_1_cone = atoms[np.argmax(alphas)].cone
+        alphas = [atom.cone.angle for atom in atoms]
+        idx = int(np.argmax(alphas))
+        max_1_cone = atoms[idx].cone
 
         # Check if all atoms are contained in cone. If yes, return cone,
         # otherwise, return None.
@@ -177,7 +177,7 @@ class ConeAngle:
         else:
             return None
 
-    def _search_two_cones(self) -> Cone:
+    def _search_two_cones(self) -> Optional[Cone]:
         """Search over cones tangent to two atoms.
 
         Returns:
@@ -191,8 +191,9 @@ class ConeAngle:
             cones.append(cone)
 
         # Select largest two-atom cone
-        angles = np.array([cone.angle for cone in cones])
-        max_2_cone = cones[np.argmax(angles)]
+        angles = [cone.angle for cone in cones]
+        idx = int(np.argmax(angles))
+        max_2_cone = cones[idx]
         self._max_2_cone = max_2_cone
 
         # Check if all atoms are contained in cone. If yes, return cone,
@@ -242,8 +243,9 @@ class ConeAngle:
                 keep_cones.append(cone)
 
         # Take the smallest cone that encompasses all atoms
-        cone_angles = np.array([cone.angle for cone in keep_cones])
-        min_3_cone = keep_cones[np.argmin(cone_angles)]
+        cone_angles = [cone.angle for cone in keep_cones]
+        idx = int(np.argmin(cone_angles))
+        min_3_cone = keep_cones[idx]
 
         return min_3_cone
 

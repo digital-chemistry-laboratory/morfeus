@@ -1,7 +1,7 @@
 """Local force constant code."""
 
 from os import PathLike
-from typing import Optional, Sequence, Union
+from typing import Any, Dict, FrozenSet, Iterable, List, Optional, Sequence, Union
 
 import numpy as np
 from scipy.io import FortranFile
@@ -25,6 +25,7 @@ from morfeus.geometry import (
     InternalCoordinates,
     kabsch_rotation_matrix,
 )
+from morfeus.typing import Array1D, Array2D, ArrayLike2D
 from morfeus.utils import convert_elements
 
 
@@ -36,43 +37,53 @@ class LocalForce:
     compliance matrix method can be used according to 10.1063/1.3413528
 
     Args:
-        elements: Elements as atomic symbols or numbers.
+        elements: Elements as atomic symbols or numbers
         coordinates: Coordinates (Å)
 
     Attributes:
-        internal_coordinates (list): Internal coordinates
-        local_force_constants (ndarray): Local force constants (mDyne/Å)
-        local_frequencies (ndarray): Local mode frequencies (cm^(-1))
-        n_imag (int): Number of normal modes with imaginary frequencies
+        internal_coordinates: Internal coordinates
+        local_force_constants: Local force constants (mDyne/Å)
+        local_frequencies: Local mode frequencies (cm⁻¹)
+        n_imag: Number of normal modes with imaginary frequencies
     """
+
+    internal_coordinates: List[Union[Bond, Angle, Dihedral]]
+    local_force_constants: Array1D
+    local_frequencies: Array1D
+    n_imag: int
+    _B_inv: Array2D
+    _B: Array2D
+    _coordinates: Array2D
+    _D_full: Array2D
+    _D: Array2D
+    _elements: List[int]
+    _fc_matrix: Array2D
+    _force_constants_full: Array1D
+    _force_constants: Array1D
+    _ifc_matrix: Array2D
+    _input_coordinates: Array2D
+    _internal_coordinates: InternalCoordinates
+    _masses: Array1D
+    _normal_modes: Array2D
+    _standard_coordinates: Array2D
 
     def __init__(
         self,
-        elements: Optional[Sequence[Union[int, str]]] = None,
-        coordinates: Optional[Sequence[Sequence[float]]] = None,
+        elements: Optional[Union[Iterable[int], Iterable[str]]] = None,
+        coordinates: Optional[ArrayLike2D] = None,
     ) -> None:
         # Set up attributes
-        self.n_imag = None
-        self.local_force_constants = np.array([])
-        self.local_frequencies = np.array([])
-        self._D = np.array([])
-        self._B = np.array([])
-        self._force_constants = np.array([])
-        self._normal_modes = np.array([])
         self._internal_coordinates = InternalCoordinates()
         self.internal_coordinates = self._internal_coordinates.internal_coordinates
 
+        masses: Optional[Array1D]
         if elements is not None:
-            elements = convert_elements(elements)
-            masses = np.array([atomic_masses[i] for i in elements])
-        else:
-            masses = None
-        if coordinates is not None:
-            coordinates = np.array(coordinates)
+            elements = convert_elements(elements, output="numbers")
+            self._elements = elements
+            self._masses = np.array([atomic_masses[i] for i in elements])
 
-        self._masses = masses
-        self._elements = elements
-        self._coordinates = coordinates
+        if coordinates is not None:
+            self._coordinates = np.array(coordinates)
 
     def add_internal_coordinate(self, atoms: Sequence[int]) -> None:
         """Add internal coordinate.
@@ -187,7 +198,7 @@ class LocalForce:
         index = self.internal_coordinates.index(coordinate)
         if index is None:
             raise Exception(f"No internal coordinate with these atoms: {atoms}")
-        force_constant = self.local_force_constants[index]
+        force_constant: float = self.local_force_constants[index]
 
         return force_constant
 
@@ -207,7 +218,7 @@ class LocalForce:
         index = self.internal_coordinates.index(coordinate)
         if index is None:
             raise Exception(f"No internal coordinate with these atoms: {atoms}.")
-        frequency = self.local_frequencies[index]
+        frequency: float = self.local_frequencies[index]
 
         return frequency
 
@@ -241,7 +252,7 @@ class LocalForce:
 
     def normal_mode_analysis(
         self,
-        hessian: Optional[Sequence[Sequence[float]]] = None,
+        hessian: Optional[ArrayLike2D] = None,
         save_hessian: bool = False,
     ) -> None:
         """Perform normal mode analysis.
@@ -411,14 +422,14 @@ class LocalForce:
         read_masses = False
 
         # Set up containers for reading data
-        modes = []
-        hessian = []
-        vib_e2 = []
+        modes: List[float] = []
+        hessian: List[float] = []
+        vib_e2: List[float] = []
         internal_coordinates = []
-        n_atoms = None
-        atomic_numbers = []
-        masses = []
-        coordinates = []
+        n_atoms: int
+        atomic_numbers: List[int] = []
+        masses: List[float] = []
+        coordinates: List[float] = []
 
         # Parse fchk file
         for line in lines:
@@ -426,56 +437,49 @@ class LocalForce:
             if read_modes:
                 try:
                     split_line = line.strip().split()
-                    values = [float(value) for value in split_line]
-                    modes.extend(values)
+                    modes.extend([float(value) for value in split_line])
                 except ValueError:
                     read_modes = False
             # Read cartesian force constants
             if read_hessian:
                 try:
                     split_line = line.strip().split()
-                    values = [float(value) for value in split_line]
-                    hessian.extend(values)
+                    hessian.extend([float(value) for value in split_line])
                 except ValueError:
                     read_hessian = False
             # Read normal mode force constants
             if read_vib_e2:
                 try:
                     split_line = line.strip().split()
-                    values = [float(value) for value in split_line]
-                    vib_e2.extend(values)
+                    vib_e2.extend([float(value) for value in split_line])
                 except ValueError:
                     read_vib_e2 = False
             # Read internal coordinates
             if read_ic:
                 try:
                     split_line = line.strip().split()
-                    values = [int(value) for value in split_line]
-                    internal_coordinates.extend(values)
+                    internal_coordinates.extend([int(value) for value in split_line])
                 except ValueError:
                     read_ic = False
             # Read atomic numbers
             if read_atomic_numbers:
                 try:
                     split_line = line.strip().split()
-                    values = [int(value) for value in split_line]
-                    atomic_numbers.extend(values)
+                    atomic_numbers.extend([int(value) for value in split_line])
                 except ValueError:
                     read_atomic_numbers = False
             # Read atomic masses
             if read_masses:
                 try:
                     split_line = line.strip().split()
-                    values = [float(value) for value in split_line]
-                    masses.extend(values)
+                    masses.extend([float(value) for value in split_line])
                 except ValueError:
                     read_masses = False
             # Read coordinates
             if read_coordinates:
                 try:
                     split_line = line.strip().split()
-                    values = [float(value) for value in split_line]
-                    coordinates.extend(values)
+                    coordinates.extend([float(value) for value in split_line])
                 except ValueError:
                     read_coordinates = False
             # Read number of atoms
@@ -525,7 +529,7 @@ class LocalForce:
         self._fc_matrix = fc_matrix
         self._normal_modes = np.array(modes).reshape(n_modes, n_atoms * 3)
         self._force_constants = force_constants
-        self._elements = convert_elements(atomic_numbers)
+        self._elements = convert_elements(atomic_numbers, output="numbers")
         self._coordinates = coordinates
         self._masses = np.array(masses)
 
@@ -547,26 +551,29 @@ class LocalForce:
         read_masses = False
 
         # Set up containers for reading data
-        B_atom_map = {}
-        B_vectors = {}
-        normal_modes = []
-        internal_modes = []
-        force_constants = []
-        masses = []
+        B_atom_map: Dict[int, List[int]] = {}
+        B_vectors: Dict[int, List[float]] = {}
+        normal_modes: List[List[List[float]]] = []
+        internal_modes: List[List[float]] = []
+        force_constants: List[float] = []
+        masses: List[float] = []
         fc_matrix = np.array([])
         ifc_matrix = np.array([])
-        input_coordinates = []
-        standard_coordinates = []
-        n_imag = None
-        n_atoms = None
-        internal_indices = {}
-        atomic_numbers = []
+        input_coordinates: List[float] = []
+        standard_coordinates: List[float] = []
+        n_imag: int
+        n_atoms: int = 0
+        internal_indices: Dict[FrozenSet[int], int] = {}
+        atomic_numbers: List[int] = []
+        coordinates: List[List[float]] = []
 
         # Parse through log file content
         counter = 0
-        internal_names = []
-        internal_vector = []
-        coordinates = []
+        internal_names: List[str] = []
+        internal_vector: List[float] = []
+
+        values: Any
+        value: Any
         for line in lines:
             # Read internal coordinate definitions
             if read_internal:
@@ -586,7 +593,7 @@ class LocalForce:
                         internal_indices[frozenset(atoms)] = counter - 2
                 counter += 1
             # Read Cartesian force constant matrix
-            if read_fc_matrix:
+            elif read_fc_matrix:
                 if " FormGI is forming" in line:
                     read_fc_matrix = False
                     fc_matrix = np.triu(fc_matrix.T, 1) + fc_matrix
@@ -595,13 +602,14 @@ class LocalForce:
                 elif "D" in line:
                     split_line = line.strip().split()
                     row_index = int(split_line[0]) - 1
-                    values = split_line[1:]
-                    values = [float(value.replace("D", "E")) for value in values]
+                    values = [
+                        float(value.replace("D", "E")) for value in split_line[1:]
+                    ]
                     for i, value in enumerate(values):
                         column_index = column_indices[i] - 1
                         fc_matrix[row_index, column_index] = value
             # Read internal force constant matrix
-            if read_ifc_matrix:
+            elif read_ifc_matrix:
                 if "Leave Link  716" in line:
                     read_ifc_matrix = False
                     ifc_matrix = np.triu(ifc_matrix.T, 1) + ifc_matrix
@@ -610,13 +618,14 @@ class LocalForce:
                 elif "D" in line:
                     split_line = line.strip().split()
                     row_index = int(split_line[0]) - 1
-                    values = split_line[1:]
-                    values = [float(value.replace("D", "E")) for value in values]
+                    values = [
+                        float(value.replace("D", "E")) for value in split_line[1:]
+                    ]
                     for i, value in enumerate(values):
                         column_index = column_indices[i] - 1
                         ifc_matrix[row_index, column_index] = value
             # Read atoms for creation of B matrix
-            if read_b_atoms:
+            elif read_b_atoms:
                 if " B Matrix in FormBX:" in line:
                     read_b_atoms = False
                 else:
@@ -632,7 +641,7 @@ class LocalForce:
                     if counter == 5:
                         counter = 0
             # Read values of B matrix
-            if read_b_vectors:
+            elif read_b_vectors:
                 if (
                     " IB Matrix in Red2BG:" in line
                     or "Iteration" in line
@@ -655,7 +664,7 @@ class LocalForce:
                     if counter == 13:
                         counter = 0
             # Read atomic coordinates in input orientation
-            if read_input_orientation:
+            elif read_input_orientation:
                 if counter > 3:
                     if (
                         "---------------------------------------------------------------------"  # noqa: B950
@@ -669,7 +678,7 @@ class LocalForce:
                         atomic_numbers.append(int(strip_line[1]))
                 counter += 1
             # Read atomic coordinates in standard orientation
-            if read_standard_orientation:
+            elif read_standard_orientation:
                 if counter > 3:
                     if (
                         "---------------------------------------------------------------------"  # noqa: B950
@@ -682,7 +691,7 @@ class LocalForce:
                         standard_coordinates.append(values)
                 counter += 1
             # Read decomposition of normal modes in internal coordinates
-            if read_internal_modes:
+            elif read_internal_modes:
                 if counter > 3:
                     if (
                         "--------------------------------------------------------------------------------"  # noqa: B950
@@ -695,18 +704,17 @@ class LocalForce:
                         internal_vector.append(value)
                 counter += 1
             # Read high-precision normal modes
-            if read_hp_modes:
+            elif read_hp_modes:
                 if counter < n_atoms * 3:
                     strip_line = line.strip().split()
                     values = [float(value) for value in strip_line[3:]]
                     coordinates.append(values)
                 if counter == n_atoms * 3:
-                    coordinates = np.array(coordinates)
                     normal_modes.append(coordinates)
                     read_hp_modes = False
                 counter += 1
             # Read atomic masses
-            if read_masses:
+            elif read_masses:
                 if "Molecular mass: " in line:
                     read_masses = False
                 elif "and mass" in line:
@@ -727,33 +735,33 @@ class LocalForce:
                 read_internal = True
                 counter = 1
                 internal_names = []
-            if "- Thermochemistry -" in line:
+            elif "- Thermochemistry -" in line:
                 read_masses = True
-            if " IB Matrix in FormBX:" in line:
+            elif " IB Matrix in FormBX:" in line:
                 read_b_atoms = True
                 counter = 0
-            if " B Matrix in FormBX:" in line:
+            elif " B Matrix in FormBX:" in line:
                 read_b_vectors = True
                 counter = 0
-            if " Force constants in Cartesian coordinates: " in line:
+            elif " Force constants in Cartesian coordinates: " in line:
                 read_fc_matrix = True
                 fc_matrix = np.zeros((3 * n_atoms, 3 * n_atoms))
                 counter = 0
-            if " Force constants in internal coordinates: " in line:
+            elif " Force constants in internal coordinates: " in line:
                 read_ifc_matrix = True
                 ifc_matrix = np.zeros((n_internals, n_internals))
                 counter = 0
-            if "Input orientation: " in line:
+            elif "Input orientation: " in line:
                 read_input_orientation = True
                 counter = 0
-            if "Standard orientation: " in line:
+            elif "Standard orientation: " in line:
                 read_standard_orientation = True
                 counter = 0
-            if "Normal Mode" in line:
+            elif "Normal Mode" in line:
                 read_internal_modes = True
                 counter = 1
                 internal_vector = []
-            if " Coord Atom Element:" in line:
+            elif " Coord Atom Element:" in line:
                 read_hp_modes = True
                 coordinates = []
                 counter = 0
@@ -762,11 +770,11 @@ class LocalForce:
         if len(internal_indices) > 0:
             for name, indices in zip(internal_names, internal_indices):
                 if name[0] == "R" and len(indices) == 2:
-                    self._internal_coordinates.add_internal_coordinate(indices)
+                    self._internal_coordinates.add_internal_coordinate(list(indices))
                 if name[0] == "A" and len(indices) == 3:
-                    self._internal_coordinates.add_internal_coordinate(indices)
+                    self._internal_coordinates.add_internal_coordinate(list(indices))
                 if name[0] == "D" and len(indices) == 4:
-                    self._internal_coordinates.add_internal_coordinate(indices)
+                    self._internal_coordinates.add_internal_coordinate(list(indices))
 
         # Construct the B matrix from atoms and vectors
         if B_vectors:
@@ -823,7 +831,7 @@ class LocalForce:
         self._input_coordinates = input_coordinates
         self._standard_coordinates = standard_coordinates
         self._coordinates = input_coordinates
-        self._elements = convert_elements(atomic_numbers)
+        self._elements = convert_elements(atomic_numbers, output="numbers")
 
     def _parse_unimovib_local(self, file: Union[str, PathLike]) -> None:  # noqa: C901
         # Read file
@@ -912,7 +920,7 @@ class LocalForce:
         coordinates = np.array(coordinates).reshape(-1, 3) * BOHR_TO_ANGSTROM
         hessian = np.array(hessian).reshape(n_atoms * 3, n_atoms * 3)
         normal_modes = np.array(normal_modes).reshape(-1, n_atoms * 3)[:n_modes]
-        elements = convert_elements(atomic_numbers)
+        elements = convert_elements(atomic_numbers, output="numbers")
 
         # Set up attributes
         self._normal_modes = normal_modes
@@ -940,9 +948,10 @@ class LocalForce:
         frequencies = []
 
         # Parse file
-        normal_modes_chunk = [[]]
+        normal_modes_chunk: List[List[float]] = []
         counter = 0
         n_modes_chunk = 0
+        values: Any
         for line in lines:
             # Read coordinates, atomic numbers and atomic masses
             if read_coordinates:
@@ -994,9 +1003,10 @@ class LocalForce:
         n_atoms = len(masses)
         coordinates = np.array(coordinates).reshape(-1, 3)
         normal_modes = np.array(normal_modes).reshape(-1, n_atoms * 3)
-        elements = convert_elements(atomic_numbers)
+        elements = convert_elements(atomic_numbers, output="numbers")
         force_constants = np.array(force_constants)
         frequencies = np.array(frequencies)
+        masses = np.array(masses)
 
         # Detect imaginary modes
         self.n_imag = np.sum(frequencies < 0)
@@ -1021,7 +1031,7 @@ class LocalForce:
         read_hessian = False
 
         # Set up containers for data
-        n_atoms = None
+        n_atoms: int
         masses = []
         atomic_numbers = []
         coordinates = []
@@ -1087,7 +1097,7 @@ class LocalForce:
         # Convert data to right format
         coordinates = np.array(coordinates).reshape(-1, 3) * BOHR_TO_ANGSTROM
         hessian = np.array(hessian).reshape(n_atoms * 3, n_atoms * 3)
-        elements = convert_elements(atomic_numbers)
+        elements = convert_elements(atomic_numbers, output="numbers")
 
         # Set up attributes
         self._masses = np.array(masses)
@@ -1164,3 +1174,5 @@ def _get_internal_coordinate(atoms: Sequence[int]) -> Union[Bond, Angle, Dihedra
         return Angle(*atoms)
     elif len(atoms) == 4:
         return Dihedral(*atoms)
+    else:
+        raise ValueError(f"Sequence of atoms must be 2-4 atoms, not {len(atoms)}.")

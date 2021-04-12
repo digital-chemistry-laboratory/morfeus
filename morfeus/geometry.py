@@ -1,12 +1,13 @@
 """Help classes and functions related to geometry."""
 
 import math
-from typing import List, Sequence, Union
+from typing import cast, Iterable, List, Optional, Sequence, Union
 
 import numpy as np
 from scipy.spatial.transform import Rotation
 
 from morfeus.data import ANGSTROM_TO_BOHR
+from morfeus.typing import Array1D, Array2D, ArrayLike1D, ArrayLike2D
 from morfeus.utils import get_connectivity_matrix
 
 
@@ -20,47 +21,53 @@ class Atom:
         index: Atom index (starting from 1)
 
     Attributes:
+        accessible_mask: Boolean mask for accessible points
         accessible_points: Points accessible to solvent (Å)
         area: Solvent-accessible surface area (Å²)
         cone: Cone tangent to atom
         coordinates: Coordinates (Å)
+        coordination_number: Coordination number
         element: Atomic number (1-indexed)
-        index (int): Atom index (1-indexed)
+        index: Atom index (1-indexed)
+        invisible_mask: Boolean mask for invisible points
+        occluded_mask: Boolean mask for occluded points
         occluded_points: Points occluded by other atoms (Å)
         p_values: P values
+        point_areas: Point areas (Å²)
+        point_volumes: Point volumes (Å³)
+        point: Points (Å)
+        proximal_mask: Boolean mask for proximal points
         radius: vdW radius (Å)
         volume: Volume inside solvent-accessible surface area (Å³)
     """
 
-    accessible_points: Sequence[Sequence[float]]
+    accessible_mask: Array1D
+    accessible_points: Array2D
     area: float
     cone: "Cone"
-    coordinates: Sequence[float]
+    coordinates: Array1D
+    coordination_number: float
     element: int
     index: int
-    occluded_points: Sequence[Sequence[float]]
+    invisible_mask: Array1D
+    occluded_mask: Array1D
+    occluded_points: Array2D
+    p_values: Array1D
+    point_areas: Array1D
+    point_volumes: Array1D
+    points: Array2D
+    proximal_mask: Array1D
     radius: float
     volume: float
-    p_values: Sequence[float]
 
     def __init__(
-        self, element: int, coordinates: Sequence[float], radius: float, index: int
+        self, element: int, coordinates: ArrayLike1D, radius: float, index: int
     ) -> None:
         # Set up initial attributes
-        self.coordinates = coordinates
+        self.coordinates = np.array(coordinates)
         self.element = element
         self.index = index
         self.radius = radius
-
-        # Set up settable attributes
-        self.accessible_points = None
-        self.area = None
-        self.cone = None
-        self.coordination_number = None
-        self.occluded_points = None
-        self.point_areas = None
-        self.p_values = None
-        self.volume = None
 
     def get_cone(self) -> None:
         """Construct cone for atom."""
@@ -90,15 +97,15 @@ class Cone:
     """
 
     angle: float
-    atoms: Sequence[int]
-    normal: Sequence[float]
+    atoms: Sequence[Atom]
+    normal: Array1D
 
     def __init__(
-        self, angle: float, atoms: Sequence[int], normal: Sequence[float]
+        self, angle: float, atoms: Sequence[Atom], normal: ArrayLike1D
     ) -> None:
         self.angle = angle
         self.atoms = atoms
-        self.normal = normal
+        self.normal = np.array(normal)
 
     def is_inside(self, atom: Atom) -> bool:
         """Tests if atom lies inside the cone.
@@ -108,7 +115,13 @@ class Cone:
 
         Returns:
             True if inside, False if outside.
+
+        Raises:
+            AttributeError: When atom doesn't have cone.
         """
+        if not hasattr(atom, "cone"):
+            raise AttributeError("Atom needs to have cone.")
+
         # Get vertex angle of atom
         beta = atom.cone.angle
 
@@ -128,9 +141,7 @@ class Cone:
         else:
             return False
 
-    def is_inside_points(
-        self, points: Sequence[Sequence[float]], method: str = "cross"
-    ) -> Sequence[bool]:
+    def is_inside_points(self, points: ArrayLike2D, method: str = "cross") -> Array1D:
         """Test if points are inside cone of atom.
 
         Args:
@@ -138,8 +149,12 @@ class Cone:
             method: Method for testing: 'angle', 'cross' or 'dot'
 
         Returns:
-            is_inside: Boolean array with points marked as inside.
+            is_inside: Boolean array with points marked as inside
+
+        Raises:
+            ValueError: When method not supported
         """
+        points = np.array(points)
         if method in ["cross", "dot"]:
             # Calculate radius of cone at distance of each point
             cone_distances = np.dot(points, self.normal)
@@ -155,7 +170,7 @@ class Cone:
                 )
 
             # Determine if distance is smaller than cone radius.
-            is_inside = orth_distances < cone_radii
+            inside = orth_distances < cone_radii
         elif method == "angle":
             norm_points = points / np.linalg.norm(points, axis=1).reshape(-1, 1)
 
@@ -171,11 +186,15 @@ class Cone:
             # Check if atom lies inside cone, within numerical reason
             diff = self.angle - angle
 
-            is_inside = diff > -1e-5
+            inside = diff > -1e-5
+        else:
+            raise ValueError(f"method={method} not supported.")
+
+        is_inside = cast(np.ndarray, inside)
 
         return is_inside
 
-    def __repr__(self) -> None:
+    def __repr__(self) -> str:
         atoms = ", ".join([str(atom.index) for atom in self.atoms])
         return f"{self.__class__.__name__}(Tangent atoms: {atoms})"
 
@@ -203,22 +222,22 @@ class Sphere:
     """
 
     area: float
-    center: Sequence[float]
+    center: Array1D
     circumference: float
     density: float
-    points: Sequence[Sequence[float]]
+    points: Array1D
     radius: float
     volume: float
 
     def __init__(
         self,
-        center: Sequence[float],
+        center: ArrayLike1D,
         radius: float,
         density: float = 0.005,
         method: str = "fibonacci",
         filled: bool = False,
     ) -> None:
-        self.center = center
+        self.center = np.array(center)
         self.radius = radius
         self.circumference = math.pi * radius * 2
         self.area = 4 * radius ** 2 * math.pi
@@ -234,14 +253,14 @@ class Sphere:
 
     @staticmethod
     def _get_cartesian_coordinates(
-        r: float, theta: Sequence[float], phi: Sequence[float]
-    ) -> Sequence[Sequence[float]]:
+        r: float, theta: ArrayLike1D, phi: ArrayLike1D
+    ) -> Array2D:
         """Converts polar to Cartesian coordinates.
 
         Args:
-            phi: Phi angles (rad)
+            phi: Phi angles (radians)
             r: Radius (Å)
-            theta: Theta angles (rad)
+            theta: Theta angles (radians)
 
         Returns:
             points: Cartesian points (Å)
@@ -252,11 +271,11 @@ class Sphere:
         z = r * np.cos(theta)
 
         # Stack coordinates as columns
-        points = np.column_stack((x, y, z))
+        points: np.ndarray = np.column_stack((x, y, z))
 
         return points
 
-    def _get_points_fibonacci(self, density: float) -> Sequence[Sequence[float]]:
+    def _get_points_fibonacci(self, density: float) -> Array2D:
         """Construct points on sphere surface by the Fibonacci golden spiral method.
 
         Method vectorized from
@@ -284,11 +303,11 @@ class Sphere:
         # Generate points and adjust with radius and center
         points = np.column_stack((x, y, z))
         points = points * self.radius
-        points = points + self.center
+        points: np.ndarray = points + self.center
 
         return points
 
-    def _get_points_polar(self, density: float) -> Sequence[Sequence[float]]:
+    def _get_points_polar(self, density: float) -> Array2D:
         """Construct points on sphere by polar coordinate method.
 
         Args:
@@ -313,13 +332,11 @@ class Sphere:
         points = self._get_cartesian_coordinates(self.radius, theta, phi)
 
         # Adjust to sphere center
-        points = points + self.center
+        points: np.ndarray = points + self.center
 
         return points
 
-    def _get_points_projected(
-        self, density: float, filled: bool = False
-    ) -> Sequence[Sequence[float]]:
+    def _get_points_projected(self, density: float, filled: bool = False) -> Array2D:
         """Construct points on sphere surface by projection.
 
         Args:
@@ -352,11 +369,11 @@ class Sphere:
             points = points / np.linalg.norm(points, axis=1).reshape(-1, 1) * r
 
         # Adjust with sphere center
-        points = points + self.center
+        points: np.ndarray = points + self.center
 
         return points
 
-    def __repr__(self) -> None:
+    def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}(center: {self.center}, "
             f"radius: {self.radius})"
@@ -384,7 +401,7 @@ class Bond:
         self.j = atom_2
         self.atoms = [atom_1, atom_2]
 
-    def get_b_vector(self, coordinates: Sequence[Sequence[float]]) -> Sequence[float]:
+    def get_b_vector(self, coordinates: ArrayLike2D) -> Array1D:
         """Calculate vector of B matrix for internal coordinate.
 
         Code adapted from pyberny: https://github.com/jhrmnn/pyberny.
@@ -395,6 +412,7 @@ class Bond:
         Returns:
             b_vector: Vector of B matrix (a.u.)
         """
+        coordinates = np.array(coordinates)
         i, j = self.i - 1, self.j - 1
         v = (coordinates[i] - coordinates[j]) * ANGSTROM_TO_BOHR
         r = np.linalg.norm(v)
@@ -449,7 +467,7 @@ class Angle:
         self.k = atom_3
         self.atoms = [atom_1, atom_2, atom_3]
 
-    def get_b_vector(self, coordinates: Sequence[Sequence[float]]) -> Sequence[float]:
+    def get_b_vector(self, coordinates: ArrayLike2D) -> Array1D:
         """Calculate vector of B matrix for internal coordinate.
 
         Code adapted from pyberny: https://github.com/jhrmnn/pyberny.
@@ -460,6 +478,7 @@ class Angle:
         Returns:
             b_vector: Vector of B matrix (a.u.)
         """
+        coordinates = np.array(coordinates)
         i, j, k = self.i - 1, self.j - 1, self.k - 1
         v_1 = (coordinates[i] - coordinates[j]) * ANGSTROM_TO_BOHR
         v_2 = (coordinates[k] - coordinates[j]) * ANGSTROM_TO_BOHR
@@ -546,7 +565,7 @@ class Dihedral:
         self.l = atom_4
         self.atoms = [atom_1, atom_2, atom_3, atom_4]
 
-    def get_b_vector(self, coordinates: Sequence[Sequence[float]]) -> Sequence[float]:
+    def get_b_vector(self, coordinates: ArrayLike2D) -> Array1D:
         """Calculate vector of B matrix for internal coordinate.
 
         Code adapted from pyberny: https://github.com/jhrmnn/pyberny.
@@ -557,6 +576,7 @@ class Dihedral:
         Returns:
             b_vector: Vector of B matrix (a.u.)
         """
+        coordinates = np.array(coordinates)
         i, j, k, l = self.i - 1, self.j - 1, self.k - 1, self.l - 1
         v_1 = (coordinates[i] - coordinates[j]) * ANGSTROM_TO_BOHR
         v_2 = (coordinates[l] - coordinates[k]) * ANGSTROM_TO_BOHR
@@ -719,13 +739,20 @@ class InternalCoordinates:
 
     def detect_bonds(
         self,
-        elements: Sequence[Union[int, str]],
-        coordinates: Sequence[Sequence[float]],
+        coordinates: ArrayLike2D,
+        elements: Optional[Union[Iterable[int], Iterable[str]]],
+        radii: Optional[ArrayLike1D] = None,
+        radii_type: str = "pyykko",
+        scale_factor: float = 1.2,
     ) -> None:
         """Detect bonds based on covalent radii cutoffs."""
         # Detect bonds based on covalent radii
         connectivity_matrix = get_connectivity_matrix(
-            elements, coordinates, radii_type="pyykko"
+            coordinates,
+            elements=elements,
+            radii=radii,
+            radii_type="pyykko",
+            scale_factor=scale_factor,
         )
         indices = np.where(connectivity_matrix)
 
@@ -739,9 +766,7 @@ class InternalCoordinates:
             i, j = sorted(bond)
             self.add_bond(i, j)
 
-    def get_B_matrix(
-        self, coordinates: Sequence[Sequence[float]]
-    ) -> Sequence[Sequence[float]]:
+    def get_B_matrix(self, coordinates: ArrayLike2D) -> Array2D:
         """Calculate B matrix for coordinates.
 
         Args:
@@ -750,6 +775,7 @@ class InternalCoordinates:
         Returns:
             B_matrix: B matrix
         """
+        coordinates = np.array(coordinates)
         b_vectors = []
         for internal_coordinate in self.internal_coordinates:
             b_vectors.append(internal_coordinate.get_b_vector(coordinates))
@@ -765,10 +791,10 @@ class InternalCoordinates:
 
 
 def rotate_coordinates(
-    coordinates: Sequence[Sequence[float]],
-    vector: Sequence[float],
-    axis: Sequence[float],
-) -> Sequence[Sequence[float]]:
+    coordinates: ArrayLike2D,
+    vector: ArrayLike1D,
+    axis: ArrayLike1D,
+) -> Array2D:
     """Rotates coordinates by the rotation that aligns vector with axis.
 
     Args:
@@ -779,6 +805,10 @@ def rotate_coordinates(
     Returns:
         rotated_coordinates: Rotated coordinates.
     """
+    coordinates = np.array(coordinates)
+    vector = np.array(vector)
+    axis = np.array(axis)
+
     # Get real part of quaternion
     real = np.dot(vector, axis).reshape(1) + 1
 
@@ -796,14 +826,14 @@ def rotate_coordinates(
 
     # Rotate atomic coordinates
     rotation = Rotation.from_quat(q)
-    rotated_coordinates = rotation.apply(coordinates)
+    rotated_coordinates: np.ndarray = rotation.apply(coordinates)
 
     return rotated_coordinates
 
 
 def kabsch_rotation_matrix(
-    P: Sequence[Sequence[float]], Q: Sequence[Sequence[float]], center: bool = True
-) -> Sequence[Sequence[float]]:
+    P: ArrayLike2D, Q: ArrayLike2D, center: bool = True
+) -> Array2D:
     """Construct Kabsch rotation matrix.
 
     Constructs the rotation matrix that overlays the points in P with the points in Q
@@ -817,6 +847,9 @@ def kabsch_rotation_matrix(
     Returns:
         R: Rotation matrix
     """
+    P = np.array(P)
+    Q = np.array(Q)
+
     # Calculate centroids and center coordinates
     if center:
         centroid_P = np.mean(P, axis=0)
@@ -834,14 +867,14 @@ def kabsch_rotation_matrix(
     d = np.sign(np.linalg.det(V_T.T @ U.T))
 
     # Obtain rotation matrix
-    R = V_T.T @ np.array([[1, 0, 0], [0, 1, 0], [0, 0, d]]) @ U.T
+    R: np.ndarray = V_T.T @ np.array([[1, 0, 0], [0, 1, 0], [0, 0, d]]) @ U.T
 
     return R
 
 
 def sphere_line_intersection(
-    vector: Sequence[float], center: Sequence[float], radius: float
-) -> Sequence[Sequence[float]]:
+    vector: ArrayLike1D, center: ArrayLike1D, radius: float
+) -> Array2D:
     """Get points of intersection between line and sphere.
 
     Follows the procedure outlined here: http://paulbourke.net/geometry/circlesphere/.
@@ -854,6 +887,9 @@ def sphere_line_intersection(
     Returns:
         intersection_points: Intersection points
     """
+    vector = np.array(vector)
+    center = np.array(center)
+
     # Set up points
     p_1 = vector
     p_2 = vector * 2
@@ -889,6 +925,6 @@ def sphere_line_intersection(
         ]
 
     # Calculate intersection points.
-    intersection_points = [p_1 + u * (p_2 - p_1) for u in us]
+    intersection_points = np.vstack([p_1 + u * (p_2 - p_1) for u in us])
 
     return intersection_points

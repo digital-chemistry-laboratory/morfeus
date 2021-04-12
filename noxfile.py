@@ -1,12 +1,12 @@
 """Automated testing linting and formatting apparatus."""
 # external
-import nox
-from nox.sessions import Session
+import nox  # type: ignore
+from nox.sessions import Session  # type: ignore
 
 package = "morfeus"
 nox.options.sessions = "lint", "tests", "mypy"  # default session
 locations = "morfeus", "tests", "noxfile.py"  # Linting locations
-pyversions = ["3.7", "3.8", "3.9"]
+pyversions = ["3.8"]
 
 
 # Testing
@@ -31,7 +31,7 @@ def tests(session: Session) -> None:
 
 
 # Linting
-@nox.session(python="3.8")
+@nox.session(venv_backend="conda", python="3.8")
 def lint(session: Session) -> None:
     """Lint code."""
     args = session.posargs or locations
@@ -48,7 +48,7 @@ def lint(session: Session) -> None:
 
 
 # Code formatting
-@nox.session(python="3.8")
+@nox.session(venv_backend="conda", python="3.8")
 def black(session: Session) -> None:
     """Format code."""
     args = session.posargs or locations
@@ -57,7 +57,7 @@ def black(session: Session) -> None:
 
 
 # Static typing
-@nox.session(python="3.8")
+@nox.session(venv_backend="conda", python="3.8")
 def mypy(session: Session) -> None:
     """Run the static type checker."""
     args = session.posargs or locations

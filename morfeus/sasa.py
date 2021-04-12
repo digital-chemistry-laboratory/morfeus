@@ -1,13 +1,14 @@
 """Solvent accessible surface area code."""
 
 import typing
-from typing import Dict, Optional, Sequence, Union
+from typing import Dict, Iterable, List, Optional, Union
 
 import numpy as np
 import scipy.spatial
 
 from morfeus.data import atomic_symbols, jmol_colors
 from morfeus.geometry import Atom, Sphere
+from morfeus.typing import ArrayLike1D, ArrayLike2D
 from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
@@ -38,21 +39,22 @@ class SASA:
     atom_areas: Dict[int, float]
     atom_volumes: Dict[int, float]
     volume: float
-    _atoms: Sequence[Atom]
+    _atoms: List[Atom]
     _density: float
     _probe_radius: float
 
     def __init__(
         self,
-        elements: Sequence[Union[int, str]],
-        coordinates: Sequence[Sequence[float]],
-        radii: Optional[Sequence[float]] = None,
+        elements: Union[Iterable[int], Iterable[str]],
+        coordinates: ArrayLike2D,
+        radii: Optional[ArrayLike1D] = None,
         radii_type: str = "crc",
         probe_radius: float = 1.4,
         density: float = 0.01,
     ) -> None:
         # Converting elements to atomic numbers if the are symbols
-        elements = convert_elements(elements)
+        elements = convert_elements(elements, output="numbers")
+        coordinates = np.array(coordinates)
 
         # Getting radii if they are not supplied
         if radii is None:

@@ -2,16 +2,17 @@
 
 import math
 import typing
-from typing import Optional, Sequence, Union
+from typing import Iterable, List, Optional, Sequence, Set, Union
 
 import numpy as np
 import scipy.spatial
 
 from morfeus.data import jmol_colors
 from morfeus.geometry import Atom, kabsch_rotation_matrix, sphere_line_intersection
-from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
 from morfeus.plotting import Arrow3D
 from morfeus.sasa import SASA
+from morfeus.typing import Array1D, ArrayLike1D, ArrayLike2D
+from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
     from matplotlib.colors import hex2color
@@ -45,48 +46,51 @@ class Sterimol:
     """
 
     B_1_value: float
-    B_1: np.ndarray
-    B_5_value: np.ndarray
-    B_5: np.ndarray
+    B_1: Array1D
+    B_5_value: float
+    B_5: Array1D
     bond_length: float
     L_value_uncorrected: float
     L_value: float
-    L: np.ndarray
-    _atoms: Sequence[Atom]
+    L: Array1D
+    _atoms: List[Atom]
     _attached_atom: Atom
     _dummy_atom: Atom
-    _excluded_atoms: Sequence[int]
+    _excluded_atoms: Set[int]
     _n_rot_vectors: int
-    _origin: np.ndarray
-    _points: np.ndarray
-    _sphere_radius: float
+    _origin: Array1D
     _plotter: "BackgroundPlotter"
+    _points: Array1D
+    _sphere_radius: float
 
     def __init__(
         self,
-        elements: Sequence[Union[int, str]],
-        coordinates: Sequence[Sequence[float]],
+        elements: Union[Iterable[int], Iterable[str]],
+        coordinates: ArrayLike2D,
         dummy_index: int,
         attached_index: int,
-        radii: Optional[Sequence[float]] = None,
+        radii: Optional[ArrayLike1D] = None,
         radii_type: str = "crc",
         n_rot_vectors: int = 3600,
         excluded_atoms: Optional[Sequence[int]] = None,
         calculate: bool = True,
     ) -> None:
         # Convert elements to atomic numbers if the are symbols
-        elements = convert_elements(elements)
+        elements = convert_elements(elements, output="numbers")
+        coordinates = np.array(coordinates)
 
         if excluded_atoms is None:
-            excluded_atoms = np.array([])
+            excluded_atoms = []
+        excluded_atoms = np.array(excluded_atoms)
 
         # Get radii if they are not supplied
         if radii is None:
             radii = get_radii(elements, radii_type=radii_type)
-        all_radii = np.array(radii)
+        radii = np.array(radii)
+        all_radii = radii
 
         # Set up coordinate array
-        all_coordinates = np.array(coordinates)
+        all_coordinates = coordinates
 
         # Translate coordinates so origin is at atom 2
         origin = all_coordinates[attached_index - 1]
@@ -125,19 +129,9 @@ class Sterimol:
         self._dummy_atom = dummy_atom
         self._attached_atom = attached_atom
 
-        self.L = None
-        self.L_value = None
-        self.L_value_uncorrected = None
         self.bond_length = np.linalg.norm(vector_2_to_1)
 
-        self.B_1 = None
-        self.B_1_value = None
-
-        self.B_5 = None
-        self.B_5_value = None
-
         self._n_rot_vectors = n_rot_vectors
-        self._sphere_radius = None
 
         if calculate:
             self.calculate()
@@ -215,7 +209,7 @@ class Sterimol:
                     np.dot(norm_vector, trial_vector / np.linalg.norm(trial_vector))
                     for trial_vector in trial_vectors
                 ]
-                new_vector = trial_vectors[np.argmax(dot_products)]
+                new_vector = trial_vectors[int(np.argmax(dot_products))]
                 new_vectors.append(new_vector)
 
             # Replace vectors if new ones are shorter than old ones
@@ -265,7 +259,7 @@ class Sterimol:
         coordinates = []
         radii = []
         for atom in self._atoms:
-            if atom not in self._excluded_atoms and atom is not self._dummy_atom:
+            if atom.index not in self._excluded_atoms and atom is not self._dummy_atom:
                 elements.append(atom.element)
                 coordinates.append(atom.coordinates)
                 radii.append(atom.radius)
@@ -292,7 +286,10 @@ class Sterimol:
             coordinates = []
             radii = []
             for atom in self._atoms:
-                if atom != self._dummy_atom and atom not in self._excluded_atoms:
+                if (
+                    atom is not self._dummy_atom
+                    and atom.index not in self._excluded_atoms
+                ):
                     coordinates.append(atom.coordinates)
                     radii.append(atom.radius)
             coordinates = np.vstack(coordinates)
@@ -400,7 +397,7 @@ class Sterimol:
             color = hex2color(jmol_colors[atom.element])
             radius = atom.radius * atom_scale
             sphere = pv.Sphere(center=list(atom.coordinates), radius=radius)
-            if atom in self._excluded_atoms:
+            if atom.index in self._excluded_atoms:
                 opacity = 0.25
             else:
                 opacity = 1

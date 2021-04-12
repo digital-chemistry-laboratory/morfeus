@@ -1,12 +1,13 @@
 """Visible volume code."""
 
-from typing import Optional, Sequence, Union
+from typing import Iterable, Optional, Union
 
 import numpy as np
 
 from morfeus.geometry import Cone
-from morfeus.utils import check_distances, convert_elements, get_radii
 from morfeus.sasa import SASA
+from morfeus.typing import ArrayLike1D, ArrayLike2D
+from morfeus.utils import check_distances, convert_elements, get_radii
 
 
 class VisibleVolume:
@@ -24,20 +25,20 @@ class VisibleVolume:
         density: Area per point on atom surface (Å²)
 
     Attributes:
-        total_volume: Total volume (Å³)
-        proximal_volume: Proximal volume (Å³)
-        distal_volume: Distal volume (Å³)
-        invisible_volume: Invisible volume (Å³)
-        visible_volume: Visible volume (Å³)
-        proximal_visible_volume: Proximal visible volume (Å³)
-        distal_visible_volume: Distal visible volume (Å³)
-        total_area: Total area (Å²)
-        proximal_area: Proximal area (Å²)
         distal_area: Distal area (Å²)
-        invisible_area: Invisible area (Å²)
-        visible_area: Visible area (Å²)
-        proximal_visible_area: Proximal visible area (Å²)
         distal_visible_area: Distal visible area (Å²)
+        distal_visible_volume: Distal visible volume (Å³)
+        distal_volume: Distal volume (Å³)
+        invisible_area: Invisible area (Å²)
+        invisible_volume: Invisible volume (Å³)
+        proximal_area: Proximal area (Å²)
+        proximal_visible_area: Proximal visible area (Å²)
+        proximal_visible_volume: Proximal visible volume (Å³)
+        proximal_volume: Proximal volume (Å³)
+        total_area: Total area (Å²)
+        total_volume: Total volume (Å³)
+        visible_area: Visible area (Å²)
+        visible_volume: Visible volume (Å³)
     """
 
     distal_area: float
@@ -57,20 +58,21 @@ class VisibleVolume:
 
     def __init__(
         self,
-        elements: Sequence[Union[int, str]],
-        coordinates: Sequence[Sequence[float]],
+        elements: Union[Iterable[int], Iterable[str]],
+        coordinates: ArrayLike2D,
         metal_index: int,
         include_hs: bool = True,
-        radii: Optional[Sequence[float]] = None,
+        radii: Optional[ArrayLike1D] = None,
         radii_type: str = "pyykko",
         radius: float = 3.5,
         density: float = 0.01,
     ) -> None:
         # Set up arrays and get radii
-        elements = np.array(convert_elements(elements))
+        elements = np.array(convert_elements(elements, output="numbers"))
         coordinates = np.array(coordinates)
         if radii is None:
             radii = get_radii(elements, radii_type=radii_type)
+        radii = np.array(radii)
 
         # Check so that no atom is within vdW distance of metal atom
         within = check_distances(elements, coordinates, metal_index, radii=radii)

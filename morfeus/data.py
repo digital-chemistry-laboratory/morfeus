@@ -2,11 +2,11 @@
 
 Data taken from the Mendeleev package unless otherwise specified.
 """
-from typing import Dict
+from typing import Dict, Optional
 
 import scipy.constants
 
-atomic_symbols: dict[int, str] = {
+atomic_symbols: Dict[int, str] = {
     1: "H",
     2: "He",
     3: "Li",
@@ -135,7 +135,7 @@ atomic_symbols: dict[int, str] = {
 # Commission on Isotopic Abundances and Atomic Weights. Tables can be found here:
 # https://www.ciaaw.org/. See Pure and Applied Chemistry 2016, 88,
 # 265. and revisions. Summary of latest data: https://www.qmul.ac.uk/sbcs/iupac/AtWt/
-atomic_masses: dict[int, float] = {
+atomic_masses: Dict[int, float] = {
     1: 1.00782503223,
     2: 4.00260325413,
     3: 7.0160034366,
@@ -573,7 +573,7 @@ radii_truhlar: Dict[int, float] = {
 
 # Alvarez, S. Dalton Trans. 2013, 42, 8617.
 # Vogt, J.; Alvarez, S. Inorg. Chem. 2014, 53, 9260.
-radii_alvarez: dict[int, float] = {
+radii_alvarez: Dict[int, float] = {
     1: 1.2,
     2: 1.43,
     3: 2.12,
@@ -896,7 +896,7 @@ cov_radii_pyykko: Dict[int, float] = {
 }
 """Atomic numbers as keys and Pyykkö radii as values."""
 
-jmol_colors: dict[int, float] = {
+jmol_colors: Dict[int, Optional[str]] = {
     1: "#ffffff",
     2: "#ffc0cb",
     3: "#b22222",
