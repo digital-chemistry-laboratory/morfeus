@@ -29,7 +29,7 @@ class Sterimol:
         dummy_index: Index of dummy atom (1-indexed)
         attached_index: Index of attached atom of substituent (1-indexed)
         radii: List of radii (Å)
-        radii_type: Type of radii to use: 'alvarez', 'bondi', 'crc' or 'truhlar'
+        radii_type: vdW radii type: 'alvarez', 'bondi', 'crc' or 'truhlar'
         n_rot_vectors: Number of rotational vectors for determining B₁ and B₅
         excluded_atoms: Atom indices to exclude from the calculation
         calculate: Whether to calculate the Sterimol parameters directly

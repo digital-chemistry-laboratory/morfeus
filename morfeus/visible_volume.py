@@ -19,8 +19,7 @@ class VisibleVolume:
         metal_index: Index of metal atom (1-indexed)
         include_hs: Whether to include H atoms in the calculation
         radii: Atomic radii (Å)
-        radii_type: Type of vdW radii: 'alvarez', 'bondi', 'crc', 'pyykko', 'rahm' or
-            'truhlar'
+        radii_type: Radii type: 'alvarez', 'bondi', 'crc', 'pyykko', 'rahm' or 'truhlar'
         radius: Radius of sphere to divide proximal and distal (Å)
         density: Area per point on atom surface (Å²)
 

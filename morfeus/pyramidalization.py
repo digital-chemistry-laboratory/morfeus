@@ -21,7 +21,7 @@ class Pyramidalization:
         neighbor_indices: Indices of neighbors to pyramidalized atom
         elements: Elements as atomic symbols or numbers
         radii: Covalent radii used to determine connectivity (Å)
-        radii_type: Choice of covalent radii: 'pyykko'
+        radii_type: Covalent radii type: 'pyykko'
         excluded_atoms: Indices of atoms to exclude
         method: Method for detecting neighbors: 'connectivity' or 'distance'. Ignored if
             neighbor_indices is given.

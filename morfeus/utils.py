@@ -54,7 +54,7 @@ def check_distances(
         check_radius: Radius to use for check_atom (Å)
         exclude_list: Atom indices to exclude (1-indexed)
         epsilon: Numeric term add to the radii (Å)
-        radii_type: Radii type: 'bondi' or 'crc'
+        radii_type: Radii type: 'alvarez', 'bondi', 'crc', 'pyykko', 'rahm' or 'truhlar'
 
     Returns:
         within_list: Atom indices within vdW distance of check atom.
@@ -258,7 +258,7 @@ def get_radii(
 
     Args:
         elements: Elements as atomic symbols or numbers
-        radii_type: Radii type: 'bondi', 'crc', 'pyykko' 'rahm' or 'truhlar'
+        radii_type: Radii type: 'alvarez', 'bondi', 'crc', 'pyykko' 'rahm' or 'truhlar'
         scale: Scaling factor
 
     Returns:
