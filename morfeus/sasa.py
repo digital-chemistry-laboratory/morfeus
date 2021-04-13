@@ -21,18 +21,18 @@ class SASA:
     """Performs and stores results of solvent accessible surface area calculations.
 
     Args:
-        coordinates (list): Coordinates (Å)
-        density (float): Area per point (Å**2) on the vdW surface.
-        elements (list): Elements as atomic symbols or numbers.
-        probe_radius (float): Radius of probe atom (Å)
-        radii (list): VdW radii (Å)
-        radii_type (str): Choice of vdW radii: 'bondi' or 'crc' (default)
+        coordinates: Coordinates (Å)
+        density: Area per point (Å²) on the vdW surface
+        elements: Elements as atomic symbols or numbers
+        probe_radius: Radius of probe atom (Å)
+        radii: VdW radii (Å)
+        radii_type: Choice of vdW radii: 'bondi' or 'crc' (default)
 
     Attributes:
-        area (float): Area of the solvent accessible surface.
-        atom_areas (dict): Atom areas (starting from 1)
-        atom_volumes (dict): Atom volumes (starting from 1)
-        volume (float): Volume of the solvent accessible surface.
+        area: Area of the solvent accessible surface.
+        atom_areas: Atom areas (starting from 1)
+        atom_volumes: Atom volumes (starting from 1)
+        volume: Volume of the solvent accessible surface
     """
 
     area: float
