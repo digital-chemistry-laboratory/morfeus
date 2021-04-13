@@ -281,8 +281,8 @@ class Dispersion:
     )
     @staticmethod
     def _contour_surface(
-        grid: pv.Grid, method: str = "flying_edges", isodensity: float = 0.001
-    ) -> pv.PolyData:
+        grid: "pv.Grid", method: str = "flying_edges", isodensity: float = 0.001
+    ) -> "pv.PolyData":
         """Counter surface from grid.
 
         Args:

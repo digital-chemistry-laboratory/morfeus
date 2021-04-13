@@ -1,7 +1,7 @@
 """Geometry file parsing functions."""
 
 from os import PathLike
-from typing import Dict, Iterable, Optional, Sequence, Set, Tuple, Union
+from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
 
 import numpy as np
 
@@ -293,7 +293,7 @@ class VertexParser:
         return f"{self.__class__.__name__}({len(self.vertices)!r} points)"
 
 
-def read_gjf(file: Union[str, PathLike]) -> Tuple[np.ndarray, np.ndarray]:
+def read_gjf(file: Union[str, PathLike]) -> Tuple[Array1D, Array1D]:
     """Reads Gaussian gjf/com file and returns elements and coordinates.
 
     Args:
@@ -305,28 +305,22 @@ def read_gjf(file: Union[str, PathLike]) -> Tuple[np.ndarray, np.ndarray]:
     """
     # Read file and split lines
     with open(file) as f:
-        lines = f.readlines()
+        text = f.read()
+    xyz_lines = text.split("\n\n")[2].splitlines()[1:]
+    xyz_lines = [line for line in xyz_lines if line.strip()]
 
     # Loop over lines and store elements and coordinates
-    elements = []
-    coordinates = []
-    empty_counter = 0
-    read_counter = 0
-    for line in lines:
-        if not line:
-            empty_counter += 1
-        if empty_counter == 2:
-            if read_counter > 1:
-                strip_line = line.strip().split()
-                atom_char = strip_line[0]
-                if atom_char.isdigit():
-                    atom = int(atom_char)
-                elements.append(atom)
-                coordinates.append(
-                    [float(strip_line[1]), float(strip_line[2]), float(strip_line[3])]
-                )
-            read_counter += 1
-
+    elements: List[Union[int, str]] = []
+    coordinates: List[List[float]] = []
+    for line in xyz_lines:
+        split_line = line.strip().split()
+        element = split_line[0]
+        if element.isdigit():
+            elements.append(int(element))
+        else:
+            elements.append(element)
+        atom_coordinates = [float(i) for i in split_line[1:]]
+        coordinates.append(atom_coordinates)
     elements = np.array(elements)
     coordinates = np.array(coordinates)
 
@@ -350,8 +344,8 @@ def read_xyz(file: Union[str, PathLike]) -> Tuple[Array1D, Union[Array2D, Array3
         lines = f.readlines()
 
     # Loop over lines and store elements and coordinates
-    elements = []
-    coordinates = []
+    elements: List[Union[int, str]] = []
+    coordinates: List[List[float]] = []
     n_atoms = int(lines[0].strip())
     line_chunks = zip(*[iter(lines)] * (n_atoms + 2))
     for line_chunk in line_chunks:
