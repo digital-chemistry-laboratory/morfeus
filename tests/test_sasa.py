@@ -23,7 +23,7 @@ def pytest_generate_tests(metafunc):
 
 
 def test_reference(sasa_data):
-    """Test against cone angle reference data."""
+    """Test against SASA reference data."""
     idx, data = sasa_data
     sasa_ref = float(data["area"])
     atom_areas_ref = np.loadtxt(DATA_DIR / f"atom_areas/{idx}.txt")

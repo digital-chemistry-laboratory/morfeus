@@ -1,4 +1,4 @@
-"""Test dispersion code."""
+"""Test local force code."""
 
 import csv
 from pathlib import Path

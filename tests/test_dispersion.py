@@ -21,7 +21,7 @@ def pytest_generate_tests(metafunc):
 
 
 def test_reference(disp_data):
-    """Test against cone angle reference data."""
+    """Test against dispersion reference data."""
     data = disp_data
     p_int_ref = float(data["p_int"])
     elements = [data["symbol"]]
