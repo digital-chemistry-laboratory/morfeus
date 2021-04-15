@@ -4,8 +4,8 @@ Local force constants
 
 Local force constants can be calculated with the local modes method
 :cite:`konkoli_new_1998` or the compliance matrix method
-:cite:`brandhorst_how_2008`. ᴍᴏʀғᴇᴜs can use the output of the Gaussian_, xtb_,
-or UniMoVib_ programs.
+:cite:`brandhorst_how_2008`. ᴍᴏʀғᴇᴜs can use the output of the Gaussian__, xtb__,
+or UniMoVib__ programs.
 
 ***************
 Preparing input
@@ -379,12 +379,6 @@ assessed by the local force constants.
 ᴍᴏʀғᴇᴜs has been benchmarked against the local force constants and frequencies
 given by Cremer :cite:`zou_relating_2012` for small organic molecules. 
 
-.. figure:: benchmarks/local_force/benchmark.png
-  
-  Benchmark of local force constants and frequencies against data from Table 1
-  of ref. :cite:`zou_relating_2012`. Data obtained with Gaussian log file and
-  the local modes method.
-
 **********
 References
 **********
@@ -393,6 +387,6 @@ References
   :style: unsrt
   :filter: docname in docnames
 
-.. _Gaussian: https://gaussian.com/
-.. _UniMoVib: https://github.com/zorkzou/UniMoVib
-.. _xtb: https://xtb-docs.readthedocs.io/en/latest/contents.html
+.. __: https://gaussian.com/
+.. __: https://xtb-docs.readthedocs.io/en/latest/contents.html
+.. __: https://github.com/zorkzou/UniMoVib

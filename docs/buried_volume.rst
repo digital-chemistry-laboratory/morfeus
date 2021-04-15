@@ -78,7 +78,7 @@ For more information, use ``help(BuriedVolume)`` or see the API:
 Background
 **********
 
-The percent of buried volume is a measure of the steric hindrance induced by a 
+The percent of buried volume is a measure of the steric hindrance induced by a
 ligand of a transition metal complex :cite:`falivene_sambvca_2016`. A web tool
 to calculate buried volumes, SambVca, was made available for scientific
 purposes by Cavallo and co-workers in 2009 :cite:`poater_sambvca_2009` with
@@ -90,10 +90,6 @@ test sphere rather than considering voxels. The numerical results with standard
 settings are the same though as shown by benchmarks on complexes 1-18 from ref.
 :cite:`falivene_sambvca_2016`. Steric maps also match those in ref.
 :cite:`falivene_sambvca_2016`.
-
-.. todo::
-  Correlation to BVs of ref [X]
-  figure
 
 **********
 References
