@@ -1,7 +1,7 @@
 =========
 Morfeus
 =========
-`test <https://github.com/kjelljorner/morfeus/actions/workflows/ci-pip.yml/badge.svg>`_
+.. image:: https://github.com/kjelljorner/morfeus/actions/workflows/ci-pip.yml/badge.svg
 
 A Python package for calculation of molecular features. Morfeus can be run
 either as a command line script or imported as a module.
