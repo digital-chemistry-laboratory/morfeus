@@ -1,6 +1,3 @@
-=========
-Morfeus
-=========
 .. image:: docs/images/logo.svg
 .. image:: https://github.com/kjelljorner/morfeus/actions/workflows/ci-pip.yml/badge.svg
 
