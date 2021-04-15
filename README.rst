@@ -1,6 +1,7 @@
 =========
 Morfeus
 =========
+.. image:: docs/images/logo.svg
 .. image:: https://github.com/kjelljorner/morfeus/actions/workflows/ci-pip.yml/badge.svg
 
 A Python package for calculation of molecular features. Morfeus can be run
