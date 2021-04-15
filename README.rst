@@ -14,32 +14,8 @@ Clone the repository and install with
 
   pip install .
 
-Installation with extra graphics functionality
-
-.. code-block:: console
-
-  pip install .[extras]
-
 *************
 Documentation
 *************
 
 To be added later.
-
-************
-Dependencies
-************
-
-Core dependencies:
-
-* numpy
-* scipy
-
-Optional depedencies when installed with [extras]:
-
-* matplotlib
-* pyvista
-* vtk
-
-The optional dependencies are used for 3D visualization and in the Dispersion
-descriptor calculations.

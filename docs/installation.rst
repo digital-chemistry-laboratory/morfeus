@@ -14,10 +14,15 @@ Core dependencies:
 
 Optional depedencies:
 
+* dftd4_
 * matplotlib_
+* openbabel_
 * pymeshfix_
 * pyvista_
 * pyvistaqt_
+* qcengine_
+* rdkit_
+* spyrmsd_
 * vtk_
 * xtb-python_
 
@@ -41,11 +46,16 @@ Install with extra graphics functionality:
 
   pip install .[extras]
 
-.. _matplotlib: https://pypi.org/project/matplotlib/
-.. _numpy: https://pypi.org/project/numpy/
-.. _pymeshfix: https://pypi.org/project/pymeshfix/
-.. _pyvista: https://pypi.org/project/pyvista/
-.. _pyvistaqt: https://pypi.org/project/pyvistaqt/
-.. _scipy: https://pypi.org/project/scipy/
-.. _vtk:  https://pypi.org/project/vtk/
+.. _dftd4: https://github.com/dftd4/dftd4
+.. _matplotlib: https://matplotlib.org
+.. _numpy: https://numpy.org
+.. _openbabel: http://openbabel.org/
+.. _pymeshfix: https://github.com/pyvista/pymeshfix
+.. _pyvista: https://github.com/pyvista/pyvista
+.. _pyvistaqt: https://github.com/pyvista/pyvistaqt
+.. _qcengine: https://github.com/MolSSI/QCEngine
+.. _rdkit: https://www.rdkit.org
+.. _scipy: https://github.com/pyvista/pyvistaqt
+.. _spyrmsd: https://github.com/RMeli/spyrmsd
+.. _vtk:  https://vtk.org
 .. _xtb-python: https://github.com/grimme-lab/xtb-python

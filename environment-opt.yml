@@ -1,5 +1,12 @@
 dependencies:
+- dftd4
 - matplotlib
+- openbabel
 - pymeshfix
 - pyvista
+- pyvistaqt
+- qcengine
+- spyrmsd
+- rdkit
 - vtk
+- xtb-python
