@@ -9,6 +9,7 @@ import tempfile
 import typing
 from typing import (
     Any,
+    cast,
     Counter,
     Dict,
     Iterable,
@@ -319,7 +320,9 @@ class ConformerEnsemble:
 
         if not all([isinstance(energy, float) for energy in energies]):
             self._add_conformers(conformer_coordinates)
-        self.add_conformers(conformer_coordinates, energies)
+        else:
+            energies_ = cast(List[float], energies)
+            self.add_conformers(conformer_coordinates, energies_)
 
     @requires_dependency([Import(module="rdkit.Chem", item="AllChem")], globals())
     def align_conformers(self) -> None:
@@ -727,8 +730,8 @@ class ConformerEnsemble:
                 'obrms-iter' and 'obrms-batch' that only use heavy atoms.
             symmetry: Consider symmetry (requires connectivity matrix). Ignored for
                 'obrms-iter' and 'obrms-batch' that always use symmetry.
-            method: RMSD calculation method: 'obrms-batch', 'obrms-iter',
-                'openbabel', 'rdkit' or 'spyrmsd'.
+            method: RMSD calculation method: 'obrms-batch', 'obrms-iter', 'openbabel',
+                'rdkit' or 'spyrmsd'.
 
         Returns:
             rmsds: RSMDs (Å)
@@ -1039,6 +1042,7 @@ class ConformerEnsemble:
         energies = [conformer.energy for conformer in self.conformers]
         if not all([isinstance(energy, float) for energy in energies]):
             raise ValueError("Not all conformers have energies.")
+        energies = cast(List[float], energies)
         indices = np.argsort(energies)
         self.conformers = [self.conformers[i] for i in indices]
 
