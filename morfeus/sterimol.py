@@ -123,7 +123,6 @@ class Sterimol:
         # Set up attributes
         self._atoms = atoms
         self._excluded_atoms = set(excluded_atoms)
-        self._points = np.array([])
         self._origin = origin
 
         self._dummy_atom = dummy_atom
@@ -282,7 +281,7 @@ class Sterimol:
     def calculate(self) -> None:
         """Calculate Sterimol parameters."""
         # Use coordinates and radii if points are not given
-        if not len(self._points) > 0:
+        if not hasattr(self, "_points"):
             coordinates = []
             radii = []
             for atom in self._atoms:
@@ -300,7 +299,7 @@ class Sterimol:
         bond_length = np.linalg.norm(vector)
         unit_vector = vector / np.linalg.norm(vector)
 
-        if not len(self._points) > 0:
+        if not hasattr(self, "_points"):
             c_values = np.dot(unit_vector.reshape(1, -1), coordinates.T)
             projected = c_values + radii
         else:
@@ -320,7 +319,7 @@ class Sterimol:
         rot_vectors = np.column_stack((x, y, z))
 
         # Project coordinates onto rotation vectors
-        if not len(self._points) > 0:
+        if not hasattr(self, "_points"):
             c_values = np.dot(rot_vectors, coordinates.T)
             projected = c_values + radii
         else:
