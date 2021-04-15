@@ -9,7 +9,7 @@ import scipy.spatial
 
 from morfeus.data import jmol_colors
 from morfeus.geometry import Atom, kabsch_rotation_matrix, sphere_line_intersection
-from morfeus.plotting import Arrow3D
+from morfeus.plotting import get_drawing_arrow
 from morfeus.sasa import SASA
 from morfeus.typing import Array1D, ArrayLike1D, ArrayLike2D
 from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
@@ -421,21 +421,21 @@ class Sterimol:
         length = np.linalg.norm(self.L)
         direction = self.L / length
         stop_L = start_L + length * direction
-        L_arrow = Arrow3D(start=start_L, direction=direction, length=length)
+        L_arrow = get_drawing_arrow(start=start_L, direction=direction, length=length)
         p.add_mesh(L_arrow, color=arrow_color)
 
         # Add B_1 arrow
         length = np.linalg.norm(self.B_1)
         direction = self.B_1 / length
         stop_B_1 = start_B + length * direction
-        B_1_arrow = Arrow3D(start=start_B, direction=direction, length=length)
+        B_1_arrow = get_drawing_arrow(start=start_B, direction=direction, length=length)
         p.add_mesh(B_1_arrow, color=arrow_color)
 
         # Add B_5 arrow
         length = np.linalg.norm(self.B_5)
         direction = self.B_5 / length
         stop_B_5 = start_B + length * direction
-        B_5_arrow = Arrow3D(start=start_B, direction=direction, length=length)
+        B_5_arrow = get_drawing_arrow(start=start_B, direction=direction, length=length)
         p.add_mesh(B_5_arrow, color=arrow_color)
 
         # Add labels

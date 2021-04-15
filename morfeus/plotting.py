@@ -13,7 +13,7 @@ if typing.TYPE_CHECKING:
 
 
 @requires_dependency([Import(module="pyvista", alias="pv")], globals())
-def Arrow3D(
+def get_drawing_arrow(
     start: Optional[Sequence[float]] = None,
     direction: Optional[Sequence[float]] = None,
     length: float = 1,
@@ -59,7 +59,7 @@ def Arrow3D(
 
     # Create cone
     cone_center = start + (cylinder_length + tip_length / 2) * direction
-    cone = Cone3D(
+    cone = get_drawing_cone(
         center=cone_center,
         direction=direction,
         radius=tip_radius,
@@ -76,7 +76,7 @@ def Arrow3D(
 
 
 @requires_dependency([Import(module="pyvista", alias="pv"), Import("vtk")], globals())
-def Cone3D(
+def get_drawing_cone(
     center: Optional[Sequence[float]] = None,
     direction: Optional[Sequence[float]] = None,
     height: float = 1.0,

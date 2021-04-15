@@ -353,6 +353,7 @@ class Dispersion:
             axis=0,
         )
         p = cast(np.ndarray, p)
+
         self.p_values = p
 
         # Take out atomic p_ints if no points are given

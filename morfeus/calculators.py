@@ -1,7 +1,7 @@
 """Internal calculators."""
 
 import typing
-from typing import Dict, Iterable, List, Sequence, Union
+from typing import Dict, Iterable, List, Union
 
 import numpy as np
 from scipy.spatial.distance import cdist
@@ -41,7 +41,7 @@ class D3Grimme:
 
     c_n_coefficients: Dict[int, Array1D]
     polarizabilities: Array1D
-    _atoms: Sequence["ase.Atoms"]
+    _atoms: List["ase.Atoms"]
 
     def __init__(
         self,
@@ -112,7 +112,7 @@ class D4Grimme:
     c_n_coefficients: Dict[int, Array1D]
     charges: Array1D
     polarizabilities: Array1D
-    _atoms: Sequence["ase.Atoms"]
+    _atoms: List["ase.Atoms"]
 
     def __init__(
         self,

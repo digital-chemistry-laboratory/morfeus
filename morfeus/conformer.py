@@ -9,7 +9,6 @@ import tempfile
 import typing
 from typing import (
     Any,
-    cast,
     Counter,
     Dict,
     Iterable,
@@ -320,7 +319,6 @@ class ConformerEnsemble:
 
         if not all([isinstance(energy, float) for energy in energies]):
             self._add_conformers(conformer_coordinates)
-        energies = cast(float, energies)  # typing
         self.add_conformers(conformer_coordinates, energies)
 
     @requires_dependency([Import(module="rdkit.Chem", item="AllChem")], globals())
@@ -1041,7 +1039,6 @@ class ConformerEnsemble:
         energies = [conformer.energy for conformer in self.conformers]
         if not all([isinstance(energy, float) for energy in energies]):
             raise ValueError("Not all conformers have energies.")
-        energies = cast(List[float], energies)  # typing
         indices = np.argsort(energies)
         self.conformers = [self.conformers[i] for i in indices]
 

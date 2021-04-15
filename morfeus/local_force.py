@@ -4,7 +4,6 @@ from os import PathLike
 from typing import Any, Dict, FrozenSet, Iterable, List, Optional, Sequence, Union
 
 import numpy as np
-from scipy.io import FortranFile
 
 from morfeus.data import (
     AFU,
@@ -58,7 +57,6 @@ class LocalForce:
     _D: Array2D
     _elements: List[int]
     _fc_matrix: Array2D
-    _force_constants_full: Array1D
     _force_constants: Array1D
     _ifc_matrix: Array2D
     _input_coordinates: Array2D
@@ -76,7 +74,6 @@ class LocalForce:
         self._internal_coordinates = InternalCoordinates()
         self.internal_coordinates = self._internal_coordinates.internal_coordinates
 
-        masses: Optional[Array1D]
         if elements is not None:
             elements = convert_elements(elements, output="numbers")
             self._elements = elements
@@ -98,7 +95,7 @@ class LocalForce:
     def compute_compliance(self) -> None:
         """Compute local force constants with the compliance matrix method."""
         # Compute B matrix if it does not exists
-        if len(self._B) == 0:
+        if not hasattr(self, "_B"):
             self._B = self._internal_coordinates.get_B_matrix(self._coordinates)
 
         # Compute compliance matrix and get local force constants
@@ -126,7 +123,9 @@ class LocalForce:
 
         self.local_frequencies = frequencies
 
-    def compute_local(self, project_imag: bool = True, cutoff: float = 1e-3) -> None:
+    def compute_local(  # noqa: C901
+        self, project_imag: bool = True, cutoff: float = 1e-3
+    ) -> None:
         """Compute local force constants with the local modes approach.
 
         Args:
@@ -140,10 +139,9 @@ class LocalForce:
             self._D = self._B @ self._normal_modes.T
 
         # Project out imaginary modes
-        if project_imag and getattr(self, "n_imag", 0) > 0:
+        if project_imag is True and self.n_imag > 0:
             # Save full D matrix and force constant vector
             self._D_full = self._D
-            self._force_constants_full = self._force_constants
 
             # Remove force constants with imaginary force constants
             self._force_constants = self._force_constants[self.n_imag :]
@@ -168,7 +166,7 @@ class LocalForce:
         k_s = np.array(k_s)
 
         # Scale force constants due to projection of imaginary normal modes
-        if project_imag and getattr(self, "n_imag", 0) > 0:
+        if project_imag and self.n_imag > 0:
             lengths = np.linalg.norm(self._D, axis=1)
             lengths_full = np.linalg.norm(self._D_full, axis=1)
             k_s *= lengths / lengths_full
@@ -187,20 +185,14 @@ class LocalForce:
             radii: Covalent radii (Å)
             radii_type: Covalent radii type: 'pyykko'
             scale_factor: Scale factor for covalent radii
-
-        Raises:
-            Exception: When elements or coordinates are missing
         """
-        if len(self._elements) > 0 and len(self._coordinates) > 0:
-            self._internal_coordinates.detect_bonds(
-                self._coordinates,
-                self._elements,
-                radii=radii,
-                radii_type=radii_type,
-                scale_factor=scale_factor,
-            )
-        else:
-            raise Exception("Elements or coordinates missing.")
+        self._internal_coordinates.detect_bonds(
+            self._coordinates,
+            self._elements,
+            radii=radii,
+            radii_type=radii_type,
+            scale_factor=scale_factor,
+        )
 
     def get_local_force_constant(self, atoms: Sequence[int]) -> float:
         """Return the local force constant between a set of atoms.
@@ -212,12 +204,12 @@ class LocalForce:
             force_constant: Local force constant (mDyne/Å, mDyne Å/rad²)
 
         Raises:
-            Exception: When no internal coordinate found
+            ValueError: When no internal coordinate found
         """
         coordinate = _get_internal_coordinate(atoms)
         index = self.internal_coordinates.index(coordinate)
         if index is None:
-            raise Exception(f"No internal coordinate with these atoms: {atoms}")
+            raise ValueError(f"No internal coordinate with these atoms: {atoms}")
         force_constant: float = self.local_force_constants[index]
 
         return force_constant
@@ -232,12 +224,12 @@ class LocalForce:
             frequency: Local frequency (cm⁻¹)
 
         Raises:
-            Exception: When no internal coordinate found
+            ValueError: When no internal coordinate found
         """
         coordinate = _get_internal_coordinate(atoms)
         index = self.internal_coordinates.index(coordinate)
         if index is None:
-            raise Exception(f"No internal coordinate with these atoms: {atoms}.")
+            raise ValueError(f"No internal coordinate with these atoms: {atoms}.")
         frequency: float = self.local_frequencies[index]
 
         return frequency
@@ -260,7 +252,6 @@ class LocalForce:
             },
             "xtb": {
                 "hessian": self._parse_xtb_hessian,
-                "normal_modes": self._parse_xtb_normal_modes,
             },
             "unimovib": {
                 "local": self._parse_unimovib_local,
@@ -409,8 +400,6 @@ class LocalForce:
                 continue
             index = self.internal_coordinates.index(coordinate)
             force_constant = self.local_force_constants[index]
-            if len(self.local_frequencies) > 0:
-                frequency = self.local_frequencies[index]
 
             # Convert units for angles and dihedrals
             if len(coordinate.atoms) > 2 and angle_units:
@@ -418,7 +407,8 @@ class LocalForce:
 
             # Print out the results
             string = f"{repr(coordinate):30s}" + f"{force_constant:50.3f}"
-            if len(self.local_frequencies) > 0:
+            if hasattr(self, "local_frequencies"):
+                frequency = self.local_frequencies[index]
                 string += f"{frequency:30.0f}"
             print(string)
 
@@ -1141,45 +1131,6 @@ class LocalForce:
         # Set up force constant matrix
         dimension = int(np.sqrt(len(hessian)))
         self._fc_matrix = np.array(hessian).reshape(dimension, dimension)
-
-    def _parse_xtb_normal_modes(self, file: Union[str, PathLike]) -> None:
-        # Read in data from xtb normal modes file
-        with FortranFile(file) as f:
-            n_modes = f.read_ints()[0]
-            frequencies = f.read_reals()
-            reduced_masses = f.read_reals()
-            xtb_normal_modes = f.read_reals().reshape(n_modes, -1)
-
-        # Find the number of rotations and translations
-        n_tr_1 = np.sum(frequencies == 0)
-        n_tr_2 = np.sum(reduced_masses == 0)
-        n_tr_3 = np.sum(np.sum(xtb_normal_modes, axis=1) == 0)
-        if n_tr_1 == n_tr_2 == n_tr_3:
-            frequencies = frequencies[n_tr_1:]
-            reduced_masses = reduced_masses[n_tr_1:]
-            xtb_normal_modes = xtb_normal_modes[n_tr_1:]
-        else:
-            raise Exception("Can't determine the number of translations and rotations.")
-
-        # Un-mass-weight normal modes, calculate reduced masses and normalize
-        m_inverse = 1 / np.repeat(self._masses, 3)
-        cart_disp = xtb_normal_modes * np.sqrt(m_inverse)
-        N = 1 / np.linalg.norm(cart_disp, axis=1)
-        norm_cart_disp = cart_disp * N.reshape(-1, 1)
-        reduced_masses = N ** 2
-
-        # Calculate force constants
-        force_constants = (
-            4 * np.pi ** 2 * (frequencies * 100) ** 2 * C ** 2 * reduced_masses * AMU
-        )
-        force_constants = force_constants / (DYNE / 1000) * ANGSTROM
-
-        # Detect imaginary modes
-        n_imag = np.sum(frequencies < 0)
-
-        self._normal_modes = norm_cart_disp
-        self._force_constants = force_constants
-        self.n_imag = n_imag
 
     def __repr__(self) -> str:
         n_internal = len(self.internal_coordinates)

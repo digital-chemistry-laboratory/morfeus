@@ -1,7 +1,7 @@
 """Help classes and functions related to geometry."""
 
 import math
-from typing import cast, Iterable, List, Optional, Sequence, Union
+from typing import Iterable, List, Optional, Sequence, Union
 
 import numpy as np
 from scipy.spatial.transform import Rotation
@@ -97,14 +97,14 @@ class Cone:
     """
 
     angle: float
-    atoms: Sequence[Atom]
+    atoms: List[Atom]
     normal: Array1D
 
     def __init__(
         self, angle: float, atoms: Sequence[Atom], normal: ArrayLike1D
     ) -> None:
         self.angle = angle
-        self.atoms = atoms
+        self.atoms = list(atoms)
         self.normal = np.array(normal)
 
     def is_inside(self, atom: Atom) -> bool:
@@ -115,13 +115,7 @@ class Cone:
 
         Returns:
             True if inside, False if outside.
-
-        Raises:
-            AttributeError: When atom doesn't have cone.
         """
-        if not hasattr(atom, "cone"):
-            raise AttributeError("Atom needs to have cone.")
-
         # Get vertex angle of atom
         beta = atom.cone.angle
 
@@ -190,7 +184,7 @@ class Cone:
         else:
             raise ValueError(f"method={method} not supported.")
 
-        is_inside = cast(np.ndarray, inside)
+        is_inside: np.ndarray = inside
 
         return is_inside
 
@@ -751,7 +745,7 @@ class InternalCoordinates:
             coordinates,
             elements=elements,
             radii=radii,
-            radii_type="pyykko",
+            radii_type=radii_type,
             scale_factor=scale_factor,
         )
         indices = np.where(connectivity_matrix)

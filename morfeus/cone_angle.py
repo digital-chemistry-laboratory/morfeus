@@ -9,7 +9,7 @@ import numpy as np
 
 from morfeus.data import atomic_symbols, jmol_colors
 from morfeus.geometry import Atom, Cone
-from morfeus.plotting import Cone3D
+from morfeus.plotting import get_drawing_cone
 from morfeus.typing import ArrayLike1D, ArrayLike2D
 from morfeus.utils import (
     check_distances,
@@ -96,7 +96,7 @@ class ConeAngle:
             remove_atoms: Set[Atom] = set()
             for cone_atom in loop_atoms:
                 for test_atom in loop_atoms:
-                    if cone_atom != test_atom:
+                    if cone_atom is not test_atom:
                         if cone_atom.cone.is_inside(test_atom):
                             remove_atoms.add(test_atom)
             for atom in remove_atoms:
@@ -162,7 +162,9 @@ class ConeAngle:
         """
         # Get the largest cone
         atoms = self._atoms
-        alphas = [atom.cone.angle for atom in atoms]
+        alphas: List[float] = []
+        for atom in atoms:
+            alphas.append(atom.cone.angle)
         idx = int(np.argmax(alphas))
         max_1_cone = atoms[idx].cone
 
@@ -298,7 +300,7 @@ class ConeAngle:
             max_extension += 1
 
         # Make the cone
-        cone = Cone3D(
+        cone = get_drawing_cone(
             center=[0, 0, 0] + (max_extension * normal) / 2,
             direction=-normal,
             angle=cone_angle,

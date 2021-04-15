@@ -12,7 +12,7 @@ import scipy.spatial
 from morfeus.data import jmol_colors
 from morfeus.geometry import Atom, kabsch_rotation_matrix, rotate_coordinates, Sphere
 from morfeus.sasa import SASA
-from morfeus.typing import ArrayLike1D, ArrayLike2D
+from morfeus.typing import Array1D, Array2D, ArrayLike1D, ArrayLike2D
 from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
@@ -90,20 +90,20 @@ class BuriedVolume:
     """
 
     buried_volume: float
-    distal_volume: Optional[float]
+    distal_volume: float
     free_volume: float
-    molecular_volume: Optional[float]
+    molecular_volume: float
     octants: Dict[str, Dict[int, float]]
     percent_buried_volume: float
     quadrants: Dict[str, Dict[int, float]]
-    _all_coordinates: np.ndarray
+    _all_coordinates: Array2D
     _atoms: List[Atom]
-    _buried_points: np.ndarray
+    _buried_points: Array1D
     _density: float
     _excluded_atoms: Set[int]
-    _free_points: np.ndarray
-    _octant_limits: Optional[
-        Dict[int, Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]]
+    _free_points: Array1D
+    _octant_limits: Dict[
+        int, Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]
     ]
     _sphere: Sphere
 
@@ -193,13 +193,6 @@ class BuriedVolume:
         # Compute buried volume
         self._compute_buried_volume(center=center, radius=radius, density=density)
 
-        # Set up attributes
-        self.molecular_volume = None
-        self.distal_volume = None
-        self._octant_limits = None
-        self.octants = {}
-        self.quadrants = {}
-
     def octant_analysis(self) -> None:
         """Perform octant analysis of the buried volume."""
         # Set up limits depending on the sphere radius
@@ -253,9 +246,11 @@ class BuriedVolume:
             percent_buried_volume[name] = fraction_buried * 100
             buried_volume[name] = fraction_buried * octant_volume
             free_volume[name] = (1 - fraction_buried) * octant_volume
-        self.octants["percent_buried_volume"] = percent_buried_volume
-        self.octants["buried_volume"] = buried_volume
-        self.octants["free_volume"] = free_volume
+        self.octants = {
+            "percent_buried_volume": percent_buried_volume,
+            "buried_volume": buried_volume,
+            "free_volume": free_volume,
+        }
 
         # Do quadrant analysis
         percent_buried_volume = {}
@@ -277,9 +272,11 @@ class BuriedVolume:
             free_volume[name] = sum(
                 [self.octants["free_volume"][octant] for octant in octants]
             )
-        self.quadrants["percent_buried_volume"] = percent_buried_volume
-        self.quadrants["buried_volume"] = buried_volume
-        self.quadrants["free_volume"] = free_volume
+        self.quadrants = {
+            "percent_buried_volume": percent_buried_volume,
+            "buried_volume": buried_volume,
+            "free_volume": free_volume,
+        }
 
         self._octant_limits = octant_limits
 
@@ -355,6 +352,9 @@ class BuriedVolume:
             # Calculate distal volume
             self.distal_volume = self.molecular_volume - self.buried_volume
         elif method == "buried_volume":
+            if octants is True and self.octants is None:
+                raise ValueError("Needs octant analysis.")
+
             # Save the values for the old buried volume calculation
             temp_bv = copy.deepcopy(self)
 
@@ -378,8 +378,9 @@ class BuriedVolume:
             )
             self.molecular_volume = temp_bv.buried_volume
             self.distal_volume = self.molecular_volume - self.buried_volume
-            if octants:
+            if octants is True:
                 temp_bv.octant_analysis()
+
                 # Octant analysis
                 distal_volume = {}
                 molecular_volume = {}

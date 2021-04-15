@@ -9,7 +9,7 @@ from numpy.testing import assert_almost_equal, assert_array_almost_equal
 from morfeus import read_xyz, SASA
 
 DATA_DIR = Path(__file__).parent / "data" / "sasa"
-XYZ_DIR = Path(__file__).parent / "data" / "buried_volume"
+XYZ_DIR = Path(__file__).parent / "data" / "buried_volume" / "xyz"
 
 
 def pytest_generate_tests(metafunc):
