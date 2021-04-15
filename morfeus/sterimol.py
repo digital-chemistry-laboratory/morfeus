@@ -2,7 +2,7 @@
 
 import math
 import typing
-from typing import Iterable, List, Optional, Sequence, Set, Union
+from typing import cast, Iterable, List, Optional, Sequence, Set, Union
 
 import numpy as np
 import scipy.spatial
@@ -27,7 +27,8 @@ class Sterimol:
         elements: Elements as atomic symbols or numbers
         coordinates: Coordinates (Å)
         dummy_index: Index of dummy atom (1-indexed)
-        attached_index: Index of attached atom of substituent (1-indexed)
+        attached_index: Index of attached atom of substituent (1-indexed). For a list of
+            indices, a dummy atom is created at their geometric center
         radii: List of radii (Å)
         radii_type: vdW radii type: 'alvarez', 'bondi', 'crc' or 'truhlar'
         n_rot_vectors: Number of rotational vectors for determining B₁ and B₅
@@ -68,7 +69,7 @@ class Sterimol:
         elements: Union[Iterable[int], Iterable[str]],
         coordinates: ArrayLike2D,
         dummy_index: int,
-        attached_index: int,
+        attached_index: Union[int, Iterable[int]],
         radii: Optional[ArrayLike1D] = None,
         radii_type: str = "crc",
         n_rot_vectors: int = 3600,
@@ -87,10 +88,21 @@ class Sterimol:
         if radii is None:
             radii = get_radii(elements, radii_type=radii_type)
         radii = np.array(radii)
-        all_radii = radii
+
+        # Add dummy atom if multiple attached indices are given
+        if isinstance(attached_index, Iterable):
+            attached_dummy_coordinates = np.mean(
+                [coordinates[i - 1] for i in attached_index], axis=0
+            )
+            attached_dummy_coordinates = cast(np.ndarray, attached_dummy_coordinates)
+            coordinates = np.vstack([coordinates, attached_dummy_coordinates])
+            elements.append(0)
+            radii = np.concatenate([radii, [0.0]])
+            attached_index = len(elements)
 
         # Set up coordinate array
         all_coordinates = coordinates
+        all_radii = radii
 
         # Translate coordinates so origin is at atom 2
         origin = all_coordinates[attached_index - 1]
@@ -100,6 +112,7 @@ class Sterimol:
         vector_2_to_1 = (
             all_coordinates[attached_index - 1] - all_coordinates[dummy_index - 1]
         )
+        bond_length = np.linalg.norm(vector_2_to_1)
         vector_2_to_1 = vector_2_to_1 / np.linalg.norm(vector_2_to_1)
 
         # Get rotation quaternion that overlays vector with x-axis
@@ -128,7 +141,7 @@ class Sterimol:
         self._dummy_atom = dummy_atom
         self._attached_atom = attached_atom
 
-        self.bond_length = np.linalg.norm(vector_2_to_1)
+        self.bond_length = bond_length
 
         self._n_rot_vectors = n_rot_vectors
 
@@ -394,7 +407,10 @@ class Sterimol:
         # Draw molecule
         for atom in self._atoms:
             color = hex2color(jmol_colors[atom.element])
-            radius = atom.radius * atom_scale
+            if atom.element == 0:
+                radius = 0.5 * atom_scale
+            else:
+                radius = atom.radius * atom_scale
             sphere = pv.Sphere(center=list(atom.coordinates), radius=radius)
             if atom.index in self._excluded_atoms:
                 opacity = 0.25
@@ -409,7 +425,7 @@ class Sterimol:
             )
             p.add_mesh(sphere, opacity=0.25)
 
-        if len(self._points) > 0:
+        if hasattr(self, "_points"):
             p.add_points(self._points, color="gray")
 
         # Get arrow starting points

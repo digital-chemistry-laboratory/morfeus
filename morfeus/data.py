@@ -897,6 +897,7 @@ cov_radii_pyykko: Dict[int, float] = {
 """Atomic numbers as keys and Pyykkö radii as values."""
 
 jmol_colors: Dict[int, Optional[str]] = {
+    0: "#ffffff",
     1: "#ffffff",
     2: "#ffc0cb",
     3: "#b22222",
