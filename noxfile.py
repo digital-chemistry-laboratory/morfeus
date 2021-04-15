@@ -25,7 +25,6 @@ def tests(session: Session) -> None:
         silent=False,
     )
     session.conda_install("pytest", "pytest-cov")
-    session.conda_install("rdkit")
     session.install("-e", ".", "--no-deps")
     session.run("pytest", *args)
 
@@ -36,6 +35,7 @@ def lint(session: Session) -> None:
     """Lint code."""
     args = session.posargs or locations
     session.conda_install(
+        "--channel=conda-forge",
         "flake8",
         "flake8-black",
         "flake8-bugbear",
@@ -52,7 +52,7 @@ def lint(session: Session) -> None:
 def black(session: Session) -> None:
     """Format code."""
     args = session.posargs or locations
-    session.conda_install("black")
+    session.conda_install("--channel=conda-forge", "black")
     session.run("black", *args)
 
 
@@ -61,5 +61,5 @@ def black(session: Session) -> None:
 def mypy(session: Session) -> None:
     """Run the static type checker."""
     args = session.posargs or locations
-    session.conda_install("mypy")
+    session.conda_install("--channel=conda-forge", "mypy")
     session.run("mypy", *args)
