@@ -2,6 +2,8 @@
 Dispersion descriptor
 =====================
 
+:sup:`test`
+
 The universal quantitative dispersion descriptor :cite:`pollice_universal_2019`
 can be calculated either approximately based on tabulated vdW radii, or more
 accurately based on computed electron density isosurfaces. Dispersion is

@@ -3,7 +3,7 @@ XTB
 ===
 
 Electronic parameters can be calculated at the GFN1-xTB or GFN2-xTB levels
-using the xtb-python_ interface (which needs to be installed). 
+using the xtb-python__ interface (which needs to be installed). 
 
 ******
 Module
@@ -145,4 +145,4 @@ References
   :style: unsrt
   :filter: docname in docnames
 
-.. _xtb-python: https://github.com/grimme-lab/xtb-python/
+.. __: https://github.com/grimme-lab/xtb-python/

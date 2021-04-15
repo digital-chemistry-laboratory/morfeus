@@ -9,7 +9,7 @@ Exact cone angles are implemented as described by Allen and co-workers
 Command line script
 *******************
 
-The command line script provides access to the basic functionality through the 
+The command line script provides access to the basic functionality through the
 terminal.
 
 .. code-block:: console
