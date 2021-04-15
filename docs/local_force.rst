@@ -76,7 +76,8 @@ fchk ``freq=intmodes``
 
 ``iop(7/75=1)`` triggers printing of the internal modes with full accuracy,
 while ``iop(1/33=3)`` triggers printing of the Wilson B matrix. The table below
-lists all the quantities read by each approach.
+lists all the quantities read by each approach. fchk files should be generated
+with ``formchk -3`` to obtain maximum printout of internal coordinates.
 
 .. table:: Quantities from Gaussian files.
   :widths: auto
