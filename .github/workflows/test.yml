@@ -22,7 +22,7 @@ jobs:
         run: |
           conda install pip
           conda install nox
-        shell: bash
+        shell: bash -l {0} 
       - name: Run `nox -s tests`     
         run: python -m nox -s tests-${{ matrix.python_version }}          
-        shell: bash     
+        shell: bash -l {0} 
