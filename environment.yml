@@ -1,4 +1,3 @@
-name: morfeus
 dependencies:
 - numpy
 - scipy

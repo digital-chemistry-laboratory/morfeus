@@ -20,7 +20,6 @@ jobs:
           miniforge-version: latest
       - name: Install dependencies
         run: |
-          conda install pip
           conda install nox
         shell: bash -l {0} 
       - name: Run `nox -s tests`     
