@@ -14,10 +14,13 @@ pyversions = ["3.8", "3.9"]
 def tests(session: Session) -> None:
     """Run tests."""
     args = session.posargs or ["--cov", "--import-mode=importlib", "-s"]
-    session.conda_install("numpy", "scipy")
-    session.conda_install("pytest", "pytest-cov")
-    session.install("-e", ".", "--no-deps")
-    session.run("pytest", *args)
+    session.conda_install("numpy", "scipy", "pytest", "pytest-cov")
+    session.install(".", "--no-deps")
+    session.run(
+        "pytest",
+        *args,
+        env={"CONDA_PREFIX": session.bin, "CONDA_DEFAULT_ENV": session.get_session_id()}
+    )
 
 
 # Linting
