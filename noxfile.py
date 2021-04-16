@@ -6,7 +6,7 @@ from nox.sessions import Session
 package = "morfeus"
 nox.options.sessions = "lint", "tests", "mypy"  # default session
 locations = "morfeus", "tests", "noxfile.py"  # Linting locations
-pyversions = ["3.8"]
+pyversions = ["3.7", "3.8", "3.9"]
 
 
 # Testing
@@ -48,7 +48,7 @@ def lint(session: Session) -> None:
 
 
 # Code formatting
-@nox.session(venv_backend="conda", python="3.8")
+@nox.session(venv_backend="conda", python="3.9")
 def black(session: Session) -> None:
     """Format code."""
     args = session.posargs or locations
@@ -57,7 +57,7 @@ def black(session: Session) -> None:
 
 
 # Static typing
-@nox.session(venv_backend="conda", python="3.8")
+@nox.session(venv_backend="conda", python="3.9")
 def mypy(session: Session) -> None:
     """Run the static type checker."""
     args = session.posargs or locations
