@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="",
     packages=["morfeus"],
-    package_data={"morfeus": ["../data/c6_reference_data.pickle"]},
+    python_requires=">=3.8",
     install_requires=["numpy", "scipy"],
     classifiers=[
         "Programming Language :: Python :: 3",

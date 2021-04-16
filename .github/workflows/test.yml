@@ -10,7 +10,7 @@ jobs:
       matrix:
         os: [Ubuntu, Windows, macOS]
         python_version:
-          ["3.7", "3.8", "3.9"]
+          ["3.8", "3.9"]
     steps:          
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
