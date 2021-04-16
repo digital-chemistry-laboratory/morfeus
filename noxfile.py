@@ -16,15 +16,13 @@ def tests(session: Session) -> None:
     args = session.posargs or ["--cov", "--import-mode=importlib", "-s"]
     session.conda_install("numpy", "scipy", "pytest", "pytest-cov")
     session.install(".", "--no-deps")
-    session.run(
-        "pytest",
-        *args,
-        env={
-            "CONDA_PREFIX": session.virtualenv.location,
-            "CONDA_DEFAULT_ENV": session._runner.friendly_name,
-            "PATH": session.virtualenv.location,
-        },
-    )
+
+    new_env = dict(session.env)
+    new_env["PATH"] += f":{session.virtualenv.location}"
+    new_env["CONDA_PREFIX"] = session.virtualenv.location
+    new_env["CONDA_DEFAULT_ENV"] = session._runner.friendly_name
+
+    session.run("pytest", *args, env=new_env)
 
 
 # Linting
