@@ -1,7 +1,5 @@
 """Automated testing linting and formatting apparatus."""
 # external
-import os
-
 import nox
 from nox.sessions import Session
 
@@ -16,12 +14,7 @@ pyversions = ["3.8", "3.9"]
 def tests(session: Session) -> None:
     """Run tests."""
     args = session.posargs or ["--cov", "--import-mode=importlib", "-s"]
-    conda_exe = os.environ["CONDA_EXE"]
-    session.run(
-        *f"{conda_exe} env update --prefix {session.virtualenv.location} --file environment.yml".split(),
-        silent=False,
-        external=True,
-    )
+    session.conda_install("numpy", "scipy")
     session.conda_install("pytest", "pytest-cov")
     session.install("-e", ".", "--no-deps")
     session.run("pytest", *args)
