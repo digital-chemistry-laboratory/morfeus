@@ -6,7 +6,7 @@ from nox.sessions import Session
 package = "morfeus"
 nox.options.sessions = "lint", "tests", "mypy"  # default session
 locations = "morfeus", "tests", "noxfile.py"  # Linting locations
-pyversions = ["3.8", "3.9"]
+pyversions = ["3.9"]
 
 
 # Testing
@@ -19,7 +19,10 @@ def tests(session: Session) -> None:
     session.run(
         "pytest",
         *args,
-        env={"CONDA_PREFIX": session.bin, "CONDA_DEFAULT_ENV": session.get_session_id()}
+        env={
+            "CONDA_PREFIX": session.virtualenv.location,
+            "CONDA_DEFAULT_ENV": session._runner.friendly_name,
+        },
     )
 
 
