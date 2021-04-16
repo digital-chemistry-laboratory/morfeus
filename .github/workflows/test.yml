@@ -14,15 +14,12 @@ jobs:
     steps:          
       - uses: actions/checkout@v2
       - name: Install Python ${{ matrix.python_version }}
-        uses: conda-incubator/setup-miniconda@v2
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python_version }}
-          miniforge-version: latest
-          auto-update-conda: true
       - name: Install dependencies
-        run: |
-          conda install nox
-        shell: bash -l {0} 
+        run: pip install nox
+        shell: bash
       - name: Run `nox -s tests`     
         run: python -m nox -s tests-${{ matrix.python_version }}          
-        shell: bash -l {0} 
+        shell: bash 

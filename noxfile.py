@@ -10,28 +10,21 @@ pyversions = ["3.8", "3.9"]
 
 
 # Testing
-@nox.session(venv_backend="conda", python=pyversions)
+@nox.session(python=pyversions)
 def tests(session: Session) -> None:
     """Run tests."""
     args = session.posargs or ["--cov", "--import-mode=importlib", "-s"]
-    session.conda_install("numpy", "scipy", "pytest", "pytest-cov")
+    session.install("numpy", "scipy", "pytest", "pytest-cov")
     session.install(".", "--no-deps")
-
-    new_env = dict(session.env)
-    new_env["PATH"] += f":{session.virtualenv.location}"
-    new_env["CONDA_PREFIX"] = session.virtualenv.location
-    new_env["CONDA_DEFAULT_ENV"] = session._runner.friendly_name
-
-    session.run("pytest", *args, env=new_env)
+    session.run("pytest", *args)
 
 
 # Linting
-@nox.session(venv_backend="conda", python="3.8")
+@nox.session(python="3.9")
 def lint(session: Session) -> None:
     """Lint code."""
     args = session.posargs or locations
-    session.conda_install(
-        "--channel=conda-forge",
+    session.install(
         "flake8",
         "flake8-black",
         "flake8-bugbear",
@@ -44,18 +37,18 @@ def lint(session: Session) -> None:
 
 
 # Code formatting
-@nox.session(venv_backend="conda", python="3.9")
+@nox.session(python="3.9")
 def black(session: Session) -> None:
     """Format code."""
     args = session.posargs or locations
-    session.conda_install("--channel=conda-forge", "black")
+    session.install("black")
     session.run("black", *args)
 
 
 # Static typing
-@nox.session(venv_backend="conda", python="3.9")
+@nox.session(python="3.9")
 def mypy(session: Session) -> None:
     """Run the static type checker."""
     args = session.posargs or locations
-    session.conda_install("--channel=conda-forge", "mypy")
+    session.install("mypy")
     session.run("mypy", *args)
