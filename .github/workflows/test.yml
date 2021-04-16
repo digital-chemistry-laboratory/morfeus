@@ -18,6 +18,7 @@ jobs:
         with:
           python-version: ${{ matrix.python_version }}
           miniforge-version: latest
+          auto-update-conda: true
       - name: Install dependencies
         run: |
           conda install nox
