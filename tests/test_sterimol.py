@@ -14,7 +14,7 @@ DATA_DIR = Path(__file__).parent / "data" / "sterimol"
 
 def test_H():
     """Test H substituent."""
-    elements, coordinates = read_gjf(DATA_DIR / "gjfs" / f"H.gjf")
+    elements, coordinates = read_gjf(DATA_DIR / "gjfs" / "H.gjf")
     radii = get_radii(elements, radii_type="bondi")
     radii = [1.09 if radius == 1.20 else radius for radius in radii]
     sterimol = Sterimol(elements, coordinates, 1, 2, radii=radii)
