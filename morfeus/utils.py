@@ -49,15 +49,15 @@ def get_excluded_from_connectivity(
 
     Args:
         connectivity_matrix: Connectivity matrix
-        center_atoms: Atoms of central unit which connects to fragment
-        connected_atoms: Atoms of fragment
+        center_atoms: Atoms of central unit which connects to fragment (1-indexed)
+        connected_atoms: Atoms of fragment (1-indexed)
 
     Returns:
         excluded_atoms: Atom indices to exclude
 
     Raises:
         ValueError: When connected atoms belong to different fragments or when connected
-            atoms belong to same fragment as other neighbors of center atoms.
+            atoms belong to same fragment as other neighbors of center atoms (1-indexed)
     """
     connectivity_matrix = np.array(connectivity_matrix)
     center_atoms = np.array(center_atoms).reshape(-1) - 1
@@ -90,17 +90,16 @@ def get_excluded_from_connectivity(
     return excluded_atoms
 
 
-# TODO change exclude_list, within_list, return empty list instead of None
 def check_distances(
     elements: Union[Iterable[int], Iterable[str]],
     coordinates: ArrayLike2D,
     check_atom: int,
     radii: Optional[ArrayLike1D] = None,
     check_radius: float = 0,
-    exclude_list: Optional[Sequence[int]] = None,
+    excluded_atoms: Optional[Sequence[int]] = None,
     epsilon: float = 0,
     radii_type: str = "crc",
-) -> Optional[List[int]]:
+) -> List[int]:
     """Check which atoms are within clashing vdW radii distances.
 
     Args:
@@ -109,13 +108,12 @@ def check_distances(
         check_atom: Index of atom to check against (1-indexed)
         radii: vdW radii (Å)
         check_radius: Radius to use for check_atom (Å)
-        exclude_list: Atom indices to exclude (1-indexed)
+        excluded_atoms: Atom indices to exclude (1-indexed)
         epsilon: Numeric term add to the radii (Å)
         radii_type: Radii type: 'alvarez', 'bondi', 'crc', 'pyykko', 'rahm' or 'truhlar'
 
     Returns:
         within_list: Atom indices within vdW distance of check atom.
-            Returns none if list is empty.
     """
     # Convert elements to atomic numbers if the are symbols
     elements = convert_elements(elements, output="numbers")
@@ -125,10 +123,10 @@ def check_distances(
         radii = get_radii(elements, radii_type=radii_type)
     radii = np.array(radii)
 
-    if exclude_list is None:
-        exclude_list = []
+    if excluded_atoms is None:
+        excluded_atoms = []
     else:
-        exclude_list = list(exclude_list)
+        excluded_atoms = list(excluded_atoms)
 
     coordinates = np.array(coordinates)
     atom_coordinates = np.array(coordinates)
@@ -148,14 +146,9 @@ def check_distances(
 
     # Remove check atom and atoms in the exclude list
     within_distance.remove(check_atom - 1)
-    within_distance = [i for i in within_distance if i not in exclude_list]
+    within_distance = [i + 1 for i in within_distance if i + 1 not in excluded_atoms]
 
-    # Return atoms which are within vdW distance from check atom
-    if within_distance:
-        within_list = [i + 1 for i in within_distance]
-        return within_list
-    else:
-        return None
+    return within_distance
 
 
 def requires_executable(executables: Sequence[str]) -> Callable[..., Callable]:

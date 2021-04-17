@@ -75,7 +75,7 @@ class VisibleVolume:
 
         # Check so that no atom is within vdW distance of metal atom
         within = check_distances(elements, coordinates, metal_index, radii=radii)
-        if within:
+        if len(within) > 0:
             atom_string = " ".join([str(i) for i in within])
             raise Exception("Atoms within vdW radius of central atom:", atom_string)
 
