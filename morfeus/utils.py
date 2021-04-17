@@ -18,6 +18,8 @@ from typing import (
 )
 
 import numpy as np
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import connected_components
 import scipy.spatial
 
 from morfeus.data import (
@@ -31,6 +33,61 @@ from morfeus.data import (
     radii_truhlar,
 )
 from morfeus.typing import Array2D, ArrayLike1D, ArrayLike2D
+
+
+def get_excluded_from_connectivity(
+    connectivity_matrix: ArrayLike2D,
+    center_atoms: ArrayLike1D,
+    connected_atoms: ArrayLike1D,
+) -> List[int]:
+    """Get atom indices to exclude bassed on connectivity and fragmentation.
+
+    Convenience function that determines atoms to exclude from a calculation of a larger
+    structure with multiple fragments. Connected atoms belong to the fragment of
+    interest, e.g., a ligand. Center atoms are those of e.g. a central metal atom that.
+    By default, the center atoms are added to the excluded ones.
+
+    Args:
+        connectivity_matrix: Connectivity matrix
+        center_atoms: Atoms of central unit which connects to fragment
+        connected_atoms: Atoms of fragment
+
+    Returns:
+        excluded_atoms: Atom indices to exclude
+
+    Raises:
+        ValueError: When connected atoms belong to different fragments or when connected
+            atoms belong to same fragment as other neighbors of center atoms.
+    """
+    connectivity_matrix = np.array(connectivity_matrix)
+    center_atoms = np.array(center_atoms).reshape(-1) - 1
+    connected_atoms = np.array(connected_atoms).reshape(-1) - 1
+    # Determine other neihgbors to the central atoms
+    other_neighbors = set(
+        connectivity_matrix[center_atoms].reshape(-1).nonzero()[0]
+    ).difference(connected_atoms)
+
+    # Calculate fragment labels
+    mask = np.ones(len(connectivity_matrix), dtype=bool)
+    mask[center_atoms] = False
+    graph = csr_matrix(connectivity_matrix)[mask, :][:, mask]
+    n_components, labels = connected_components(
+        csgraph=graph, directed=False, return_labels=True
+    )
+
+    # Take out labels and check for errors
+    connected_labels = set([labels[i] for i in connected_atoms])
+    if len(connected_labels) > 1:
+        raise ValueError("Connected atoms belong to different fragments.")
+    neighbor_labels = set([labels[i] for i in other_neighbors])
+    if len(neighbor_labels.intersection(connected_labels)) > 0:
+        raise ValueError(
+            "Connected atoms belong to same fragment as other neighbor of center atoms."
+        )
+    ref_label = list(connected_labels)[0]
+    excluded_atoms = list(np.where(labels != ref_label)[0] + 1)
+
+    return excluded_atoms
 
 
 # TODO change exclude_list, within_list, return empty list instead of None
