@@ -1,53 +1,76 @@
 """Help classes and functions related to geometry."""
 
 import math
+from typing import Iterable, List, Optional, Sequence, Union
 
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-from morfeus.helpers import get_connectivity_matrix
 from morfeus.data import ANGSTROM_TO_BOHR
+from morfeus.typing import Array1D, Array2D, ArrayLike1D, ArrayLike2D
+from morfeus.utils import get_connectivity_matrix
 
 
 class Atom:
     """Atom common for morfeus calculations.
 
     Args:
-        coordinates (ndarray): Coordinates (Å)
-        element (int): Atomic number (starting from 1) 
-        index (int): Atom index (starting from 1)
-        radius (float): vdW radius (Å)
+        element: Atomic number (starting from 1)
+        coordinates: Coordinates (Å)
+        radius: vdW radius (Å)
+        index: Atom index (starting from 1)
 
     Attributes:
-        accessible_points (list): Points accessible to solvent
-        area (float): Solvent-accessible surface area (Å**2)
-        cone (object): Cone tangent to atom
-        coordinates (ndarray): Coordinates (Å)
-        element (int): Atomic number (starting from 1)
-        index (int): Atom index (starting from 1)
-        occluded_points (list): Points occluded by other atoms
-        radius (float): vdW radius (Å)
-        volume (float): Volume inside solvent-accessible surface area (Å**3)   
+        accessible_mask: Boolean mask for accessible points
+        accessible_points: Points accessible to solvent (Å)
+        area: Solvent-accessible surface area (Å²)
+        cone: Cone tangent to atom
+        coordinates: Coordinates (Å)
+        coordination_number: Coordination number
+        element: Atomic number (1-indexed)
+        index: Atom index (1-indexed)
+        invisible_mask: Boolean mask for invisible points
+        occluded_mask: Boolean mask for occluded points
+        occluded_points: Points occluded by other atoms (Å)
+        p_values: P values
+        point_areas: Point areas (Å²)
+        point_volumes: Point volumes (Å³)
+        point: Points (Å)
+        proximal_mask: Boolean mask for proximal points
+        radius: vdW radius (Å)
+        volume: Volume inside solvent-accessible surface area (Å³)
     """
-    def __init__(self, element, coordinates, radius, index):
+
+    accessible_mask: Array1D
+    accessible_points: Array2D
+    area: float
+    cone: "Cone"
+    coordinates: Array1D
+    coordination_number: float
+    element: int
+    index: int
+    invisible_mask: Array1D
+    occluded_mask: Array1D
+    occluded_points: Array2D
+    p_values: Array1D
+    point_areas: Array1D
+    point_volumes: Array1D
+    points: Array2D
+    proximal_mask: Array1D
+    radius: float
+    volume: float
+
+    def __init__(
+        self, element: int, coordinates: ArrayLike1D, radius: float, index: int
+    ) -> None:
         # Set up initial attributes
-        self.coordinates = coordinates
+        self.coordinates = np.array(coordinates)
         self.element = element
         self.index = index
         self.radius = radius
 
-        # Set up settable attributes
-        self.accessible_points = None
-        self.area = None
-        self.cone = None
-        self.coordination_number = None
-        self.occluded_points = None
-        self.point_areas = None
-        self.p_values = None
-        self.volume = None
-
-    def get_cone(self):
-        """Construct cone for atom"""
+    def get_cone(self) -> None:
+        """Construct cone for atom."""
         vector = self.coordinates
         normal = vector / np.linalg.norm(vector)
         sin_alpha = self.radius / np.linalg.norm(vector)
@@ -55,7 +78,7 @@ class Atom:
         cone = Cone(alpha, [self], normal)
         self.cone = cone
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.index!r})"
 
 
@@ -63,28 +86,35 @@ class Cone:
     """Cone used in cone angle calculations.
 
     Args:
-        angle (float): Cone angle in radians
-        atoms (list): List of 1-index atoms that are tangent to cone
-        normal (ndarray): Normal vector of cone
+        angle: Cone angle (rad)
+        atoms: Atoms that are tangent to cone (1-indexed)
+        normal: Normal vector of cone
 
     Attributes:
-        angle (float): Cone angle in radians
-        atoms (list): List of 1-index atoms that are tangent to cone
-        normal (ndarray): Normal vector of cone
+        angle: Cone angle (rad)
+        atoms: Atoms that are tangent to cone (1-indexed)
+        normal: Normal vector of cone
     """
-    def __init__(self, angle, atoms, normal):
-        self.angle = angle
-        self.atoms = atoms
-        self.normal = normal
 
-    def is_inside(self, atom):
-        """Tests if atom lies inside the cone
+    angle: float
+    atoms: List[Atom]
+    normal: Array1D
+
+    def __init__(
+        self, angle: float, atoms: Sequence[Atom], normal: ArrayLike1D
+    ) -> None:
+        self.angle = angle
+        self.atoms = list(atoms)
+        self.normal = np.array(normal)
+
+    def is_inside(self, atom: Atom) -> bool:
+        """Tests if atom lies inside the cone.
 
         Args:
-            atom (object)   :   Atom to test.
+            atom: Atom to test.
 
         Returns:
-            (bool)          :   True if inside, False if outside.
+            True if inside, False if outside.
         """
         # Get vertex angle of atom
         beta = atom.cone.angle
@@ -104,17 +134,21 @@ class Cone:
             return True
         else:
             return False
- 
-    def is_inside_points(self, points, method="cross"):
-        """Test if points are inside c one of atom
-        
+
+    def is_inside_points(self, points: ArrayLike2D, method: str = "cross") -> Array1D:
+        """Test if points are inside cone of atom.
+
         Args:
-            points (ndarray): Points to check
-            method (str): Method for testing: 'angle', 'cross' or 'dot'
-        
+            points: Points to check (Å)
+            method: Method for testing: 'angle', 'cross' or 'dot'
+
         Returns:
-            is_inside (ndarray): Boolean array with points marked as inside.
+            is_inside: Boolean array with points marked as inside
+
+        Raises:
+            ValueError: When method not supported
         """
+        points = np.array(points)
         if method in ["cross", "dot"]:
             # Calculate radius of cone at distance of each point
             cone_distances = np.dot(points, self.normal)
@@ -122,17 +156,17 @@ class Cone:
 
             # Calculate orthogonal distance of points to cone normal vector
             if method == "cross":
-                orth_distances = np.linalg.norm(
-                    np.cross(-points, self.normal), axis=1)
+                orth_distances = np.linalg.norm(np.cross(-points, self.normal), axis=1)
             elif method == "dot":
-                orth_distances = np.linalg.norm(-points - np.dot(
-                    points, self.normal).reshape(-1, 1) * self.normal, axis=1)
-            
+                orth_distances = np.linalg.norm(
+                    -points - np.dot(points, self.normal).reshape(-1, 1) * self.normal,
+                    axis=1,
+                )
+
             # Determine if distance is smaller than cone radius.
-            is_inside = orth_distances < cone_radii
+            inside = orth_distances < cone_radii
         elif method == "angle":
-            norm_points = points / \
-                np.linalg.norm(points, axis=1).reshape(-1, 1)
+            norm_points = points / np.linalg.norm(points, axis=1).reshape(-1, 1)
 
             # Calculate angle between cone normal vector and unit vector to
             # atom
@@ -145,13 +179,17 @@ class Cone:
 
             # Check if atom lies inside cone, within numerical reason
             diff = self.angle - angle
-            
-            is_inside = diff > -1e-5
-            
+
+            inside = diff > -1e-5
+        else:
+            raise ValueError(f"method={method} not supported.")
+
+        is_inside: np.ndarray = inside
+
         return is_inside
 
-    def __repr__(self):
-        atoms = ', '.join([str(atom.index) for atom in self.atoms])
+    def __repr__(self) -> str:
+        atoms = ", ".join([str(atom.index) for atom in self.atoms])
         return f"{self.__class__.__name__}(Tangent atoms: {atoms})"
 
 
@@ -159,50 +197,67 @@ class Sphere:
     """Sphere class for creating and holding points on vdW surface.
 
     Args:
-        center (list): Coordinates for center (Å)
-        density (float): Area per point (Å**2) for empty sphere and volume per
-                         point (Å**3) for filled sphere.
-        filled (bool): Whether a sphere with internal points should be
-                       constructed (works only with projection)
-        method (str): Method for generating points:
-                     'fibonacci' (default), 'polar' or 'projection'
-        radius (float): Radius (Å)
+        center: Coordinates for center (Å)
+        density: Area per point (Å²) for empty sphere
+            and volume per point (Å³) for filled sphere.
+        filled: Whether a sphere with internal points should be constructed (works only
+            with method='projection')
+        method: Method for generating points: 'fibonacci', 'polar' or 'projection'
+        radius: Radius (Å)
 
     Attributes:
-        area (float): Area of sphere (Å**2)
-        center (list): Coordinates for center (Å)
-        circumference (float): Circumference (Å)
-        points (ndarray): Points on sphere surface
-        radius (float): Radius (Å)
+        area: Area (Å²)
+        center: Coordinates for sphere center (Å)
+        circumference: Circumference (Å)
+        density: Density of points (Å² or Å³)
+        points: Points in/on sphere (Å)
+        radius: Radius (Å)
+        volume: Volume (Å³)
     """
-    def __init__(self, center, radius, density=0.005, method="fibonacci",
-                 filled=False):
-        self.center = center
+
+    area: float
+    center: Array1D
+    circumference: float
+    density: float
+    points: Array1D
+    radius: float
+    volume: float
+
+    def __init__(
+        self,
+        center: ArrayLike1D,
+        radius: float,
+        density: float = 0.005,
+        method: str = "fibonacci",
+        filled: bool = False,
+    ) -> None:
+        self.center = np.array(center)
         self.radius = radius
         self.circumference = math.pi * radius * 2
-        self.area = 4 * radius**2 * math.pi
-        self.volume = 4 * radius**3 * math.pi / 3
+        self.area = 4 * radius ** 2 * math.pi
+        self.volume = 4 * radius ** 3 * math.pi / 3
         self.density = density
 
         if method == "polar":
             self.points = self._get_points_polar(density=density)
-        elif method =="projection":
-            self.points = self._get_points_projected(density=density,
-                                                     filled=filled)
+        elif method == "projection":
+            self.points = self._get_points_projected(density=density, filled=filled)
         elif method == "fibonacci":
             self.points = self._get_points_fibonacci(density=density)
 
     @staticmethod
-    def _get_cartesian_coordinates(r, theta, phi):
+    def _get_cartesian_coordinates(
+        r: float, theta: ArrayLike1D, phi: ArrayLike1D
+    ) -> Array2D:
         """Converts polar to Cartesian coordinates.
 
         Args:
-            phi (ndarray): Phi angles (rad)
-            r (float): Radius (Å)
-            theta (ndarray): Theta angles (rad)
+            phi: Phi angles (radians)
+            r: Radius (Å)
+            theta: Theta angles (radians)
 
         Returns:
-            points (ndarray): Cartesian points (Å)
+            points: Cartesian points (Å)
         """
         # Calculate x, y and z coordinates
         x = r * np.sin(theta) * np.cos(phi)
@@ -210,20 +265,21 @@ class Sphere:
         z = r * np.cos(theta)
 
         # Stack coordinates as columns
-        points = np.column_stack((x, y, z))
+        points: np.ndarray = np.column_stack((x, y, z))
 
         return points
 
-    def _get_points_fibonacci(self, density):
-        """Construct points on sphere surface by the Fibonacci golden spiral
-        method. Method vectorized from 
+    def _get_points_fibonacci(self, density: float) -> Array2D:
+        """Construct points on sphere surface by the Fibonacci golden spiral method.
+
+        Method vectorized from
         https://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere
 
         Args:
-            density (float): Area per point (Å**2)
-        
+            density: Area per point (Å²)
+
         Returns:
-            points (ndarray): Array of surface points.
+            points: Surface points (Å)
         """
         # Generate points on unit sphere
         rnd = 1
@@ -241,22 +297,21 @@ class Sphere:
         # Generate points and adjust with radius and center
         points = np.column_stack((x, y, z))
         points = points * self.radius
-        points = points + self.center
+        points: np.ndarray = points + self.center
 
         return points
 
-    def _get_points_polar(self, density):
+    def _get_points_polar(self, density: float) -> Array2D:
         """Construct points on sphere by polar coordinate method.
 
         Args:
-            density (float): Area per point (Å**2) for empty sphere and volume
-                             per point (Å**3) for filled sphere.
-      
+            density: Area per point (Å²)
+
         Returns:
-            points (ndarray): Array of surface points.
+            points: Points on sphere (Å)
         """
         # Calculate number of points
-        n = int(round((self.area / density / 2)**(1 / 2)))
+        n = int(round((self.area / density / 2) ** (1 / 2)))
 
         # Set up points along theta and phi
         theta = np.linspace(0, math.pi, n)
@@ -264,33 +319,33 @@ class Sphere:
 
         # Combine together all the possible combinations of theta and phi
         combined_theta_phi = np.dstack(np.meshgrid(theta, phi)).reshape(-1, 2)
-        theta = combined_theta_phi[:,0]
-        phi = combined_theta_phi[:,1]
+        theta = combined_theta_phi[:, 0]
+        phi = combined_theta_phi[:, 1]
 
         # Get the Cartesian coordinates
         points = self._get_cartesian_coordinates(self.radius, theta, phi)
 
         # Adjust to sphere center
-        points = points + self.center
+        points: np.ndarray = points + self.center
 
         return points
 
-    def _get_points_projected(self, density, filled=False):
+    def _get_points_projected(self, density: float, filled: bool = False) -> Array2D:
         """Construct points on sphere surface by projection.
 
         Args:
-            density (float): Area per point (Å**2) for empty sphere and volume
-                             per point (Å**3) for filled sphere.
-            filled (bool): Whether to generate internal points
-        
+            density: Area per point (Å²) for empty sphere and volume
+                per point (Å³) for filled sphere
+            filled: Whether to generate internal points
+
         Returns:
-            points (ndarray): Array of surface points.
+            points: Array of surface points (Å)
         """
         # Calculate number of points from density of empty or filled sphere.
         if filled:
-            n = int(round((self.volume / density * 6 / math.pi)**(1 / 3)))
+            n = int(round((self.volume / density * 6 / math.pi) ** (1 / 3)))
         else:
-            n = int(round((self.area / density * 6 / math.pi)**(1 / 3)))
+            n = int(round((self.area / density * 6 / math.pi) ** (1 / 3)))
 
         # Generate points in box
         r = self.radius
@@ -305,121 +360,123 @@ class Sphere:
 
         # Project points onto sphere surface if sphere is empty
         if not filled:
-            points = points / np.linalg.norm(points, axis=1).reshape(-1,1) * r
+            points = points / np.linalg.norm(points, axis=1).reshape(-1, 1) * r
 
         # Adjust with sphere center
-        points = points + self.center
+        points: np.ndarray = points + self.center
 
         return points
 
-    def __repr__(self):
-        return (f"{self.__class__.__name__}(center: {self.center}, "
-                f"radius: {self.radius})")
-
-
-class InternalCoordinates:
-    def __init__(self):
-        self.internal_coordinates = []
-
-    def add_bond(self, atom_1, atom_2):
-        bond = Bond(atom_1, atom_2)
-        if bond not in self.internal_coordinates:
-            self.internal_coordinates.append(bond)
-
-    def add_angle(self, atom_1, atom_2, atom_3):
-        angle = Angle(atom_1, atom_2, atom_3)
-        if angle not in self.internal_coordinates:
-            self.internal_coordinates.append(angle)
-
-    def add_dihedral(self, atom_1, atom_2, atom_3, atom_4):
-        dihedral = Dihedral(atom_1, atom_2, atom_3, atom_4)
-        if dihedral not in self.internal_coordinates:
-            self.internal_coordinates.append(dihedral)
-
-    def add_internal_coordinate(self, atoms):
-        if len(atoms) == 2:
-            self.add_bond(*atoms)
-        elif len(atoms) == 3:
-            self.add_angle(*atoms)
-        elif len(atoms) == 4:
-            self.add_dihedral(*atoms)
-
-    def detect_bonds(self, elements, coordinates):
-        # Detect bonds based on covalent radii
-        connectivity_matrix = get_connectivity_matrix(elements,
-                                                      coordinates,
-                                                      radii_type="pyykko")
-        indices = np.where(connectivity_matrix)
-
-        bonds = set()
-        for i, j in zip(*indices):
-            bond = frozenset([i + 1, j + 1])
-            bonds.add(bond)
-
-        # Add each bond as an internal coordinate
-        for bond in bonds:
-            i, j = sorted(bond)
-            self.add_bond(i, j)
-
-    def get_B_matrix(self, coordinates):
-        b_vectors = []
-        for internal_coordinate in self.internal_coordinates:
-            b_vectors.append(internal_coordinate.get_b_vector(coordinates))
-        B_matrix = np.vstack(b_vectors)
-
-        return B_matrix
-
-    def __repr__(self):
-        return (f"{self.__class__.__name__}({len(self.internal_coordinates)} "
-                "coordinates)")
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(center: {self.center}, "
+            f"radius: {self.radius})"
+        )
 
 
 class Bond:
-    def __init__(self, atom_1, atom_2):
+    """Bond internal coordinate.
+
+    Args:
+        atom_1: Index of atom 1 (1-indexed)
+        atom_2: Index of atom 2 (1-indexed)
+
+    Attributes:
+        i: Index of atom 1 (1-indexed)
+        j: Index of atom 2 (1-indexed)
+    """
+
+    i: int
+    j: int
+    atoms: List[int]
+
+    def __init__(self, atom_1: int, atom_2: int) -> None:
         self.i = atom_1
         self.j = atom_2
         self.atoms = [atom_1, atom_2]
 
-    def get_b_vector(self, coordinates):
-        i, j = self.i - 1, self.j -1
+    def get_b_vector(self, coordinates: ArrayLike2D) -> Array1D:
+        """Calculate vector of B matrix for internal coordinate.
+
+        Code adapted from pyberny: https://github.com/jhrmnn/pyberny.
+
+        Args:
+            coordinates: Coordinates (Å)
+
+        Returns:
+            b_vector: Vector of B matrix (a.u.)
+        """
+        coordinates = np.array(coordinates)
+        i, j = self.i - 1, self.j - 1
         v = (coordinates[i] - coordinates[j]) * ANGSTROM_TO_BOHR
         r = np.linalg.norm(v)
-        grad  = np.array([v / r, -v / r])
+        grad = np.array([v / r, -v / r])
 
         b_vector = np.zeros(coordinates.size)
-        b_vector[i * 3:i * 3 + 3] = grad[0]
-        b_vector[j * 3:j * 3 + 3] = grad[1]
+        b_vector[i * 3 : i * 3 + 3] = grad[0]
+        b_vector[j * 3 : j * 3 + 3] = grad[1]
 
         return b_vector
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
-            return (self.i == other.i or self.i == other.j) and \
-                   (self.j == other.i or self.j == other.j)
+            return (self.i == other.i or self.i == other.j) and (
+                self.j == other.i or self.j == other.j
+            )
         else:
             return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.i, self.j))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         atoms = ", ".join(str(i) for i in sorted(self.atoms))
-        return (f"{self.__class__.__name__}({atoms})")
+        return f"{self.__class__.__name__}({atoms})"
 
 
 class Angle:
-    def __init__(self, atom_1, atom_2, atom_3):
+    """Bond internal coordinate.
+
+    Code adapted from pyberny: https://github.com/jhrmnn/pyberny.
+
+    Args:
+        atom_1: Index of atom 1 (1-indexed)
+        atom_2: Index of atom 2 (1-indexed)
+        atom_3: Index of atom 3 (1-indexed)
+
+    Attributes:
+        i: Index of atom 1 (1-indexed)
+        j: Index of atom 2 (1-indexed)
+        k: Index of atom 3 (1-indexed)
+    """
+
+    i: int
+    j: int
+    k: int
+    atoms: List[int]
+
+    def __init__(self, atom_1: int, atom_2: int, atom_3: int) -> None:
         self.i = atom_1
         self.j = atom_2
         self.k = atom_3
         self.atoms = [atom_1, atom_2, atom_3]
 
-    def get_b_vector(self, coordinates):
+    def get_b_vector(self, coordinates: ArrayLike2D) -> Array1D:
+        """Calculate vector of B matrix for internal coordinate.
+
+        Code adapted from pyberny: https://github.com/jhrmnn/pyberny.
+
+        Args:
+            coordinates: Coordinates (Å)
+
+        Returns:
+            b_vector: Vector of B matrix (a.u.)
+        """
+        coordinates = np.array(coordinates)
         i, j, k = self.i - 1, self.j - 1, self.k - 1
         v_1 = (coordinates[i] - coordinates[j]) * ANGSTROM_TO_BOHR
         v_2 = (coordinates[k] - coordinates[j]) * ANGSTROM_TO_BOHR
-        dot_product = np.dot(
-            v_1, v_2) / (np.linalg.norm(v_1) * np.linalg.norm(v_2))
+        dot_product = np.dot(v_1, v_2) / (np.linalg.norm(v_1) * np.linalg.norm(v_2))
         if dot_product < -1:
             dot_product = -1
         elif dot_product > 1:
@@ -428,53 +485,92 @@ class Angle:
         if abs(phi) > np.pi - 1e-6:
             grad = [
                 (np.pi - phi) / (2 * np.linalg.norm(v_1) ** 2) * v_1,
-                (1 / np.linalg.norm(v_1) - 1 / np.linalg.norm(v_2)) *
-                (np.pi - phi) / (2 * np.linalg.norm(v_1)) * v_1,
+                (1 / np.linalg.norm(v_1) - 1 / np.linalg.norm(v_2))
+                * (np.pi - phi)
+                / (2 * np.linalg.norm(v_1))
+                * v_1,
                 (np.pi - phi) / (2 * np.linalg.norm(v_2) ** 2) * v_2,
             ]
         else:
             grad = [
-                1 / np.tan(phi) * v_1 / np.linalg.norm(v_1)**2 - v_2 /
-                (np.linalg.norm(v_1) * np.linalg.norm(v_2) * np.sin(phi)),
-                (v_1 + v_2) /
-                (np.linalg.norm(v_1) * np.linalg.norm(v_2) * np.sin(phi)) -
-                1 / np.tan(phi) *
-                (v_1 / np.linalg.norm(v_1)**2 + v_2 / np.linalg.norm(v_2)**2),
-                1 / np.tan(phi) * v_2 / np.linalg.norm(v_2)**2 - v_1 /
-                (np.linalg.norm(v_1) * np.linalg.norm(v_2) * np.sin(phi)),
+                1 / np.tan(phi) * v_1 / np.linalg.norm(v_1) ** 2
+                - v_2 / (np.linalg.norm(v_1) * np.linalg.norm(v_2) * np.sin(phi)),
+                (v_1 + v_2) / (np.linalg.norm(v_1) * np.linalg.norm(v_2) * np.sin(phi))
+                - 1
+                / np.tan(phi)
+                * (v_1 / np.linalg.norm(v_1) ** 2 + v_2 / np.linalg.norm(v_2) ** 2),
+                1 / np.tan(phi) * v_2 / np.linalg.norm(v_2) ** 2
+                - v_1 / (np.linalg.norm(v_1) * np.linalg.norm(v_2) * np.sin(phi)),
             ]
 
         b_vector = np.zeros(coordinates.size)
-        b_vector[i * 3:i * 3 + 3] = grad[0]
-        b_vector[j * 3:j * 3 + 3] = grad[1]
-        b_vector[k * 3:k * 3 + 3] = grad[2]
+        b_vector[i * 3 : i * 3 + 3] = grad[0]
+        b_vector[j * 3 : j * 3 + 3] = grad[1]
+        b_vector[k * 3 : k * 3 + 3] = grad[2]
 
         return b_vector
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
-            return (self.i == other.i or self.i == other.k) and \
-                   (self.k == other.i or self.k == other.k) and \
-                    self.j == other.j
+            return (
+                (self.i == other.i or self.i == other.k)
+                and (self.k == other.i or self.k == other.k)
+                and self.j == other.j
+            )
         else:
             return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.i, self.j, self.k))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         atoms = ", ".join(str(i) for i in sorted(self.atoms))
-        return (f"{self.__class__.__name__}({atoms})")
+        return f"{self.__class__.__name__}({atoms})"
+
 
 class Dihedral:
-    def __init__(self, atom_1, atom_2, atom_3, atom_4):
+    """Bond internal coordinate.
+
+    Code adapted from pyberny: https://github.com/jhrmnn/pyberny.
+
+    Args:
+        atom_1: Index of atom 1 (1-indexed)
+        atom_2: Index of atom 2 (1-indexed)
+        atom_3: Index of atom 3 (1-indexed)
+        atom_4: Index of atom 4 (1-indexed)
+
+    Attributes:
+        i: Index of atom 1 (1-indexed)
+        j: Index of atom 2 (1-indexed)
+        k: Index of atom 3 (1-indexed)
+        l: Index of atom 4 (1-indexed)
+    """
+
+    i: int
+    j: int
+    k: int
+    l: int
+    atoms: List[int]
+
+    def __init__(self, atom_1: int, atom_2: int, atom_3: int, atom_4: int) -> None:
         self.i = atom_1
         self.j = atom_2
         self.k = atom_3
         self.l = atom_4
         self.atoms = [atom_1, atom_2, atom_3, atom_4]
 
-    def get_b_vector(self, coordinates):
+    def get_b_vector(self, coordinates: ArrayLike2D) -> Array1D:
+        """Calculate vector of B matrix for internal coordinate.
+
+        Code adapted from pyberny: https://github.com/jhrmnn/pyberny.
+
+        Args:
+            coordinates: Coordinates (Å)
+
+        Returns:
+            b_vector: Vector of B matrix (a.u.)
+        """
+        coordinates = np.array(coordinates)
         i, j, k, l = self.i - 1, self.j - 1, self.k - 1, self.l - 1
         v_1 = (coordinates[i] - coordinates[j]) * ANGSTROM_TO_BOHR
         v_2 = (coordinates[l] - coordinates[k]) * ANGSTROM_TO_BOHR
@@ -484,8 +580,7 @@ class Dihedral:
         a_2 = v_2 - np.dot(v_2, ew) * ew
         sgn = np.sign(np.linalg.det(np.array([v_2, v_1, w])))
         sgn = sgn or 1
-        dot_product = np.dot(
-            a_1, a_2) / (np.linalg.norm(a_1) * np.linalg.norm(a_2))
+        dot_product = np.dot(a_1, a_2) / (np.linalg.norm(a_1) * np.linalg.norm(a_2))
         if dot_product < -1:
             dot_product = -1
         elif dot_product > 1:
@@ -518,54 +613,196 @@ class Dihedral:
             A = np.dot(v_1, ew) / np.linalg.norm(w)
             B = np.dot(v_2, ew) / np.linalg.norm(w)
             grad = [
-                1 / np.tan(phi) * a_1 / np.linalg.norm(a_1)**2 - a_2 /
-                (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi)),
-                ((1 - A) * a_2 - B * a_1) /
-                (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi)) -
-                1 / np.tan(phi) * ((1 - A) * a_1 / np.linalg.norm(a_1)**2 -
-                                   B * a_2 / np.linalg.norm(a_2)**2),
-                ((1 + B) * a_1 + A * a_2) /
-                (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi)) -
-                1 / np.tan(phi) * ((1 + B) * a_2 / np.linalg.norm(a_2)**2 +
-                                   A * a_1 / np.linalg.norm(a_1)**2),
-                1 / np.tan(phi) * a_2 / np.linalg.norm(a_2)**2 - a_1 /
-                (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi)),
+                1 / np.tan(phi) * a_1 / np.linalg.norm(a_1) ** 2
+                - a_2 / (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi)),
+                ((1 - A) * a_2 - B * a_1)
+                / (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi))
+                - 1
+                / np.tan(phi)
+                * (
+                    (1 - A) * a_1 / np.linalg.norm(a_1) ** 2
+                    - B * a_2 / np.linalg.norm(a_2) ** 2
+                ),
+                ((1 + B) * a_1 + A * a_2)
+                / (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi))
+                - 1
+                / np.tan(phi)
+                * (
+                    (1 + B) * a_2 / np.linalg.norm(a_2) ** 2
+                    + A * a_1 / np.linalg.norm(a_1) ** 2
+                ),
+                1 / np.tan(phi) * a_2 / np.linalg.norm(a_2) ** 2
+                - a_1 / (np.linalg.norm(a_1) * np.linalg.norm(a_2) * np.sin(phi)),
             ]
         b_vector = np.zeros(coordinates.size)
-        b_vector[i * 3:i * 3 + 3] = grad[0]
-        b_vector[j * 3:j * 3 + 3] = grad[1]
-        b_vector[k * 3:k * 3 + 3] = grad[2]
-        b_vector[l * 3:l * 3 + 3] = grad[3]
+        b_vector[i * 3 : i * 3 + 3] = grad[0]
+        b_vector[j * 3 : j * 3 + 3] = grad[1]
+        b_vector[k * 3 : k * 3 + 3] = grad[2]
+        b_vector[l * 3 : l * 3 + 3] = grad[3]
 
         return b_vector
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
-            return all([self.i == other.i, self.j == other.j,
-                        self.k == other.k, self.l == other.l]) or \
-                   all([self.i == other.l, self.j == other.k,
-                        self.k == other.j, self.l == other.i])
+            return all(
+                [
+                    self.i == other.i,
+                    self.j == other.j,
+                    self.k == other.k,
+                    self.l == other.l,
+                ]
+            ) or all(
+                [
+                    self.i == other.l,
+                    self.j == other.k,
+                    self.k == other.j,
+                    self.l == other.i,
+                ]
+            )
         else:
             return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.i, self.j, self.k, self.l))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         atoms = ", ".join(str(i) for i in sorted(self.atoms))
-        return (f"{self.__class__.__name__}({atoms})")
+        return f"{self.__class__.__name__}({atoms})"
 
-def rotate_coordinates(coordinates, vector, axis):
+
+class InternalCoordinates:
+    """Internal coordinates.
+
+    Attributes:
+        internal_coordinates: Internal coordinates
+    """
+
+    internal_coordinates: List[Union[Bond, Angle, Dihedral]]
+
+    def __init__(self) -> None:
+        self.internal_coordinates = []
+
+    def add_bond(self, atom_1: int, atom_2: int) -> None:
+        """Add bonds to internal coordinates.
+
+        Args:
+            atom_1: Index of atom 1 (1-indexed)
+            atom_2: Index of atom 2 (1-indexed)
+        """
+        bond = Bond(atom_1, atom_2)
+        if bond not in self.internal_coordinates:
+            self.internal_coordinates.append(bond)
+
+    def add_angle(self, atom_1: int, atom_2: int, atom_3: int) -> None:
+        """Add angle to internal coordinates.
+
+        Args:
+            atom_1: Index of atom 1 (1-indexed)
+            atom_2: Index of atom 2 (1-indexed)
+            atom_3: Index of atom 3 (1-indexed)
+        """
+        angle = Angle(atom_1, atom_2, atom_3)
+        if angle not in self.internal_coordinates:
+            self.internal_coordinates.append(angle)
+
+    def add_dihedral(self, atom_1: int, atom_2: int, atom_3: int, atom_4: int) -> None:
+        """Add dihedral angle to internal coordinates.
+
+        Args:
+            atom_1: Index of atom 1 (1-indexed)
+            atom_2: Index of atom 2 (1-indexed)
+            atom_3: Index of atom 3 (1-indexed)
+            atom_4: Index of atom 4 (1-indexed)
+        """
+        dihedral = Dihedral(atom_1, atom_2, atom_3, atom_4)
+        if dihedral not in self.internal_coordinates:
+            self.internal_coordinates.append(dihedral)
+
+    def add_internal_coordinate(self, atoms: Sequence[int]) -> None:
+        """Add internal coordinate automatically depending on number of atoms.
+
+        Args:
+            atoms: Sequence of atom indices (1-index).
+        """
+        if len(atoms) == 2:
+            self.add_bond(*atoms)
+        elif len(atoms) == 3:
+            self.add_angle(*atoms)
+        elif len(atoms) == 4:
+            self.add_dihedral(*atoms)
+
+    def detect_bonds(
+        self,
+        coordinates: ArrayLike2D,
+        elements: Optional[Union[Iterable[int], Iterable[str]]],
+        radii: Optional[ArrayLike1D] = None,
+        radii_type: str = "pyykko",
+        scale_factor: float = 1.2,
+    ) -> None:
+        """Detect bonds based on covalent radii cutoffs."""
+        # Detect bonds based on covalent radii
+        connectivity_matrix = get_connectivity_matrix(
+            coordinates,
+            elements=elements,
+            radii=radii,
+            radii_type=radii_type,
+            scale_factor=scale_factor,
+        )
+        indices = np.where(connectivity_matrix)
+
+        bonds = set()
+        for i, j in zip(*indices):
+            bond = frozenset([i + 1, j + 1])
+            bonds.add(bond)
+
+        # Add each bond as an internal coordinate
+        for bond in bonds:
+            i, j = sorted(bond)
+            self.add_bond(i, j)
+
+    def get_B_matrix(self, coordinates: ArrayLike2D) -> Array2D:
+        """Calculate B matrix for coordinates.
+
+        Args:
+            coordinates: Coordinates (Å)
+
+        Returns:
+            B_matrix: B matrix
+        """
+        coordinates = np.array(coordinates)
+        b_vectors = []
+        for internal_coordinate in self.internal_coordinates:
+            b_vectors.append(internal_coordinate.get_b_vector(coordinates))
+        B_matrix = np.vstack(b_vectors)
+
+        return B_matrix
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}({len(self.internal_coordinates)} "
+            "coordinates)"
+        )
+
+
+def rotate_coordinates(
+    coordinates: ArrayLike2D,
+    vector: ArrayLike1D,
+    axis: ArrayLike1D,
+) -> Array2D:
     """Rotates coordinates by the rotation that aligns vector with axis.
 
     Args:
-        axis (ndarray): Reference vector to align input vector to
-        coordinates (ndarray): Coordinates to rotate
-        vector (ndarray): Vector to align
+        axis: Reference vector to align input vector with
+        coordinates: Coordinates to rotate
+        vector: Vector to align
 
     Returns:
-        rotated_coordinates (ndarray): Rotated coordinates.
+        rotated_coordinates: Rotated coordinates.
     """
+    coordinates = np.array(coordinates)
+    vector = np.array(vector)
+    axis = np.array(axis)
+
     # Get real part of quaternion
     real = np.dot(vector, axis).reshape(1) + 1
 
@@ -583,22 +820,30 @@ def rotate_coordinates(coordinates, vector, axis):
 
     # Rotate atomic coordinates
     rotation = Rotation.from_quat(q)
-    rotated_coordinates = rotation.apply(coordinates)
+    rotated_coordinates: np.ndarray = rotation.apply(coordinates)
 
     return rotated_coordinates
 
-def kabsch_rotation_matrix(P, Q, center=True):
-    """Construct the rotation matrix that overlays the points in P with the
-    points in Q with minimum RMSD.
-    https://en.wikipedia.org/wiki/Kabsch_algorithm
+
+def kabsch_rotation_matrix(
+    P: ArrayLike2D, Q: ArrayLike2D, center: bool = True
+) -> Array2D:
+    """Construct Kabsch rotation matrix.
+
+    Constructs the rotation matrix that overlays the points in P with the points in Q
+    with minimum RMSD. https://en.wikipedia.org/wiki/Kabsch_algorithm
 
     Args:
-        P (ndarray): Coordinates to be rotated
-        Q (ndarray): Reference coordinates
+        P: Coordinates to be rotated
+        Q: Reference coordinates
+        center: Whether to center P and Q at origin.
 
     Returns:
-        R (ndarray): Rotation matrix
+        R: Rotation matrix
     """
+    P = np.array(P)
+    Q = np.array(Q)
+
     # Calculate centroids and center coordinates
     if center:
         centroid_P = np.mean(P, axis=0)
@@ -616,36 +861,50 @@ def kabsch_rotation_matrix(P, Q, center=True):
     d = np.sign(np.linalg.det(V_T.T @ U.T))
 
     # Obtain rotation matrix
-    R = V_T.T @ np.array([[1, 0, 0], [0, 1, 0], [0, 0, d]]) @ U.T
+    R: np.ndarray = V_T.T @ np.array([[1, 0, 0], [0, 1, 0], [0, 0, d]]) @ U.T
 
     return R
 
-def sphere_line_intersection(vector, center, radius):
-    """Get points of intersection between line and sphere. Follows the
-    procedure outlined here: http://paulbourke.net/geometry/circlesphere/.
+
+def sphere_line_intersection(
+    vector: ArrayLike1D, center: ArrayLike1D, radius: float
+) -> Array2D:
+    """Get points of intersection between line and sphere.
+
+    Follows the procedure outlined here: http://paulbourke.net/geometry/circlesphere/.
 
     Args:
-        vector (ndarray): Vector giving direction of line
-        center (ndarray): Center of sphere
-        radius (float): Radius of sphere
+        vector: Vector giving direction of line
+        center: Center of sphere
+        radius: Radius of sphere
 
     Returns:
-        intersection_points (list): Intersection points
+        intersection_points: Intersection points
     """
+    vector = np.array(vector)
+    center = np.array(center)
+
     # Set up points
     p_1 = vector
     p_2 = vector * 2
 
     # Set up terms for quadratic equation
-    a = (p_2[0] - p_1[0]) ** 2 + (p_2[1] - p_1[1]) ** 2 \
-        + (p_2[2] - p_1[2]) ** 2
-    b = 2 * ((p_2[0] - p_1[0]) * (p_1[0] - center[0]) \
-        + (p_2[1] - p_1[1]) * (p_1[1] - center[1]) \
-        + (p_2[2] - p_1[2]) * (p_1[2] - center[2]))
-    c = center[0] ** 2 + center[1] ** 2 + center[2] ** 2 \
-        + p_1[0] ** 2 + p_1[1] ** 2 + p_1[2] ** 2 \
-        - 2 * (center[0] * p_1[0] + center[1] * p_1[1] + center[2] * p_1[2]) \
+    a = (p_2[0] - p_1[0]) ** 2 + (p_2[1] - p_1[1]) ** 2 + (p_2[2] - p_1[2]) ** 2
+    b = 2 * (
+        (p_2[0] - p_1[0]) * (p_1[0] - center[0])
+        + (p_2[1] - p_1[1]) * (p_1[1] - center[1])
+        + (p_2[2] - p_1[2]) * (p_1[2] - center[2])
+    )
+    c = (
+        center[0] ** 2
+        + center[1] ** 2
+        + center[2] ** 2
+        + p_1[0] ** 2
+        + p_1[1] ** 2
+        + p_1[2] ** 2
+        - 2 * (center[0] * p_1[0] + center[1] * p_1[1] + center[2] * p_1[2])
         - radius ** 2
+    )
 
     # Determine value within the square root and select cases
     within_sqrt = b ** 2 - 4 * a * c
@@ -654,10 +913,12 @@ def sphere_line_intersection(vector, center, radius):
     elif within_sqrt == 0:
         us = [-b / (2 * a)]
     elif within_sqrt > 0:
-        us = [(-b + math.sqrt(within_sqrt)) / (2 * a),
-              (-b - math.sqrt(within_sqrt)) / (2 * a)]
+        us = [
+            (-b + math.sqrt(within_sqrt)) / (2 * a),
+            (-b - math.sqrt(within_sqrt)) / (2 * a),
+        ]
 
     # Calculate intersection points.
-    intersection_points = [p_1 + u * (p_2 - p_1) for u in us]
+    intersection_points = np.vstack([p_1 + u * (p_2 - p_1) for u in us])
 
     return intersection_points

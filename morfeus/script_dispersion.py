@@ -4,34 +4,32 @@ import argparse
 
 from morfeus import Dispersion, read_gjf, read_xyz
 
-def main():
+
+def main() -> None:  # noqa: C901
+    """Calculate dispersion descriptor."""
     # Add arguments
     parser = argparse.ArgumentParser(
-        "morfeus script to calcaulate dispersion descriptor.")
+        "morfeus script to calcaulate dispersion descriptor."
+    )
+    parser.add_argument("file", type=str, help="Input file, either .xyz, .gjf or .com")
     parser.add_argument(
-        'file', type=str, help='Input file, either .xyz, .gjf or .com')
+        "--density",
+        type=float,
+        help="Density of points on sphere vdW surface (default: 0.1)",
+        default=0.1,
+    )
+    parser.add_argument("--cube_file", type=str, help="Cube file of electron density.")
+    parser.add_argument("--d3_file", type=str, help="Output file of D3 program.")
+    parser.add_argument("--d4_file", type=str, help="Output file of D4 program.")
+    parser.add_argument("--vertex_file", type=str, help="Vertex file from Multiwfn")
     parser.add_argument(
-        '--density', type=float,
-        help='Density of points on sphere vdW surface (default: 0.1)',
-        default=0.1)
-    parser.add_argument(
-        '--cube_file', type=str, help='Cube file of electron density.')
-    parser.add_argument(
-        '--d3_file', type=str, help='Output file of D3 program.')
-    parser.add_argument(
-        '--d4_file', type=str, help='Output file of D4 program.')
-    parser.add_argument(
-        '--vertex_file', type=str, help='Vertex file from Multiwfn')
-    parser.add_argument(
-        '--isodensity', type=float, 
-        help='Isodensity value for  density from cube file.',
-        default=0.001)
-    parser.add_argument(
-        '--verbose', help='Print atom areas', action='store_true')
-    parser.add_argument(
-        '--surface_from_radii', help='Construct pseudo-surface from vdW radii',
-        action='store_true')
-    
+        "--isodensity",
+        type=float,
+        help="Isodensity value for  density from cube file.",
+        default=0.001,
+    )
+    parser.add_argument("--verbose", help="Print atom areas", action="store_true")
+
     # Parse the arguments
     args = parser.parse_args()
     density = args.density
@@ -41,10 +39,9 @@ def main():
     vertex_file = args.vertex_file
     verbose = args.verbose
     isodensity = args.isodensity
-    surface_from_radii = args.surface_from_radii
 
     # Perform checks to ensure no inconsistencies in input
-    #TODO fix this
+    # TODO fix this
     if cube_file and vertex_file:
         raise Exception("Cannot give both cube and Multiwfn vertex file.")
     if d3_file and d4_file:
@@ -58,41 +55,44 @@ def main():
         elements, coordinates = read_gjf(file)
     else:
         raise Exception("No valid input file. Use .xyz or .gjf/.com")
-    
+
     # Check if surface or coefficients files are given
     point_surface = True
     calculate_coefficients = True
-    if cube_file or vertex_file or surface_from_radii:
+    if cube_file or vertex_file:
         point_surface = False
     if d3_file or d4_file:
         calculate_coefficients = False
-    
+
     # Set up Dispersion object
-    dispersion = Dispersion(elements, coordinates, density=density,
-        point_surface=point_surface, 
-        calculate_coefficients=calculate_coefficients)
-    
+    dispersion = Dispersion(
+        elements,
+        coordinates,
+        density=density,
+        point_surface=point_surface,
+        compute_coefficients=calculate_coefficients,
+    )
+
     # Set up surface and coefficients if files are given
     if cube_file:
         dispersion.surface_from_cube(cube_file, isodensity=isodensity)
     elif vertex_file:
         dispersion.surface_from_multiwfn(vertex_file)
-    elif surface_from_radii:
-        dispersion.surface_from_radii()
 
     if d3_file:
-        dispersion.get_coefficients(d3_file, model='d3')
+        dispersion.load_coefficients(d3_file, model="d3")
     elif d4_file:
-        dispersion.get_coefficients(d4_file, model='d4')
+        dispersion.load_coefficients(d4_file, model="d4")
     else:
-        dispersion.get_coefficients()
+        dispersion.compute_coefficients()
 
     # Perform the calculations and print the results
     if not point_surface or not calculate_coefficients:
-        dispersion.calculate_p_int()
-    
+        dispersion.compute_p_int()
+
     # Print report
     dispersion.print_report(verbose=verbose)
+
 
 if __name__ == "__main__":
     main()

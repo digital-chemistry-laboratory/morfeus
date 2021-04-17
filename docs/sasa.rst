@@ -90,26 +90,6 @@ described by Eisenhaber *et al.* :cite:`eisenhaber_double_1995`. ᴍᴏʀғᴇ�
 optimized for larger molecules and other programs are recommended for, *e.g.*,
 proteins.
 
-Results have been compared against FreeSASA :cite:`mitternacht_freesasa_2016`
-and GEPOL93 :cite:`pascual-ahuir_gepol_1994` on a set of transition metal
-complexes with results that correlate well. FreeSASA uses the Shrake and Rupley
-algorithm while GEPOL93 uses the one by Lee and Richards
-:cite:`lee_interpretation_1971`. Settings were CRC radii, a probe radius of 1.4
-Å and a density of 0.1 Å\ :sup:`2`/point for ᴍᴏʀғᴇᴜs. The same total number of
-points were used for FreeSASA, while GEPOL93 uses the finest setting (NDIV=5).
-
-.. note::
-  Figures to be added
-
-
-.. todo::
-  figure:: benchmarks/SASA/total_areas.png
-  Benchmark of total SASA against FreeSASA and GEPOL93.
-  figure:: benchmarks/SASA/atom_areas.png
-  Benchmark of atom SASA against FreeSASA and GEPOL93.
-  figure:: benchmarks/SASA/gepol93_volumes.png
-  Benchmark of volume against GEPOL93.
-
 **********
 References
 **********

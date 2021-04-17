@@ -1,43 +1,60 @@
 """Interface to quantum-chemical programs."""
 
+import typing
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+
 import numpy as np
 
 from morfeus.data import ANGSTROM_TO_BOHR, BOHR_TO_ANGSTROM
-from morfeus.helpers import Import, convert_elements, requires_dependency
+from morfeus.typing import ArrayLike2D
+from morfeus.utils import convert_elements, Import, requires_dependency
+
+if typing.TYPE_CHECKING:
+    import qcelemental as qcel
+    import qcengine as qcng
 
 
 @requires_dependency([Import(module="qcengine", alias="qcng")], globals())
-def optimize_qc_engine(elements,
-                       coordinates,
-                       charge=None,
-                       multiplicity=None,
-                       connectivity_matrix=None,
-                       program="xtb",
-                       model=None,
-                       keywords=None,
-                       local_options=None,
-                       procedure="berny",
-                       return_trajectory=False):
+def optimize_qc_engine(
+    elements: Union[Iterable[int], Iterable[str]],
+    coordinates: ArrayLike2D,
+    charge: Optional[int] = None,
+    multiplicity: Optional[int] = None,
+    connectivity_matrix: Optional[ArrayLike2D] = None,
+    program: str = "xtb",
+    model: Optional[Dict[str, Any]] = None,
+    keywords: Optional[Dict[str, Any]] = None,
+    local_options: Optional[Dict[str, Any]] = None,
+    procedure: str = "berny",
+    return_trajectory: bool = False,
+) -> Tuple[np.ndarray, np.ndarray]:
     """Optimize molecule with QCEngine.
 
     Args:
-        elements (list): Elements as atomic symbols or numbers
-        coordinates (list): Coordinates (Å)
-        charge (int): Molecular charge
-        multiplicity (int): Multiplicity
-        connectivity_matrix (ndarray): Connectivity matrix
-        program (str): QCEngine program
-        model (dict): QCEngine model
-        keywords (dict): QCEngine keywords
-        local_options (dict): QCEngine local options
-        procedure (str): QCEngine procedure
-        return_trajectory (bool): Return coordinates for all steps
+        elements: Elements as atomic symbols or numbers
+        coordinates: Coordinates (Å)
+        charge: Molecular charge
+        multiplicity: Multiplicity
+        connectivity_matrix: Connectivity matrix
+        program: QCEngine program
+        model: QCEngine model
+        keywords: QCEngine keywords
+        local_options: QCEngine local options
+        procedure: QCEngine procedure
+        return_trajectory: Return coordinates for all steps
 
     Returns:
         opt_coordinates (ndarray): Conformer coordinates (Å)
         energies (ndarray): Energies for all steps (a.u.)
+
+    Raises:
+        Exception: When QCEngine calculation fails
     """
-    if program.lower() == "rdkit":
+    if (
+        program.lower() == "rdkit"
+        and charge is not None
+        and connectivity_matrix is not None
+    ):
         _check_qcng_rdkit(charge, connectivity_matrix)
 
     # Set defaults
@@ -49,26 +66,25 @@ def optimize_qc_engine(elements,
         local_options = {}
 
     # Create molecule object
-    molecule = _generate_qcel_molecule(elements, coordinates, charge,
-                                       multiplicity, connectivity_matrix)
+    molecule = _generate_qcel_molecule(
+        elements, coordinates, charge, multiplicity, connectivity_matrix
+    )
 
     # Create optimization input
     opt_input = {
-        "keywords": {
-            "program": program
-        },
+        "keywords": {"program": program},
         "input_specification": {
             "driver": "gradient",
             "model": model,
             "keywords": keywords,
         },
-        "initial_molecule": molecule
+        "initial_molecule": molecule,
     }
 
     # Perform optimization
-    opt = qcng.compute_procedure(opt_input,
-                                 procedure=procedure,
-                                 local_options=local_options)
+    opt = qcng.compute_procedure(
+        opt_input, procedure=procedure, local_options=local_options
+    )
     if not opt.success:
         raise Exception(opt.error.error_message)
 
@@ -76,7 +92,8 @@ def optimize_qc_engine(elements,
     energies = np.array(opt.energies)
     if return_trajectory:
         opt_coordinates = np.array(
-            [result.molecule.geometry for result in opt.trajectory])
+            [result.molecule.geometry for result in opt.trajectory]
+        )
     else:
         opt_coordinates = opt.final_molecule.geometry
     opt_coordinates *= BOHR_TO_ANGSTROM
@@ -85,32 +102,41 @@ def optimize_qc_engine(elements,
 
 
 @requires_dependency([Import(module="qcengine", alias="qcng")], globals())
-def sp_qc_engine(elements,
-                 coordinates,
-                 charge=None,
-                 multiplicity=None,
-                 connectivity_matrix=None,
-                 program="xtb",
-                 model=None,
-                 keywords=None,
-                 local_options=None):
+def sp_qc_engine(
+    elements: Union[Iterable[int], Iterable[str]],
+    coordinates: Sequence[Sequence[float]],
+    charge: Optional[int] = None,
+    multiplicity: Optional[int] = None,
+    connectivity_matrix: Optional[Sequence[Sequence[int]]] = None,
+    program: str = "xtb",
+    model: Optional[Dict[str, Any]] = None,
+    keywords: Optional[Dict[str, Any]] = None,
+    local_options: Optional[Dict[str, Any]] = None,
+) -> float:
     """Single-point calculation with QCEngine.
 
     Args:
-        elements (list): Elements as atomic symbols or numbers
-        coordinates (list): Coordinates (Å)
-        charge (int): Molecular charge
-        multiplicity (int); Molecular multiplicity
-        connectivity_matrix (ndarray): Connectivity matrix
-        program (str): QCEngine program
-        model (dict): QCEngine model
-        keywords (dict): QCEngine keywords
-        local_options (dict): QCEngine local options
+        elements: Elements as atomic symbols or numbers
+        coordinates: Coordinates (Å)
+        charge: Molecular charge
+        multiplicity: Molecular multiplicity
+        connectivity_matrix: Connectivity matrix
+        program: QCEngine program
+        model: QCEngine model
+        keywords: QCEngine keywords
+        local_options: QCEngine local options
 
     Returns:
-        energy (float): Energy (a.u.)
+        energy: Energy (a.u.)
+
+    Raises:
+        Exception: When QCEngine calculation fails
     """
-    if program.lower() == "rdkit":
+    if (
+        program.lower() == "rdkit"
+        and charge is not None
+        and connectivity_matrix is not None
+    ):
         _check_qcng_rdkit(charge, connectivity_matrix)
 
     # Set defaults
@@ -122,8 +148,9 @@ def sp_qc_engine(elements,
         local_options = {}
 
     # Crate molecule object
-    molecule = _generate_qcel_molecule(elements, coordinates, charge,
-                                       multiplicity, connectivity_matrix)
+    molecule = _generate_qcel_molecule(
+        elements, coordinates, charge, multiplicity, connectivity_matrix
+    )
 
     # Create sp input
     sp_input = qcel.models.AtomicInput(
@@ -139,41 +166,46 @@ def sp_qc_engine(elements,
         raise Exception(sp.error.error_message)
 
     # Take out results
-    energy = sp.return_result
+    energy: float = sp.return_result
 
     return energy
 
 
-def _check_qcng_rdkit(charge, connectivity_matrix):
+def _check_qcng_rdkit(charge: int, connectivity_matrix: ArrayLike2D) -> None:
     """Check qncg calculation for RDKit incompatibilities."""
     if charge != 0:
-        raise Exception(
-            "QCEngine using RDKit does not work with charged molecules.")
+        raise Exception("QCEngine using RDKit does not work with charged molecules.")
     if np.any(~np.isin(connectivity_matrix, [0, 1, 2, 3])):
         raise Exception(
             "QCEngine using RDKit cannot handle bond orders different from "
-            "1, 2 or 3.")
+            "1, 2 or 3."
+        )
+
 
 @requires_dependency([Import(module="qcelemental", alias="qcel")], globals())
-def _generate_qcel_molecule(elements,
-                            coordinates,
-                            charge=None,
-                            multiplicity=None,
-                            connectivity_matrix=None):
+def _generate_qcel_molecule(
+    elements: Union[Iterable[int], Iterable[str]],
+    coordinates: ArrayLike2D,
+    charge: Optional[int] = None,
+    multiplicity: Optional[int] = None,
+    connectivity_matrix: Optional[ArrayLike2D] = None,
+) -> qcel.models.Molecule:
     """Generate QCElemental molecule object.
 
     Args:
-        elements (list): Elements as atomic symbols or numbers
-        coordinates (list): Coordinates (Å)
-        charge (int): Molecular charge
-        multiplicity (int): Molecular multiplicity
-        connectivity_matrix (ndarray): Connectivity matrix
+        elements: Elements as atomic symbols or numbers
+        coordinates: Coordinates (Å)
+        charge: Molecular charge
+        multiplicity: Molecular multiplicity
+        connectivity_matrix: Connectivity matrix
 
     Returns:
-        molecule (obj): QCElemental molecule object.
+        molecule: QCElemental molecule object.
     """
     # Generate bond order list from connectivity matrix
+    bos: Optional[List[Tuple[int, int, int]]]
     if connectivity_matrix is not None:
+        connectivity_matrix = np.array(connectivity_matrix)
         bos = []
         i, j = np.tril_indices_from(connectivity_matrix)
         for k, l in zip(i, j):
@@ -187,10 +219,12 @@ def _generate_qcel_molecule(elements,
     # Create molecule object
     elements = np.array(convert_elements(elements, output="symbols"))
     coordinates = np.array(coordinates) * ANGSTROM_TO_BOHR
-    molecule = qcel.models.Molecule(symbols=elements,
-                                    geometry=coordinates,
-                                    molecular_charge=charge,
-                                    connectivity=bos,
-                                    molecular_multiplicity=multiplicity)
+    molecule = qcel.models.Molecule(
+        symbols=elements,
+        geometry=coordinates,
+        molecular_charge=charge,
+        connectivity=bos,
+        molecular_multiplicity=multiplicity,
+    )
 
     return molecule

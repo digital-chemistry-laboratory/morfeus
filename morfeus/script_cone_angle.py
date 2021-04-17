@@ -4,18 +4,20 @@ import argparse
 
 from morfeus import ConeAngle, read_gjf, read_xyz
 
-def main():
+
+def main() -> None:
+    """Calculate exact ligand cone angle."""
     # Parse the arguments
-    parser = argparse.ArgumentParser(
-        "morfeus script to calcaulate cone angles")
+    parser = argparse.ArgumentParser("morfeus script to calcaulate cone angles")
+    parser.add_argument("file", type=str, help="Input file, either .xyz, .gjf or .com")
+    parser.add_argument("atom_1", type=int, help="Central atom")
     parser.add_argument(
-        'file', type=str, help='Input file, either .xyz, .gjf or .com')
-    parser.add_argument(
-        'atom_1', type=int, help='Central atom')
-    parser.add_argument(
-        '--radii', type=str, 
+        "--radii",
+        type=str,
         help='Radii type: "bondi" or "crc" (default)',
-        choices=["bondi", "crc"], default="crc")
+        choices=["bondi", "crc"],
+        default="crc",
+    )
 
     args = parser.parse_args()
     radii_type = args.radii
@@ -29,10 +31,11 @@ def main():
         elements, coordinates = read_gjf(file)
     else:
         raise Exception("No valid input file. Use .xyz or .gjf/.com")
-    
+
     # Perform the calculations and print the results
     cone_angle = ConeAngle(elements, coordinates, atom_1, radii_type=radii_type)
     cone_angle.print_report()
+
 
 if __name__ == "__main__":
     main()

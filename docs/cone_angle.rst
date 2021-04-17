@@ -9,7 +9,7 @@ Exact cone angles are implemented as described by Allen and co-workers
 Command line script
 *******************
 
-The command line script provides access to the basic functionality through the 
+The command line script provides access to the basic functionality through the
 terminal.
 
 .. code-block:: console
@@ -59,25 +59,15 @@ For more detailed information, use ``help(ConeAngle)`` or see the API:
 Background
 **********
 
-Cone angles is a method invented by Tolman for assessing the steric size of 
+Cone angles is a method invented by Tolman for assessing the steric size of
 ligands :cite:`tolman_steric_1977`. The original Tolman cone angles for
 phosphines have problems with asymmetric ligands and are not implemented in
 this package. Instead, the exact cone angles :cite:`bilbrey_exact_2013` are
 used. These are also defined for multidentate ligands.
 
 The method implemented in ᴍᴏʀғᴇᴜs is taken directly from the article by Allen
-:cite:`bilbrey_exact_2013`. The results have been benchmarked against Table 1
-of the original article and agree within numerical accuracy.
-
-.. figure:: benchmarks/cone_angle/cone_angles_min.png
-  
-  Benchmark of minimum cone angles from Table 1 of ref.
-  :cite:`bilbrey_exact_2013`
-
-.. figure:: benchmarks/cone_angle/cone_angles_max.png
-
-  Benchmark of maximum cone angles from Table 1 of ref.
-  :cite:`bilbrey_exact_2013`
+:cite:`bilbrey_exact_2013`. The results have been benchmarked against the
+original article and agree within numerical accuracy.
 
 **********
 References

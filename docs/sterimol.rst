@@ -93,24 +93,15 @@ rotational size of the substituent. They are defined as the shortest and
 longest vectors from atom 2 to a tangent plane of the vdW surface which are
 perpendicular to the L vector, respectively.
 
-ᴍᴏʀғᴇᴜs has been benchmarked against Paton's Sterimol_ package. Using exactly
+ᴍᴏʀғᴇᴜs has been benchmarked against Paton's Sterimol__ package. Using exactly
 the same radii (Paton's modified Bondi), almost identical results are obtained.
-(Note that ᴍᴏʀғᴇᴜs normally uses 1.20 Å as the Bondi vdW radius for H).
-
-.. note::
-  Figure to be added.
-
-.. todo::
-  figure:: benchmarks/sterimol/correlation.png Benchmark of Sterimol parameters
-  against Paton's Sterimol code.
-
-ᴍᴏʀғᴇᴜs calculates the B\ :sub:`1` and B\ :sub:`5` parameters by a different
-approach from the original code. First, atomic spheres are created with a
-certain density of points. B\ :sub:`1` and B\ :sub:`5` are then obtained by
-projection of atoms onto vectors spanning the whole 360 degrees in the plane
-perpendicular to L. B\ :sub:`5` is obtained from the largest projection, while
-B\ :sub:`1` is obtained from the smallest maximum projection for the set of
-vectors.
+(Note that ᴍᴏʀғᴇᴜs normally uses 1.20 Å as the Bondi vdW radius for H).ᴍᴏʀғᴇᴜs
+calculates the B\ :sub:`1` and B\ :sub:`5` parameters by a different approach
+from the original code. First, atomic spheres are created with a certain
+density of points. B\ :sub:`1` and B\ :sub:`5` are then obtained by projection
+of atoms onto vectors spanning the whole 360 degrees in the plane perpendicular
+to L. B\ :sub:`5` is obtained from the largest projection, while B\ :sub:`1` is
+obtained from the smallest maximum projection for the set of vectors.
 
 **********
 References
@@ -120,4 +111,4 @@ References
   :style: unsrt
   :filter: docname in docnames
 
-.. _Sterimol: https://github.com/bobbypaton/Sterimol
+.. __: https://github.com/bobbypaton/Sterimol

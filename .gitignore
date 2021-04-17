@@ -1,6 +1,10 @@
 __pycache__/
 *.pyc
 .vscode
+.nox
+.coverage
+.mypy_cache
+.pytest_cache
 
 # Distribution/packaging
 build/
