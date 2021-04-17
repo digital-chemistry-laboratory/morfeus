@@ -1,7 +1,6 @@
 """Test buried volume code."""
 
 import csv
-from os import device_encoding
 from pathlib import Path
 
 from numpy.testing import assert_almost_equal

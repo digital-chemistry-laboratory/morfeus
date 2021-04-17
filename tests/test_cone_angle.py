@@ -13,7 +13,7 @@ DATA_DIR = Path(__file__).parent / "data" / "cone_angle"
 
 def test_PdPMe3():
     """Test PdPMe3."""
-    elements, coordinates = read_xyz(DATA_DIR / f"pd/PdPMe3.xyz")
+    elements, coordinates = read_xyz(DATA_DIR / "pd/PdPMe3.xyz")
     ca = ConeAngle(elements, coordinates, 1, radii_type="bondi")
     assert_almost_equal(ca.cone_angle, 120.4, decimal=1)
 
