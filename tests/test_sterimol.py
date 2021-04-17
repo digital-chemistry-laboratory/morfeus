@@ -4,11 +4,25 @@ import csv
 from pathlib import Path
 
 from numpy.testing import assert_almost_equal
+import pytest
 
 from morfeus import read_gjf, Sterimol
 from morfeus.utils import get_radii
 
 DATA_DIR = Path(__file__).parent / "data" / "sterimol"
+
+
+def test_H():
+    """Test H substituent."""
+    elements, coordinates = read_gjf(DATA_DIR / "gjfs" / f"H.gjf")
+    radii = get_radii(elements, radii_type="bondi")
+    radii = [1.09 if radius == 1.20 else radius for radius in radii]
+    sterimol = Sterimol(elements, coordinates, 1, 2, radii=radii)
+    assert_almost_equal(
+        (sterimol.L_value, sterimol.B_1_value, sterimol.B_5_value),
+        (2.15, 1.09, 1.09),
+        decimal=2,
+    )
 
 
 def pytest_generate_tests(metafunc):
@@ -20,6 +34,7 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("sterimol_data", records)
 
 
+@pytest.mark.benchmark
 def test_reference(sterimol_data):
     """Test against Sterimol reference data."""
     data = sterimol_data

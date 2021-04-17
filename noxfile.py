@@ -13,9 +13,9 @@ pyversions = ["3.8", "3.9"]
 @nox.session(python=pyversions)
 def tests(session: Session) -> None:
     """Run tests."""
-    args = session.posargs or ["--cov", "--import-mode=importlib", "-s"]
+    args = session.posargs + ["--cov=morfeus", "--import-mode=importlib", "-s"]
     session.install("numpy", "scipy", "pytest", "pytest-cov")
-    session.install(".", "--no-deps")
+    session.install("-e", ".", "--no-deps")
     session.run("pytest", *args)
 
 

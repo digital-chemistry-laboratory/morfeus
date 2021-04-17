@@ -5,11 +5,23 @@ from pathlib import Path
 
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_array_almost_equal
+import pytest
 
 from morfeus import read_xyz, SASA
 
 DATA_DIR = Path(__file__).parent / "data" / "sasa"
 XYZ_DIR = Path(__file__).parent / "data" / "buried_volume" / "xyz"
+
+
+def test_one():
+    """Test complex one."""
+    atom_areas_ref = np.loadtxt(DATA_DIR / "atom_areas/1.txt")
+
+    elements, coordinates = read_xyz(XYZ_DIR / "1.xyz")
+    sasa = SASA(elements, coordinates)
+    atom_areas = np.array(list(sasa.atom_areas.values()))
+    assert_almost_equal(sasa.area, 624, decimal=0)
+    assert_array_almost_equal(atom_areas, atom_areas_ref, decimal=0)
 
 
 def pytest_generate_tests(metafunc):
@@ -22,6 +34,7 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("sasa_data", records)
 
 
+@pytest.mark.benchmark
 def test_reference(sasa_data):
     """Test against SASA reference data."""
     idx, data = sasa_data

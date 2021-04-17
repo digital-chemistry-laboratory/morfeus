@@ -4,10 +4,18 @@ import csv
 from pathlib import Path
 
 from numpy.testing import assert_almost_equal
+import pytest
 
 from morfeus import ConeAngle, read_xyz
 
 DATA_DIR = Path(__file__).parent / "data" / "cone_angle"
+
+
+def test_PdPMe3():
+    """Test PdPMe3."""
+    elements, coordinates = read_xyz(DATA_DIR / f"pd/PdPMe3.xyz")
+    ca = ConeAngle(elements, coordinates, 1, radii_type="bondi")
+    assert_almost_equal(ca.cone_angle, 120.4, decimal=1)
 
 
 def pytest_generate_tests(metafunc):
@@ -22,6 +30,7 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("cone_angle_data", records)
 
 
+@pytest.mark.benchmark
 def test_reference(cone_angle_data):
     """Test against cone angle reference data."""
     for metal in ("pd", "pt", "ni"):

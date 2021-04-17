@@ -4,10 +4,23 @@ import csv
 from pathlib import Path
 
 from numpy.testing import assert_almost_equal
+import pytest
 
 from morfeus import LocalForce
 
 DATA_DIR = Path(__file__).parent / "data" / "local_force"
+
+
+def test_one():
+    """Test molecule one."""
+    lf = LocalForce()
+    lf.load_file(DATA_DIR / "1" / "freq-hp.log", "gaussian", "log")
+    lf.compute_local()
+    lf.compute_frequencies()
+    fc = lf.get_local_force_constant([1, 2])
+    freq = lf.get_local_frequency([1, 2])
+    assert_almost_equal(fc, 5.365, decimal=1)
+    assert_almost_equal(freq, 3129, decimal=-2)
 
 
 def pytest_generate_tests(metafunc):
@@ -19,6 +32,7 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("lf_data", records)
 
 
+@pytest.mark.benchmark
 def test_reference(lf_data):
     """Test against local force reference data."""
     # Test criteria are relatively loose as reference geometries don't exist
