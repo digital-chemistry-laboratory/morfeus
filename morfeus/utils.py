@@ -18,6 +18,8 @@ from typing import (
 )
 
 import numpy as np
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import connected_components
 import scipy.spatial
 
 from morfeus.data import (
@@ -33,17 +35,71 @@ from morfeus.data import (
 from morfeus.typing import Array2D, ArrayLike1D, ArrayLike2D
 
 
-# TODO change exclude_list, within_list, return empty list instead of None
+def get_excluded_from_connectivity(
+    connectivity_matrix: ArrayLike2D,
+    center_atoms: ArrayLike1D,
+    connected_atoms: ArrayLike1D,
+) -> List[int]:
+    """Get atom indices to exclude bassed on connectivity and fragmentation.
+
+    Convenience function that determines atoms to exclude from a calculation of a larger
+    structure with multiple fragments. Connected atoms belong to the fragment of
+    interest, e.g., a ligand. Center atoms are those of e.g. a central metal atom that.
+    By default, the center atoms are added to the excluded ones.
+
+    Args:
+        connectivity_matrix: Connectivity matrix
+        center_atoms: Atoms of central unit which connects to fragment (1-indexed)
+        connected_atoms: Atoms of fragment (1-indexed)
+
+    Returns:
+        excluded_atoms: Atom indices to exclude
+
+    Raises:
+        ValueError: When connected atoms belong to different fragments or when connected
+            atoms belong to same fragment as other neighbors of center atoms (1-indexed)
+    """
+    connectivity_matrix = np.array(connectivity_matrix)
+    center_atoms = np.array(center_atoms).reshape(-1) - 1
+    connected_atoms = np.array(connected_atoms).reshape(-1) - 1
+    # Determine other neihgbors to the central atoms
+    other_neighbors = set(
+        connectivity_matrix[center_atoms].reshape(-1).nonzero()[0]
+    ).difference(connected_atoms)
+
+    # Calculate fragment labels
+    mask = np.ones(len(connectivity_matrix), dtype=bool)
+    mask[center_atoms] = False
+    graph = csr_matrix(connectivity_matrix)[mask, :][:, mask]
+    n_components, labels = connected_components(
+        csgraph=graph, directed=False, return_labels=True
+    )
+
+    # Take out labels and check for errors
+    connected_labels = set([labels[i] for i in connected_atoms])
+    if len(connected_labels) > 1:
+        raise ValueError("Connected atoms belong to different fragments.")
+    neighbor_labels = set([labels[i] for i in other_neighbors])
+    if len(neighbor_labels.intersection(connected_labels)) > 0:
+        raise ValueError(
+            "Connected atoms belong to same fragment as other neighbor of center atoms."
+        )
+    ref_label = list(connected_labels)[0]
+    excluded_atoms = list(np.where(labels != ref_label)[0] + 1)
+
+    return excluded_atoms
+
+
 def check_distances(
     elements: Union[Iterable[int], Iterable[str]],
     coordinates: ArrayLike2D,
     check_atom: int,
     radii: Optional[ArrayLike1D] = None,
     check_radius: float = 0,
-    exclude_list: Optional[Sequence[int]] = None,
+    excluded_atoms: Optional[Sequence[int]] = None,
     epsilon: float = 0,
     radii_type: str = "crc",
-) -> Optional[List[int]]:
+) -> List[int]:
     """Check which atoms are within clashing vdW radii distances.
 
     Args:
@@ -52,13 +108,12 @@ def check_distances(
         check_atom: Index of atom to check against (1-indexed)
         radii: vdW radii (Å)
         check_radius: Radius to use for check_atom (Å)
-        exclude_list: Atom indices to exclude (1-indexed)
+        excluded_atoms: Atom indices to exclude (1-indexed)
         epsilon: Numeric term add to the radii (Å)
         radii_type: Radii type: 'alvarez', 'bondi', 'crc', 'pyykko', 'rahm' or 'truhlar'
 
     Returns:
         within_list: Atom indices within vdW distance of check atom.
-            Returns none if list is empty.
     """
     # Convert elements to atomic numbers if the are symbols
     elements = convert_elements(elements, output="numbers")
@@ -68,10 +123,10 @@ def check_distances(
         radii = get_radii(elements, radii_type=radii_type)
     radii = np.array(radii)
 
-    if exclude_list is None:
-        exclude_list = []
+    if excluded_atoms is None:
+        excluded_atoms = []
     else:
-        exclude_list = list(exclude_list)
+        excluded_atoms = list(excluded_atoms)
 
     coordinates = np.array(coordinates)
     atom_coordinates = np.array(coordinates)
@@ -91,14 +146,9 @@ def check_distances(
 
     # Remove check atom and atoms in the exclude list
     within_distance.remove(check_atom - 1)
-    within_distance = [i for i in within_distance if i not in exclude_list]
+    within_distance = [i + 1 for i in within_distance if i + 1 not in excluded_atoms]
 
-    # Return atoms which are within vdW distance from check atom
-    if within_distance:
-        within_list = [i + 1 for i in within_distance]
-        return within_list
-    else:
-        return None
+    return within_distance
 
 
 def requires_executable(executables: Sequence[str]) -> Callable[..., Callable]:
