@@ -1,5 +1,5 @@
 dependencies:
-- python>=3.8
-- numpy
-- scipy
 - fire
+- numpy
+- python>=3.8
+- scipy

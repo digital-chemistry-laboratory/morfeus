@@ -48,4 +48,4 @@ __all__ = [
 ]
 
 # Version of the morfeus package
-__version__ = metadata.version("morfeus")
+__version__ = metadata.version("morfeus-ml")

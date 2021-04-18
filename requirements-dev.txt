@@ -1,0 +1,17 @@
+black
+darglint
+flake8
+flake8-annotations
+flake8-black
+flake8-bugbear
+flake8-docstrings
+flake8-import-order
+isort
+mypy
+nox
+pip
+pytest
+pytest-cov
+sphinx
+sphinx_rtd_theme
+sphinxcontrib-bibtex
