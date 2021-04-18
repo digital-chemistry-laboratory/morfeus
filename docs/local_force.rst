@@ -3,9 +3,9 @@ Local force constants
 =====================
 
 Local force constants can be calculated with the local modes method
-:cite:`konkoli_new_1998` or the compliance matrix method
-:cite:`brandhorst_how_2008`. ᴍᴏʀғᴇᴜs can use the output of the Gaussian__, xtb__,
-or UniMoVib__ programs.
+:footcite:`konkoli_new_1998` or the compliance matrix method
+:footcite:`brandhorst_how_2008`. ᴍᴏʀғᴇᴜs can use the output of the Gaussian__,
+xtb__, or UniMoVib__ programs.
 
 ***************
 Preparing input
@@ -201,56 +201,6 @@ for transition states.
   constants and frequencies of the atoms corresponding to the imaginary mode
   should not be used.
 
-*******************
-Command line script
-*******************
-
-The command line script provides access to the basic functionality through
-the terminal.
-
-.. code-block:: console
-  :caption: Example with Gaussian log file.
-  
-  $ morfeus_local_force freq-lm.log -p gaussian -t log
-  Coordinate                            Force constant (mDyne/Å, mDyne Å rad^(-2))             Frequency (cm^-1)
-  Bond(1, 2)                                                                 5.364                          3129
-  Bond(1, 3)                                                                 5.364                          3129
-  Bond(1, 4)                                                                 5.365                          3129
-  Bond(1, 5)                                                                 5.364                          3129
-  Angle(1, 2, 3)                                                             0.667                          1448
-  Angle(1, 2, 4)                                                             0.667                          1448
-  Angle(1, 2, 5)                                                             0.667                          1448
-  Angle(1, 3, 4)                                                             0.667                          1448
-  Angle(1, 3, 5)                                                             0.667                          1448
-  Angle(1, 4, 5)                                                             0.667                          1448
-  Dihedral(1, 2, 3, 4)                                                       0.433                          1384
-  Dihedral(1, 2, 3, 5)                                                       0.433                          1384
-  Dihedral(1, 2, 4, 5)                                                       0.433                          1384
-  Dihedral(1, 3, 4, 5)                                                       0.433                          1384
-
-.. code-block:: console
-  :caption: Example with xtb and hessian file.
-  
-  $ morfeus_local_force hessian -x xtbopt.xyz -p xtb -t hessian -m local -c 1 2 -c 1 5 -c 1 2 3
-  Coordinate                            Force constant (mDyne/Å, mDyne Å rad^(-2))             Frequency (cm^-1)
-  Bond(1, 2)                                                                 5.190                          3078
-  Bond(1, 5)                                                                 5.190                          3078
-  Angle(1, 2, 3)                                                             2.388                          1692
-
--c, --coordinate <list>
-  List of atoms in the bond/internal coordinate. Can be given multiple times
-  to add multiple coordinates.
--m, --method <str>
-  Method: "local" (default) or "compliance"
--p, --program <str>
-  Quantum-chemical program
--t, --type <str>
-  Input file type.
--x, --xyz <str>
-  Coordinate file in xyz format
-
-More information is given with ``morfeus_local_force --help``
-
 ******
 Module
 ******
@@ -355,7 +305,56 @@ method. The cutoff for low-frequency modes can be controlled with
 ``add_internal_coordinate`` method.
 
 For more detailed information, use ``help(LocalForce)`` or see the API
-documentation: :py:class:`morfeus.morfeus.LocalForce`.
+documentation: :py:class:`LocalForce <morfeus.local_force.LocalForce>`.
+
+*******************
+Command line script
+*******************
+
+The command line script provides access to the basic functionality through
+the terminal.
+
+.. code-block:: console
+  :caption: Example with Gaussian log file.
+  
+  $ morfeus local_force - - load_file freq-lm.log gaussian log - compute_local - compute_frequencies - print_report
+  Coordinate                                              Force constant (mDyne/Å)              Frequency (cm⁻¹)
+  Bond(1, 2)                                                                 5.364                          3129
+  Bond(1, 3)                                                                 5.364                          3129
+  Bond(1, 4)                                                                 5.365                          3129
+  Bond(1, 5)                                                                 5.364                          3129
+
+
+.. note::
+  Breaking up the command:
+
+  morfeus local_force - -
+    Call LocalForce without any geometry file and without arguments. Return
+    object.
+
+  load_file freq_lm.log gaussian log -
+    Call LocalForce.load_file with three arguments. Return object for chaining.
+
+  compute_local - 
+    Call LocalForce.compute_local. Return object for chaining.
+
+  compute_frequencies - 
+    Call LocalForce.compute_frequencies. Return object for chaining.
+
+  print_report
+    Call LocalFroce.print_report. Return result
+
+Another example using xtb where a geometry file is loaded:
+
+.. code-block:: console
+  :caption: Example with xtb and hessian file.
+  
+  $ morfeus local_force xtb.xyz - - load_file hessian xtb hessian - normal_mode_analysis -  detect_bonds - compute_local - compute_frequencies - print_report
+  Coordinate                                              Force constant (mDyne/Å)              Frequency (cm⁻¹)
+  Bond(1, 2)                                                                 5.190                          3078
+  Bond(1, 3)                                                                 5.190                          3078
+  Bond(1, 4)                                                                 5.190                          3078
+  Bond(1, 5)                                                                 5.190                          3078
 
 **********
 Background
@@ -363,30 +362,23 @@ Background
 
 Local force constants describe the bond strength based on vibrational
 frequencies. There are two approaches in the literature: the local modes method
-of Cremer :cite:`konkoli_new_1998` and the compliance matrix method of
-Grunenberg :cite:`brandhorst_how_2008`. They have been shown to be equivalent
-within numerical accuracy :cite:`zou_relating_2012`. ᴍᴏʀғᴇᴜs can use either
-method, and they give almost identical results except when there are modes with
-imaginary or very small frequencies. In these cases, the local modes approach
-can handle the issue with  two methods: (1) projecting out imaginary modes, and
-(2) raising the force constants of low-frequency modes to a cutoff value.
-ᴍᴏʀғᴇᴜs does this projection by default and uses a cutoff of 0.001 mDyne/Å for
-low-frequency modes. We therefore recommend local modes with default settings
-as the most robust method in problematic cases. Expert users can turn off the
-projection and alter the cutoff value. Note that interactions involving
-imaginary modes (such as breaking/forming bonds in transition states) cannot be
-assessed by the local force constants.
+of Cremer :footcite:`konkoli_new_1998` and the compliance matrix method of
+Grunenberg :footcite:`brandhorst_how_2008`. They have been shown to be
+equivalent within numerical accuracy :footcite:`zou_relating_2012`. ᴍᴏʀғᴇᴜs can
+use either method, and they give almost identical results except when there are
+modes with imaginary or very small frequencies. In these cases, the local modes
+approach can handle the issue with  two methods: (1) projecting out imaginary
+modes, and (2) raising the force constants of low-frequency modes to a cutoff
+value. ᴍᴏʀғᴇᴜs does this projection by default and uses a cutoff of 0.001
+mDyne/Å for low-frequency modes. We therefore recommend local modes with
+default settings as the most robust method in problematic cases. Expert users
+can turn off the projection and alter the cutoff value. Note that interactions
+involving imaginary modes (such as breaking/forming bonds in transition states)
+cannot be assessed by the local force constants. ᴍᴏʀғᴇᴜs has been benchmarked
+against the local force constants and frequencies given by Cremer
+:footcite:`zou_relating_2012` for small organic molecules. 
 
-ᴍᴏʀғᴇᴜs has been benchmarked against the local force constants and frequencies
-given by Cremer :cite:`zou_relating_2012` for small organic molecules. 
-
-**********
-References
-**********
-
-.. bibliography:: refs.bib
-  :style: unsrt
-  :filter: docname in docnames
+.. footbibliography::
 
 .. __: https://gaussian.com/
 .. __: https://xtb-docs.readthedocs.io/en/latest/contents.html

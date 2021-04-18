@@ -21,6 +21,7 @@ jobs:
           pip install sphinx-rtd-theme
           pip install sphinxcontrib-bibtex
           pip install .
+          export SPHINX_APIDOC_OPTIONS=members,show-inheritance 
           sphinx-apidoc --separate --no-toc -o docs/api morfeus
           sphinx-build docs public -b html
       - name: Deploy to GitHub Pages

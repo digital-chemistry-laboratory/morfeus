@@ -39,19 +39,43 @@ release = "0.5.0"
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinx.ext.githubpages",
-    "sphinx.ext.autodoc",
-    "sphinx.ext.napoleon",
+    "sphinx_copybutton",
+    "sphinx_inline_tabs",
     "sphinx_rtd_theme",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.githubpages",
+    "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "sphinxcontrib.bibtex",
+    "sphinx.ext.viewcode",
 ]
 
 bibtex_bibfiles = ["refs.bib"]
+bibtex_bibliography_header = ".. rubric:: References"
+bibtex_footbibliography_header = bibtex_bibliography_header
+bibtex_default_style = "unsrt"
 
-autodoc_mock_imports = ["ase", "dftd4", "pyvista", "pymeshfix", "vtk", "xtb"]
+autodoc_mock_imports = [
+    "ase",
+    "dftd4",
+    "pymeshfix",
+    "openbabel",
+    "pyvista",
+    "pyvistaqt",
+    "rdkit",
+    "vtk",
+    "xtb",
+]
 
 numfig = True
+
+html_theme_options = {
+    "light_logo": "logo-light.svg",
+    "dark_logo": "logo-dark.svg",
+    "sidebar_hide_name": True,
+}
+html_static_path = ["_static"]
+html_theme = "furo"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -86,7 +110,6 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

@@ -45,13 +45,13 @@ class Dispersion:
     Attributes:
         area: Area of surface (Å²)
         atom_areas: Atom indices as keys and atom areas as values (Å²)
-        atom_p_int: Atom indices as keys and P_int as values (kcal**(1/2) mol**(-1/2))
-        atom_p_max: Atom indices as keys and P_max as values (kcal**(1/2) mol**(-1/2))
-        atom_p_min: Atom indices as keys and P_min as values( kcal**(1/2) mol**(-1/2))
-        p_int: P_int value for molecule (kcal**(1/2) mol**(-1/2))
-        p_max: Highest P value (kcal**(1/2) mol**(-1/2))
-        p_min: Lowest P value (kcal**(1/2) mol**(-1/2))
-        p_values: All P values (kcal**(1/2) mol**(-1/2))
+        atom_p_int: Atom indices as keys and P_int as values (kcal¹ᐟ² mol⁻¹⸍²))
+        atom_p_max: Atom indices as keys and P_max as values (kcal¹ᐟ² mol⁻¹ᐟ²)
+        atom_p_min: Atom indices as keys and P_min as values( kcal¹ᐟ² mol⁻¹ᐟ²)
+        p_int: P_int value for molecule (kcal¹ᐟ² mol⁻¹ᐟ²)
+        p_max: Highest P value (kcal¹ᐟ² mol⁻¹ᐟ²)
+        p_min: Lowest P value (kcal¹ᐟ² mol⁻¹ᐟ²)
+        p_values: All P values (kcal¹ᐟ² mol⁻¹ᐟ²)
         volume: Volume of surface (Å³)
 
     Raises:
@@ -495,9 +495,9 @@ class Dispersion:
         Args:
             verbose: Whether to print atom P_ints
         """
-        print(f"Surface area (Å^2): {self.area:.1f}")
-        print(f"Surface volume (Å^3): {self.volume:.1f}")
-        print(f"P_int (kcal^(1/2) mol^(-1/2): {self.p_int:.1f}")
+        print(f"Surface area (Å²): {self.area:.1f}")
+        print(f"Surface volume (Å³): {self.volume:.1f}")
+        print(f"P_int (kcal¹ᐟ² mol⁻¹ᐟ²): {self.p_int:.1f}")
         if verbose:
             print(
                 f"{'Symbol':<10s}{'Index':<10s}{'P_int (kcal^(1/2) mol^(-1/2))':<30s}"

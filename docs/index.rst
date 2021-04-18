@@ -1,7 +1,12 @@
-.. figure:: images/logo.svg
+.. raw:: html
 
-ᴍᴏʀғᴇᴜs calculates molecular features from 3D structures with a focus on 
-steric descriptors. It can be used as a Python library or through console
+  <picture>
+      <source srcset="_static/logo-dark.svg" media="(prefers-color-scheme: dark)">
+      <img src="_static/logo-light.svg?text=Light+mode" /> 
+  </picture>
+
+ᴍᴏʀғᴇᴜs calculates molecular features from 3D structures with a focus on steric
+descriptors. It can be used as a Python library or through command line
 scripts.
 
 ********
@@ -11,27 +16,22 @@ Examples
 ᴍᴏʀғᴇᴜs can be imported as a Python module that is easily integrated into
 workflows. Here is an example for calculating the exact ligand cone angle:
 
-.. code-block:: python
-  :caption: Cone angle calculation
-
-  >>> from morfeus import ConeAngle, read_xyz
-  >>> elements, coordinates = read_xyz("phosphines/PdPMe3.xyz")
-  >>> cone_angle = ConeAngle(elements, coordinates, 1)
-  >>> print(cone_angle.cone_angle)
-  117.11012922937584  
-
-The metal atom here has index 1. Command-line scripts are also available for
-convenience. Here is an example for a Sterimol calculation:
-
-.. code-block:: console
-  :caption: Sterimol calculation
+.. tab:: Module
   
-  $ morfeus_sterimol tBu.xyz 1 2
-  L         B_1       B_5
-  4.21      2.87      3.27
+  .. code-block:: python
 
-The dummy atom here has index 1, while the connected atom in the substituent
-has index 2.
+    >>> from morfeus import ConeAngle, read_xyz
+    >>> elements, coordinates = read_xyz("PdPMe3.xyz")
+    >>> cone_angle = ConeAngle(elements, coordinates, 1)
+    >>> print(cone_angle.cone_angle)
+    117.11012922937584 
+
+.. tab:: Command line
+
+  .. code-block:: console
+
+    $ morfeus cone_angle PdPMe3.xyz - 1 - cone_angle
+    117.11012922937584    
 
 ************
 Installation
@@ -40,24 +40,18 @@ Installation
 Clone the repository from GitHub and install with pip:
 
 .. code-block:: console
-  :caption: pip
+  :caption: pip installation
 
   pip install .
-
-To install with extra graphics functionality:
-
-.. code-block:: console
-  :caption: pip
-
-  pip install .[extras]
 
 ********
 Features
 ********
 
 * Buried volume
+* Conformer tools
 * Dispersion descriptor
-* Ligand cone angle
+* Exact ligand cone angle
 * Local force constant
 * Pyramidalization
 * Solvent accessible surface area
@@ -68,8 +62,8 @@ Features
 About
 *****
 
-ᴍᴏʀғᴇᴜs is developed by Kjell Jorner working as a Post Doc at AstraZeneca
-in collaboration with the Aspuru-Guzik group at the University of Toronto.
+ᴍᴏʀғᴇᴜs was developed by Kjell Jorner working as a postdoctoral fellow at
+AstraZeneca UK.
 
 *******
 License
@@ -85,6 +79,8 @@ both academic and commercial use.
 
    installation
    notes
+   cli
+   radii
 
 .. toctree::
    :maxdepth: 3

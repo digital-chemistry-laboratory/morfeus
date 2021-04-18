@@ -2,11 +2,15 @@
 Installation
 ============
 
-ᴍᴏʀғᴇᴜs can be installed using pip and works with Python >= 3.7.
+ᴍᴏʀғᴇᴜs can be installed using pip and works with Python >= 3.8.
 
 ************
 Dependencies
 ************
+
+It is recommended that dependencies are installed with conda if possible as the
+performance of the linear algebra backends is generally better than with pip.
+
 Core dependencies:
 
 * numpy_
@@ -26,10 +30,6 @@ Optional depedencies:
 * vtk_
 * xtb-python_
 
-The optional dependencies are used for 3D visualization and in some of the
-Dispersion descriptor calculations. *xtb* is used for calculation of electronic
-properties.
-
 ***
 pip
 ***
@@ -39,12 +39,6 @@ Clone the repository from GitHub. Install core functionality with pip:
 .. code-block:: console
 
   pip install .
-
-Install with extra graphics functionality:
-
-.. code-block:: console
-
-  pip install .[extras]
 
 .. _dftd4: https://github.com/dftd4/dftd4
 .. _matplotlib: https://matplotlib.org

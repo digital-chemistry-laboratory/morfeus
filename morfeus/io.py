@@ -1,4 +1,4 @@
-"""Geometry file parsing functions."""
+"""Input and output."""
 
 from os import PathLike
 from pathlib import Path

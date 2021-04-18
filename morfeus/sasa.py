@@ -175,10 +175,10 @@ class SASA:
             verbose: Whether to print atom areas
         """
         print(f"Probe radius (Å): {self._probe_radius}")
-        print(f"Solvent accessible surface area (Å^2): {self.area:.1f}")
-        print("Volume inside solvent accessible surface (Å^3): " f"{self.volume:.1f}")
+        print(f"Solvent accessible surface area (Å²): {self.area:.1f}")
+        print("Volume inside solvent accessible surface (Å³): " f"{self.volume:.1f}")
         if verbose:
-            print(f"{'Symbol':<10s}{'Index':<10s}{'Area (Å^2)':<10s}")
+            print(f"{'Symbol':<10s}{'Index':<10s}{'Area (Å²)':<10s}")
             for atom, (i, area) in zip(self._atoms, self.atom_areas.items()):
                 symbol = atomic_symbols[atom.element]
                 print(f"{symbol:<10s}{i:<10d}{area:<10.1f}")

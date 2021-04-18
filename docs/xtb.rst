@@ -66,7 +66,7 @@ Background
 
 ᴍᴏʀғᴇᴜs can compute both simple electronic parameters such as charges, HOMO
 and LUMO energies and bond orders, as well as descriptors from conceptual
-density functional theory :cite:`domingo_applications_2016`.
+density functional theory :footcite:`domingo_applications_2016`.
 The following global descriptors are available:
 
 * Electrophilicity: :math:`\omega`
@@ -75,7 +75,7 @@ The following global descriptors are available:
 * Nucleofugality: :math:`\nu_{nucleofugality}`
 
 They are calculated according to the following definitions
-:cite:`domingo_applications_2016,ayers_indices_2005`:
+:footcite:`domingo_applications_2016,ayers_indices_2005`:
 
 .. math::
 
@@ -125,7 +125,7 @@ a measure of electrophilicity. The somewhat unintuitive names is due to the
 notion that *another* molecule would attack as a nucleophile/electrophile. The
 coefficient for radical attack is often used for radical reactivity. In
 addition, the local electrophilicity (:math:`l_{\omega}`) and nucleophilicity
-(:math:`l_N`) are also available and calculated as :cite:`oller_global_2018`.
+(:math:`l_N`) are also available and calculated as :footcite:`oller_global_2018`.
 
 .. math::
 
@@ -135,14 +135,8 @@ addition, the local electrophilicity (:math:`l_{\omega}`) and nucleophilicity
 
 The ionization potentials and electron affinities calculated with *xtb* can be
 corrected using the empirical terms given by Grimme and co-workers
-:cite:`neugebauer_benchmark_2020`.
+:footcite:`neugebauer_benchmark_2020`.
 
-**********
-References
-**********
-
-.. bibliography:: refs.bib
-  :style: unsrt
-  :filter: docname in docnames
+.. footbibliography::
 
 .. __: https://github.com/grimme-lab/xtb-python/
