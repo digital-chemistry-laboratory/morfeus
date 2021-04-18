@@ -20,6 +20,8 @@ Scripts:
     script_sasa: Calculate solvent accessible surface area.
 """
 
+from importlib import metadata
+
 from morfeus.buried_volume import BuriedVolume
 from morfeus.cone_angle import ConeAngle
 from morfeus.dispersion import Dispersion
@@ -46,4 +48,4 @@ __all__ = [
 ]
 
 # Version of the morfeus package
-__version__ = "0.5.0"
+__version__ = metadata.version("morfeus")
