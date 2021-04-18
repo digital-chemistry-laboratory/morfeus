@@ -18,6 +18,7 @@ dependencies:
 - python>=3.8
 - sphinx
 - sphinx-copybutton
+- sphinx-inline-tabs
 - sphinxcontrib-bibtex
 - pip:
   - flake8-annotations

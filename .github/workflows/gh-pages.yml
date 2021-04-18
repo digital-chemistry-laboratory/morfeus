@@ -21,6 +21,7 @@ jobs:
           pip install sphinx
           pip install furo
           pip install sphinx-copybutton
+          pip install sphinx-inline-tabs
           pip install sphinxcontrib-bibtex
           pip install .
           export SPHINX_APIDOC_OPTIONS=members,show-inheritance 
