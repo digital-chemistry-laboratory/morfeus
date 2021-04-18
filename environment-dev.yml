@@ -8,6 +8,7 @@ dependencies:
 - flake8-bugbear
 - flake8-docstrings
 - flake8-import-order
+- furo
 - isort
 - mypy
 - nox
@@ -16,7 +17,7 @@ dependencies:
 - pytest-cov
 - python>=3.8
 - sphinx
-- sphinx_rtd_theme
+- sphinx-copybutton
 - sphinxcontrib-bibtex
 - pip:
   - flake8-annotations

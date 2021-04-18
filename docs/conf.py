@@ -41,13 +41,12 @@ release = "0.5.0"
 extensions = [
     "sphinx_copybutton",
     "sphinx_inline_tabs",
-    "sphinx_rtd_theme",
     "sphinx.ext.autodoc",
     "sphinx.ext.githubpages",
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
-    "sphinxcontrib.bibtex",
     "sphinx.ext.viewcode",
+    "sphinxcontrib.bibtex",
 ]
 
 bibtex_bibfiles = ["refs.bib"]
