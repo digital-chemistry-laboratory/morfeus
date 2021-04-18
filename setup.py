@@ -14,7 +14,7 @@ setuptools.setup(
     url="",
     packages=["morfeus"],
     python_requires=">=3.8",
-    install_requires=["numpy", "scipy"],
+    install_requires=["fire", "numpy", "scipy"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
@@ -28,6 +28,7 @@ setuptools.setup(
             "morfeus_cone_angle=morfeus.script_cone_angle:main",
             "morfeus_dispersion=morfeus.script_dispersion:main",
             "morfeus_local_force=morfeus.script_local_force:main",
+            "morfeus=morfeus.__main__:main",
         ]
     },
 )

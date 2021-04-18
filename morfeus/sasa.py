@@ -1,13 +1,15 @@
 """Solvent accessible surface area code."""
 
+import functools
 import typing
-from typing import Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import numpy as np
 import scipy.spatial
 
 from morfeus.data import atomic_symbols, jmol_colors
 from morfeus.geometry import Atom, Sphere
+from morfeus.io import read_geometry
 from morfeus.typing import ArrayLike1D, ArrayLike2D
 from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
 
@@ -227,3 +229,16 @@ class SASA:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
+
+
+def cli(file: str) -> Any:
+    """CLI for solvent accessible surface area.
+
+    Args:
+        file: Geometry file
+
+    Returns:
+        Partially instantiated class
+    """
+    elements, coordinates = read_geometry(file)
+    return functools.partial(SASA, elements, coordinates)

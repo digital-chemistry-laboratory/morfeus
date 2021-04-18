@@ -1,6 +1,7 @@
 """Geometry file parsing functions."""
 
 from os import PathLike
+from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
 
 import numpy as np
@@ -323,6 +324,37 @@ def read_gjf(file: Union[str, PathLike]) -> Tuple[Array1D, Array1D]:
         coordinates.append(atom_coordinates)
     elements = np.array(elements)
     coordinates = np.array(coordinates)
+
+    return elements, coordinates
+
+
+def read_geometry(
+    file: Union[str, PathLike]
+) -> Tuple[Array1D, Union[Array2D, Array3D]]:
+    """Read geometry file and guess parser based on suffix.
+
+    Args:
+        file: Filename or Path object
+
+    Returns:
+        elements: Elements as atomic symbols or numbers
+        coordinates: Coordinates (Å)
+
+    Raises:
+        ValueError: When suffix is not supported
+    """
+    if isinstance(file, str):
+        suffix = file.lower().split(".")[-1]
+    elif isinstance(file, PathLike):
+        path = Path(file)
+        suffix = path.suffix[:1]
+
+    if suffix == "xyz":
+        elements, coordinates = read_xyz(file)
+    elif suffix in ("gjf", "com"):
+        elements, coordinates = read_gjf(file)
+    else:
+        raise ValueError(f"File suffix {suffix} not supported.")
 
     return elements, coordinates
 

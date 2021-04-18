@@ -1,14 +1,16 @@
 """Sterimol code."""
 
+import functools
 import math
 import typing
-from typing import cast, Iterable, List, Optional, Sequence, Set, Union
+from typing import Any, cast, Iterable, List, Optional, Sequence, Set, Union
 
 import numpy as np
 import scipy.spatial
 
 from morfeus.data import jmol_colors
 from morfeus.geometry import Atom, kabsch_rotation_matrix, sphere_line_intersection
+from morfeus.io import read_geometry
 from morfeus.plotting import get_drawing_arrow
 from morfeus.sasa import SASA
 from morfeus.typing import Array1D, ArrayLike1D, ArrayLike2D
@@ -148,23 +150,30 @@ class Sterimol:
         if calculate:
             self.calculate()
 
-    def set_points(self, points: Sequence[Sequence[float]], shift: bool = True) -> None:
+    def set_points(
+        self, points: Sequence[Sequence[float]], shift: bool = True
+    ) -> "Sterimol":
         """Set points for calculation of Sterimol.
 
         Args:
             points: Points (Å)
             shift: Whether to shift the points to have origin at dummy atom.
+
+        Returns:
+            self: Self
         """
         points = np.array(points)
         if shift is True:
             points -= self._origin
+
+        return self
 
     def bury(
         self,
         sphere_radius: float = 3.5,
         method: str = "delete",
         radii_scale: float = 0.5,
-    ) -> None:
+    ) -> "Sterimol":
         """Do a Buried Sterimol calculation.
 
         There are three available schemes based on deletion, truncation or slicing.
@@ -173,6 +182,9 @@ class Sterimol:
             sphere_radius: Radius of sphere (Å)
             method: Method for burying: 'delete', 'slice' or 'truncate'
             radii_scale: Scale radii for metohd='delete' calculation
+
+        Returns:
+            self: Self
 
         Raises:
             ValueError: When method is not specified correctly
@@ -226,26 +238,20 @@ class Sterimol:
 
             # Replace vectors if new ones are shorter than old ones
             if np.linalg.norm(self.L) > np.linalg.norm(new_vectors[0]):
-                L = new_vectors[0]
-                L_value = np.linalg.norm(L)
+                self.L = new_vectors[0]
+                L_value = np.linalg.norm(self.L)
+                self.L_value = L_value + 0.40
+                self.L_value_uncorrected = L_value
             if np.linalg.norm(self.B_1) > np.linalg.norm(new_vectors[1]):
-                B_1 = new_vectors[1]
-                B_1_value = np.linalg.norm(B_1)
+                self.B_1 = new_vectors[1]
+                self.B_1_value = np.linalg.norm(self.B_1)
             if np.linalg.norm(self.B_5) > np.linalg.norm(new_vectors[2]):
-                B_5 = new_vectors[2]
-                B_5_value = np.linalg.norm(B_5)
+                self.B_5 = new_vectors[2]
+                self.B_5_value = np.linalg.norm(self.B_5)
 
-            # Set attributes
-            self.L = L
-            self.L_value = L_value + 0.40
-            self.L_value_uncorrected = L_value
-
-            self.B_1 = B_1
-            self.B_1_value = B_1_value
-
-            self.B_5 = B_5
-            self.B_5_value = B_5_value
         elif method == "slice":
+            if not hasattr(self, "_points"):
+                self.surface_from_radii()
             # Remove points outside of sphere
             distances = scipy.spatial.distance.cdist(
                 self._dummy_atom.coordinates.reshape(1, -1), self._points
@@ -260,11 +266,16 @@ class Sterimol:
         # Set attributes
         self._sphere_radius = sphere_radius
 
-    def surface_from_radii(self, density: float = 0.01) -> None:
+        return self
+
+    def surface_from_radii(self, density: float = 0.01) -> "Sterimol":
         """Create surface points from vdW surface.
 
         Args:
             density: Area per point on surface (Å²)
+
+        Returns:
+            self: Self
         """
         # Calculate vdW surface for all active atoms
         elements = []
@@ -291,7 +302,9 @@ class Sterimol:
         )
         self._points = points
 
-    def calculate(self) -> None:
+        return self
+
+    def calculate(self) -> "Sterimol":
         """Calculate Sterimol parameters."""
         # Use coordinates and radii if points are not given
         if not hasattr(self, "_points"):
@@ -356,6 +369,8 @@ class Sterimol:
 
         self.B_5 = B_5
         self.B_5_value = B_5_value
+
+        return self
 
     def print_report(self, verbose: bool = False) -> None:
         """Prints the values of the Sterimol parameters.
@@ -470,3 +485,16 @@ class Sterimol:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
+
+
+def cli(file: str) -> Any:
+    """CLI for Sterimol.
+
+    Args:
+        file: Geometry file
+
+    Returns:
+        Partially instantiated class
+    """
+    elements, coordinates = read_geometry(file)
+    return functools.partial(Sterimol, elements, coordinates)

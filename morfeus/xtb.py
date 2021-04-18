@@ -1,11 +1,13 @@
 """xtb interface code."""
 
+import functools
 import typing
 from typing import Any, Iterable, Optional, Union
 
 import numpy as np
 
 from morfeus.data import ANGSTROM_TO_BOHR, HARTREE_TO_EV
+from morfeus.io import read_geometry
 from morfeus.typing import Array1D, ArrayLike2D
 from morfeus.utils import convert_elements, Import, requires_dependency
 
@@ -322,3 +324,16 @@ class XTB:
         # Do singlepoint calculation and store the result
         res = calc.singlepoint()
         self._results[charge_state] = res
+
+
+def cli(file: str) -> Any:
+    """CLI for XTB.
+
+    Args:
+        file: Geometry file
+
+    Returns:
+        Partially instantiated class
+    """
+    elements, coordinates = read_geometry(file)
+    return functools.partial(XTB, elements, coordinates)

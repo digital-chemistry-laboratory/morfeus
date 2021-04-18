@@ -1,10 +1,12 @@
 """Visible volume code."""
 
-from typing import Iterable, Optional, Union
+import functools
+from typing import Any, Iterable, Optional, Union
 
 import numpy as np
 
 from morfeus.geometry import Cone
+from morfeus.io import read_geometry
 from morfeus.sasa import SASA
 from morfeus.typing import ArrayLike1D, ArrayLike2D
 from morfeus.utils import check_distances, convert_elements, get_radii
@@ -114,7 +116,7 @@ class VisibleVolume:
         for atom in atoms:
             # Calculate distances to other atoms
             atom.get_cone()
-            cone = Cone(atom.cone.angle, atom.index, atom.cone.normal)
+            cone = Cone(atom.cone.angle, [atom.index], atom.cone.normal)
             atom_dist = np.linalg.norm(atom.coordinates)
             other_distances = np.dot(atom_coordinates, cone.normal)
 
@@ -183,3 +185,16 @@ class VisibleVolume:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
+
+
+def cli(file: str) -> Any:
+    """CLI for visible volume.
+
+    Args:
+        file: Geometry file
+
+    Returns:
+        Partially instantiated class
+    """
+    elements, coordinates = read_geometry(file)
+    return functools.partial(VisibleVolume, elements, coordinates)

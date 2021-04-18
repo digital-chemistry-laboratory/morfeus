@@ -1,11 +1,13 @@
 """Pyramidalization code."""
 
+import functools
 import itertools
-from typing import Iterable, List, Optional, Sequence, Union
+from typing import Any, Iterable, List, Optional, Sequence, Union
 
 import numpy as np
 import scipy.spatial
 
+from morfeus.io import read_geometry
 from morfeus.utils import get_connectivity_matrix
 
 
@@ -156,3 +158,16 @@ class Pyramidalization:
         self.alpha = np.rad2deg(np.mean(alphas))
         self.alphas = np.rad2deg(alphas)
         self.neighbor_indices = (neighbors + 1).tolist()
+
+
+def cli(file: str) -> Any:
+    """CLI for pyramidalization.
+
+    Args:
+        file: Geometry file
+
+    Returns:
+        Partially instantiated class
+    """
+    elements, coordinates = read_geometry(file)
+    return functools.partial(Pyramidalization, coordinates, elements=elements)
