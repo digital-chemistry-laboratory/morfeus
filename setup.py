@@ -22,12 +22,6 @@ setuptools.setup(
     ],
     entry_points={
         "console_scripts": [
-            "morfeus_sterimol=morfeus.script_sterimol:main",
-            "morfeus_sasa=morfeus.script_sasa:main",
-            "morfeus_buried_volume=morfeus.script_buried_volume:main",
-            "morfeus_cone_angle=morfeus.script_cone_angle:main",
-            "morfeus_dispersion=morfeus.script_dispersion:main",
-            "morfeus_local_force=morfeus.script_local_force:main",
             "morfeus=morfeus.__main__:main",
         ]
     },
