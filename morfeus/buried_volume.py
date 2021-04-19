@@ -1,16 +1,18 @@
 """Buried volume code."""
 
 import copy
+import functools
 import itertools
 import math
 import typing
-from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
 
 import numpy as np
 import scipy.spatial
 
 from morfeus.data import jmol_colors
 from morfeus.geometry import Atom, kabsch_rotation_matrix, rotate_coordinates, Sphere
+from morfeus.io import read_geometry
 from morfeus.sasa import SASA
 from morfeus.typing import Array1D, Array2D, ArrayLike1D, ArrayLike2D
 from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
@@ -193,7 +195,7 @@ class BuriedVolume:
         # Compute buried volume
         self._compute_buried_volume(center=center, radius=radius, density=density)
 
-    def octant_analysis(self) -> None:
+    def octant_analysis(self) -> "BuriedVolume":
         """Perform octant analysis of the buried volume."""
         # Set up limits depending on the sphere radius
         lim = self._sphere.radius
@@ -280,6 +282,8 @@ class BuriedVolume:
 
         self._octant_limits = octant_limits
 
+        return self
+
     def _compute_buried_volume(
         self, center: ArrayLike1D, radius: float, density: float
     ) -> None:
@@ -312,7 +316,7 @@ class BuriedVolume:
 
     def compute_distal_volume(
         self, method: str = "sasa", octants: bool = False, sasa_density: float = 0.01
-    ) -> None:
+    ) -> "BuriedVolume":
         """Computes the distal volume.
 
         Uses either SASA or Buried volume with large radius to calculate the molecular
@@ -324,6 +328,9 @@ class BuriedVolume:
                 Requires method='buried_volume'
             sasa_density: Density of points on SASA surface. Ignored unless
                 method='sasa'
+
+        Returns:
+            self: Self
 
         Raises:
             ValueError: When method is not specified correctly.
@@ -410,6 +417,8 @@ class BuriedVolume:
                 self.quadrants["molecular_volume"] = molecular_volume
         else:
             raise ValueError(f"Method {method} is not valid.")
+
+        return self
 
     @requires_dependency([Import(module="matplotlib.pyplot", alias="plt")], globals())
     def plot_steric_map(  # noqa: C901
@@ -582,3 +591,16 @@ class BuriedVolume:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
+
+
+def cli(file: str) -> Any:
+    """CLI for buried volume.
+
+    Args:
+        file: Geometry file
+
+    Returns:
+        Partially instantiated class
+    """
+    elements, coordinates = read_geometry(file)
+    return functools.partial(BuriedVolume, elements, coordinates)

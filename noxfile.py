@@ -14,7 +14,8 @@ pyversions = ["3.8", "3.9"]
 def tests(session: Session) -> None:
     """Run tests."""
     args = session.posargs + ["--cov=morfeus", "--import-mode=importlib", "-s"]
-    session.install("numpy", "scipy", "pytest", "pytest-cov")
+    session.install("-r", "requirements.txt")
+    session.install("pytest", "pytest-cov")
     session.install("-e", ".", "--no-deps")
     session.run("pytest", *args)
 

@@ -1,8 +1,9 @@
 """Dispersion code."""
 
+import functools
 from os import PathLike
 import typing
-from typing import cast, Dict, Iterable, List, Optional, Sequence, Union
+from typing import Any, cast, Dict, Iterable, List, Optional, Sequence, Union
 
 import numpy as np
 import scipy.spatial
@@ -10,7 +11,7 @@ import scipy.spatial
 from morfeus.calculators import D3Calculator, D3Grimme, D4Grimme
 from morfeus.data import ANGSTROM_TO_BOHR, atomic_symbols, HARTREE_TO_KCAL, jmol_colors
 from morfeus.geometry import Atom
-from morfeus.io import CubeParser, D3Parser, D4Parser, VertexParser
+from morfeus.io import CubeParser, D3Parser, D4Parser, read_geometry, VertexParser
 from morfeus.sasa import SASA
 from morfeus.typing import Array1D, Array2D, ArrayLike1D, ArrayLike2D
 from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
@@ -44,13 +45,13 @@ class Dispersion:
     Attributes:
         area: Area of surface (Å²)
         atom_areas: Atom indices as keys and atom areas as values (Å²)
-        atom_p_int: Atom indices as keys and P_int as values (kcal**(1/2) mol**(-1/2))
-        atom_p_max: Atom indices as keys and P_max as values (kcal**(1/2) mol**(-1/2))
-        atom_p_min: Atom indices as keys and P_min as values( kcal**(1/2) mol**(-1/2))
-        p_int: P_int value for molecule (kcal**(1/2) mol**(-1/2))
-        p_max: Highest P value (kcal**(1/2) mol**(-1/2))
-        p_min: Lowest P value (kcal**(1/2) mol**(-1/2))
-        p_values: All P values (kcal**(1/2) mol**(-1/2))
+        atom_p_int: Atom indices as keys and P_int as values (kcal¹ᐟ² mol⁻¹⸍²))
+        atom_p_max: Atom indices as keys and P_max as values (kcal¹ᐟ² mol⁻¹ᐟ²)
+        atom_p_min: Atom indices as keys and P_min as values( kcal¹ᐟ² mol⁻¹ᐟ²)
+        p_int: P_int value for molecule (kcal¹ᐟ² mol⁻¹ᐟ²)
+        p_max: Highest P value (kcal¹ᐟ² mol⁻¹ᐟ²)
+        p_min: Lowest P value (kcal¹ᐟ² mol⁻¹ᐟ²)
+        p_values: All P values (kcal¹ᐟ² mol⁻¹ᐟ²)
         volume: Volume of surface (Å³)
 
     Raises:
@@ -192,13 +193,16 @@ class Dispersion:
         file: Union[str, PathLike],
         isodensity: float = 0.001,
         method: str = "flying_edges",
-    ) -> None:
+    ) -> "Dispersion":
         """Adds an isodensity surface from a Gaussian cube file.
 
         Args:
             file: Gaussian cube file
             isodensity: Isodensity value (electrons/bohr³)
             method: Method for contouring: 'contour' or 'flying_edges
+
+        Returns:
+            self: Self
         """
         # Parse the cubefile
         parser = CubeParser(file)
@@ -216,17 +220,22 @@ class Dispersion:
         self._surface = surface
         self._process_surface()
 
+        return self
+
     @requires_dependency(
         [Import("pymeshfix"), Import(module="pyvista", alias="pv")], globals()
     )
     def surface_from_multiwfn(
         self, file: Union[str, PathLike], fix_mesh: bool = True
-    ) -> None:
+    ) -> "Dispersion":
         """Adds surface from Multiwfn vertex file with connectivity information.
 
         Args:
             file: Vertex.pdb file
             fix_mesh: Whether to fix holes in the mesh with pymeshfix (recommended)
+
+        Returns:
+            self: Self
         """
         # Read the vertices and faces from the Multiwfn output file
         parser = VertexParser(file)
@@ -244,6 +253,8 @@ class Dispersion:
         # Process surface
         self._surface = surface
         self._process_surface()
+
+        return self
 
     def _process_surface(self) -> None:
         """Extracts face center points and assigns these to atoms based on proximity."""
@@ -309,11 +320,14 @@ class Dispersion:
 
         return surface
 
-    def compute_p_int(self, points: Optional[ArrayLike2D] = None) -> None:
+    def compute_p_int(self, points: Optional[ArrayLike2D] = None) -> "Dispersion":
         """Compute P_int values for surface or points.
 
         Args:
             points: Points to compute P values for
+
+        Returns:
+            self: Self
         """
         # Set up atoms and coefficients that are part of the calculation
         atom_indices = np.array(
@@ -404,9 +418,11 @@ class Dispersion:
         # Store points for later use
         self._points = points
 
+        return self
+
     def compute_coefficients(
         self, model: str = "id3", order: int = 8, charge: int = 0
-    ) -> None:
+    ) -> "Dispersion":
         """Compute dispersion coefficients.
 
         Can either use internal D3 model or D4 or D3-like model available through
@@ -416,6 +432,9 @@ class Dispersion:
             model: Calculation model: 'id3'. 'gd3' or 'gd4'
             order: Order of the Cᴬᴬ coefficients
             charge: Molecular charge for D4 model
+
+        Returns:
+            self: Self
 
         Raises:
             ValueError: When model not supported
@@ -439,7 +458,9 @@ class Dispersion:
             raise ValueError(f"model={model} not supported.")
         self._c_n_coefficients = calc.c_n_coefficients
 
-    def load_coefficients(self, file: Union[str, PathLike], model: str) -> None:
+        return self
+
+    def load_coefficients(self, file: Union[str, PathLike], model: str) -> "Dispersion":
         """Load the C₆ and C₈ coefficients.
 
         Output can be read from the dftd3 and dftd4 programs by giving a file in
@@ -448,6 +469,9 @@ class Dispersion:
         Args:
             file: Output file from the dftd3 or dftd4 programs
             model: Calculation model: 'd3' or 'd4'
+
+        Returns:
+            self: Self
 
         Raises:
             ValueError: When model not supported
@@ -463,15 +487,17 @@ class Dispersion:
         self._c_n_coefficients[6] = parser.c6_coefficients
         self._c_n_coefficients[8] = parser.c8_coefficients
 
+        return self
+
     def print_report(self, verbose: bool = False) -> None:
         """Print report of results.
 
         Args:
             verbose: Whether to print atom P_ints
         """
-        print(f"Surface area (Å^2): {self.area:.1f}")
-        print(f"Surface volume (Å^3): {self.volume:.1f}")
-        print(f"P_int (kcal^(1/2) mol^(-1/2): {self.p_int:.1f}")
+        print(f"Surface area (Å²): {self.area:.1f}")
+        print(f"Surface volume (Å³): {self.volume:.1f}")
+        print(f"P_int (kcal¹ᐟ² mol⁻¹ᐟ²): {self.p_int:.1f}")
         if verbose:
             print(
                 f"{'Symbol':<10s}{'Index':<10s}{'P_int (kcal^(1/2) mol^(-1/2))':<30s}"
@@ -480,13 +506,18 @@ class Dispersion:
                 symbol = atomic_symbols[atom.element]
                 print(f"{symbol:<10s}{i:<10d}{p_int:<10.1f}")
 
-    def save_vtk(self, filename: str) -> None:
+    def save_vtk(self, filename: str) -> "Dispersion":
         """Save surface as .vtk file.
 
         Args:
             filename: Name of file. Use .vtk suffix.
+
+        Returns:
+            self: Self
         """
         self._surface.save(filename)
+
+        return self
 
     @requires_dependency(
         [
@@ -548,3 +579,16 @@ class Dispersion:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
+
+
+def cli(file: str) -> Any:
+    """CLI for dispersion descriptor.
+
+    Args:
+        file: Geometry file
+
+    Returns:
+        Partially instantiated class
+    """
+    elements, coordinates = read_geometry(file)
+    return functools.partial(Dispersion, elements, coordinates)

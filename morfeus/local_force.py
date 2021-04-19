@@ -1,5 +1,6 @@
 """Local force constant code."""
 
+import functools
 from os import PathLike
 from typing import Any, Dict, FrozenSet, Iterable, List, Optional, Sequence, Union
 
@@ -24,6 +25,7 @@ from morfeus.geometry import (
     InternalCoordinates,
     kabsch_rotation_matrix,
 )
+from morfeus.io import read_geometry
 from morfeus.typing import Array1D, Array2D, ArrayLike1D, ArrayLike2D
 from morfeus.utils import convert_elements
 
@@ -82,17 +84,22 @@ class LocalForce:
         if coordinates is not None:
             self._coordinates = np.array(coordinates)
 
-    def add_internal_coordinate(self, atoms: Sequence[int]) -> None:
+    def add_internal_coordinate(self, atoms: Sequence[int]) -> "LocalForce":
         """Add internal coordinate.
 
         Composed of two (bond), three (angle) or four atoms (dihedral).
 
         Args:
             atoms: Atom indices of internal coordinate
+
+        Returns:
+            self: Self
         """
         self._internal_coordinates.add_internal_coordinate(atoms)
 
-    def compute_compliance(self) -> None:
+        return self
+
+    def compute_compliance(self) -> "LocalForce":
         """Compute local force constants with the compliance matrix method."""
         # Compute B matrix if it does not exists
         if not hasattr(self, "_B"):
@@ -104,7 +111,9 @@ class LocalForce:
 
         self.local_force_constants = k_s
 
-    def compute_frequencies(self) -> None:
+        return self
+
+    def compute_frequencies(self) -> "LocalForce":
         """Compute local frequencies."""
         # Compute local frequencies
         M = np.diag(np.repeat(self._masses, 3))
@@ -123,14 +132,19 @@ class LocalForce:
 
         self.local_frequencies = frequencies
 
+        return self
+
     def compute_local(  # noqa: C901
         self, project_imag: bool = True, cutoff: float = 1e-3
-    ) -> None:
+    ) -> "LocalForce":
         """Compute local force constants with the local modes approach.
 
         Args:
             project_imag: Whether to project out imaginary frequencies
             cutoff: Cutoff for low force constant (mDyne/Å)
+
+        Returns:
+            self: Self
         """
         # Compute D matrix from normal modes and B matrix
         if not hasattr(self, "_D"):
@@ -173,18 +187,23 @@ class LocalForce:
 
         self.local_force_constants = k_s
 
+        return self
+
     def detect_bonds(
         self,
         radii: Optional[ArrayLike1D] = None,
         radii_type: str = "pyykko",
         scale_factor: float = 1.2,
-    ) -> None:
+    ) -> "LocalForce":
         """Detect bonds based on scaled sum of covalent radii.
 
         Args:
             radii: Covalent radii (Å)
             radii_type: Covalent radii type: 'pyykko'
             scale_factor: Scale factor for covalent radii
+
+        Returns:
+            self: Self
         """
         self._internal_coordinates.detect_bonds(
             self._coordinates,
@@ -193,6 +212,8 @@ class LocalForce:
             radii_type=radii_type,
             scale_factor=scale_factor,
         )
+
+        return self
 
     def get_local_force_constant(self, atoms: Sequence[int]) -> float:
         """Return the local force constant between a set of atoms.
@@ -236,7 +257,7 @@ class LocalForce:
 
     def load_file(
         self, file: Union[str, PathLike], program: str, filetype: str
-    ) -> None:
+    ) -> "LocalForce":
         """Load data from external file.
 
         Args:
@@ -244,6 +265,9 @@ class LocalForce:
             program: Program used to generate file: 'gaussian', 'unimovib' or 'xtb'
             filetype: Filetype. For 'gaussian': 'fchk' or 'log'. For 'unimovib': 'local'
                 or 'log'. For 'xtb': 'hessian' or 'normal_modes'
+
+        Returns:
+            self: Self
         """
         choices = {
             "gaussian": {
@@ -261,11 +285,13 @@ class LocalForce:
         }
         choices[program][filetype](file)
 
+        return self
+
     def normal_mode_analysis(
         self,
         hessian: Optional[ArrayLike2D] = None,
         save_hessian: bool = False,
-    ) -> None:
+    ) -> "LocalForce":
         """Perform normal mode analysis.
 
         With projection of translations and vibrations to get normal modes and force
@@ -274,6 +300,9 @@ class LocalForce:
         Args:
             hessian: User-supplied Hessian
             save_hessian: Save projected Hessian for use in compliance matrix method.
+
+        Returns:
+            self: Self
         """
         # Set up
         coordinates = np.array(self._coordinates) * ANGSTROM_TO_BOHR
@@ -366,6 +395,8 @@ class LocalForce:
         if save_hessian:
             self._fc_matrix = M_plus @ hessian_proj @ M_plus
 
+        return self
+
     def print_report(
         self, angles: bool = False, dihedrals: bool = False, angle_units: bool = False
     ) -> None:
@@ -412,10 +443,12 @@ class LocalForce:
                 string += f"{frequency:30.0f}"
             print(string)
 
-    def reset_internal_coordinates(self) -> None:
+    def reset_internal_coordinates(self) -> "LocalForce":
         """Reset internal coordinate system."""
         self._internal_coordinates = InternalCoordinates()
         self.internal_coordinates = self._internal_coordinates.internal_coordinates
+
+        return self
 
     def _parse_gaussian_fchk(self, file: Union[str, PathLike]) -> None:  # noqa: C901
         # Read fchk file
@@ -437,6 +470,7 @@ class LocalForce:
         vib_e2: List[float] = []
         internal_coordinates = []
         n_atoms: int
+        n_imag: int
         atomic_numbers: List[int] = []
         masses: List[float] = []
         coordinates: List[float] = []
@@ -501,6 +535,8 @@ class LocalForce:
             # Read number of internal coordinates
             elif "Redundant internal coordinates" in line:
                 n_redundant = int(line.strip().split()[5])
+            elif "NImag" in line:
+                n_imag = int(line.strip().split()[2])
             # Detect when to read data
             elif "Vib-Modes" in line:
                 read_modes = True
@@ -538,6 +574,7 @@ class LocalForce:
         self._fc_matrix = fc_matrix
         self._normal_modes = np.array(modes).reshape(n_modes, n_atoms * 3)
         self._force_constants = force_constants
+        self.n_imag = n_imag
         self._elements = convert_elements(atomic_numbers, output="numbers")
         self._coordinates = coordinates
         self._masses = np.array(masses)
@@ -1148,3 +1185,19 @@ def _get_internal_coordinate(atoms: Sequence[int]) -> Union[Bond, Angle, Dihedra
         return Dihedral(*atoms)
     else:
         raise ValueError(f"Sequence of atoms must be 2-4 atoms, not {len(atoms)}.")
+
+
+def cli(file: Optional[str] = None) -> Any:
+    """CLI for local force.
+
+    Args:
+        file: Geometry file
+
+    Returns:
+        Partially instantiated class
+    """
+    if file is not None:
+        elements, coordinates = read_geometry(file)
+        return functools.partial(LocalForce, elements, coordinates)
+    else:
+        return functools.partial(LocalForce, None, None)

@@ -1,14 +1,16 @@
 """Cone angle code."""
 
+import functools
 import itertools
 import math
 import typing
-from typing import Iterable, List, Optional, Set, Union
+from typing import Any, Iterable, List, Optional, Set, Union
 
 import numpy as np
 
 from morfeus.data import atomic_symbols, jmol_colors
 from morfeus.geometry import Atom, Cone
+from morfeus.io import read_geometry
 from morfeus.plotting import get_drawing_cone
 from morfeus.typing import ArrayLike1D, ArrayLike2D
 from morfeus.utils import (
@@ -445,3 +447,16 @@ def _get_three_atom_cones(atom_i: Atom, atom_j: Atom, atom_k: Atom) -> List[Cone
         cones.append(cone)
 
     return cones
+
+
+def cli(file: str) -> Any:
+    """CLI for cone angle.
+
+    Args:
+        file: Geometry file
+
+    Returns:
+        Partially instantiated class
+    """
+    elements, coordinates = read_geometry(file)
+    return functools.partial(ConeAngle, elements, coordinates)

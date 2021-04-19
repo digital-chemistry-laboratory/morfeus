@@ -4,6 +4,7 @@ on:
   push:
     branches:
       -develop
+  workflow_dispatch:
 
 jobs:
   publish:
@@ -18,9 +19,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install sphinx
-          pip install sphinx-rtd-theme
+          pip install furo
+          pip install sphinx-copybutton
+          pip install sphinx-inline-tabs
           pip install sphinxcontrib-bibtex
           pip install .
+          export SPHINX_APIDOC_OPTIONS=members,show-inheritance 
           sphinx-apidoc --separate --no-toc -o docs/api morfeus
           sphinx-build docs public -b html
       - name: Deploy to GitHub Pages

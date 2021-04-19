@@ -1,13 +1,15 @@
 """Solvent accessible surface area code."""
 
+import functools
 import typing
-from typing import Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 import numpy as np
 import scipy.spatial
 
 from morfeus.data import atomic_symbols, jmol_colors
 from morfeus.geometry import Atom, Sphere
+from morfeus.io import read_geometry
 from morfeus.typing import ArrayLike1D, ArrayLike2D
 from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
 
@@ -21,12 +23,12 @@ class SASA:
     """Performs and stores results of solvent accessible surface area calculations.
 
     Args:
-        coordinates: Coordinates (Å)
-        density: Area per point (Å²) on the vdW surface
         elements: Elements as atomic symbols or numbers
-        probe_radius: Radius of probe atom (Å)
+        coordinates: Coordinates (Å)
         radii: VdW radii (Å)
         radii_type: Choice of vdW radii: 'bondi' or 'crc' (default)
+        probe_radius: Radius of probe atom (Å)
+        density: Area per point (Å²) on the vdW surface
 
     Attributes:
         area: Area of the solvent accessible surface.
@@ -173,10 +175,10 @@ class SASA:
             verbose: Whether to print atom areas
         """
         print(f"Probe radius (Å): {self._probe_radius}")
-        print(f"Solvent accessible surface area (Å^2): {self.area:.1f}")
-        print("Volume inside solvent accessible surface (Å^3): " f"{self.volume:.1f}")
+        print(f"Solvent accessible surface area (Å²): {self.area:.1f}")
+        print("Volume inside solvent accessible surface (Å³): " f"{self.volume:.1f}")
         if verbose:
-            print(f"{'Symbol':<10s}{'Index':<10s}{'Area (Å^2)':<10s}")
+            print(f"{'Symbol':<10s}{'Index':<10s}{'Area (Å²)':<10s}")
             for atom, (i, area) in zip(self._atoms, self.atom_areas.items()):
                 symbol = atomic_symbols[atom.element]
                 print(f"{symbol:<10s}{i:<10d}{area:<10.1f}")
@@ -227,3 +229,16 @@ class SASA:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
+
+
+def cli(file: str) -> Any:
+    """CLI for solvent accessible surface area.
+
+    Args:
+        file: Geometry file
+
+    Returns:
+        Partially instantiated class
+    """
+    elements, coordinates = read_geometry(file)
+    return functools.partial(SASA, elements, coordinates)

@@ -3,34 +3,9 @@ Sterimol
 ========
 
 The Sterimol parameters L, B\ :sub:`1` and B\ :sub:`5` as described by Verloop
-:cite:`verloop_development_1976,verloop_sterimol_1983` are implemented. Note
-that Sterimol parameters should be calculated with H as the dummy atom, to be
-consistent with the literature (see `Background`_)
-
-*******************
-Command line script
-*******************
-
-The command line script gives access to the basic functionality from the
-terminal.
-
-.. code-block:: console
-  :caption: Example
-  
-  $ morfeus_sterimol tBu.xyz 1 2
-  L         B_1       B_5
-  4.21      2.87      3.27
-
-Here the second argument is the dummy atom (called atom 1 below) and the third
-argument is the atom of the substituent to which atom 1 is connected (called 
-atom 2 below).
-
---radii <list>
-  Type of van der Waals radii: ``bondi`` or ``crc`` (default)
---density <str>
-  Density of points on spheres (default: ``0.005`` points/Å\ :sup:`2`)
--v, --verbose
-  Print uncorrected L and bond length between atom 1 and atom 2.
+:footcite:`verloop_development_1976,verloop_sterimol_1983` are implemented.
+Note that Sterimol parameters should be calculated with H as the dummy atom, to
+be consistent with values in the literature (see `Background`_)
 
 ******
 Module
@@ -54,12 +29,11 @@ The Sterimol class calculates and stores Sterimol parameters.
   L         B_1       B_5
   4.21      2.87      3.27
 
-Radii can be changed with the argument ``radii_type=<str>`` with the choices
-``crc`` (default) or ``bondi``. Custom radii can be supplied as a list with 
-``radii=<list>``. 
+Radii can be changed with the argument ``radii_type=<str>`` and custom radii
+can be supplied as a list with ``radii=<list>``. 
 
-The bond length between atoms 1 and 2 and the uncorrected L values (without
-the historical addition of 0.40 Å) can also be obtained.
+The bond length between atoms 1 and 2 and the uncorrected L values (without the
+historical addition of 0.40 Å) can also be obtained.
 
 .. code-block:: python
   :caption: Uncorrected L values
@@ -73,7 +47,21 @@ the historical addition of 0.40 Å) can also be obtained.
   4.21      2.87      3.27      3.81      1.10
 
 More information can be found with `help(Sterimol)` or in the API:
-:py:class:`morfeus.morfeus.Sterimol`
+:py:class:`Sterimol <morfeus.morfeus.Sterimol>`.
+
+*******************
+Command line script
+*******************
+
+The command line script gives access to the basic functionality from the
+terminal.
+
+.. code-block:: console
+  :caption: Example
+  
+  $ morfeus sterimol tBu.xyz - 1 2 - print_report
+  L         B_1       B_5       
+  4.21      2.86      3.27      
 
 **********
 Background
@@ -103,12 +91,6 @@ of atoms onto vectors spanning the whole 360 degrees in the plane perpendicular
 to L. B\ :sub:`5` is obtained from the largest projection, while B\ :sub:`1` is
 obtained from the smallest maximum projection for the set of vectors.
 
-**********
-References
-**********
-
-.. bibliography:: refs.bib
-  :style: unsrt
-  :filter: docname in docnames
+.. footbibliography::
 
 .. __: https://github.com/bobbypaton/Sterimol

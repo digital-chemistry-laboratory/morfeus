@@ -1,22 +1,24 @@
 channels:
   - conda-forge
 dependencies:
-- python>=3.8
-- nox
 - black
+- darglint
 - flake8
 - flake8-black
 - flake8-bugbear
+- flake8-docstrings
 - flake8-import-order
+- furo
+- isort
+- mypy
+- nox
+- pip
 - pytest
 - pytest-cov
-- flake8-docstrings
-- darglint
-- mypy
-- isort
-- pip
+- python>=3.8
 - sphinx
-- sphinx_rtd_theme
+- sphinx-copybutton
+- sphinx-inline-tabs
 - sphinxcontrib-bibtex
 - pip:
   - flake8-annotations

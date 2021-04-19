@@ -1,29 +1,34 @@
 """Calculates steric descriptors for molecules.
 
 Modules:
-    d3_data: Reference data for D3 calculations.
-    data: Module related to data.
-    conformer: Conformer tools.
-    geometry: Geometry functions and classes.
-    helpers: General helper functions.
-    io: File parser functions and classes.
-    morfeus: Classes for steric descriptor calculations.
-    plotting: 3D plotting classes.
-    qc: Interface to quantum-chemical programs.
+    buried_volume: Buried volume code
+    calculators: Internal calculators
+    cone_angle: Cone angle code
+    conformer: Conformer tools
+    d3_data: Reference data for D3 calculations
+    data: Module related to data
+    geometry: Help classes and functions related to geometry
+    io: Input and output
+    local_force: Local force constant code
+    plotting: Plotting functions
+    pyramidalization: Pyramidalization code
+    qc: Interface to quantum-chemical programs
+    sasa: Solvent accessible surface area code
+    sterimol: Sterimol code
+    typing: Typing code for arrays
+    utils: Helper functions.
+    visible_volume: Visible volume code
+    xtb: xtb interface code
 
 Scripts:
-    script_buried_volume: Calculate buried volume.
-    script_cone_angle: Calculate cone angle.
-    script_dispersion: Calculate dispersion descriptor.
-    script_local_force: Calculate local force constants.
-    script_morfeus: Calculate Sterimol parameters.
-    script_sasa: Calculate solvent accessible surface area.
+    morfeus: Command line interface
 """
+from importlib import metadata
 
 from morfeus.buried_volume import BuriedVolume
 from morfeus.cone_angle import ConeAngle
 from morfeus.dispersion import Dispersion
-from morfeus.io import read_gjf, read_xyz
+from morfeus.io import read_geometry, read_gjf, read_xyz
 from morfeus.local_force import LocalForce
 from morfeus.pyramidalization import Pyramidalization
 from morfeus.sasa import SASA
@@ -32,6 +37,7 @@ from morfeus.visible_volume import VisibleVolume
 from morfeus.xtb import XTB
 
 __all__ = [
+    "read_geometry",
     "read_gjf",
     "read_xyz",
     "BuriedVolume",
@@ -46,4 +52,4 @@ __all__ = [
 ]
 
 # Version of the morfeus package
-__version__ = "0.5.0"
+__version__ = metadata.version("morfeus-ml")

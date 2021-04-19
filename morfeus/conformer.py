@@ -1,6 +1,7 @@
 """Conformer tools."""
 
 from copy import copy, deepcopy
+import functools
 import numbers
 from os import PathLike
 from pathlib import Path
@@ -293,7 +294,7 @@ class ConformerEnsemble:
         energies: Optional[ArrayLike1D] = None,
         degeneracies: Optional[ArrayLike1D] = None,
         properties: Optional[Mapping[str, ArrayLike1D]] = None,
-    ) -> None:
+    ) -> "ConformerEnsemble":
         """Add conformer to ensemble.
 
         Args:
@@ -301,14 +302,22 @@ class ConformerEnsemble:
             energies: Energies (a.u.)
             degeneracies: Degeneracies
             properties: Conformer properties.
+
+        Returns:
+            self: Self
         """
         self._add_conformers(conformer_coordinates, energies, degeneracies, properties)
 
-    def add_inverted(self) -> None:
+        return self
+
+    def add_inverted(self) -> "ConformerEnsemble":
         """Add inverted images of all conformers.
 
         Scrambles stereochemistry and leads to redundant conformers so use with
         care and prune based on RMSD as postprocessing.
+
+        Returns:
+            self: Self
         """
         conformers = self.conformers
         conformer_coordinates: List[List[float]] = []
@@ -324,11 +333,15 @@ class ConformerEnsemble:
             energies_ = cast(List[float], energies)
             self.add_conformers(conformer_coordinates, energies_)
 
+        return self
+
     @requires_dependency([Import(module="rdkit.Chem", item="AllChem")], globals())
-    def align_conformers(self) -> None:
+    def align_conformers(self) -> "ConformerEnsemble":
         """Align conformers with RDKit."""
         self.update_mol()
         AllChem.AlignMolConformers(self.mol)
+
+        return self
 
     def boltzmann_average_dT(
         self, property_name: str, temperature: float = 298.15
@@ -425,7 +438,7 @@ class ConformerEnsemble:
     def from_rdkit(cls: Type[T], *args: Any, **kwargs: Any) -> T:
         """Generate conformer ensemble from RDKit.
 
-        See the documentation for the function generate_conformers_rdkit for
+        See the documentation for the function conformers_from_rdkit for
         more information.
 
         Args:
@@ -443,7 +456,7 @@ class ConformerEnsemble:
             connectivity_matrix,
             charges,
             mol,
-        ) = generate_conformers_rdkit(*args, **kwargs)
+        ) = conformers_from_rdkit(*args, **kwargs)
         ce = cls(
             elements,
             conformer_coordinates,
@@ -462,7 +475,7 @@ class ConformerEnsemble:
         return ce
 
     @classmethod
-    def from_openbabel_ga(
+    def from_ob_ga(
         cls: Type[T],
         *args: Any,
         generate_rdkit_mol: bool = False,
@@ -473,11 +486,11 @@ class ConformerEnsemble:
     ) -> T:
         """Generate conformer ensemble from OpenBabel with GA method.
 
-        See the documentation for the function generate_conformers_openbabel_ga
+        See the documentation for the function conformers_from_ob_ga
         for more information.
 
         Args:
-            *args: Positional arguments for generate_conformers_openbabel_ga
+            *args: Positional arguments for conformers_from_ob_ga
             generate_rdkit_mol: Generate RDKit mol object for ensemble
             update_charges: Update formal charges from generated RDKit Mol object. Only
                 used if generate_rdkit_mol is True.
@@ -485,7 +498,7 @@ class ConformerEnsemble:
                 Only used if generate_rdkit_mol is True.
             update_multiplicity: Update multiplicity from generated RDKit Mol object.
                 Only used if generate_rdkit_mol is True.
-            **kwargs: Keyword arguments for generate_conformers_openbabel_ga
+            **kwargs: Keyword arguments for conformers_from_ob_ga
 
         Returns:
             ce: Conformer ensemble.
@@ -497,7 +510,7 @@ class ConformerEnsemble:
             connectivity_matrix,
             charges,
             ob_mol,
-        ) = generate_conformers_openbabel_ga(*args, **kwargs)
+        ) = conformers_from_ob_ga(*args, **kwargs)
         ce = cls(
             elements,
             conformer_coordinates,
@@ -520,7 +533,7 @@ class ConformerEnsemble:
         return ce
 
     @classmethod
-    def from_openbabel_ff(
+    def from_ob_ff(
         cls: Type[T],
         *args: Any,
         generate_rdkit_mol: bool = False,
@@ -531,11 +544,11 @@ class ConformerEnsemble:
     ) -> T:
         """Generate conformer ensemble from OpenBabel with FF method.
 
-        See the documentation for the function generate_conformers_openbabel_ff
+        See the documentation for the function conformers_from_ob_ff
         for more information.
 
         Args:
-            *args: Positional arguments for generate_conformers_openbabel_ga
+            *args: Positional arguments for conformers_from_ob_ga
             generate_rdkit_mol: Generate RDKit mol object for ensemble
             update_charges: Update formal charges from generated RDKit Mol object. Only
                 used if generate_rdkit_mol is True.
@@ -543,7 +556,7 @@ class ConformerEnsemble:
                 Only used if generate_rdkit_mol is True.
             update_multiplicity: Update multiplicity from generated RDKit Mol object.
                 Only used if generate_rdkit_mol is True.
-            **kwargs: Keyword arguments for generate_conformers_openbabel_ga
+            **kwargs: Keyword arguments for conformers_from_ob_ga
 
         Returns:
             ce: Conformer ensemble.
@@ -555,7 +568,7 @@ class ConformerEnsemble:
             connectivity_matrix,
             charges,
             ob_mol,
-        ) = generate_conformers_openbabel_ff(*args, **kwargs)
+        ) = conformers_from_ob_ff(*args, **kwargs)
         ce = cls(
             elements,
             conformer_coordinates,
@@ -775,7 +788,7 @@ class ConformerEnsemble:
         keywords: Optional[Dict[str, Any]] = None,
         local_options: Optional[Dict[str, Any]] = None,
         procedure: str = "berny",
-    ) -> None:
+    ) -> "ConformerEnsemble":
         """Optimize conformers with QCEngine interface.
 
         Args:
@@ -785,6 +798,9 @@ class ConformerEnsemble:
             keywords: QCEngine keywords
             local_options: QCEngine local options
             procedure: QCEngine procedure
+
+        Returns:
+            self: Self
 
         Raises:
             Exception: When RDKit requested without formal charges.
@@ -821,11 +837,18 @@ class ConformerEnsemble:
             conformer.coordinates = opt_coordinates
             conformer.energy = energies[-1]
 
-    def condense_enantiomeric(self, thres: Optional[float] = None) -> None:
+        return self
+
+    def condense_enantiomeric(
+        self, thres: Optional[float] = None
+    ) -> "ConformerEnsemble":
         """Condense enantiomers into single enantiomer per pair.
 
         Args:
             thres: RMSD threshold for assessing enantiomers.
+
+        Returns:
+            self: Self
 
         Raises:
             Exception: If molecule is chiral.
@@ -846,16 +869,21 @@ class ConformerEnsemble:
 
         self.conformers = to_keep
 
+        return self
+
     def prune_enantiomers(
         self, keep: str = "original", ref_label: Optional[Tuple[str, ...]] = None
-    ) -> None:
+    ) -> "ConformerEnsemble":
         """Prune conformers so that only one enantiomer is present in the ensemble.
 
         Args:
             keep: Which enantiomer to keep: 'original', 'most common' or 'specified'.
                 Choice of 'original' requires that the ref_cip_label attribute is set.
                 Choice of 'specified' requires ref_label to be given.
-            ref_label: Reference CIP labels for all atoms.
+            ref_label: Reference CIP labels for all atoms
+
+        Returns:
+            self: Self
         """
         cip_labels = self.get_cip_labels()
 
@@ -877,12 +905,19 @@ class ConformerEnsemble:
                 to_keep.append(i)
         self.conformers = [self.conformers[i] for i in to_keep]
 
-    def prune_energy(self, threshold: float = 3.0, unit: str = "kcal/mol") -> None:
+        return self
+
+    def prune_energy(
+        self, threshold: float = 3.0, unit: str = "kcal/mol"
+    ) -> "ConformerEnsemble":
         """Prune conformers based on energy compared to minimum energy conformer.
 
         Args:
             threshold: Energy threshold for pruning
             unit: Unit for energy threshold 'hartree', 'kcal/mol' or 'kJ/mol'
+
+        Returns:
+            self: Self
         """
         # Convert threshold to Hartree.
         if unit.lower() == "hartree":
@@ -900,13 +935,15 @@ class ConformerEnsemble:
         for i in reversed(remove_list):
             del self.conformers[i]
 
+        return self
+
     def prune_rmsd(
         self,
         thres: float = 0.35,
         include_hs: bool = False,
         symmetry: bool = False,
         method: str = "rdkit",
-    ) -> None:
+    ) -> "ConformerEnsemble":
         """Prune conformers based on RMSD.
 
         Args:
@@ -917,6 +954,9 @@ class ConformerEnsemble:
                 'obrms-iter' and 'obrms-batch' which always use symmetry.
             method: RMSD calculation method: 'obrms-batch', 'obrms-iter', 'openbabel',
                 'rdkit' or 'spyrmsd'
+
+        Returns:
+            self: Self
         """
         # Select conformers to keep
         candidates = np.arange(len(self.conformers))
@@ -954,11 +994,18 @@ class ConformerEnsemble:
             conformer for i, conformer in enumerate(self.conformers) if i in keep_list
         ]
 
-    def set_coordinates(self, conformer_coordinates: ArrayLike3D) -> None:
+        return self
+
+    def set_coordinates(
+        self, conformer_coordinates: ArrayLike3D
+    ) -> "ConformerEnsemble":
         """Set conformer coordinates.
 
         Args:
             conformer_coordinates: Conformer coordinates (Å)
+
+        Returns:
+            self: Self
 
         Raises:
             ValueError: When Number of conformer coordinates is different from number of
@@ -974,11 +1021,16 @@ class ConformerEnsemble:
         for conformer, coordinates in zip(self.conformers, conformer_coordinates):
             conformer.coordinates = np.array(coordinates)
 
-    def set_degeneracies(self, degeneracies: ArrayLike1D) -> None:
+        return self
+
+    def set_degeneracies(self, degeneracies: ArrayLike1D) -> "ConformerEnsemble":
         """Set degeneracies.
 
         Args:
             degeneracies: Degeneracies
+
+        Returns:
+            self: Self
 
         Raises:
             ValueError: When number of degeneracies is different from number of
@@ -994,11 +1046,16 @@ class ConformerEnsemble:
         for conformer, degeneracy in zip(self.conformers, degeneracies):
             conformer.degeneracy = degeneracy
 
-    def set_energies(self, energies: ArrayLike1D) -> None:
+        return self
+
+    def set_energies(self, energies: ArrayLike1D) -> "ConformerEnsemble":
         """Set energies.
 
         Args:
             energies: Energy (a.u.)
+
+        Returns:
+            self: Self
 
         Raises:
             ValueError: When number of energies is different from number of
@@ -1014,8 +1071,10 @@ class ConformerEnsemble:
         for conformer, energy in zip(self.conformers, energies):
             conformer.energy = energy
 
+        return self
+
     @requires_dependency([Import(module="rdkit.Chem", item="Descriptors")], globals())
-    def set_multiplicity_from_mol(self) -> None:
+    def set_multiplicity_from_mol(self) -> "ConformerEnsemble":
         """Sets multiplicity based on unpaired electrons in Mol object."""
         num_radical = Descriptors.NumRadicalElectrons(self.mol)
 
@@ -1027,17 +1086,24 @@ class ConformerEnsemble:
 
         self.multiplicity = multiplicity
 
-    def set_properties(self, key: str, values: Iterable[float]) -> None:
+        return self
+
+    def set_properties(self, key: str, values: Iterable[float]) -> "ConformerEnsemble":
         """Set conformer properties.
 
         Args:
             key: Name of property
             values: Property values
+
+        Returns:
+            self: Self
         """
         for conformer, value in zip(self.conformers, values):
             conformer.properties[key] = value
 
-    def sort(self) -> None:
+        return self
+
+    def sort(self) -> "ConformerEnsemble":
         """Sort conformers based on energy."""
         energies = [conformer.energy for conformer in self.conformers]
         if not all([isinstance(energy, float) for energy in energies]):
@@ -1046,6 +1112,8 @@ class ConformerEnsemble:
         indices = np.argsort(energies)
         self.conformers = [self.conformers[i] for i in indices]
 
+        return self
+
     def sp_qc_engine(
         self,
         ids: Optional[Sequence[int]] = None,
@@ -1053,7 +1121,7 @@ class ConformerEnsemble:
         model: Optional[Dict[str, Any]] = None,
         keywords: Optional[Dict[str, Any]] = None,
         local_options: Optional[Dict[str, Any]] = None,
-    ) -> None:
+    ) -> "ConformerEnsemble":
         """Calculate conformer energies with QCEngine interface.
 
         Args:
@@ -1062,6 +1130,9 @@ class ConformerEnsemble:
             model: QCEngine model
             keywords: QCEngine keywords
             local_options: QCEngine local options
+
+        Returns:
+            self: Self
 
         Raises:
             Exception: When trying to use RDKit with formal charges.
@@ -1094,6 +1165,8 @@ class ConformerEnsemble:
                 local_options=local_options,
             )
             conformer.energy = energy
+
+        return self
 
     def write_xyz(
         self,
@@ -1380,11 +1453,13 @@ class ConformerEnsemble:
 
         return rmsds
 
-    def update_mol(self) -> None:
+    def update_mol(self) -> "ConformerEnsemble":
         """Update Mol object with conformers."""
         self.mol.RemoveAllConformers()
         conformer_coordinates = self.get_coordinates()
         _add_conformers_to_mol(self.mol, conformer_coordinates)
+
+        return self
 
     def __copy__(self) -> "ConformerEnsemble":
         # Generate copy where conformers and mol object are shared with old
@@ -1454,7 +1529,7 @@ class ConformerEnsemble:
     ],
     globals(),
 )
-def generate_conformers_openbabel_ff(
+def conformers_from_ob_ff(
     mol: Union[str, ob.OBMol],
     num_conformers: int = 30,
     ff: str = "MMFF94",
@@ -1528,7 +1603,7 @@ def generate_conformers_openbabel_ff(
     ],
     globals(),
 )
-def generate_conformers_openbabel_ga(  # noqa: C901
+def conformers_from_ob_ga(  # noqa: C901
     mol: Union[str, ob.OBMol],
     num_conformers: Optional[int] = None,
     num_children: Optional[int] = None,
@@ -1633,7 +1708,7 @@ def generate_conformers_openbabel_ga(  # noqa: C901
     [Import(module="rdkit", item="Chem"), Import(module="rdkit.Chem", item="AllChem")],
     globals(),
 )
-def generate_conformers_rdkit(  # noqa: C901
+def conformers_from_rdkit(  # noqa: C901
     mol: Union[str, Chem.Mol],
     n_confs: Optional[int] = None,
     optimize: Optional[str] = None,
@@ -1929,3 +2004,21 @@ def _get_rdkit_mol(
     Chem.SanitizeMol(mol)
 
     return mol
+
+
+def cli(smiles: str, generator: str = "rdkit") -> Any:
+    """CLI for cone angle.
+
+    Args:
+        smiles: SMILES string
+        generator: Confomer generator: 'ob-ff', 'ob-ga' or 'rdkit'
+
+    Returns:
+        Partially instantiated class
+    """
+    if generator == "rdkit":
+        return functools.partial(ConformerEnsemble.from_rdkit, smiles)
+    elif generator == "ob-ff":
+        return functools.partial(ConformerEnsemble.from_ob_ff, smiles)
+    elif generator == "ob-ga":
+        return functools.partial(ConformerEnsemble.from_ob_ga, smiles)

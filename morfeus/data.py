@@ -1031,10 +1031,10 @@ AMU: float = scipy.constants.physical_constants["atomic mass constant"][0]
 DYNE: float = scipy.constants.dyne
 AFU: float = scipy.constants.physical_constants["atomic unit of force"][0]
 
-ANGSTROM_TO_BOHR = ANGSTROM / BOHR
-BOHR_TO_ANGSTROM = BOHR / ANGSTROM
-HARTREE_TO_KCAL = HARTREE / KCAL * MOL
-HARTREE_TO_KJ = HARTREE / MOL
-HARTREE_TO_EV = HARTREE / EV
-KCAL_TO_HARTREE = KCAL / MOL / HARTREE
-KJ_TO_HARTREE = MOL / HARTREE
+ANGSTROM_TO_BOHR: float = ANGSTROM / BOHR
+BOHR_TO_ANGSTROM: float = BOHR / ANGSTROM
+HARTREE_TO_KCAL: float = HARTREE / KCAL * MOL
+HARTREE_TO_KJ: float = HARTREE / MOL
+HARTREE_TO_EV: float = HARTREE / EV
+KCAL_TO_HARTREE: float = KCAL / MOL / HARTREE
+KJ_TO_HARTREE: float = MOL / HARTREE

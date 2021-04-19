@@ -1,0 +1,11 @@
+dftd4
+matplotlib
+openbabel
+pymeshfix
+pyvista
+pyvistaqt
+qcengine
+rdkit
+spyrmsd
+vtk
+xtb-python
