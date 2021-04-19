@@ -6,6 +6,8 @@ The command line interface (CLI) for ᴍᴏʀғᴇᴜs is powered by `Python Fir
 this way, allmost all of the functionality of the module system is made
 available also in the command line.
 
+.. __: https://github.com/google/python-fire
+
 ************
 Introduction
 ************
@@ -13,71 +15,83 @@ Introduction
 The entry point to the CLI is the command line script ``morfeus``. Running this
 command in the terminal gives a help page with all the possible subcommands.
 
-.. code-block:: console
-  :caption: Running ᴍᴏʀғᴇᴜs CLI help
+.. tab:: Input 1
   
-  $ morfeus
-  NAME
-    morfeus
+  .. code-block:: console
   
-  SYNOPSIS
-    morfeus COMMAND
-  
-  COMMANDS
-    COMMAND is one of the following:
-  
-     buried_volume
-       CLI for buried volume.
-  
-     cone_angle
-       CLI for cone angle.
-  
-     conformer
-       CLI for cone angle.
-  
-     dispersion
-       CLI for dispersion descriptor.
-  
-     local_force
-       CLI for local force.
-  
-     pyramidalization
-       CLI for pyramidalization.
-  
-     sasa
-       CLI for solvent accessible surface area.
-  
-     sterimol
-       CLI for Sterimol.
-  
-     visible_volume
-       CLI for visible volume.
-  
-     xtb
-       CLI for XTB.  
+    $ morfeus
 
-The subcommands can be qeueried for their help page:
+.. tab:: Output 1
 
-.. code-block:: console
-  :caption: Running subcommand help
+  .. code-block:: none
 
-  $ morfeus sterimol -- --help
-  NAME
-      morfeus sterimol - CLI for Sterimol.
-  
-  SYNOPSIS
-      morfeus sterimol FILE
-  
-  DESCRIPTION
-      CLI for Sterimol.
-  
-  POSITIONAL ARGUMENTS
-      FILE
-          Type: str
-          Geometry file
-  
-  NOTES
-      You can also use flags syntax for POSITIONAL ARGUMENTS
+    NAME
+      morfeus
+    
+    SYNOPSIS
+      morfeus COMMAND
+    
+    COMMANDS
+      COMMAND is one of the following:
+    
+       buried_volume
+         CLI for buried volume.
+    
+       cone_angle
+         CLI for cone angle.
+    
+       conformer
+         CLI for cone angle.
+    
+       dispersion
+         CLI for dispersion descriptor.
+    
+       local_force
+         CLI for local force.
+    
+       pyramidalization
+         CLI for pyramidalization.
+    
+       sasa
+         CLI for solvent accessible surface area.
+    
+       sterimol
+         CLI for Sterimol.
+    
+       visible_volume
+         CLI for visible volume.
+    
+       xtb
+         CLI for XTB.    
+
+There is also a help page for each subcommand:
+
+.. tab:: Input 2
+
+  .. code-block:: console
+
+    $ morfeus sterimol -- --help  
+
+.. tab:: Output 2
+
+  .. code-block:: none
+
+    NAME
+        morfeus sterimol - CLI for Sterimol.
+    
+    SYNOPSIS
+        morfeus sterimol FILE
+    
+    DESCRIPTION
+        CLI for Sterimol.
+    
+    POSITIONAL ARGUMENTS
+        FILE
+            Type: str
+            Geometry file
+    
+    NOTES
+        You can also use flags syntax for POSITIONAL ARGUMENTS
 
 All the subcommands serve as entry points to the corresponding Python classes
 used in the module system. For example, ``morfeus sterimol tBu.xyz -`` creates
@@ -86,64 +100,76 @@ where the ``elements`` and ``coordinates`` arguments have been set from the
 geometry file. To find out what other argument can be given to this object, we
 run
 
-.. code-block:: console
-  :caption: Running help on partially instantiated object
-  
-  $ morfeus sterimol tBu.xyz - -- --help
-  NAME
-      morfeus sterimol tBu.xyz - partial(func, *args, **keywords) - new function with partial application of the given arguments and keywords.
-  
-  SYNOPSIS
-      morfeus sterimol tBu.xyz - GROUP | COMMAND | --dummy_index=DUMMY_INDEX --attached_index=ATTACHED_INDEX <flags>
-  
-  DESCRIPTION
-      partial(func, *args, **keywords) - new function with partial application of the given arguments and keywords.
-  
-  ARGUMENTS
-      DUMMY_INDEX
-          Type: int
-      ATTACHED_INDEX
-          Type: typing.Union[int, ...
-  
-  FLAGS
-      --radii=RADII
-          Type: Optional[typing.Union[int, float, complex, str, bytes, numpy.ge...
-          Default: None
-      --radii_type=RADII_TYPE
-          Type: str
-          Default: 'crc'
-      --n_rot_vectors=N_ROT_VECTORS
-          Type: int
-          Default: 3600
-      --excluded_atoms=EXCLUDED_ATOMS
-          Type: Optional[t...
-          Default: None
-      --calculate=CALCULATE
-          Type: bool
-          Default: True
-  
-  GROUPS
-      GROUP is one of the following:
-  
-       args
-  
-       keywords
-  
-  COMMANDS
-      COMMAND is one of the following:
-  
-       func
-         Performs and stores results of Sterimol calculation.
+.. tab:: Input 3
 
-We learn that we need to supply the two arguments for indices of the dummy atom
-and the attached atom. Keyword arguments can also be given. After supplying the
-additional arguments, we get back a fully instantiated object. Getting the help
-from this object returns the available commands and what values are available.
+  .. code-block:: console
+    
+    $ morfeus sterimol tBu.xyz - -- --help
 
-.. code-block:: console
-  :caption: Running help on fully instantiated object
+.. tab:: Output 3
 
-    $ morfeus sterimol tBu.xyz - 1 2 --radii_type=bondi - -- --help
+  .. code-block:: none
+
+    NAME
+        morfeus sterimol tBu.xyz - partial(func, *args, **keywords) - new function with partial application of the given arguments and keywords.
+    
+    SYNOPSIS
+        morfeus sterimol tBu.xyz - GROUP | COMMAND | --dummy_index=DUMMY_INDEX --attached_index=ATTACHED_INDEX <flags>
+    
+    DESCRIPTION
+        partial(func, *args, **keywords) - new function with partial application of the given arguments and keywords.
+    
+    ARGUMENTS
+        DUMMY_INDEX
+            Type: int
+        ATTACHED_INDEX
+            Type: typing.Union[int, ...
+    
+    FLAGS
+        --radii=RADII
+            Type: Optional[typing.Union[int, float, complex, str, bytes, numpy.ge...
+            Default: None
+        --radii_type=RADII_TYPE
+            Type: str
+            Default: 'crc'
+        --n_rot_vectors=N_ROT_VECTORS
+            Type: int
+            Default: 3600
+        --excluded_atoms=EXCLUDED_ATOMS
+            Type: Optional[t...
+            Default: None
+        --calculate=CALCULATE
+            Type: bool
+            Default: True
+    
+    GROUPS
+        GROUP is one of the following:
+    
+         args
+    
+         keywords
+    
+    COMMANDS
+        COMMAND is one of the following:
+    
+         func
+           Performs and stores results of Sterimol calculation.
+
+We learn that we need to supply the two arguments: ``dummy_index`` and
+``attached_index``. Optional keyword arguments can also be given. After
+supplying the additional arguments, we get back a fully instantiated object.
+Getting the help from this object returns the available commands and what
+values are available.
+
+.. tab:: Input 4
+
+  .. code-block:: console
+  
+      $ morfeus sterimol tBu.xyz - 1 2 --radii_type=bondi - -- --help
+
+.. tab:: Output 4
+
+  .. code-block:: none
 
     NAME
         morfeus sterimol tBu.xyz 1 2 --radii_type=bondi - Performs and stores results of Sterimol calculation.
@@ -221,8 +247,7 @@ system.
 Detailed use
 ************
 
-Positional arguments are passed with in sequence separated by spaces, for
-example:
+Positional arguments are passed in sequence separated by spaces, for example:
 
 .. code-block:: console
   
@@ -236,18 +261,19 @@ commands give the same result:
   $ morfeus sterimol tBu.xyz - 1 2 --radii_type=bondi 
   $ morfeus sterimol tBu.xyz - 1 2 --radii_type bondi 
 
-A single hyphen ``-`` is used to indicate that all arguments have been provided
-and the function/class should be evaluated. For example, the hyphen before 
-`print_report` tells Fire to instantiate the Sterimol class, as we don't want
-to give more keyword arguments. Then the ``print_report`` method is exccuted.
+A single ``-`` is used to indicate that all arguments have been provided and
+the function/class should be evaluated. For example, the ``-`` before
+``print_report`` in the example below tells Fire to instantiate the Sterimol
+class, as we don't want to give more keyword arguments. Then the
+``print_report`` method is excuted.
 
 .. code-block:: console
 
   $ morfeus sterimol tBu.xyz - 1 2 --radii_type bondi - print_report
 
-Arguments after a double hyphen ``--`` separator go directly to the Fire
-program. For example, the ``--`` in the following line makes sure that
-``--help`` is sent to Python Fire instead of the ``Sterimol`` object. 
+Arguments following the ``--`` separator go directly to the Fire program. For
+example, the ``--`` in the line below makes sure that ``--help`` is sent to
+Python Fire instead of the ``Sterimol`` object. 
 
 .. code-block:: console
 
@@ -273,6 +299,8 @@ partially instantiate a Sterimol object. By specifiying the final hyphen ``-``,
 we are telling Fire to evaluate the ``cli`` function and return this partially
 instantiated object. We can can then supply the remaining arguments required to
 fully instantiate ``Sterimol`` with ``morfeus sterimol tBu.xyz - 1 2 -``.
+
+.. __: https://docs.python.org/3/library/functools.html#functools.partial
 
 ********
 Chaining
@@ -301,14 +329,32 @@ return the object itself:
       ...
       return self
 
+We can break down the chaining in detail:
+
+``morfeus dispersion corannulene.xyz -``
+  Partially instantiate the ``Dispersion`` object
+
+``--point_surface=False -``
+  Give the keyword argument ``point_surface=True`` and fully instantiate
+
+``surface_from_cube corannulene.cub -``
+  Run ``surface_from_cube`` method with cube filename as argument and return
+  same object
+
+``compute_p_int -``
+  Run ``compute_p_int`` method and return same object
+
+``print_report``
+  Run print_report method and return output 
+
 ****************
 Interactive mode
 ****************
 
 Another powerful feature of Fire is that it can send the result to an
 interactive Python session, where it can be manipulated further. This is
-triggered with the Fire argument ``--interactive`` and is an option for
-accessing the 3D drawing capabilities of ᴍᴏʀғᴇᴜs.
+triggered with the Fire argument ``--interactive`` and could be used to,
+*e.g.*, access the 3D drawing capabilities of ᴍᴏʀғᴇᴜs.
 
 .. code-block:: none
 
@@ -339,8 +385,9 @@ accessing the 3D drawing capabilities of ᴍᴏʀғᴇᴜs.
 Arguments
 *********
 
-Fire attemps to correctly guess the correct type of the arguments. The
-following style is recommended:
+Fire attemps to correctly guess the correct type of the arguments given in the
+command line. The following style is recommended as it works across different
+operating systems.
 
 ===== ==================
 Type  Recommendation
@@ -364,10 +411,6 @@ documentation:
 - `Using the CLI`__
 - `Specifying arguments`__ 
 
-
-
-.. __: https://github.com/google/python-fire
-.. __: https://docs.python.org/3/library/functools.html#functools.partial
 .. __: https://google.github.io/python-fire/guide/
 .. __: https://google.github.io/python-fire/using-cli/
 .. __: https://google.github.io/python-fire/guide/#argument-parsing

@@ -26,13 +26,13 @@ The ConeAngle class is provided to calculate and store the cone angles.
   No. tangent atoms: 3
   >>> cone_angle.plot_3D()
 
-The Bondi vdW radii are used in reference :footcite:`bilbrey_exact_2013`, but radii
-from the CRC Handbook is the default here. It can be changed with
+The Bondi vdW radii are used in reference :footcite:`bilbrey_exact_2013`, but
+radii from the CRC Handbook is the default here. It can be changed with
 ``radii_type=<str>`` with either ``crc`` or ``bondi``. Custom radii can passed
 with ``radii=<list>``.
 
 For more detailed information, use ``help(ConeAngle)`` or see the API:
-:py:class:`morfeus.morfeus.ConeAngle`
+:py:class:`ConeAngle <morfeus.cone_angle.ConeAngle>`.
 
 *******************
 Command line script

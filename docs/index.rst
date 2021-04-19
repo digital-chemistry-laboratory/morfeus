@@ -80,7 +80,6 @@ both academic and commercial use.
    installation
    notes
    cli
-   radii
 
 .. toctree::
    :maxdepth: 3
@@ -103,7 +102,11 @@ both academic and commercial use.
    
    api/morfeus
 
-..
-  api
+.. toctree::
+  :maxdepth: 3
+  :caption: Source
+  :hidden:
+
+  GitHub <https://github.com/kjelljorner/morfeus>
 
 .. _MIT license: https://en.wikipedia.org/wiki/MIT_License

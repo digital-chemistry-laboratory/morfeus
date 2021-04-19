@@ -26,7 +26,7 @@ internal modes can either be read from file or calculated with ᴍᴏʀғᴇᴜs
 Specifically, the internal modes can be computed from the normal modes and the
 Wilson B matrix. For local frequencies, additional input is needed.
 
-.. figure:: images/local_force/diagram_local.svg
+.. figure:: images/local_force/local.svg
   
   Input needed for the local modes approach.
 
@@ -37,7 +37,7 @@ Compliance matrix
 The compliance matrix method needs the Hessian matrix and the Wilson B matrix.
 For local frequencies, the elements are also needed (for their atomic masses).
 
-.. figure:: images/local_force/diagram_compliance.svg
+.. figure:: images/local_force/compliance.svg
   
   Input needed for the compliance matrix method.
 

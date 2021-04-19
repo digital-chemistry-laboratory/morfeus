@@ -23,7 +23,6 @@ Modules:
 Scripts:
     morfeus: Command line interface
 """
-
 from importlib import metadata
 
 from morfeus.buried_volume import BuriedVolume
