@@ -1,31 +1,35 @@
-=========
-Steriplus
-=========
+.. image:: docs/_static/logo-light.svg
+.. image:: https://github.com/kjelljorner/morfeus/actions/workflows/ci-pip.yml/badge.svg
 
-A Python package for calculation of steric descriptors. Steriplus can be run
+A Python package for calculation of molecular features. ᴍᴏʀғᴇᴜs can be run
 either as a command line script or imported as a module.
 
 ************
 Installation
 ************
 
-Clone this repository. Then install with pip.
+Clone the repository and install with
 
 .. code-block:: console
-  
+
   pip install .
 
 *************
 Documentation
 *************
 
-https://steriplus.readthedocs.io/en/latest/index.html
+To be added later.
 
-************
-Dependencies
-************
+****************
+Acknowledgements
+****************
 
-* matplotlib
-* numpy
-* scipy
-* rdkit (for SASA)
+ᴍᴏʀғᴇᴜs was initally developed by Kjell Jorner as a post doc at AstraZeneca UK
+in collaboration with the groups of Alán Aspuru-Guzik at the University of
+Toronto and Matthew Sigman at the University of Utah. In particular, the
+following people have contributed significantly to developing the
+functionality:
+
+* Gabriel dos Passos Gomes
+* Pascal Friedrich
+* Tobias Gensch

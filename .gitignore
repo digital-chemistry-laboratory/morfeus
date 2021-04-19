@@ -1,9 +1,15 @@
 __pycache__/
 *.pyc
+.vscode
+.nox
+.coverage
+.mypy_cache
+.pytest_cache
 
 # Distribution/packaging
 build/
 dist/
 *.egg-info/
-.vscode
 _build
+/docs/api
+bibtex.json

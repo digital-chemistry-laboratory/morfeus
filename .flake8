@@ -1,0 +1,36 @@
+[flake8]
+select = ANN,C,E,F,W,I,BLK,B,B9,D,DAR
+ignore = ANN002,ANN003,ANN101,E203,E501,E741,W503,D105,D107,DAR203
+max-line-length = 90
+max-complexity = 10
+application-import-names = morfeus,tests
+import-order-style = google
+docstring-convention = google
+strictness = short
+per-file-ignores =
+    tests/*:S101,ANN
+    noxfile.py:ANN
+    setup.py:D100
+extend-exclude = .nox
+builtins =
+    AllChem
+    ase,
+    BackgroundPlotter,
+    Chem,
+    D3_model,
+    D4_model,
+    Descriptors,
+    extrapolate_c_n_coeff,
+    hex2color,
+    ob,
+    openbabel,
+    plt,
+    pv,
+    qcel,
+    qcng,
+    pybel,
+    pymeshfix,
+    rdkit,
+    spyrmsd,
+    vtk,
+    xtb,

@@ -2,35 +2,10 @@
 Sterimol
 ========
 
-The Sterimol parameters L, B\ :sub:`1` and B\ :sub:`5` as described by
-Verloop [1]_\ [2]_ are implemented. Note that Sterimol parameters should always
-be calculated with H as the dummy atom, otherwise the results for the L
-parameter will not be consistent with the literature (see `Background`_)
-
-*******************
-Command line script
-*******************
-
-The command line script gives access to the basic functionality from the
-terminal.
-
-.. code-block:: console
-  :caption: Example
-  
-  $ steriplus_sterimol tBu.xyz 1 2
-  L         B_1       B_5
-  4.21      2.87      3.27
-
-Here the second argument is the dummy atom (called atom 1 below) and the third
-argument is the atom of the substituent to which atom 1 is connected (called 
-atom 2 below).
-
---radii <list>
-  Type of van der Waals radii: ``bondi`` or ``crc`` (default)
---density <str>
-  Density of points on spheres (default: ``0.005`` points/Å\ :sup:`2`)
--v, --verbose
-  Print uncorrected L and bond length between atom 1 and atom 2.
+The Sterimol parameters L, B\ :sub:`1` and B\ :sub:`5` as described by Verloop
+:footcite:`verloop_development_1976,verloop_sterimol_1983` are implemented.
+Note that Sterimol parameters should be calculated with H as the dummy atom, to
+be consistent with values in the literature (see `Background`_)
 
 ******
 Module
@@ -41,7 +16,7 @@ The Sterimol class calculates and stores Sterimol parameters.
 .. code-block:: python
   :caption: Example
   
-  >>> from steriplus import Sterimol, read_xyz
+  >>> from morfeus import Sterimol, read_xyz
   >>> elements, coordinates = read_xyz("tBu.xyz")
   >>> sterimol = Sterimol(elements, coordinates, 1, 2)
   >>> sterimol.L_value
@@ -54,12 +29,11 @@ The Sterimol class calculates and stores Sterimol parameters.
   L         B_1       B_5
   4.21      2.87      3.27
 
-Radii can be changed with the argument ``radii_type=<str>`` with the choices
-``crc`` (default) or ``bondi``. Custom radii can be supplied as a list with 
-``radii=<list>``. 
+Radii can be changed with the argument ``radii_type=<str>`` and custom radii
+can be supplied as a list with ``radii=<list>``. 
 
-The bond length between atoms 1 and 2 and the uncorrected L values (without
-the historical addition of 0.40 Å) can also be obtained.
+The bond length between atoms 1 and 2 and the uncorrected L values (without the
+historical addition of 0.40 Å) can also be obtained.
 
 .. code-block:: python
   :caption: Uncorrected L values
@@ -72,71 +46,51 @@ the historical addition of 0.40 Å) can also be obtained.
   L         B_1       B_5       L_uncorr  d(a1-a2)
   4.21      2.87      3.27      3.81      1.10
 
-2D and 3D plots can also be obtained to visualize the vectors. The points shown
-make up the convex hull of the vdW surface (see `Background`_)
-
-.. code-block:: python
-  :caption: 2D plot
-  
-  >>> sterimol.plot_2D()
-
-.. figure:: images/sterimol_2D.png
-
-
-.. code-block:: python
-  :caption: 3D plot
-
-  >>> sterimol.plot_3D()
-
-.. figure:: images/sterimol_3D.png
-
 More information can be found with `help(Sterimol)` or in the API:
-:py:class:`steriplus.steriplus.Sterimol`
+:py:class:`Sterimol <morfeus.morfeus.Sterimol>`.
+
+*******************
+Command line script
+*******************
+
+The command line script gives access to the basic functionality from the
+terminal.
+
+.. code-block:: console
+  :caption: Example
+  
+  $ morfeus sterimol tBu.xyz - 1 2 - print_report
+  L         B_1       B_5       
+  4.21      2.86      3.27      
 
 **********
 Background
 **********
 
 The Sterimol parameters were developed by Verloop to describe the steric size
-of substituents. The atom attached to the substituent in the calculation (by 
+of substituents. The atom attached to the substituent in the calculation (by
 definition H) is called atom 1 and the first atom in the substituent is called
-atom 2. L can be described as the depth of the substituent. It is defined as the
-length of the vector going from atom 1, through atom 2 and ending on the tangent
-of the vdW surface. For historical reasons, L is corrected by adding 0.40 Å to
-this length. This  was due to a shift from using C(sp\ :sup:`2`) to H as dummy
-atom.
+atom 2. L can be described as the depth of the substituent. It is defined as
+the length of the vector going from atom 1, through atom 2 and ending on the
+tangent of the vdW surface. For historical reasons, L is corrected by adding
+0.40 Å to this length. This  was due to a shift from using C(sp\ :sup:`2`) to H
+as dummy atom.
 
 B\ :sub:`1` and B\ :sub:`5` can be described as the minimum and maximum
-rotational size of the substituent. They are defined as the shortest and longest
-vectors from atom 2 to a tangent plane of the vdW surface which are
+rotational size of the substituent. They are defined as the shortest and
+longest vectors from atom 2 to a tangent plane of the vdW surface which are
 perpendicular to the L vector, respectively.
 
-Steriplus has been benchmarked against Paton's Sterimol_ package. Using exactly
+ᴍᴏʀғᴇᴜs has been benchmarked against Paton's Sterimol__ package. Using exactly
 the same radii (Paton's modified Bondi), almost identical results are obtained.
-(Note that Steriplus normally uses 1.20 Å as the Bondi vdW radius for H).
+(Note that ᴍᴏʀғᴇᴜs normally uses 1.20 Å as the Bondi vdW radius for H).ᴍᴏʀғᴇᴜs
+calculates the B\ :sub:`1` and B\ :sub:`5` parameters by a different approach
+from the original code. First, atomic spheres are created with a certain
+density of points. B\ :sub:`1` and B\ :sub:`5` are then obtained by projection
+of atoms onto vectors spanning the whole 360 degrees in the plane perpendicular
+to L. B\ :sub:`5` is obtained from the largest projection, while B\ :sub:`1` is
+obtained from the smallest maximum projection for the set of vectors.
 
-.. figure:: benchmarks/sterimol/correlation.png
-  
-  Benchmark of Sterimol parameters against Paton's Sterimol code.
+.. footbibliography::
 
-Steriplus calculates the B\ :sub:`1` and B\ :sub:`5` paramters by a different
-approach from the original code. First, atomic spheres are created with a
-certain density of points. Then, the so-called `convex hull`_ is created,
-reducing the number of points drastically. B\ :sub:`1` and B\ :sub:`5` are
-obtained by projection of the points of the convex hull onto vectors spanning
-the whole 360 degrees in the plane perpendicular to L. B\ :sub:`5` is obtained
-from the largest projection, while B\ :sub:`1` is obtained from the smallest
-maximum projection for the set of vectors.
-
-**********
-References
-**********
-
-.. [1] Verloop, A., Hoogenstraaten, W., Tipker, J. In *Drug Design* Vol. VII;
-       Ariens, E. J., Ed.; Academic Press, **1976**; pp 165-206.  
-.. [2] Verloop, A. In *Pesticide Chemistry: Human Welfare and Environment:
-       Synthesis and Structure-Activity Relationships*;
-       Doyle, P., Fujita, T., Eds.; Pergamon, **1983**; pp 339–344.
-
-.. _`convex hull`: https://en.wikipedia.org/wiki/Convex_hull
-.. _Sterimol: https://github.com/bobbypaton/Sterimol
+.. __: https://github.com/bobbypaton/Sterimol
