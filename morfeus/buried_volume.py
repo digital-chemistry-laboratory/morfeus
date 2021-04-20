@@ -72,7 +72,8 @@ class BuriedVolume:
         elements: Elements as atomic symbols or numbers
         coordinates: Coordinates (Å)
         metal_index: Index of metal atom (1-indexed)
-        excluded_atoms: Indices of atoms to exclude (1-indexed)
+        excluded_atoms: Indices of atoms to exclude (1-indexed). Metal atom is always
+            excluded and does not have to be given here.
         radii: vdW radii (Å)
         include_hs: Whether to include H atoms in the calculation
         radius: Radius of sphere (Å)

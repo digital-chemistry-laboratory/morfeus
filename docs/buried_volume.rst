@@ -17,7 +17,7 @@ plotted.
 
   >>> from morfeus import BuriedVolume, read_xyz
   >>> elements, coordinates = read_xyz("1.xyz")
-  >>> bv = BuriedVolume(elements, coordinates, 1, excluded_atoms=[1, 2, 3, 4, 5, 6, 7])
+  >>> bv = BuriedVolume(elements, coordinates, 1, excluded_atoms=[2, 3, 4, 5, 6, 7])
   >>> print(bv.buried_volume)
   0.2962110976518822
   >>> bv.print_report()
@@ -30,13 +30,14 @@ Plots can be saved by passing the ``filename=<str>`` keyword argument.
 :py:meth:`draw_3D <morfeus.buried_volume.BuriedVolume.draw_3D>` gives a
 three-dimensional representation of the buried volume.
 
-
 By default, hydrogen atoms are excluded in the calculation. They can be added
-by giving the keyword argument ``indclude_hs=True``. The default sphere radius
-is 3.5 Å, but can be changed with ``radius=<float>``. Default radii type is
-Bondi which are scaled by a factor of 1.17. This can be changed with
-``radii_type=<str>`` and ``radii_scale=<float>``. Custom radii can be supplied
-as a list with ``radii=<list>``.
+by giving the keyword argument ``indclude_hs=True``. The metal atom is also
+excluded, while the atoms of other ligands need to be given in the
+``excluded_atoms`` list. The default sphere radius is 3.5 Å, but can be changed
+with ``radius=<float>``. Default radii type is Bondi which are scaled by a
+factor of 1.17. This can be changed with ``radii_type=<str>`` and
+``radii_scale=<float>``. Custom radii can be supplied as a list with
+``radii=<list>``.
 
 For more information, use ``help(BuriedVolume)`` or see the API:
 :py:class:`BuriedVolume <morfeus.buried_volume.BuriedVolume>`
@@ -50,7 +51,7 @@ The basic functionality is available through the command line script.
 .. code-block:: console
   :caption: Example
 
-  $ morfeus buried_volume 1.xyz - 1 --excluded_atoms='[1,2,3,4,5,6,7]' - print_report
+  $ morfeus buried_volume 1.xyz - 1 --excluded_atoms='[2,3,4,5,6,7]' - print_report
   V_bur (%): 29.6
 
 **********
