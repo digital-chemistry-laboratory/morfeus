@@ -4,7 +4,7 @@ dependencies:
 - dftd4
 - matplotlib
 - openbabel
-- pymeshfix
+- pip
 - pyvista
 - pyvistaqt
 - qcengine
@@ -12,3 +12,5 @@ dependencies:
 - spyrmsd
 - vtk
 - xtb-python
+- pip:
+  - pymeshfix

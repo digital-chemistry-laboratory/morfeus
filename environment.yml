@@ -1,3 +1,5 @@
+channels:
+  - conda-forge
 dependencies:
 - fire
 - numpy
