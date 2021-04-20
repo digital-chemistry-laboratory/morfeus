@@ -1,5 +1,6 @@
 .. image:: docs/_static/logo-light.svg
-.. image:: https://github.com/kjelljorner/morfeus/actions/workflows/ci-pip.yml/badge.svg
+.. image:: https://github.com/kjelljorner/morfeus/actions/workflows/testing.yml/badge.svg
+.. image:: https://github.com/kjelljorner/morfeus/actions/workflows/linting.yml/badge.svg
 
 A Python package for calculation of molecular features. ᴍᴏʀғᴇᴜs can be run
 either as a command line script or imported as a module.

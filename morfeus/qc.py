@@ -189,7 +189,7 @@ def _generate_qcel_molecule(
     charge: Optional[int] = None,
     multiplicity: Optional[int] = None,
     connectivity_matrix: Optional[ArrayLike2D] = None,
-) -> qcel.models.Molecule:
+) -> "qcel.models.Molecule":
     """Generate QCElemental molecule object.
 
     Args:
