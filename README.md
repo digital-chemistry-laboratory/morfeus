@@ -9,14 +9,14 @@ A Python package for calculating molecular features.
 
 ## pip
 
-```bash
-pip install morfeus-ml
+```console
+$ pip install morfeus-ml
 ```
 
 ## conda
 
 ```console
-conda install -c conda-forge morfeus-ml
+$ conda install -c conda-forge morfeus-ml
 ```
 
 # Usage
