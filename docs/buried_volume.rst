@@ -24,7 +24,7 @@ plotted.
   V_bur (%): 29.6
   >>> bv.plot_steric_map([14])
 
-.. image:: images/steric_map.png
+.. image:: images/buried_volume/steric_map.png
 
 Plots can be saved by passing the ``filename=<str>`` keyword argument.
 :py:meth:`draw_3D <morfeus.buried_volume.BuriedVolume.draw_3D>` gives a

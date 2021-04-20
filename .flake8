@@ -11,7 +11,7 @@ per-file-ignores =
     tests/*:S101,ANN
     noxfile.py:ANN
     setup.py:D100
-extend-exclude = .nox
+extend-exclude = .nox,docs/conf.py
 builtins =
     AllChem
     ase,

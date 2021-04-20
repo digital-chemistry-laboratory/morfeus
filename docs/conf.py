@@ -26,7 +26,7 @@ extensions = [
 master_doc = "index"
 numfig = True
 source_suffix = ".rst"
-exclude_patterns = ["_build"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "furo"
 html_theme_options = {
