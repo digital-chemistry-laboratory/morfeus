@@ -131,10 +131,10 @@ class BuriedVolume:
 
         if excluded_atoms is None:
             excluded_atoms = []
-        excluded_atoms = list(excluded_atoms)
+        excluded_atoms = set(excluded_atoms)
 
         if metal_index not in excluded_atoms:
-            excluded_atoms.append(metal_index)
+            excluded_atoms.add(metal_index)
 
         if z_axis_atoms is not None and xz_plane_atoms is not None:
             z_axis_coordinates = coordinates[np.array(z_axis_atoms) - 1]
@@ -575,7 +575,7 @@ class BuriedVolume:
             self._free_points, color=free_color, opacity=opacity, point_size=size
         )
 
-        if self._octant_limits:
+        if hasattr(self, "_octant_limits"):
             for name, limits_ in self._octant_limits.items():
                 limits = tuple(itertools.chain(*limits_))
                 box = pv.Box(limits)
