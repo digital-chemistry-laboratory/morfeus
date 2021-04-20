@@ -14,7 +14,8 @@ Examples
 ********
 
 ᴍᴏʀғᴇᴜs can be imported as a Python module that is easily integrated into
-workflows. Here is an example for calculating the exact ligand cone angle:
+workflows. It can also be used from the command line. Here is an example for
+calculating the exact ligand cone angle:
 
 .. tab:: Module
   
@@ -37,12 +38,17 @@ workflows. Here is an example for calculating the exact ligand cone angle:
 Installation
 ************
 
-Clone the repository from GitHub and install with pip:
+.. tab:: pip
 
-.. code-block:: console
-  :caption: pip installation
+  .. code-block:: console
 
-  pip install .
+    pip install morfeus-ml
+
+.. tab:: conda
+
+  .. code-block:: console
+
+    conda install -c conda-forge morfeus-ml
 
 ********
 Features
@@ -62,8 +68,14 @@ Features
 About
 *****
 
-ᴍᴏʀғᴇᴜs was developed by Kjell Jorner working as a postdoctoral fellow at
-AstraZeneca UK.
+ᴍᴏʀғᴇᴜs was started by Kjell Jorner as a post doc at AstraZeneca UK in
+collaboration with the groups of Alán Aspuru-Guzik at the University of Toronto
+and Matthew Sigman at the University of Utah. In particular, the following
+people have contributed significantly to developing its functionality:
+
+* Gabriel dos Passos Gomes
+* Pascal Friedrich
+* Tobias Gensch
 
 *******
 License
