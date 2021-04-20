@@ -29,7 +29,10 @@ dipole moment are available as well as the atomic charges and bond orders.
   >>> xtb.get_homo()
   -0.39012010481047976
   >>> xtb.get_charges()
-  array([-0.42539265,  0.14180091,  0.14179421,  0.14179754])
+  {1: -0.42539265,
+   2: 0.14180091,
+   3: 0.14179421,
+   4: 0.14179754}
   >>> xtb.get_bond_order(1, 2)
   0.9786781554103448
   >>> xtb.get_dipole()
@@ -50,15 +53,45 @@ theory can also be calculated.
   >>> xtb.get_global_descriptor("nucleophilicity", corrected=True)
   -11.652754040546771
   >>> xtb.get_fukui("electrophilicity")
-  array([-0.20661935, -0.26445605, -0.26448747, -0.26443713])
+  {1: -0.20661935,
+   2: -0.26445605,
+   3: -0.26448747,
+   4:-0.26443713}
   >>> xtb.get_fukui("nucleophilicity")
-  array([-0.42294271, -0.19234974, -0.19235729, -0.19235026])
+  {1: -0.42294271,
+   2: -0.19234974,
+   3: -0.19235729,
+   4:-0.19235026}
 
 The version of GFNX-xTB can be set using ``version=<int>`` with versions 1 and 
 2 currently supported. A correction term can be applied for the calculation of 
 the ionization potential and electron affinity using ``corrected=True``, which
 also affects some of the global and local descriptors. For a full list of 
 descriptors and their definitions, see the Background_.
+
+For more information, use ``help(XTB)`` or consult the API:
+:py:class:`XTB <morfeus.xtb.XTB>`.
+
+*******************
+Command line script
+*******************
+
+The command line script gives access to the basic functionality from the
+terminal.
+
+.. tab:: Get charge
+
+  .. code-block:: console
+  
+    $ morfeus xtb Et.gjf - - get_charges - 1
+    0.03220302786615441
+
+.. tab:: Change version
+
+  .. code-block:: console
+  
+    $ morfeus xtb Et.gjf - --version='"1"' - get_charges - 1
+    0.02564834649261168
 
 **********
 Background
@@ -96,7 +129,6 @@ hardness given by
   \mu &= - \frac{IP + EA}{2}
 
   \eta &= IP - EA
-
 
 The Fukui coefficients are calculated calculated via the finite differences
 approach using the atomic charges from *xtb*. These include:

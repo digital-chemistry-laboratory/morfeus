@@ -387,12 +387,13 @@ Arguments
 
 Fire attemps to correctly guess the correct type of the arguments given in the
 command line. The following style is recommended as it works across different
-operating systems.
+operating systems. Note that integers being intended as strings need double
+quotes.
 
 ===== ==================
 Type  Recommendation
 ===== ==================
-str   bondi
+str   bondi, '"1"'
 int   1
 float 1.0
 list  '[1,2]'

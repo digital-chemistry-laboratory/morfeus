@@ -2,7 +2,7 @@
 
 import functools
 import typing
-from typing import Any, Iterable, Optional, Union
+from typing import Any, Dict, Iterable, Optional, Union
 
 import numpy as np
 
@@ -103,17 +103,25 @@ class XTB:
 
         return bond_orders
 
-    def get_charges(self, charge_state: int = 0) -> Array1D:
+    def _get_charges(self, charge_state: int = 0) -> Array1D:
+        """Returns atomic charges."""
+        self._check_results(charge_state)
+        charges: np.ndarray = self._results[charge_state].get_charges()
+
+        return charges
+
+    def get_charges(self, charge_state: int = 0) -> Dict[int, float]:
         """Returns atomic charges.
 
         Args:
             charge_state: Charge state relative to original charge
 
         Returns:
-            bond_orders: Atomic charges
+            charges: Atomic charges
         """
         self._check_results(charge_state)
-        charges: np.ndarray = self._results[charge_state].get_charges()
+        charges = self._results[charge_state].get_charges()
+        charges = {i: charge for i, charge in enumerate(charges, start=1)}
 
         return charges
 
@@ -151,7 +159,7 @@ class XTB:
 
         return ea
 
-    def get_fukui(self, variety: str) -> Array1D:
+    def get_fukui(self, variety: str) -> Dict[int, float]:
         """Calculate Fukui coefficients.
 
         Args:
@@ -164,25 +172,41 @@ class XTB:
         Raises:
             ValueError: When variety does not exist
         """
+        varieties = [
+            "dual",
+            "electrophilicity",
+            "local_electrophilicity",
+            "local_nucleophilicity",
+            "nucleophilicity",
+            "radical",
+        ]
         fukui: np.ndarray
-        if variety == "nucleophilicity":
-            fukui = self.get_charges(0) - self.get_charges(1)
+        if variety in ["local_nucleophilicity", "nucleophilicity"]:
+            fukui = self._get_charges(0) - self._get_charges(1)
         elif variety == "electrophilicity":
-            fukui = self.get_charges(-1) - self.get_charges(0)
+            fukui = self._get_charges(-1) - self._get_charges(0)
         elif variety == "radical":
-            fukui = (self.get_charges(-1) - self.get_charges(0)) / 2
+            fukui = (self._get_charges(-1) - self._get_charges(0)) / 2
         elif variety == "dual":
-            fukui = 2 * self.get_charges(0) - self.get_charges(1) - self.get_charges(-1)
-        elif variety == "local_nucleophilicity":
-            fukui = self.get_fukui("nucleophilicity")
+            fukui = (
+                2 * self._get_charges(0) - self._get_charges(1) - self._get_charges(-1)
+            )
         elif variety == "local_electrophilicity":
+            fukui_radical = np.array(list(self.get_fukui("radical").values()))
+            fukui_dual = np.array(list(self.get_fukui("dual").values()))
             chem_pot = -(self.get_ip() + self.get_ea()) / 2
             hardness = self.get_ip() - self.get_ea()
-            fukui = -(chem_pot / hardness) * self.get_fukui("radical") + 1 / 2 * (
-                chem_pot / hardness
-            ) ** 2 * self.get_fukui("dual")
+            fukui = (
+                -(chem_pot / hardness) * fukui_radical
+                + 1 / 2 * (chem_pot / hardness) ** 2 * fukui_dual
+            )
         else:
-            raise ValueError(f"Choosen variety {variety} does not exist.")
+            raise ValueError(
+                f"Variety '{variety}' does not exist. "
+                f"Choose one of {', '.join(varieties)}."
+            )
+
+        fukui = {i: fukui for i, fukui in enumerate(fukui, start=1)}
 
         return fukui
 
@@ -200,6 +224,12 @@ class XTB:
         Raises:
             ValueError: When variety does not exist
         """
+        varieties = [
+            "electrofugality",
+            "electrophilicity",
+            "nucleofugality",
+            "nucleophilicity",
+        ]
         if variety == "electrophilicity":
             descriptor = (
                 self.get_ip(corrected=corrected) + self.get_ea(corrected=corrected)
@@ -224,7 +254,10 @@ class XTB:
                 * (self.get_ip(corrected=corrected) - self.get_ea(corrected=corrected))
             )
         else:
-            raise ValueError(f"Choosen variety {variety} does not exist.")
+            raise ValueError(
+                f"Variety '{variety}' does not exist. "
+                f"Choose one of {', '.join(varieties)}."
+            )
 
         return descriptor
 
