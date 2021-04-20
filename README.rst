@@ -1,6 +1,10 @@
 .. image:: docs/_static/logo-light.svg
-.. image:: https://github.com/kjelljorner/morfeus/actions/workflows/testing.yml/badge.svg
-.. image:: https://github.com/kjelljorner/morfeus/actions/workflows/linting.yml/badge.svg
+
+.. image:: https://github.com/kjelljorner/morfeus/actions/workflows/test.yml/badge.svg
+  :target: https://github.com/kjelljorner/morfeus/actions/workflows/test.yml
+  
+.. image:: https://github.com/kjelljorner/morfeus/actions/workflows/lint.yml/badge.svg
+  :target: https://github.com/kjelljorner/morfeus/actions/workflows/lint.yml
 
 A Python package for calculation of molecular features. ᴍᴏʀғᴇᴜs can be run
 either as a command line script or imported as a module.
