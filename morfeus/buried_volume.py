@@ -25,7 +25,7 @@ if typing.TYPE_CHECKING:
 
 # Quadrant and octant signs taken from
 # https://en.wikipedia.org/wiki/Octant_(solid_geometry)
-quadrant_signs: Dict[int, str] = {
+QUADRANT_SIGNS: Dict[int, str] = {
     1: "+,+",
     2: "-,+",
     3: "-,-",
@@ -33,7 +33,7 @@ quadrant_signs: Dict[int, str] = {
 }
 """Coventional signs for quadrants."""
 
-octant_signs: Dict[int, str] = {
+OCTANT_SIGNS: Dict[int, str] = {
     0: "+,+,+",
     1: "-,+,+",
     3: "+,-,+",
@@ -45,7 +45,7 @@ octant_signs: Dict[int, str] = {
 }
 """Conventional signs for octants."""
 
-quadrant_names: Dict[int, str] = {
+QUADRANT_NAMES: Dict[int, str] = {
     1: "NE",
     2: "NW",
     3: "SW",
@@ -54,7 +54,7 @@ quadrant_names: Dict[int, str] = {
 """Conventional names for quadrants."""
 
 # Maps octants to quadrants
-quadrant_octant_map: Dict[int, Tuple[int, int]] = {
+QUADRANT_OCTANT_MAP: Dict[int, Tuple[int, int]] = {
     1: (0, 7),
     2: (1, 6),
     3: (2, 5),
@@ -259,7 +259,7 @@ class BuriedVolume:
         percent_buried_volume = {}
         buried_volume = {}
         free_volume = {}
-        for name, octants in quadrant_octant_map.items():
+        for name, octants in QUADRANT_OCTANT_MAP.items():
             percent_buried_volume[name] = (
                 sum(
                     [
@@ -404,7 +404,7 @@ class BuriedVolume:
                 # Quadrant analyis
                 distal_volume = {}
                 molecular_volume = {}
-                for name, octants_ in quadrant_octant_map.items():
+                for name, octants_ in QUADRANT_OCTANT_MAP.items():
                     distal_volume[name] = sum(
                         [self.octants["distal_volume"][octant] for octant in octants_]
                     )
@@ -585,7 +585,7 @@ class BuriedVolume:
                 y = np.array(limits)[2:4][np.argmax(np.abs(limits[2:4]))]
                 z = np.array(limits)[4:][np.argmax(np.abs(limits[4:]))]
                 p.add_point_labels(
-                    np.array([x, y, z]), [octant_signs[name]], text_color="black"
+                    np.array([x, y, z]), [OCTANT_SIGNS[name]], text_color="black"
                 )
 
         self._plotter = p
