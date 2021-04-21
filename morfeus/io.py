@@ -2,14 +2,18 @@
 
 from os import PathLike
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
+import typing
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
 
 import numpy as np
 
 from morfeus.d3_data import r2_r4
 from morfeus.data import BOHR_TO_ANGSTROM
 from morfeus.typing import Array1D, Array2D, Array3D, ArrayLike2D, ArrayLike3D
-from morfeus.utils import convert_elements
+from morfeus.utils import convert_elements, Import, requires_dependency
+
+if typing.TYPE_CHECKING:
+    import cclib.io
 
 
 class CubeParser:
@@ -392,6 +396,29 @@ def read_xyz(file: Union[str, PathLike]) -> Tuple[Array1D, Union[Array2D, Array3
             )
     elements = np.array(elements)[:n_atoms]
     coordinates = np.array(coordinates).reshape(-1, n_atoms, 3)
+    if coordinates.shape[0] == 1:
+        coordinates = coordinates[0]
+
+    return elements, coordinates
+
+
+@requires_dependency([Import("cclib")], globals())
+def read_cclib(file: Any) -> Tuple[Array1D, Array1D]:
+    """Reads geometry file with cclib.
+
+    Returns elements as atomic numbers and coordinates.
+
+    Args:
+        file: Input file to cclib
+
+    Returns:
+        elements: Elements as atomic symbols or numbers
+        coordinates: Coordinates (Å)
+    """
+    data = cclib.io.ccread(file)
+    elements = data.atomnos
+    coordinates = data.atomcoords
+
     if coordinates.shape[0] == 1:
         coordinates = coordinates[0]
 
