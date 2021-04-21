@@ -199,7 +199,7 @@ class Sterimol:
             ).reshape(-1)
             distances = distances - radii * radii_scale
             excluded_atoms = set(np.array(self._atoms)[distances >= sphere_radius])
-            self._excluded_atoms.update(excluded_atoms)
+            self._excluded_atoms.update([atom.index for atom in excluded_atoms])
 
             # Calculate Sterimol parameters
             self.calculate()
