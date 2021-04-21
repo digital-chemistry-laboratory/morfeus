@@ -159,6 +159,9 @@ class Pyramidalization:
         self.alphas = np.rad2deg(alphas)
         self.neighbor_indices = (neighbors + 1).tolist()
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({round(self.P, 3)!r})"
+
 
 def cli(file: str) -> Any:
     """CLI for pyramidalization.
