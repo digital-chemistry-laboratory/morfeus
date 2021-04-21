@@ -50,8 +50,9 @@ The functionality is also available from the command line.
 .. code-block:: console
   :caption: Example
   
-  $ morfeus pyramidalization pyr.xyz - 1 - P
-  0.9382253758236183
+  $ morfeus pyramidalization pyr.xyz - 1 - print_report
+  P: 0.938
+  P_angle: 7.579
 
 **********
 Background
