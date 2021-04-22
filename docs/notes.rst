@@ -43,6 +43,28 @@ lists and used with zero-indexing if needed:
   22.529947315182724,
   ...
 
+**************
+Geometry files
+**************
+
+Many features of ᴍᴏʀғᴇᴜs makes use of atomic numbers/symbols and coordinates.
+These can be read from geometry files, and currently the files formats ``gjf``
+(Gaussian input file) and ``xyz`` (XMOL )are supported. These files can be 
+read with two different functions. There is also the
+:py:func:`read_geometry <morfeus.io.read_geometry>`
+function that will try to guess the file type based on its suffix. If the
+cclib__ package is installed, it can be used to read many file formats.
+
+====== =============================================
+Format Function
+====== =============================================
+gjf    :py:func:`read_gjf <morfeus.io.read_gjf>`
+xyz    :py:func:`read_xyz <morfeus.io.read_gjf>`
+\*     :py:func:`read_cclib <morfeus.io.read_cclib>`
+====== =============================================
+
+.. __: https://github.com/cclib/cclib
+
 *****
 Radii
 *****
