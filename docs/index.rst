@@ -100,6 +100,7 @@ both academic and commercial use.
 
    buried_volume
    cone_angle
+   conformer
    dispersion
    local_force
    pyramidalization
