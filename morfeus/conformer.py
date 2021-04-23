@@ -1233,7 +1233,7 @@ class ConformerEnsemble:
         if degeneracies is None:
             degeneracies_ = np.ones(n_conformers)
         else:
-            degeneracies_ = np.array(energies)
+            degeneracies_ = np.array(degeneracies)
         degeneracies = degeneracies_
 
         for coordinates, energy, degeneracy in zip(
