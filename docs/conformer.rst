@@ -76,6 +76,80 @@ OpenBabel.
   >>> ce
   ConformerEnsemble(3 conformers)
 
+#####
+CREST
+#####
+
+Output from the CREST__ program can be parsed. Mᴏʀғᴇᴜs does not currently have
+any functionality for running CREST. The following files must be present in 
+the output folder: *crest_conformers.xyz*, *cre_members* and *crest.eneriges*.
+
+.. tab:: Mᴏʀғᴇᴜs
+
+  .. code-block:: python
+    :caption: Conformer ensemble from CREST output
+  
+    >>> ce = ce = ConformerEnsemble.from_crest("crest_output_folder")
+    >>> ce
+    ConformerEnsemble(8 conformers)
+    >>> ce.sort()
+    >>> ce.get_relative_energies()
+    array([0.   , 0.468, 0.829, 0.832, 0.834])
+    >>> ce.get_degeneracies()
+    array([ 4, 27,  8,  2,  1])
+    >>> ce.boltzmann_weights()
+    array([0.45642055, 0.20716615, 0.11264294, 0.11207402, 0.11169634])
+
+.. tab:: CREST output
+  
+  .. code-block:: none
+
+    Erel/kcal        Etot weight/tot  conformer     set   degen     origin
+    1    0.000    -2.40317    0.05283    0.21084       1       4     mtd3
+    2    0.000    -2.40317    0.05281                                mtd4
+    3    0.002    -2.40317    0.05262                                mtd3
+    4    0.003    -2.40316    0.05258                                mtd4
+    5    0.468    -2.40242    0.02400    0.64605       2      27     mtd2
+    6    0.468    -2.40242    0.02399                                mtd4
+    7    0.468    -2.40242    0.02398                                mtd6
+    8    0.468    -2.40242    0.02398                                mtd1
+    9    0.469    -2.40242    0.02398                                mtd1
+    10   0.469    -2.40242    0.02398                                mtd1
+    11   0.469    -2.40242    0.02397                                mtd2
+    12   0.469    -2.40242    0.02397                                mtd1
+    13   0.469    -2.40242    0.02397                                mtd3
+    14   0.469    -2.40242    0.02396                                mtd1
+    15   0.469    -2.40242    0.02395                                mtd1
+    16   0.469    -2.40242    0.02395                                mtd4
+    17   0.469    -2.40242    0.02394                                mtd4
+    18   0.469    -2.40242    0.02394                                mtd5
+    19   0.469    -2.40242    0.02394                                mtd3
+    20   0.470    -2.40242    0.02393                                mtd1
+    21   0.470    -2.40242    0.02393                                mtd1
+    22   0.470    -2.40242    0.02391                                mtd3
+    23   0.470    -2.40242    0.02391                                mtd5
+    24   0.470    -2.40242    0.02390                                mtd5
+    25   0.471    -2.40242    0.02389                                mtd2
+    26   0.471    -2.40242    0.02388                                mtd1
+    27   0.471    -2.40242    0.02387                                mtd3
+    28   0.472    -2.40242    0.02386                                mtd3
+    29   0.472    -2.40242    0.02385                                mtd5
+    30   0.473    -2.40242    0.02381                                mtd3
+    31   0.473    -2.40242    0.02381                                mtd6
+    32   0.829    -2.40185    0.01306    0.10429       3       8     mtd3
+    33   0.829    -2.40185    0.01305                                mtd2
+    34   0.829    -2.40185    0.01305                                mtd6
+    35   0.829    -2.40185    0.01305                                mtd2
+    36   0.829    -2.40185    0.01305                                mtd2
+    37   0.830    -2.40185    0.01304                                mtd5
+    38   0.832    -2.40184    0.01300                                mtd5
+    39   0.832    -2.40184    0.01299                                mtd5
+    40   0.832    -2.40184    0.01299    0.02588       4       2     mtd3
+    41   0.837    -2.40184    0.01289                                mtd3
+    42   0.834    -2.40184    0.01295    0.01295       5       1     mtd5
+
+.. __: https://github.com/grimme-lab/crest
+
 #############################
 Boltzmann-weighted properties
 #############################
@@ -214,12 +288,11 @@ with GFN2-xTB.
 .. note:: 
 
   Optimization of many molecules with many conformers through the QCEngine
-  interface is not efficient. The CREST__ program is recommended in these
+  interface is not efficient. The CREST_ program is recommended in these
   cases.
 
 .. __: https://github.com/MolSSI/QCEngine
 .. __: http://docs.qcarchive.molssi.org/projects/QCEngine/
-.. __: https://github.com/grimme-lab/crest
 
 #######################
 Enantiomeric conformers

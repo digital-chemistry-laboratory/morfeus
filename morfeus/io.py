@@ -17,12 +17,12 @@ if typing.TYPE_CHECKING:
 
 
 class CrestParser:
-    """Parses folder with crest output files for conformer information.
+    """Parses folder with CREST output files for conformer information.
 
     Reads the files: cre_members, crest.energies, crest_conformers.xyz
 
     Args:
-        path: Path to crest folder
+        path: Path to CREST folder
 
     Attributes:
         conformer_coordinates: Conformer coordinates (Å)

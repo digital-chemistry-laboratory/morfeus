@@ -436,10 +436,10 @@ class ConformerEnsemble:
 
     @classmethod
     def from_crest(cls: Type[T], path: Union[str, PathLike]) -> T:
-        """Generate conformer ensemble from crest output.
+        """Generate conformer ensemble from CREST output.
 
         Args:
-            path: Path to crest folder
+            path: Path to CREST folder
 
         Returns:
             ce: Conformer ensemble object.
