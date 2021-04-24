@@ -37,7 +37,7 @@ from morfeus.data import (
     KCAL_TO_HARTREE,
     KJ_TO_HARTREE,
 )
-from morfeus.io import write_xyz
+from morfeus.io import CrestParser, write_xyz
 from morfeus.qc import optimize_qc_engine, sp_qc_engine
 from morfeus.typing import (
     Array1D,
@@ -433,6 +433,26 @@ class ConformerEnsemble:
         self.conformers = self.conformers[:n_conformers]
 
         return enantiomers
+
+    @classmethod
+    def from_crest(cls: Type[T], path: Union[str, PathLike]) -> T:
+        """Generate conformer ensemble from CREST output.
+
+        Args:
+            path: Path to CREST folder
+
+        Returns:
+            ce: Conformer ensemble object.
+        """
+        cp = CrestParser(path)
+        ce = cls(
+            cp.elements,
+            cp.conformer_coordinates,
+            energies=cp.energies,
+            degeneracies=cp.degeneracies,
+        )
+
+        return ce
 
     @classmethod
     def from_rdkit(cls: Type[T], *args: Any, **kwargs: Any) -> T:
@@ -1233,7 +1253,7 @@ class ConformerEnsemble:
         if degeneracies is None:
             degeneracies_ = np.ones(n_conformers)
         else:
-            degeneracies_ = np.array(energies)
+            degeneracies_ = np.array(degeneracies)
         degeneracies = degeneracies_
 
         for coordinates, energy, degeneracy in zip(
@@ -1711,7 +1731,7 @@ def conformers_from_ob_ga(  # noqa: C901
 def conformers_from_rdkit(  # noqa: C901
     mol: Union[str, Chem.Mol],
     n_confs: Optional[int] = None,
-    optimize: Optional[str] = None,
+    optimize: Optional[str] = "MMFF94",
     version: int = 2,
     small_rings: bool = True,
     macrocycles: bool = True,
@@ -1728,8 +1748,8 @@ def conformers_from_rdkit(  # noqa: C901
         mol: Molecule either as SMILES string or RDKit Mol object.
         n_confs: Number of conformers to generate. If None, a reasonable number will be
             set depending on the number of rotatable bonds.
-        optimize: Force field used for conformer optimization: 'MMFF', 'UFF'. If None,
-            conformers are not optimized.
+        optimize: Force field used for conformer optimization: 'MMFF94', 'MMFF94s' or
+            'UFF'. If None, conformers are not optimized.
         version: Version of the experimental torsion-angle preferences
         small_rings: Whether to impose small ring torsion angle preferences
         macrocycles: Whether to mpose macrocycle torsion angle preferences
