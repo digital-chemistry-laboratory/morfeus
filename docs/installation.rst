@@ -2,7 +2,19 @@
 Installation
 ============
 
-ᴍᴏʀғᴇᴜs can be installed using pip and works with Python >= 3.8.
+ᴍᴏʀғᴇᴜs can be installed using pip or conda and works with Python >= 3.8.
+
+.. tab:: pip
+
+  .. code-block:: console
+
+    $ pip install morfeus-ml
+
+.. tab:: conda
+
+  .. code-block:: console
+
+    $ conda install -c conda-forge morfeus-ml
 
 ************
 Dependencies
@@ -29,16 +41,6 @@ Optional depedencies:
 * spyrmsd_
 * vtk_
 * xtb-python_
-
-***
-pip
-***
-
-Clone the repository from GitHub. Install core functionality with pip:
-
-.. code-block:: console
-
-  pip install .
 
 .. _dftd4: https://github.com/dftd4/dftd4
 .. _matplotlib: https://matplotlib.org

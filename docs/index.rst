@@ -69,9 +69,10 @@ About
 *****
 
 ᴍᴏʀғᴇᴜs was started by Kjell Jorner as a post doc at AstraZeneca UK in
-collaboration with the groups of Alán Aspuru-Guzik at the University of Toronto
-and Matthew Sigman at the University of Utah. In particular, the following
-people have contributed significantly to developing its functionality:
+collaboration with the groups of Alán Aspuru-Guzik at the University of
+Toronto, Matthew Sigman at the University of Utah and Tobias Gensch at TU
+Berlin. In particular, the following people have contributed significantly to
+developing its functionality:
 
 * Gabriel dos Passos Gomes
 * Pascal Friedrich
