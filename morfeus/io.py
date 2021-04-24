@@ -400,7 +400,7 @@ def read_geometry(
         suffix = file.lower().split(".")[-1]
     elif isinstance(file, PathLike):
         path = Path(file)
-        suffix = path.suffix[:1]
+        suffix = path.suffix[1:]
 
     if suffix == "xyz":
         elements, coordinates = read_xyz(file)
