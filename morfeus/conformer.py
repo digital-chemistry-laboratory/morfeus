@@ -1731,7 +1731,7 @@ def conformers_from_ob_ga(  # noqa: C901
 def conformers_from_rdkit(  # noqa: C901
     mol: Union[str, Chem.Mol],
     n_confs: Optional[int] = None,
-    optimize: Optional[str] = None,
+    optimize: Optional[str] = "MMFF94",
     version: int = 2,
     small_rings: bool = True,
     macrocycles: bool = True,
@@ -1748,8 +1748,8 @@ def conformers_from_rdkit(  # noqa: C901
         mol: Molecule either as SMILES string or RDKit Mol object.
         n_confs: Number of conformers to generate. If None, a reasonable number will be
             set depending on the number of rotatable bonds.
-        optimize: Force field used for conformer optimization: 'MMFF', 'UFF'. If None,
-            conformers are not optimized.
+        optimize: Force field used for conformer optimization: 'MMFF94', 'MMFF94s' or
+            'UFF'. If None, conformers are not optimized.
         version: Version of the experimental torsion-angle preferences
         small_rings: Whether to impose small ring torsion angle preferences
         macrocycles: Whether to mpose macrocycle torsion angle preferences
