@@ -37,7 +37,7 @@ from morfeus.data import (
     KCAL_TO_HARTREE,
     KJ_TO_HARTREE,
 )
-from morfeus.io import write_xyz
+from morfeus.io import CrestParser, write_xyz
 from morfeus.qc import optimize_qc_engine, sp_qc_engine
 from morfeus.typing import (
     Array1D,
@@ -433,6 +433,26 @@ class ConformerEnsemble:
         self.conformers = self.conformers[:n_conformers]
 
         return enantiomers
+
+    @classmethod
+    def from_crest(cls: Type[T], path: Union[str, PathLike]) -> T:
+        """Generate conformer ensemble from crest output.
+
+        Args:
+            path: Path to crest folder
+
+        Returns:
+            ce: Conformer ensemble object.
+        """
+        cp = CrestParser(path)
+        ce = cls(
+            cp.elements,
+            cp.conformer_coordinates,
+            energies=cp.energies,
+            degeneracies=cp.degeneracies,
+        )
+
+        return ce
 
     @classmethod
     def from_rdkit(cls: Type[T], *args: Any, **kwargs: Any) -> T:

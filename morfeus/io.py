@@ -8,12 +8,61 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Un
 import numpy as np
 
 from morfeus.d3_data import r2_r4
-from morfeus.data import BOHR_TO_ANGSTROM
+from morfeus.data import BOHR_TO_ANGSTROM, KCAL_TO_HARTREE
 from morfeus.typing import Array1D, Array2D, Array3D, ArrayLike2D, ArrayLike3D
 from morfeus.utils import convert_elements, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
     import cclib.io
+
+
+class CrestParser:
+    """Parses folder with crest output files for conformer information.
+
+    Reads the files: cre_members, crest.energies, crest_conformers.xyz
+
+    Args:
+        path: Path to crest folder
+
+    Attributes:
+        conformer_coordinates: Conformer coordinates (Å)
+        degeneracies: Degeneracies
+        elements: Elements
+        energies: Energies (a.u.)
+    """
+
+    conformer_coordinates: Array3D
+    degeneracies: Array1D
+    elements: Array1D
+    energies: Array1D
+
+    def __init__(self, path: Union[str, PathLike]) -> None:
+        path = Path(path)
+
+        with open(path / "cre_members") as f:
+            lines = f.readlines()
+        degeneracies = []
+        for line in lines:
+            strip_line = line.strip().split()
+            if len(strip_line) != 1:
+                degeneracies.append(int(strip_line[0]))
+        degeneracies = np.array(degeneracies)
+
+        with open(path / "crest.energies") as f:
+            lines = f.readlines()
+
+        energies = []
+        for line in lines:
+            strip_line = line.strip().split()
+            energies.append(float(strip_line[1]))
+        energies = np.array(energies) * KCAL_TO_HARTREE
+
+        elements, conformer_coordinates = read_xyz(path / "crest_conformers.xyz")
+
+        self.elements = elements
+        self.conformer_coordinates = conformer_coordinates
+        self.energies = energies
+        self.degeneracies = degeneracies
 
 
 class CubeParser:
