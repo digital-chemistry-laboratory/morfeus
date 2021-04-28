@@ -7,6 +7,8 @@ on:
   pull_request:
     branches:
       - "*"
+    tags:
+      - "*"
   workflow_dispatch:
 
 jobs:
