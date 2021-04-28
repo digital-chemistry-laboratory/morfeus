@@ -6,8 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2021-04-28
 
+### Added
+- First public release. Changelog use starts here.
 
 ### Deprecated
-- ``BuriedVolume.percent_buried_volume``. Use ``BuriedVolume.fraction_buried_volume`` instead. ``percent_buried_volume`` will be reintroduced later with the proper meaning.
+- ``BuriedVolume.percent_buried_volume``. Use ``BuriedVolume.fraction_buried_volume`` instead.``percent_buried_volume`` will be reintroduced later with the proper meaning.
 
