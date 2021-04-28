@@ -173,6 +173,7 @@ class Sterimol:
         sphere_radius: float = 5.5,
         method: str = "delete",
         radii_scale: float = 0.5,
+        density: float = 0.01,
     ) -> "Sterimol":
         """Do a Buried Sterimol calculation.
 
@@ -182,6 +183,7 @@ class Sterimol:
             sphere_radius: Radius of sphere (Å)
             method: Method for burying: 'delete', 'slice' or 'truncate'
             radii_scale: Scale radii for metohd='delete' calculation
+            density: Area per point on surface (Å²)
 
         Returns:
             self: Self
@@ -251,7 +253,7 @@ class Sterimol:
 
         elif method == "slice":
             if not hasattr(self, "_points"):
-                self.surface_from_radii()
+                self.surface_from_radii(density=density)
             # Remove points outside of sphere
             distances = scipy.spatial.distance.cdist(
                 self._dummy_atom.coordinates.reshape(1, -1), self._points
