@@ -593,6 +593,7 @@ class BuriedVolume:
 
     @property
     def percent_buried_volume(self) -> float:
+        """Deprecated attribute. Use 'fraction_buried_volume' instead."""
         warnings.warn(
             "'percent_buried_volume' is deprecated. Use 'fraction_buried_volume'.",
             DeprecationWarning,
