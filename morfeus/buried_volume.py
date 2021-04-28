@@ -6,6 +6,7 @@ import itertools
 import math
 import typing
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
+import warnings
 
 import numpy as np
 import scipy.spatial
@@ -86,18 +87,18 @@ class BuriedVolume:
     Attributes:
         buried_volume: Buried volume of sphere (Å³)
         distal_volume: Distal volume of ligand (Å³)
+        fraction_buried_volume: Fraction buried volume of sphere
         free_volume: Free volume of sphere (Å³)
         octants: Results for octant analysis
-        percent_buried_volume: Fraction buried volume of sphere
         quadrants: Results for quadrant analysis
     """
 
     buried_volume: float
     distal_volume: float
+    fraction_buried_volume: float
     free_volume: float
     molecular_volume: float
     octants: Dict[str, Dict[int, float]]
-    percent_buried_volume: float
     quadrants: Dict[str, Dict[int, float]]
     _all_coordinates: Array2D
     _atoms: List[Atom]
@@ -308,8 +309,8 @@ class BuriedVolume:
         free_points = sphere.points[np.invert(mask), :]
 
         # Calculate buried_volume
-        self.percent_buried_volume = len(buried_points) / len(sphere.points)
-        self.buried_volume = sphere.volume * self.percent_buried_volume
+        self.fraction_buried_volume = len(buried_points) / len(sphere.points)
+        self.buried_volume = sphere.volume * self.fraction_buried_volume
         self.free_volume = sphere.volume - self.buried_volume
         self._sphere = sphere
         self._buried_points = buried_points
@@ -526,7 +527,7 @@ class BuriedVolume:
 
     def print_report(self) -> None:
         """Prints a report of the buried volume."""
-        print("V_bur (%):", round(self.percent_buried_volume * 100, 1))
+        print("V_bur (%):", round(self.fraction_buried_volume * 100, 1))
 
     @requires_dependency(
         [
@@ -589,6 +590,16 @@ class BuriedVolume:
                 )
 
         self._plotter = p
+
+    @property
+    def percent_buried_volume(self) -> float:
+        """Deprecated attribute. Use 'fraction_buried_volume' instead."""
+        warnings.warn(
+            "'percent_buried_volume' is deprecated. Use 'fraction_buried_volume'.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.fraction_buried_volume
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"

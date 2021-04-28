@@ -18,7 +18,7 @@ plotted.
   >>> from morfeus import BuriedVolume, read_xyz
   >>> elements, coordinates = read_xyz("1.xyz")
   >>> bv = BuriedVolume(elements, coordinates, 1, excluded_atoms=[2, 3, 4, 5, 6, 7])
-  >>> print(bv.buried_volume)
+  >>> print(bv.fraction_buried_volume)
   0.2962110976518822
   >>> bv.print_report()
   V_bur (%): 29.6
