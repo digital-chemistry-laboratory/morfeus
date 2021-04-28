@@ -15,7 +15,7 @@ def test_one():
     """Test one complex."""
     elements, coordinates = read_xyz(DATA_DIR / "xyz" / "1.xyz")
     bv = BuriedVolume(elements, coordinates, 1, excluded_atoms=[1, 2, 3, 4, 5, 6, 7])
-    assert_almost_equal(bv.percent_buried_volume * 100, 29.6, decimal=1)
+    assert_almost_equal(bv.fraction_buried_volume * 100, 29.6, decimal=1)
 
 
 def pytest_generate_tests(metafunc):
@@ -38,5 +38,5 @@ def test_reference(bv_data):
     bv = BuriedVolume(elements, coordinates, 1, excluded_atoms=excluded_atoms)
 
     assert_almost_equal(
-        bv.percent_buried_volume * 100, percent_buried_volume_ref, decimal=0
+        bv.fraction_buried_volume * 100, percent_buried_volume_ref, decimal=0
     )
