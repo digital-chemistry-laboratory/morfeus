@@ -49,6 +49,72 @@ historical addition of 0.40 Å) can also be obtained.
 More information can be found with `help(Sterimol)` or in the API:
 :py:class:`Sterimol <morfeus.morfeus.Sterimol>`.
 
+###############
+Buried Sterimol
+###############
+
+The Sterimol vectors can be "buried":
+
+.. tab:: Delete
+
+  .. code-block:: python
+ 
+    >>> elements, coordinates = read_xyz("P_p-Tol_3.xyz")
+    >>> sterimol = Sterimol(elements, coordinates, 1, 2)
+    >>> sterimol.print_report()
+    L         B_1       B_5       
+    7.44      4.94      7.44      
+    >>> sterimol.bury(method="delete")
+    >>> sterimol.print_report()
+    L         B_1       B_5       
+    6.92      4.27      6.04     
+
+.. tab:: Truncate
+
+  .. code-block:: python
+ 
+    >>> elements, coordinates = read_xyz("P_p-Tol_3.xyz")
+    >>> sterimol = Sterimol(elements, coordinates, 1, 2)
+    >>> sterimol.print_report()
+    L         B_1       B_5       
+    7.44      4.94      7.44      
+    >>> sterimol.bury(method="truncate")
+    >>> sterimol.print_report()
+    L         B_1       B_5       
+    5.90      4.27      5.01  
+    
+.. tab:: Slice
+
+  .. code-block:: python
+ 
+    >>> elements, coordinates = read_xyz("P_p-Tol_3.xyz")
+    >>> sterimol = Sterimol(elements, coordinates, 1, 2)
+    >>> sterimol.print_report()
+    L         B_1       B_5       
+    7.44      4.94      7.44      
+    >>> sterimol.bury(method="slice")
+    >>> sterimol.print_report()
+    L         B_1       B_5       
+    5.82      3.77      5.24    
+
+There are three different methods for doing this:
+
+``delete``
+  Atoms outside the sphere + 0.5 vdW radius are deleted and the Sterimol
+  vectors are calculated. This is the default.
+``truncate``
+  Sterimol vectors are calculated as usual, but truncated in length by the
+  sphere.
+``slice``
+  A point vdW surface is constructed from the atoms and all points outside the
+  sphere are removed. Then the Sterimol vectors are computed based on the 
+  remaining points.
+
+A standard sphere radius of 5.5 Å is used that can be changed with
+``sphere_radius=<float>``. For the ``delete`` method, the scaling factor for the
+atom cutoff can be changed with ``radii_scale=<float>``. For more information,
+see the API: :py:meth:`Sterimol.bury <morfeus.sterimol.Sterimol.bury>`
+
 *******************
 Command line script
 *******************
@@ -91,6 +157,12 @@ of atoms onto vectors spanning the whole 360 degrees in the plane perpendicular
 to L. B\ :sub:`5` is obtained from the largest projection, while B\ :sub:`1` is
 obtained from the smallest maximum projection for the set of vectors.
 
-.. footbibliography::
+Buried Sterimol was developed by Tobias Gensch while working in the group of
+Matthew Sigman at the University of Utah [ref to come]. It is intended to limit
+the Sterimol vectors to a volume of interest in the philosophy of the buried
+volume. The original implementation uses the ``delete`` algorithm.
 
 .. __: https://github.com/bobbypaton/Sterimol
+
+.. footbibliography::
+
