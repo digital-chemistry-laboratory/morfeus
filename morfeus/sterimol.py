@@ -170,7 +170,7 @@ class Sterimol:
 
     def bury(
         self,
-        sphere_radius: float = 3.5,
+        sphere_radius: float = 5.5,
         method: str = "delete",
         radii_scale: float = 0.5,
     ) -> "Sterimol":
