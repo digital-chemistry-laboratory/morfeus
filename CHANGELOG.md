@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2021-04-29
+
+## Fixed 
+- Typing of external dependencies to allow conda-forge install
+
 ## [0.5.2] - 2021-04-28
 
 ### Added
