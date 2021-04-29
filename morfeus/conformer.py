@@ -1550,12 +1550,12 @@ class ConformerEnsemble:
     globals(),
 )
 def conformers_from_ob_ff(
-    mol: Union[str, ob.OBMol],
+    mol: Union[str, "ob.OBMol"],
     num_conformers: int = 30,
     ff: str = "MMFF94",
     method: str = "systematic",
     rings: bool = False,
-) -> Tuple[Array1D, Array3D, Array2D, Array1D, ob.OBMol]:
+) -> Tuple[Array1D, Array3D, Array2D, Array1D, "ob.OBMol"]:
     """Generates conformers based on the force field algorithm in OpenBabel.
 
     Follows the recipe of the command line script obabel --conformer:
@@ -1624,7 +1624,7 @@ def conformers_from_ob_ff(
     globals(),
 )
 def conformers_from_ob_ga(  # noqa: C901
-    mol: Union[str, ob.OBMol],
+    mol: Union[str, "ob.OBMol"],
     num_conformers: Optional[int] = None,
     num_children: Optional[int] = None,
     mutability: Optional[float] = None,
@@ -1634,7 +1634,7 @@ def conformers_from_ob_ga(  # noqa: C901
     cutoff: float = 0.8,
     vdw_factor: float = 0.5,
     check_hydrogens: bool = True,
-) -> Tuple[Array1D, Array3D, Array2D, Array1D, ob.OBMol]:
+) -> Tuple[Array1D, Array3D, Array2D, Array1D, "ob.OBMol"]:
     """Generates conformers based on the genetic algorithm in OpenBabel.
 
     Follows the recipe of the command line script obabel --conformer:
@@ -1729,7 +1729,7 @@ def conformers_from_ob_ga(  # noqa: C901
     globals(),
 )
 def conformers_from_rdkit(  # noqa: C901
-    mol: Union[str, Chem.Mol],
+    mol: Union[str, "Chem.Mol"],
     n_confs: Optional[int] = None,
     optimize: Optional[str] = "MMFF94",
     version: int = 2,
@@ -1739,7 +1739,7 @@ def conformers_from_rdkit(  # noqa: C901
     rmsd_thres: Optional[float] = 0.35,
     rmsd_symmetry: bool = False,
     n_threads: int = 1,
-) -> Tuple[Array1D, Array3D, Optional[Array1D], Array2D, Array1D, Chem.Mol]:
+) -> Tuple[Array1D, Array3D, Optional[Array1D], Array2D, Array1D, "Chem.Mol"]:
     """Generates conformers for an RDKit mol object.
 
     Recipe based on J. Chem. Inf. Modeling 2012, 52, 1146.
@@ -1854,7 +1854,7 @@ def conformers_from_rdkit(  # noqa: C901
     ],
     globals(),
 )
-def _add_conformers_to_mol(mol: Chem.Mol, conformer_coordinates: ArrayLike3D) -> None:
+def _add_conformers_to_mol(mol: "Chem.Mol", conformer_coordinates: ArrayLike3D) -> None:
     """Add conformers to RDKit Mol object.
 
     Args:
@@ -1875,7 +1875,7 @@ def _add_conformers_to_mol(mol: Chem.Mol, conformer_coordinates: ArrayLike3D) ->
 
 @requires_dependency([Import(module="rdkit", item="Chem")], globals())
 def _extract_from_mol(
-    mol: Chem.Mol,
+    mol: "Chem.Mol",
 ) -> Tuple[List[str], Array3D, Array2D, Array1D]:
     """Extract information from RDKit Mol object with conformers."""
     # Take out elements, coordinates and connectivity matrix
@@ -1902,7 +1902,7 @@ def _extract_from_mol(
     globals(),
 )
 def _extract_from_ob_mol(
-    ob_mol: ob.OBMol,
+    ob_mol: "ob.OBMol",
 ) -> Tuple[Array1D, Array3D, Array2D, Array1D]:
     """Extract information from Openbabel OBMol object with conformers."""
     py_mol = pybel.Molecule(ob_mol)
@@ -1935,7 +1935,7 @@ def _get_ob_mol(
     coordinates: ArrayLike2D,
     connectivity_matrix: ArrayLike2D,
     charges: Optional[ArrayLike1D] = None,
-) -> ob.OBMol:
+) -> "ob.OBMol":
     """Generate OpenBabel OBMol object.
 
     Args:
@@ -1981,7 +1981,7 @@ def _get_rdkit_mol(
     conformer_coordinates: ArrayLike3D,
     connectivity_matrix: ArrayLike2D,
     charges: Optional[ArrayLike1D] = None,
-) -> Chem.Mol:
+) -> "Chem.Mol":
     _RDKIT_BOND_TYPES = {
         1.0: Chem.BondType.SINGLE,
         1.5: Chem.BondType.AROMATIC,
