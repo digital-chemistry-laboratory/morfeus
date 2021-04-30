@@ -1,6 +1,8 @@
 ![Logo](docs/_static/logo-light.svg)
 ![PyPI - License](https://img.shields.io/pypi/l/morfeus-ml)
 [![PyPI](https://img.shields.io/pypi/v/morfeus-ml)](https://pypi.org/project/morfeus-ml/)
+[![Conda (channel only)](https://img.shields.io/conda/vn/conda-forge/morfeus-ml)](https://anaconda.org/conda-forge/morfeus-ml)
+![Conda](https://img.shields.io/conda/pn/conda-forge/morfeus-ml)
 ![Python requires](https://img.shields.io/badge/dynamic/json?query=info.requires_python&label=python&url=https%3A%2F%2Fpypi.org%2Fpypi%2Fmorfeus-ml%2Fjson)
 [![Testing](https://github.com/kjelljorner/morfeus/actions/workflows/test.yml/badge.svg)](https://github.com/kjelljorner/morfeus/actions/workflows/test.yml)
 
