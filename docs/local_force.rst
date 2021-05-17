@@ -70,7 +70,7 @@ The Gaussian input file should be prepared with the following keywords
 included (appropriate method and basis set need to be added as well).
 
 ==== =========================================
-log  ``freq=intmodes iop(7/75=1) iop(1/33=3)``
+log  ``freq=intmodes iop(7/75=-1) iop(1/33=3)``
 fchk ``freq=intmodes``
 ==== =========================================
 
