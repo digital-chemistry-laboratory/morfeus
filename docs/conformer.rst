@@ -9,12 +9,22 @@ to the RDKit__ and OpenBabel__.
 .. __: https://www.rdkit.org
 .. __: http://openbabel.org/wiki/Main_Page
 
-OpenBabel and RDKit are avaible for install via, *e.g.*, the conda-forge:
+OpenBabel and RDKit are avaible for install via, *e.g.*, pip or conda-forge:
 
-.. code-block:: console
+.. tab:: pip
 
-  conda install -c conda-forge rdkit
-  conda install -c conda-forge openbabel
+  .. code-block:: console
+
+    $ pip install rdkit-pypi
+    $ pip install openbabel
+    
+
+.. tab:: conda
+
+  .. code-block:: console
+
+  $ conda install -c conda-forge rdkit
+  $ conda install -c conda-forge openbabel
 
 ******
 Module
