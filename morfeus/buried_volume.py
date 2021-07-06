@@ -82,7 +82,7 @@ class BuriedVolume:
         radii_scale: Scaling factor for radii
         density: Volume per point in the sphere (Å³)
         z_axis_atoms: Atom indices for deciding orientation of z axis (1-indexed)
-        xy_plane_atoms: Atom indices for deciding orientation of xz plane (1-indexed)
+        xz_plane_atoms: Atom indices for deciding orientation of xz plane (1-indexed)
 
     Attributes:
         buried_volume: Buried volume of sphere (Å³)
