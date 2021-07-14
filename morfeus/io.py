@@ -520,4 +520,3 @@ def write_xyz(
         for coord, comment in zip(coordinates, comments):
             xyz_string = get_xyz_string(symbols, coord, comment=comment)
             f.write(xyz_string)
-            f.write("\n")
