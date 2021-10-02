@@ -630,6 +630,8 @@ class ConformerEnsemble:
             self.connectivity_matrix,
             self.formal_charges,
         )
+        self.mol = mol
+
         if update_charges:
             self.formal_charges = np.array(
                 [atom.GetFormalCharge() for atom in mol.GetAtoms()]
@@ -640,8 +642,6 @@ class ConformerEnsemble:
             )
         if update_multiplicity:
             self.set_multiplicity_from_mol()
-
-        self.mol = mol
 
     @requires_dependency([Import(module="rdkit", item="Chem")], globals())
     def get_cip_labels(self) -> List[Tuple[str, ...]]:
