@@ -33,6 +33,7 @@ def lint(session: Session) -> None:
         "flake8-annotations",
         "flake8-docstrings",
         "darglint",
+        "types-pkg_resources",
     )
     session.run("flake8", *args)
 
