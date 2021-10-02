@@ -33,7 +33,6 @@ def lint(session: Session) -> None:
         "flake8-annotations",
         "flake8-docstrings",
         "darglint",
-        "types-pkg_resources",
     )
     session.run("flake8", *args)
 
@@ -53,4 +52,5 @@ def mypy(session: Session) -> None:
     """Run the static type checker."""
     args = session.posargs or locations
     session.install("mypy")
+    session.install("types-pkg_resources")
     session.run("mypy", *args)
