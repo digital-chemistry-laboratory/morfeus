@@ -8,7 +8,7 @@ LONG_DESCRIPTION = f"""\
 
 setuptools.setup(
     name="morfeus-ml",
-    version="0.5.4",
+    version="0.5.5",
     author="Kjell Jorner",
     author_email="kjell.jorner@gmail.com",
     description=DESCRIPTION,
