@@ -58,6 +58,8 @@ class CrestParser:
         energies = np.array(energies) * KCAL_TO_HARTREE
 
         elements, conformer_coordinates = read_xyz(path / "crest_conformers.xyz")
+        if conformer_coordinates.ndim == 2:
+            conformer_coordinates = conformer_coordinates.reshape(1, -1, 3)
 
         self.elements = elements
         self.conformer_coordinates = conformer_coordinates
