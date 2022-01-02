@@ -1,7 +1,7 @@
 channels:
   - conda-forge
 dependencies:
-- fire
-- numpy
-- python>=3.8
-- scipy
+  - fire
+  - numpy
+  - python>=3.8
+  - scipy
