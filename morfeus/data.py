@@ -2,6 +2,9 @@
 
 Data taken from the Mendeleev package unless otherwise specified.
 """
+
+from __future__ import annotations
+
 from typing import Dict, Optional
 
 import scipy.constants

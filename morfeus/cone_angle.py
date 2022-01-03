@@ -1,5 +1,7 @@
 """Cone angle code."""
 
+from __future__ import annotations
+
 import functools
 import itertools
 import math

@@ -1,5 +1,7 @@
 """Pyramidalization code."""
 
+from __future__ import annotations
+
 import functools
 import itertools
 from typing import Any, Iterable, List, Optional, Sequence, Union

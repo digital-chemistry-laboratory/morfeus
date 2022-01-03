@@ -1,5 +1,7 @@
 """Conformer tools."""
 
+from __future__ import annotations
+
 from copy import copy, deepcopy
 import functools
 import numbers

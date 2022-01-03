@@ -1,5 +1,7 @@
 """Dispersion code."""
 
+from __future__ import annotations
+
 import functools
 from os import PathLike
 import typing

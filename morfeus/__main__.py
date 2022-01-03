@@ -1,4 +1,5 @@
 """Run in command line mode."""
+
 import fire
 
 import morfeus.buried_volume

@@ -1,5 +1,7 @@
 """Interface to quantum-chemical programs."""
 
+from __future__ import annotations
+
 import typing
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 

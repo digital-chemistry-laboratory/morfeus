@@ -1,4 +1,7 @@
 """Automated testing linting and formatting apparatus."""
+
+from __future__ import annotations
+
 # external
 import nox
 from nox.sessions import Session

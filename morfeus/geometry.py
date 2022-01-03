@@ -1,5 +1,7 @@
 """Help classes and functions related to geometry."""
 
+from __future__ import annotations
+
 import math
 from typing import Iterable, List, Optional, Sequence, Union
 

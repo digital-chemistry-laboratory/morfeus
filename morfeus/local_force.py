@@ -1,5 +1,7 @@
 """Local force constant code."""
 
+from __future__ import annotations
+
 import functools
 from os import PathLike
 from typing import Any, Dict, FrozenSet, Iterable, List, Optional, Sequence, Union

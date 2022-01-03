@@ -1,5 +1,7 @@
 """Solvent accessible surface area code."""
 
+from __future__ import annotations
+
 import functools
 import typing
 from typing import Any, Dict, Iterable, List, Optional, Union

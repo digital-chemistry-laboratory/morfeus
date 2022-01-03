@@ -1,5 +1,7 @@
 """Input and output."""
 
+from __future__ import annotations
+
 from os import PathLike
 from pathlib import Path
 import typing
