@@ -18,6 +18,21 @@ def test_one():
     assert_almost_equal(bite_angle.angle, 101.91, decimal=2)
 
 
+def test_inverted_vector():
+    """Test inverted bite angle by reference vector method."""
+    _, coordinates = read_xyz(DATA_DIR / "xyz" / "inverted.xyz")
+    ref_vector = coordinates[5] - coordinates[10]
+    bite_angle = BiteAngle(coordinates, 11, 10, 14, ref_vector=ref_vector)
+    assert_almost_equal(bite_angle.angle, 187.33, decimal=2)
+
+
+def test_inverted_atoms():
+    """Test inverted bite angle by reference vector method."""
+    _, coordinates = read_xyz(DATA_DIR / "xyz" / "inverted.xyz")
+    bite_angle = BiteAngle(coordinates, 11, 10, 14, ref_atoms=[6])
+    assert_almost_equal(bite_angle.angle, 187.33, decimal=2)
+
+
 def pytest_generate_tests(metafunc):
     """Generate test data from csv file."""
     if "bite_angle_data" in metafunc.fixturenames:

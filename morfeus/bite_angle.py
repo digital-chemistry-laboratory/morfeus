@@ -69,7 +69,6 @@ class BiteAngle:
             ref_vector /= np.linalg.norm(ref_vector)
             v_mean = (v_1 + v_2) / 2
             v_mean /= np.linalg.norm(v_mean)
-            print(ref_vector, v_mean, np.dot(v_mean, ref_vector))
             if np.dot(v_mean, ref_vector) < 0:
                 inverted = True
                 angle = 360 - angle
