@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.6] - 2022-01-23
+- Fixed ``XTB.get_fukui``, affecting the varieties "electrophilicity" (wrong sign only), "nucleophilicity" (wrong sign only), "radical" (wrong number) and "local_electrophilicty" (wrong number)
+
 ## [0.5.5] - 2021-10-07
 - Fixed bug with ``ConformerEnsemble.from_crest`` with only one structure in the ensemble
 - Fixed bug with ``ConformerEnsemble.from_ob_ga`` when generating RDKit mol 
