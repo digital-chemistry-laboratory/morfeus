@@ -182,11 +182,11 @@ class XTB:
         ]
         fukui: np.ndarray
         if variety in ["local_nucleophilicity", "nucleophilicity"]:
-            fukui = self._get_charges(0) - self._get_charges(1)
+            fukui = self._get_charges(1) - self._get_charges(0)
         elif variety == "electrophilicity":
-            fukui = self._get_charges(-1) - self._get_charges(0)
+            fukui = self._get_charges(0) - self._get_charges(-1)
         elif variety == "radical":
-            fukui = (self._get_charges(-1) - self._get_charges(0)) / 2
+            fukui = (self._get_charges(1) - self._get_charges(-1)) / 2
         elif variety == "dual":
             fukui = (
                 2 * self._get_charges(0) - self._get_charges(1) - self._get_charges(-1)
