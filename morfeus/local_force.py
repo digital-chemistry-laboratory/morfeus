@@ -125,7 +125,7 @@ class LocalForce:
                     / AMU
                     * (self.local_force_constants / ANGSTROM * DYNE / 1000)
                 )
-                / (4 * np.pi ** 2 * C ** 2)
+                / (4 * np.pi**2 * C**2)
             )
             / 100
         )
@@ -367,21 +367,21 @@ class LocalForce:
         cart = eigenvectors.T * m_minus
         N = 1 / np.linalg.norm(cart, axis=1)
         norm_cart = cart * N.reshape(-1, 1)
-        reduced_masses = N ** 2
+        reduced_masses = N**2
 
         # Calculate frequencies and force constants
         n_imag = np.sum(eigenvalues < 0)
         frequencies = (
-            np.sqrt(np.abs(eigenvalues) * HARTREE / BOHR ** 2 / AMU)
+            np.sqrt(np.abs(eigenvalues) * HARTREE / BOHR**2 / AMU)
             / (2 * np.pi * C)
             / 100
         )
         frequencies[:n_imag] = -frequencies[:n_imag]
         force_constants = (
             4
-            * np.pi ** 2
+            * np.pi**2
             * (frequencies * 100) ** 2
-            * C ** 2
+            * C**2
             * reduced_masses
             * AMU
             / (DYNE / 1000)
@@ -434,7 +434,7 @@ class LocalForce:
 
             # Convert units for angles and dihedrals
             if len(coordinate.atoms) > 2 and angle_units:
-                force_constant = force_constant * BOHR_TO_ANGSTROM ** 2
+                force_constant = force_constant * BOHR_TO_ANGSTROM**2
 
             # Print out the results
             string = f"{repr(coordinate):30s}" + f"{force_constant:50.3f}"

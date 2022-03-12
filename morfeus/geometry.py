@@ -234,8 +234,8 @@ class Sphere:
         self.center = np.array(center)
         self.radius = radius
         self.circumference = math.pi * radius * 2
-        self.area = 4 * radius ** 2 * math.pi
-        self.volume = 4 * radius ** 3 * math.pi / 3
+        self.area = 4 * radius**2 * math.pi
+        self.volume = 4 * radius**3 * math.pi / 3
         self.density = density
 
         if method == "polar":
@@ -903,11 +903,11 @@ def sphere_line_intersection(
         + p_1[1] ** 2
         + p_1[2] ** 2
         - 2 * (center[0] * p_1[0] + center[1] * p_1[1] + center[2] * p_1[2])
-        - radius ** 2
+        - radius**2
     )
 
     # Determine value within the square root and select cases
-    within_sqrt = b ** 2 - 4 * a * c
+    within_sqrt = b**2 - 4 * a * c
     if within_sqrt < 0:
         us = []
     elif within_sqrt == 0:

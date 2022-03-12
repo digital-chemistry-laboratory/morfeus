@@ -361,7 +361,7 @@ class Dispersion:
         dist = scipy.spatial.distance.cdist(points, coordinates) * ANGSTROM_TO_BOHR
         p = np.sum(
             [
-                np.sum(np.sqrt(coefficients / (dist ** order)), axis=1)
+                np.sum(np.sqrt(coefficients / (dist**order)), axis=1)
                 for order, coefficients in c_n_coefficients.items()
             ],
             axis=0,

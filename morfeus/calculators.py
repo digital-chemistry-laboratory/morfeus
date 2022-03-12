@@ -267,7 +267,7 @@ class D3Calculator:
                     c_8 = 3 * c_6 * r2_r4[atom.element] ** 2
                     temp_coefficients[i] = c_8
                 elif i == 10:
-                    c_10 = 49.0 / 40.0 * c_8 ** 2 / c_6
+                    c_10 = 49.0 / 40.0 * c_8**2 / c_6
                     temp_coefficients[i] = c_10
                 elif i > 10:
                     c_n = (

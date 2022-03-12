@@ -94,7 +94,7 @@ def boltzmann_average_dT(
     )
 
     # Calculate derivative
-    derivative = (avg_prop_en - avg_en * avg_prop) / (K_B * temperature ** 2)
+    derivative = (avg_prop_en - avg_en * avg_prop) / (K_B * temperature**2)
 
     return derivative
 

@@ -98,7 +98,7 @@ class SASA:
             ratio_accessible = 1 - ratio_occluded
 
             # Calculate area
-            area = 4 * np.pi * atom.radius ** 2 * ratio_accessible
+            area = 4 * np.pi * atom.radius**2 * ratio_accessible
             atom.area = area
             atom.point_areas = np.zeros(n_points)
             if n_accessible > 0:
@@ -113,8 +113,8 @@ class SASA:
 
             # Calculate volume
             volume = (4 * np.pi / 3 / n_points) * (
-                atom.radius ** 2 * np.dot(atom.coordinates, accessible_summed)
-                + atom.radius ** 3 * n_accessible
+                atom.radius**2 * np.dot(atom.coordinates, accessible_summed)
+                + atom.radius**3 * n_accessible
             )
             atom.volume = volume
             atom.point_volumes = np.zeros(n_points)

@@ -385,12 +385,12 @@ def _get_three_atom_cones(atom_i: Atom, atom_j: Atom, atom_k: Atom) -> List[Cone
     A = u @ P @ u
     B = v.T @ P @ v
     C = u.T @ P @ v
-    D = gamma ** 2
+    D = gamma**2
 
     # Solve quadratic equation
-    p2 = (A - B) ** 2 + 4 * C ** 2
+    p2 = (A - B) ** 2 + 4 * C**2
     p1 = 2 * (A - B) * (A + B - 2 * D)
-    p0 = (A + B - 2 * D) ** 2 - 4 * C ** 2
+    p0 = (A + B - 2 * D) ** 2 - 4 * C**2
 
     roots = np.roots([p2, p1, p0])
     roots = np.real_if_close(roots, tol=1e10)
@@ -431,7 +431,7 @@ def _get_three_atom_cones(atom_i: Atom, atom_j: Atom, atom_k: Atom) -> List[Cone
         b_ij = (
             math.cos(alpha - beta_j) - math.cos(alpha - beta_i) * math.cos(beta_ij)
         ) / math.sin(beta_ij) ** 2
-        c_ij_squared = 1 - a_ij ** 2 - b_ij ** 2 - 2 * a_ij * b_ij * math.cos(beta_ij)
+        c_ij_squared = 1 - a_ij**2 - b_ij**2 - 2 * a_ij * b_ij * math.cos(beta_ij)
         # Set c_ij_squared to 0 if negative due to numerical precision.
         if c_ij_squared < 0:
             c_ij_squared = 0
