@@ -94,7 +94,7 @@ def boltzmann_average_dT(
     )
 
     # Calculate derivative
-    derivative = (avg_prop_en - avg_en * avg_prop) / (K_B * temperature ** 2)
+    derivative = (avg_prop_en - avg_en * avg_prop) / (K_B * temperature**2)
 
     return derivative
 
@@ -115,6 +115,9 @@ def boltzmann_statistic(
 
     Returns:
         result: Boltzmann statistic
+
+    Raises:
+        ValueError: When statistic not specified correctly
     """
     properties = np.array(properties)
 
@@ -124,14 +127,22 @@ def boltzmann_statistic(
     # Compute Boltzmann weighted statistic
     result: float
     if statistic == "avg":
-        result = np.average(properties, weights=weights)
+        result = np.average(properties, weights=weights, axis=0)
     elif statistic == "var":
-        avg = np.average(properties, weights=weights)
-        result = np.sum(weights * (properties - avg) ** 2)
+        avg = boltzmann_statistic(
+            properties, energies, temperature=temperature, statistic="avg"
+        )
+        result = np.average((properties - avg) ** 2, weights=weights, axis=0)
     elif statistic == "std":
-        avg = np.average(properties, weights=weights)
-        var = np.sum(weights * (properties - avg) ** 2)
+        avg = boltzmann_statistic(
+            properties, energies, temperature=temperature, statistic="avg"
+        )
+        var = boltzmann_statistic(
+            properties, energies, temperature=temperature, statistic="var"
+        )
         result = np.sqrt(var)
+    else:
+        raise ValueError("Choose between: 'avg', 'var' and 'std'")
 
     return result
 

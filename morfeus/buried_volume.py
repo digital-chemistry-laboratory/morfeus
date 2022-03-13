@@ -484,7 +484,7 @@ class BuriedVolume:
                 x_s = coordinates[i, 0]
                 y_s = coordinates[i, 1]
                 z_s = coordinates[i, 2]
-                test = atom.radius ** 2 - (x - x_s) ** 2 - (y - y_s) ** 2
+                test = atom.radius**2 - (x - x_s) ** 2 - (y - y_s) ** 2
                 if test >= 0:
                     z_atom = math.sqrt(test) + z_s
                     z_list.append(z_atom)
