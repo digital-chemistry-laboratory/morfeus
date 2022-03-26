@@ -5,6 +5,7 @@ import itertools
 import math
 import typing
 from typing import Any, Iterable, List, Optional, Set, Union
+import warnings
 
 import numpy as np
 
@@ -12,7 +13,7 @@ from morfeus.data import atomic_symbols, jmol_colors
 from morfeus.geometry import Atom, Cone
 from morfeus.io import read_geometry
 from morfeus.plotting import get_drawing_cone
-from morfeus.typing import ArrayLike1D, ArrayLike2D
+from morfeus.typing import Array1D, Array2D, ArrayLike1D, ArrayLike2D
 from morfeus.utils import (
     check_distances,
     convert_elements,
@@ -59,15 +60,16 @@ class ConeAngle:
         atom_1: int,
         radii: Optional[ArrayLike1D] = None,
         radii_type: str = "crc",
+        method: str = "libconeangle",
     ) -> None:
         # Convert elements to atomic numbers if the are symbols
         elements = convert_elements(elements, output="numbers")
-        coordinates = np.array(coordinates)
+        coordinates: Array1D = np.array(coordinates)
 
         # Get radii if they are not supplied
         if radii is None:
             radii = get_radii(elements, radii_type=radii_type)
-        radii = np.array(radii)
+        radii: Array1D = np.array(radii)
 
         # Check so that no atom is within vdW distance of atom 1
         within = check_distances(elements, coordinates, atom_1, radii=radii)
@@ -89,12 +91,51 @@ class ConeAngle:
                 atoms.append(atom)
         self._atoms = atoms
 
+        # Calculate cone angle
+        if method == "libconeangle":
+            try:
+                from libconeangle import cone_angle
+
+                angle, axis, tangent_atoms = cone_angle(coordinates, radii, atom_1 - 1)
+                self.cone_angle = angle
+                self.tangent_atoms = [i + 1 for i in tangent_atoms]
+                atoms = [
+                    atom for atom in self._atoms if atom.index in self.tangent_atoms
+                ]
+                self._cone = Cone(self.cone_angle, atoms, axis)
+            except ImportError:
+                warnings.warn(
+                    "Failed to import libconeangle. Defaulting to method='internal'"
+                )
+                self._cone_angle_internal()
+        elif method == "internal":
+            self._cone_angle_internal()
+        else:
+            raise ValueError(
+                "Method not implemented. Choose between 'libconeangle' and 'internal'"
+            )
+
+    def print_report(self) -> None:
+        """Prints report of results."""
+        tangent_atoms = [
+            atom for atom in self._atoms if atom.index in self.tangent_atoms
+        ]
+        tangent_labels = [
+            f"{atomic_symbols[atom.element]}{atom.index}" for atom in tangent_atoms
+        ]
+        tangent_string = " ".join(tangent_labels)
+        print(f"Cone angle: {self.cone_angle:.1f}")
+        print(f"No. tangent atoms: {len(tangent_atoms)}")
+        print(f"Tangent to: {tangent_string}")
+
+    def _cone_angle_internal(self) -> None:
+        """Calculates cone angle with internal algorithm."""
         # Search for cone over single atoms
         cone = self._search_one_cones()
 
         # Prune out atoms that lie in the shadow of another atom's cone
         if cone is None:
-            loop_atoms = list(atoms)
+            loop_atoms = list(self._atoms)
             remove_atoms: Set[Atom] = set()
             for cone_atom in loop_atoms:
                 for test_atom in loop_atoms:
@@ -118,19 +159,6 @@ class ConeAngle:
         self.cone_angle = math.degrees(cone.angle * 2)
         self.tangent_atoms = [atom.index for atom in cone.atoms]
 
-    def print_report(self) -> None:
-        """Prints report of results."""
-        tangent_atoms = [
-            atom for atom in self._atoms if atom.index in self.tangent_atoms
-        ]
-        tangent_labels = [
-            f"{atomic_symbols[atom.element]}{atom.index}" for atom in tangent_atoms
-        ]
-        tangent_string = " ".join(tangent_labels)
-        print(f"Cone angle: {self.cone_angle:.1f}")
-        print(f"No. tangent atoms: {len(tangent_atoms)}")
-        print(f"Tangent to: {tangent_string}")
-
     def _get_upper_bound(self) -> float:
         """Calculates upper bound for apex angle.
 
@@ -138,7 +166,7 @@ class ConeAngle:
             upper_bound: Upper bound to apex angle (radians)
         """
         # Calculate unit vector to centroid
-        coordinates = np.array([atom.coordinates for atom in self._atoms])
+        coordinates: Array1D = np.array([atom.coordinates for atom in self._atoms])
         centroid_vector = np.mean(coordinates, axis=0)
         centroid_unit_vector = centroid_vector / np.linalg.norm(centroid_vector)
 
@@ -247,8 +275,8 @@ class ConeAngle:
                 keep_cones.append(cone)
 
         # Take the smallest cone that encompasses all atoms
-        cone_angles = [cone.angle for cone in keep_cones]
-        idx = int(np.argmin(cone_angles))
+        angles = [cone.angle for cone in keep_cones]
+        idx = int(np.argmin(angles))
         min_3_cone = keep_cones[idx]
 
         return min_3_cone
@@ -288,24 +316,24 @@ class ConeAngle:
             p.add_mesh(sphere, color=color, opacity=1, name=str(atom.index))
 
         # Determine direction and extension of cone
-        cone_angle = math.degrees(self._cone.angle)
-        coordinates = np.array([atom.coordinates for atom in self._atoms])
-        radii = np.array([atom.radius for atom in self._atoms])
-        if cone_angle > 180:
+        angle = math.degrees(self._cone.angle)
+        coordinates: Array2D = np.array([atom.coordinates for atom in self._atoms])
+        radii: Array1D = np.array([atom.radius for atom in self._atoms])
+        if angle > 180:
             normal = -self._cone.normal
         else:
             normal = self._cone.normal
         projected = np.dot(normal, coordinates.T) + np.array(radii)
 
         max_extension = np.max(projected)
-        if cone_angle > 180:
+        if angle > 180:
             max_extension += 1
 
         # Make the cone
         cone = get_drawing_cone(
             center=[0, 0, 0] + (max_extension * normal) / 2,
             direction=-normal,
-            angle=cone_angle,
+            angle=angle,
             height=max_extension,
             capping=False,
             resolution=100,
@@ -375,10 +403,12 @@ def _get_three_atom_cones(atom_i: Atom, atom_j: Atom, atom_k: Atom) -> List[Cone
     m_k = atom_k.cone.normal
 
     # Setup matrices
-    u = np.array([math.cos(beta_i), math.cos(beta_j), math.cos(beta_k)])
-    v = np.array([math.sin(beta_i), math.sin(beta_j), math.sin(beta_k)])
-    N = np.array([np.cross(m_j, m_k), np.cross(m_k, m_i), np.cross(m_i, m_j)]).T
-    P = N.T @ N
+    u: Array1D = np.array([math.cos(beta_i), math.cos(beta_j), math.cos(beta_k)])
+    v: Array1D = np.array([math.sin(beta_i), math.sin(beta_j), math.sin(beta_k)])
+    N: Array2D = np.array(
+        [np.cross(m_j, m_k), np.cross(m_k, m_i), np.cross(m_i, m_j)]
+    ).T
+    P: Array2D = N.T @ N
     gamma = np.dot(m_i, np.cross(m_j, m_k))
 
     # Set up coefficients of quadratic equation
