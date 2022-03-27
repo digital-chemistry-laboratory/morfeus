@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 import typing
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any
 
 import numpy as np
 
@@ -24,18 +25,18 @@ if typing.TYPE_CHECKING:
 
 @requires_dependency([Import(module="qcengine", alias="qcng")], globals())
 def optimize_qc_engine(
-    elements: Union[Iterable[int], Iterable[str]],
+    elements: Iterable[int] | Iterable[str],
     coordinates: ArrayLike2D,
-    charge: Optional[int] = None,
-    multiplicity: Optional[int] = None,
-    connectivity_matrix: Optional[ArrayLike2D] = None,
+    charge: int | None = None,
+    multiplicity: int | None = None,
+    connectivity_matrix: ArrayLike2D | None = None,
     program: str = "xtb",
-    model: Optional[Dict[str, Any]] = None,
-    keywords: Optional[Dict[str, Any]] = None,
-    local_options: Optional[Dict[str, Any]] = None,
+    model: dict[str, Any] | None = None,
+    keywords: dict[str, Any] | None = None,
+    local_options: dict[str, Any] | None = None,
     procedure: str = "berny",
     return_trajectory: bool = False,
-) -> Tuple[Union[Array2DFloat, Array3DFloat], Array1DFloat]:
+) -> tuple[Array2DFloat | Array3DFloat, Array1DFloat]:
     """Optimize molecule with QCEngine.
 
     Args:
@@ -111,15 +112,15 @@ def optimize_qc_engine(
 
 @requires_dependency([Import(module="qcengine", alias="qcng")], globals())
 def sp_qc_engine(
-    elements: Union[Iterable[int], Iterable[str]],
+    elements: Iterable[int] | Iterable[str],
     coordinates: Sequence[Sequence[float]],
-    charge: Optional[int] = None,
-    multiplicity: Optional[int] = None,
-    connectivity_matrix: Optional[Sequence[Sequence[int]]] = None,
+    charge: int | None = None,
+    multiplicity: int | None = None,
+    connectivity_matrix: Sequence[Sequence[int]] | None = None,
     program: str = "xtb",
-    model: Optional[Dict[str, Any]] = None,
-    keywords: Optional[Dict[str, Any]] = None,
-    local_options: Optional[Dict[str, Any]] = None,
+    model: dict[str, Any] | None = None,
+    keywords: dict[str, Any] | None = None,
+    local_options: dict[str, Any] | None = None,
 ) -> float:
     """Single-point calculation with QCEngine.
 
@@ -192,11 +193,11 @@ def _check_qcng_rdkit(charge: int, connectivity_matrix: ArrayLike2D) -> None:
 
 @requires_dependency([Import(module="qcelemental", alias="qcel")], globals())
 def _generate_qcel_molecule(
-    elements: Union[Iterable[int], Iterable[str]],
+    elements: Iterable[int] | Iterable[str],
     coordinates: ArrayLike2D,
-    charge: Optional[int] = None,
-    multiplicity: Optional[int] = None,
-    connectivity_matrix: Optional[ArrayLike2D] = None,
+    charge: int | None = None,
+    multiplicity: int | None = None,
+    connectivity_matrix: ArrayLike2D | None = None,
 ) -> qcel.models.Molecule:
     """Generate QCElemental molecule object.
 
@@ -211,7 +212,7 @@ def _generate_qcel_molecule(
         molecule: QCElemental molecule object.
     """
     # Generate bond order list from connectivity matrix
-    bos: Optional[List[Tuple[int, int, int]]]
+    bos: list[tuple[int, int, int]] | None
     if connectivity_matrix is not None:
         connectivity_matrix = np.array(connectivity_matrix)
         bos = []

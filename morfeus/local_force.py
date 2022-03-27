@@ -1,8 +1,11 @@
 """Local force constant code."""
 
+from __future__ import annotations
+
+from collections.abc import Iterable, Sequence
 import functools
 from os import PathLike
-from typing import Any, Dict, FrozenSet, Iterable, List, Optional, Sequence, Union
+from typing import Any
 
 import numpy as np
 
@@ -54,7 +57,7 @@ class LocalForce:
         n_imag: Number of normal modes with imaginary frequencies
     """
 
-    internal_coordinates: List[Union[Bond, Angle, Dihedral]]
+    internal_coordinates: list[Bond | Angle | Dihedral]
     local_force_constants: Array1DFloat
     local_frequencies: Array1DFloat
     n_imag: int
@@ -63,7 +66,7 @@ class LocalForce:
     _coordinates: Array2DFloat
     _D_full: Array2DFloat
     _D: Array2DFloat
-    _elements: List[int]
+    _elements: list[int]
     _fc_matrix: Array2DFloat
     _force_constants: Array1DFloat
     _ifc_matrix: Array2DFloat
@@ -75,8 +78,8 @@ class LocalForce:
 
     def __init__(
         self,
-        elements: Optional[Union[Iterable[int], Iterable[str]]] = None,
-        coordinates: Optional[ArrayLike2D] = None,
+        elements: Iterable[int] | Iterable[str] | None = None,
+        coordinates: ArrayLike2D | None = None,
     ) -> None:
         # Set up attributes
         self._internal_coordinates = InternalCoordinates()
@@ -202,7 +205,7 @@ class LocalForce:
 
     def detect_bonds(
         self,
-        radii: Optional[ArrayLike1D] = None,
+        radii: ArrayLike1D | None = None,
         radii_type: str = "pyykko",
         scale_factor: float = 1.2,
     ) -> "LocalForce":
@@ -267,7 +270,7 @@ class LocalForce:
         return frequency
 
     def load_file(
-        self, file: Union[str, PathLike], program: str, filetype: str
+        self, file: str | PathLike, program: str, filetype: str
     ) -> "LocalForce":
         """Load data from external file.
 
@@ -300,7 +303,7 @@ class LocalForce:
 
     def normal_mode_analysis(
         self,
-        hessian: Optional[ArrayLike2D] = None,
+        hessian: ArrayLike2D | None = None,
         save_hessian: bool = False,
     ) -> "LocalForce":
         """Perform normal mode analysis.
@@ -464,7 +467,7 @@ class LocalForce:
 
         return self
 
-    def _parse_gaussian_fchk(self, file: Union[str, PathLike]) -> None:  # noqa: C901
+    def _parse_gaussian_fchk(self, file: str | PathLike) -> None:  # noqa: C901
         # Read fchk file
         with open(file) as f:
             lines = f.readlines()
@@ -479,15 +482,15 @@ class LocalForce:
         read_masses = False
 
         # Set up containers for reading data
-        modes: List[float] = []
-        hessian: List[float] = []
-        vib_e2: List[float] = []
+        modes: list[float] = []
+        hessian: list[float] = []
+        vib_e2: list[float] = []
         internal_coordinates = []
         n_atoms: int
         n_imag: int
-        atomic_numbers: List[int] = []
-        masses: List[float] = []
-        coordinates: List[float] = []
+        atomic_numbers: list[int] = []
+        masses: list[float] = []
+        coordinates: list[float] = []
 
         # Parse fchk file
         for line in lines:
@@ -596,7 +599,7 @@ class LocalForce:
         self._coordinates = coordinates
         self._masses = np.array(masses)
 
-    def _parse_gaussian_log(self, file: Union[str, PathLike]) -> None:  # noqa: C901
+    def _parse_gaussian_log(self, file: str | PathLike) -> None:  # noqa: C901
         # Read the log file
         with open(file) as f:
             lines = f.readlines()
@@ -614,26 +617,26 @@ class LocalForce:
         read_masses = False
 
         # Set up containers for reading data
-        B_atom_map: Dict[int, List[int]] = {}
-        B_vectors: Dict[int, List[float]] = {}
-        normal_modes: List[List[List[float]]] = []
-        internal_modes: List[List[float]] = []
-        force_constants: List[float] = []
-        masses: List[float] = []
+        B_atom_map: dict[int, list[int]] = {}
+        B_vectors: dict[int, list[float]] = {}
+        normal_modes: list[list[list[float]]] = []
+        internal_modes: list[list[float]] = []
+        force_constants: list[float] = []
+        masses: list[float] = []
         fc_matrix: Array2DFloat = np.empty([])
         ifc_matrix: Array2DFloat = np.empty([])
-        input_coordinates: List[float] = []
-        standard_coordinates: List[float] = []
+        input_coordinates: list[float] = []
+        standard_coordinates: list[float] = []
         n_imag: int = 0
         n_atoms: int = 0
-        internal_indices: Dict[FrozenSet[int], int] = {}
-        atomic_numbers: List[int] = []
-        coordinates: List[List[float]] = []
+        internal_indices: dict[frozenset[int], int] = {}
+        atomic_numbers: list[int] = []
+        coordinates: list[list[float]] = []
 
         # Parse through log file content
         counter = 0
-        internal_names: List[str] = []
-        internal_vector: List[float] = []
+        internal_names: list[str] = []
+        internal_vector: list[float] = []
 
         values: Any
         value: Any
@@ -900,7 +903,7 @@ class LocalForce:
         self._coordinates = input_coordinates
         self._elements = convert_elements(atomic_numbers, output="numbers")
 
-    def _parse_unimovib_local(self, file: Union[str, PathLike]) -> None:  # noqa: C901
+    def _parse_unimovib_local(self, file: str | PathLike) -> None:  # noqa: C901
         # Read file
         with open(file) as f:
             lines = f.readlines()
@@ -996,7 +999,7 @@ class LocalForce:
         self._coordinates = coordinates
         self._elements = elements
 
-    def _parse_unimovib_log(self, file: Union[str, PathLike]) -> None:  # noqa: C901
+    def _parse_unimovib_log(self, file: str | PathLike) -> None:  # noqa: C901
         # Read file
         with open(file) as f:
             lines = f.readlines()
@@ -1015,7 +1018,7 @@ class LocalForce:
         frequencies = []
 
         # Parse file
-        normal_modes_chunk: List[List[float]] = []
+        normal_modes_chunk: list[list[float]] = []
         counter = 0
         n_modes_chunk = 0
         values: Any
@@ -1085,7 +1088,7 @@ class LocalForce:
         self._force_constants = force_constants
         self._normal_modes = normal_modes
 
-    def _parse_unimovib_umv(self, file: Union[str, PathLike]) -> None:  # noqa: C901
+    def _parse_unimovib_umv(self, file: str | PathLike) -> None:  # noqa: C901
         # Read file
         with open(file) as f:
             lines = f.readlines()
@@ -1174,7 +1177,7 @@ class LocalForce:
         self._coordinates = coordinates
         self._elements = elements
 
-    def _parse_xtb_hessian(self, file: Union[str, PathLike]) -> None:
+    def _parse_xtb_hessian(self, file: str | PathLike) -> None:
         # Read hessian file
         with open(file) as f:
             lines = f.readlines()
@@ -1195,7 +1198,7 @@ class LocalForce:
         return f"{self.__class__.__name__}({n_internal!r} internal coordinates)"
 
 
-def _get_internal_coordinate(atoms: Sequence[int]) -> Union[Bond, Angle, Dihedral]:
+def _get_internal_coordinate(atoms: Sequence[int]) -> Bond | Angle | Dihedral:
     """Returns internal coordinate."""
     # Return bond, angle or dihedral
     if len(atoms) == 2:
@@ -1208,7 +1211,7 @@ def _get_internal_coordinate(atoms: Sequence[int]) -> Union[Bond, Angle, Dihedra
         raise ValueError(f"Sequence of atoms must be 2-4 atoms, not {len(atoms)}.")
 
 
-def cli(file: Optional[str] = None) -> Any:
+def cli(file: str | None = None) -> Any:
     """CLI for local force.
 
     Args:

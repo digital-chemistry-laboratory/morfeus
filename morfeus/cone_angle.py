@@ -1,10 +1,13 @@
 """Cone angle code."""
 
+from __future__ import annotations
+
+from collections.abc import Iterable
 import functools
 import itertools
 import math
 import typing
-from typing import Any, Iterable, List, Optional, Set, Union
+from typing import Any
 import warnings
 
 import numpy as np
@@ -49,16 +52,16 @@ class ConeAngle:
     """
 
     cone_angle: float
-    tangent_atoms: List[int]
-    _atoms: List[Atom]
+    tangent_atoms: list[int]
+    _atoms: list[Atom]
     _max_2_cone: Cone
 
     def __init__(  # noqa: C901
         self,
-        elements: Union[Iterable[int], Iterable[str]],
+        elements: Iterable[int] | Iterable[str],
         coordinates: ArrayLike2D,
         atom_1: int,
-        radii: Optional[ArrayLike1D] = None,
+        radii: ArrayLike1D | None = None,
         radii_type: str = "crc",
         method: str = "libconeangle",
     ) -> None:
@@ -81,7 +84,7 @@ class ConeAngle:
         coordinates -= coordinates[atom_1 - 1]
 
         # Get list of atoms as Atom objects
-        atoms: List[Atom] = []
+        atoms: list[Atom] = []
         for i, (element, coord, radius) in enumerate(
             zip(elements, coordinates, radii), start=1
         ):
@@ -136,7 +139,7 @@ class ConeAngle:
         # Prune out atoms that lie in the shadow of another atom's cone
         if cone is None:
             loop_atoms = list(self._atoms)
-            remove_atoms: Set[Atom] = set()
+            remove_atoms: set[Atom] = set()
             for cone_atom in loop_atoms:
                 for test_atom in loop_atoms:
                     if cone_atom is not test_atom:
@@ -184,7 +187,7 @@ class ConeAngle:
 
         return upper_bound
 
-    def _search_one_cones(self) -> Optional[Cone]:
+    def _search_one_cones(self) -> Cone | None:
         """Searches over cones tangent to one atom.
 
         Returns:
@@ -192,7 +195,7 @@ class ConeAngle:
         """
         # Get the largest cone
         atoms = self._atoms
-        alphas: List[float] = []
+        alphas: list[float] = []
         for atom in atoms:
             alphas.append(atom.cone.angle)
         idx = int(np.argmax(alphas))
@@ -209,7 +212,7 @@ class ConeAngle:
         else:
             return None
 
-    def _search_two_cones(self) -> Optional[Cone]:
+    def _search_two_cones(self) -> Cone | None:
         """Search over cones tangent to two atoms.
 
         Returns:
@@ -266,7 +269,7 @@ class ConeAngle:
             cones.remove(cone)
 
         # Keep only cones that encompass all atoms
-        keep_cones = []
+        keep_cones: list[Cone] = []
         for cone in cones:
             in_atoms = []
             for atom in loop_atoms:
@@ -378,7 +381,7 @@ def _get_two_atom_cone(atom_i: Atom, atom_j: Atom) -> Cone:
     return cone
 
 
-def _get_three_atom_cones(atom_i: Atom, atom_j: Atom, atom_k: Atom) -> List[Cone]:
+def _get_three_atom_cones(atom_i: Atom, atom_j: Atom, atom_k: Atom) -> list[Cone]:
     """Creates cones tangent to three atoms.
 
     Args:

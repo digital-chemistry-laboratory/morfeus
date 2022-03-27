@@ -1,21 +1,13 @@
 """Helper functions."""
 
+from __future__ import annotations
+
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from importlib import import_module
 from numbers import Integral
 import shutil
-from typing import (
-    Any,
-    Callable,
-    cast,
-    Iterable,
-    List,
-    Literal,
-    Optional,
-    overload,
-    Sequence,
-    Union,
-)
+from typing import Any, cast, Literal, overload
 
 import numpy as np
 from scipy.sparse import csr_matrix
@@ -47,7 +39,7 @@ def get_excluded_from_connectivity(
     connectivity_matrix: ArrayLike2D,
     center_atoms: ArrayLike1D,
     connected_atoms: ArrayLike1D,
-) -> List[int]:
+) -> list[int]:
     """Get atom indices to exclude bassed on connectivity and fragmentation.
 
     Convenience function that determines atoms to exclude from a calculation of a larger
@@ -99,15 +91,15 @@ def get_excluded_from_connectivity(
 
 
 def check_distances(
-    elements: Union[Iterable[int], Iterable[str]],
+    elements: Iterable[int] | Iterable[str],
     coordinates: ArrayLike2D,
     check_atom: int,
-    radii: Optional[ArrayLike1D] = None,
+    radii: ArrayLike1D | None = None,
     check_radius: float = 0,
-    excluded_atoms: Optional[Sequence[int]] = None,
+    excluded_atoms: Sequence[int] | None = None,
     epsilon: float = 0,
     radii_type: str = "crc",
-) -> List[int]:
+) -> list[int]:
     """Check which atoms are within clashing vdW radii distances.
 
     Args:
@@ -201,8 +193,8 @@ class Import:
     """Class for handling optional dependency imports."""
 
     module: str
-    item: Optional[str] = None
-    alias: Optional[str] = None
+    item: str | None = None
+    alias: str | None = None
 
 
 def requires_dependency(  # noqa: C901
@@ -264,21 +256,21 @@ def requires_dependency(  # noqa: C901
 
 @overload
 def convert_elements(
-    elements: Union[Iterable[int], Iterable[str]], output: Literal["numbers"]
-) -> List[int]:
+    elements: Iterable[int] | Iterable[str], output: Literal["numbers"]
+) -> list[int]:
     ...
 
 
 @overload
 def convert_elements(
-    elements: Union[Iterable[int], Iterable[str]], output: Literal["symbols"]
-) -> List[str]:
+    elements: Iterable[int] | Iterable[str], output: Literal["symbols"]
+) -> list[str]:
     ...
 
 
 def convert_elements(
-    elements: Union[Iterable[int], Iterable[str]], output: str = "numbers"
-) -> Union[List[int], List[str]]:
+    elements: Iterable[int] | Iterable[str], output: str = "numbers"
+) -> list[int] | list[str]:
     """Converts elements to atomic symbols or numbers.
 
     Args:
@@ -296,12 +288,12 @@ def convert_elements(
         raise ValueError(f"ouput={output} not supported. Use 'numbers' or 'symbols'")
 
     if all(isinstance(element, str) for element in elements):
-        elements = cast(List[str], elements)
+        elements = cast(list[str], elements)
         if output == "numbers":
             elements = [atomic_numbers[element.capitalize()] for element in elements]
         return elements
     elif all(isinstance(element, Integral) for element in elements):
-        elements = cast(List[int], elements)
+        elements = cast(list[int], elements)
         if output == "symbols":
             elements = [atomic_symbols[element] for element in elements]
         return elements
@@ -310,10 +302,10 @@ def convert_elements(
 
 
 def get_radii(
-    elements: Union[Iterable[int], Iterable[str]],
+    elements: Iterable[int] | Iterable[str],
     radii_type: str = "crc",
     scale: float = 1,
-) -> List[float]:
+) -> list[float]:
     """Gets radii from element identifiers.
 
     Args:
@@ -344,8 +336,8 @@ def get_radii(
 
 def get_connectivity_matrix(
     coordinates: ArrayLike2D,
-    elements: Optional[Union[Iterable[int], Iterable[str]]] = None,
-    radii: Optional[ArrayLike1D] = None,
+    elements: Iterable[int] | Iterable[str] | None = None,
+    radii: ArrayLike1D | None = None,
     radii_type: str = "pyykko",
     scale_factor: float = 1.2,
 ) -> Array2DInt:

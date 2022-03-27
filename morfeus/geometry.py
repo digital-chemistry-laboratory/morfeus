@@ -1,7 +1,9 @@
 """Help classes and functions related to geometry."""
 
+from __future__ import annotations
+
+from collections.abc import Iterable, Sequence
 import math
-from typing import Iterable, List, Optional, Sequence, Union
 
 import numpy as np
 from scipy.spatial.transform import Rotation
@@ -103,7 +105,7 @@ class Cone:
     """
 
     angle: float
-    atoms: List[Atom]
+    atoms: list[Atom]
     normal: Array1DFloat
 
     def __init__(
@@ -398,7 +400,7 @@ class Bond:
 
     i: int
     j: int
-    atoms: List[int]
+    atoms: list[int]
 
     def __init__(self, atom_1: int, atom_2: int) -> None:
         self.i = atom_1
@@ -463,7 +465,7 @@ class Angle:
     i: int
     j: int
     k: int
-    atoms: List[int]
+    atoms: list[int]
 
     def __init__(self, atom_1: int, atom_2: int, atom_3: int) -> None:
         self.i = atom_1
@@ -560,7 +562,7 @@ class Dihedral:
     j: int
     k: int
     l: int
-    atoms: List[int]
+    atoms: list[int]
 
     def __init__(self, atom_1: int, atom_2: int, atom_3: int, atom_4: int) -> None:
         self.i = atom_1
@@ -689,7 +691,7 @@ class InternalCoordinates:
         internal_coordinates: Internal coordinates
     """
 
-    internal_coordinates: List[Union[Bond, Angle, Dihedral]]
+    internal_coordinates: list[Bond | Angle | Dihedral]
 
     def __init__(self) -> None:
         self.internal_coordinates = []
@@ -746,8 +748,8 @@ class InternalCoordinates:
     def detect_bonds(
         self,
         coordinates: ArrayLike2D,
-        elements: Optional[Union[Iterable[int], Iterable[str]]],
-        radii: Optional[ArrayLike1D] = None,
+        elements: Iterable[int] | Iterable[str] | None,
+        radii: ArrayLike1D | None = None,
         radii_type: str = "pyykko",
         scale_factor: float = 1.2,
     ) -> None:

@@ -1,7 +1,9 @@
 """Internal calculators."""
 
+from __future__ import annotations
+
+from collections.abc import Iterable
 import typing
-from typing import Dict, Iterable, List, Union
 
 import numpy as np
 from scipy.spatial.distance import cdist
@@ -39,13 +41,13 @@ class D3Grimme:
         polarizabilities: Atomic polarizabilities (a.u.)
     """
 
-    c_n_coefficients: Dict[int, Array1DFloat]
+    c_n_coefficients: dict[int, Array1DFloat]
     polarizabilities: Array1DFloat
-    _atoms: List["ase.Atoms"]
+    _atoms: list["ase.Atoms"]
 
     def __init__(
         self,
-        elements: Union[Iterable[int], Iterable[str]],
+        elements: Iterable[int] | Iterable[str],
         coordinates: ArrayLike2D,
         order: int = 6,
     ) -> None:
@@ -109,14 +111,14 @@ class D4Grimme:
         polarizabilities: Atomic polarizabilities (a.u.)
     """
 
-    c_n_coefficients: Dict[int, Array1DFloat]
+    c_n_coefficients: dict[int, Array1DFloat]
     charges: Array1DFloat
     polarizabilities: Array1DFloat
-    _atoms: List["ase.Atoms"]
+    _atoms: list[ase.Atoms]
 
     def __init__(
         self,
-        elements: Union[Iterable[int], Iterable[str]],
+        elements: Iterable[int] | Iterable[str],
         coordinates: ArrayLike2D,
         order: int = 8,
         charge: int = 0,
@@ -181,13 +183,13 @@ class D3Calculator:
         coordination_numbers: Atomic coordination numbers.
     """
 
-    c_n_coefficients: Dict[int, Array1DFloat]
+    c_n_coefficients: dict[int, Array1DFloat]
     coordination_numbers: Array1DFloat
-    _atoms: List[Atom]
+    _atoms: list[Atom]
 
     def __init__(
         self,
-        elements: Union[Iterable[int], Iterable[str]],
+        elements: Iterable[int] | Iterable[str],
         coordinates: ArrayLike2D,
         order: int = 8,
     ) -> None:
@@ -237,7 +239,7 @@ class D3Calculator:
             cn_atom.coordination_number = coordination_number
 
         # Calculate the C_N coefficients
-        c_n_coefficients: Dict[int, List[float]] = {
+        c_n_coefficients: dict[int, list[float]] = {
             i: [] for i in range(6, order + 1, 2)
         }
         for atom in atoms:
@@ -257,7 +259,7 @@ class D3Calculator:
             Z = np.sum(c_6_ref * L)
             c_6 = Z / W
 
-            temp_coefficients: Dict[int, float] = {
+            temp_coefficients: dict[int, float] = {
                 i: np.nan for i in range(6, order + 1, 2)
             }
             for i in range(6, order + 1, 2):

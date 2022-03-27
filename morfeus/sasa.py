@@ -1,8 +1,11 @@
 """Solvent accessible surface area code."""
 
+from __future__ import annotations
+
+from collections.abc import Iterable
 import functools
 import typing
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Any
 
 import numpy as np
 import scipy.spatial
@@ -38,18 +41,18 @@ class SASA:
     """
 
     area: float
-    atom_areas: Dict[int, float]
-    atom_volumes: Dict[int, float]
+    atom_areas: dict[int, float]
+    atom_volumes: dict[int, float]
     volume: float
-    _atoms: List[Atom]
+    _atoms: list[Atom]
     _density: float
     _probe_radius: float
 
     def __init__(
         self,
-        elements: Union[Iterable[int], Iterable[str]],
+        elements: Iterable[int] | Iterable[str],
         coordinates: ArrayLike2D,
-        radii: Optional[ArrayLike1D] = None,
+        radii: ArrayLike1D | None = None,
         radii_type: str = "crc",
         probe_radius: float = 1.4,
         density: float = 0.01,

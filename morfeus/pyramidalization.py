@@ -1,8 +1,11 @@
 """Pyramidalization code."""
 
+from __future__ import annotations
+
+from collections.abc import Iterable, Sequence
 import functools
 import itertools
-from typing import Any, Iterable, List, Optional, Sequence, Union
+from typing import Any
 
 import numpy as np
 import scipy.spatial
@@ -46,7 +49,7 @@ class Pyramidalization:
 
     alpha: float
     alphas: Array1DFloat
-    neighbor_indices: List[int]
+    neighbor_indices: list[int]
     P_angle: float
     P: float
 
@@ -54,11 +57,11 @@ class Pyramidalization:
         self,
         coordinates: ArrayLike2D,
         atom_index: int,
-        neighbor_indices: Optional[Sequence[int]] = None,
-        elements: Optional[Union[Iterable[int], Iterable[str]]] = None,
-        radii: Optional[ArrayLike1D] = None,
+        neighbor_indices: Sequence[int] | None = None,
+        elements: Iterable[int] | Iterable[str] | None = None,
+        radii: ArrayLike1D | None = None,
         radii_type: str = "pyykko",
-        excluded_atoms: Optional[Sequence[int]] = None,
+        excluded_atoms: Sequence[int] | None = None,
         method: str = "distance",
         scale_factor: float = 1.2,
     ) -> None:
@@ -118,10 +121,10 @@ class Pyramidalization:
         c /= np.linalg.norm(c)
 
         # Calculate alpha for all permutations
-        alphas: List[float] = []
-        vectors: List[Array1DFloat] = []
-        cos_alphas: List[float] = []
-        thetas: List[float] = []
+        alphas: list[float] = []
+        vectors: list[Array1DFloat] = []
+        cos_alphas: list[float] = []
+        thetas: list[float] = []
         for v_1, v_2, v_3 in itertools.permutations([a, b, c], 3):
             # Calculate cos_alpha
             # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released

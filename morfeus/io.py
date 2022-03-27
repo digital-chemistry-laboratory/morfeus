@@ -1,9 +1,12 @@
 """Input and output."""
 
+from __future__ import annotations
+
+from collections.abc import Iterable, Sequence
 from os import PathLike
 from pathlib import Path
 import typing
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
+from typing import Any
 
 import numpy as np
 
@@ -46,7 +49,7 @@ class CrestParser:
     elements: Array1DInt
     energies: Array1DFloat
 
-    def __init__(self, path: Union[str, PathLike]) -> None:
+    def __init__(self, path: str | PathLike) -> None:
         path = Path(path)
 
         with open(path / "cre_members") as f:
@@ -113,7 +116,7 @@ class CubeParser:
     n_points_y: int
     n_points_z: int
 
-    def __init__(self, file: Union[str, PathLike]) -> None:
+    def __init__(self, file: str | PathLike) -> None:
         # Read the lines from the cube file
         with open(file) as file:
             lines = file.readlines()
@@ -194,7 +197,7 @@ class D3Parser:
     c6_coefficients: Array1DFloat
     c8_coefficients: Array1DFloat
 
-    def __init__(self, file: Union[str, PathLike]) -> None:
+    def __init__(self, file: str | PathLike) -> None:
         # Read the file
         with open(file, encoding="utf-8") as file:
             lines = file.readlines()
@@ -240,7 +243,7 @@ class D4Parser:
     c6_coefficients: Array1DFloat
     c8_coefficients: Array1DFloat
 
-    def __init__(self, file: Union[str, PathLike]) -> None:
+    def __init__(self, file: str | PathLike) -> None:
         # Read the file
         with open(file, encoding="utf-8") as file:
             lines = file.readlines()
@@ -290,10 +293,10 @@ class VertexParser:
         vertices: Vertices of surface
     """
 
-    faces: Optional[Array2DInt]
+    faces: Array2DInt | None
     vertices: Array1DFloat
 
-    def __init__(self, file: Union[str, PathLike]) -> None:  # noqa: C901
+    def __init__(self, file: str | PathLike) -> None:  # noqa: C901
         # Parse file to see if it containts connectivity
         with open(file) as file:
             lines = file.readlines()
@@ -304,7 +307,7 @@ class VertexParser:
         # Parse the vertex positions and their connectivities
         vertices = {}
         vertex_map = {}
-        connectivities: Dict[int, Set[int]] = {
+        connectivities: dict[int, set[int]] = {
             i: set() for i in range(1, n_vertices + 1)
         }
         vertex_counter = 1
@@ -359,7 +362,7 @@ class VertexParser:
         return f"{self.__class__.__name__}({len(self.vertices)!r} points)"
 
 
-def read_gjf(file: Union[str, PathLike]) -> Tuple[Array1DAny, Array1DFloat]:
+def read_gjf(file: str | PathLike) -> tuple[Array1DAny, Array1DFloat]:
     """Reads Gaussian gjf/com file and returns elements and coordinates.
 
     Args:
@@ -376,8 +379,8 @@ def read_gjf(file: Union[str, PathLike]) -> Tuple[Array1DAny, Array1DFloat]:
     xyz_lines = [line for line in xyz_lines if line.strip()]
 
     # Loop over lines and store elements and coordinates
-    elements: List[Union[int, str]] = []
-    coordinates: List[List[float]] = []
+    elements: list[int | str] = []
+    coordinates: list[list[float]] = []
     for line in xyz_lines:
         split_line = line.strip().split()
         element = split_line[0]
@@ -387,15 +390,15 @@ def read_gjf(file: Union[str, PathLike]) -> Tuple[Array1DAny, Array1DFloat]:
             elements.append(element)
         atom_coordinates = [float(i) for i in split_line[1:]]
         coordinates.append(atom_coordinates)
-    elements: Union[Array1DInt, Array1DStr] = np.array(elements)
+    elements: Array1DInt | Array1DStr = np.array(elements)
     coordinates: Array2DFloat = np.array(coordinates)
 
     return elements, coordinates
 
 
 def read_geometry(
-    file: Union[str, PathLike]
-) -> Tuple[Union[Array1DInt, Array1DStr], Union[Array2DFloat, Array3DFloat]]:
+    file: str | PathLike,
+) -> tuple[Array1DInt | Array1DStr, Array2DFloat | Array3DFloat]:
     """Read geometry file and guess parser based on suffix.
 
     Args:
@@ -425,8 +428,8 @@ def read_geometry(
 
 
 def read_xyz(
-    file: Union[str, PathLike]
-) -> Tuple[Union[Array1DInt, Array1DStr], Union[Array2DFloat, Array3DFloat]]:
+    file: str | PathLike,
+) -> tuple[Array1DInt | Array1DStr, Array2DFloat | Array3DFloat]:
     """Reads xyz file.
 
     Returns elements as written (atomic numbers or symbols) and coordinates.
@@ -443,8 +446,8 @@ def read_xyz(
         lines = f.readlines()
 
     # Loop over lines and store elements and coordinates
-    elements: List[Union[int, str]] = []
-    coordinates: List[List[float]] = []
+    elements: list[int | str] = []
+    coordinates: list[list[float]] = []
     n_atoms = int(lines[0].strip())
     line_chunks = zip(*[iter(lines)] * (n_atoms + 2))
     for line_chunk in line_chunks:
@@ -458,7 +461,7 @@ def read_xyz(
                 [float(strip_line[1]), float(strip_line[2]), float(strip_line[3])]
             )
     elements = np.array(elements)[:n_atoms]
-    coordinates: Union[Array2DFloat, Array3DFloat] = np.array(coordinates).reshape(
+    coordinates: Array2DFloat | Array3DFloat = np.array(coordinates).reshape(
         -1, n_atoms, 3
     )
     if coordinates.shape[0] == 1:
@@ -468,7 +471,7 @@ def read_xyz(
 
 
 @requires_dependency([Import("cclib")], globals())
-def read_cclib(file: Any) -> Tuple[Array1DFloat, Union[Array2DFloat, Array3DFloat]]:
+def read_cclib(file: Any) -> tuple[Array1DFloat, Array2DFloat | Array3DFloat]:
     """Reads geometry file with cclib.
 
     Returns elements as atomic numbers and coordinates.
@@ -512,10 +515,10 @@ def get_xyz_string(
 
 
 def write_xyz(
-    file: Union[str, PathLike],
-    elements: Union[Iterable[int], Iterable[str]],
-    coordinates: Union[ArrayLike2D, ArrayLike3D],
-    comments: Optional[Sequence[str]] = None,
+    file: str | PathLike,
+    elements: Iterable[int] | Iterable[str],
+    coordinates: ArrayLike2D | ArrayLike3D,
+    comments: Sequence[str] | None = None,
 ) -> None:
     """Writes xyz file from elements and coordinates.
 
@@ -527,7 +530,7 @@ def write_xyz(
     """
     # Convert elements to symbols
     symbols = convert_elements(elements, output="symbols")
-    coordinates: Union[Array2DFloat, Array3DFloat] = np.array(coordinates).reshape(
+    coordinates: Array2DFloat | Array3DFloat = np.array(coordinates).reshape(
         -1, len(symbols), 3
     )
     if comments is None:

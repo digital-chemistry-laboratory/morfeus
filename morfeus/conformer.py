@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections import Counter
+from collections.abc import Iterable, Mapping, Sequence
 from copy import copy, deepcopy
 import functools
 import numbers
@@ -10,22 +12,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import typing
-from typing import (
-    Any,
-    cast,
-    Counter,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, cast, Type, TypeVar
 import warnings
 
 import numpy as np
@@ -192,21 +179,21 @@ class Conformer:
         properties: Conformers properties.
     """
 
-    cip_label: Optional[Tuple[str, ...]]
+    cip_label: tuple[str, ...] | None
     coordinates: Array2DFloat
     degeneracy: int
     elements: Array1DFloat
-    energy: Optional[float]
-    properties: Dict[str, float]
+    energy: float | None
+    properties: dict[str, float]
 
     def __init__(
         self,
-        elements: Union[Iterable[int], Iterable[str]],
+        elements: Iterable[int] | Iterable[str],
         coordinates: ArrayLike2D,
-        energy: Optional[float] = None,
+        energy: float | None = None,
         degeneracy: int = 1,
-        properties: Optional[Dict[str, float]] = None,
-        cip_label: Optional[Tuple[str]] = None,
+        properties: dict[str, float] | None = None,
+        cip_label: tuple[str] | None = None,
     ) -> None:
         if properties is None:
             properties = {}
@@ -254,26 +241,26 @@ class ConformerEnsemble:
     """
 
     charge: int
-    confomers: List[Conformer]
+    confomers: list[Conformer]
     connectivity_matrix: Array2DInt
     elements: Array1DInt
     formal_charges: Array1DInt
-    mol: "Chem.Mol"
+    mol: Chem.Mol
     multiplicity: int
-    ref_cip_label: Optional[Tuple[str, ...]]
+    ref_cip_label: tuple[str, ...] | None
 
     def __init__(
         self,
-        elements: Union[Iterable[int], Iterable[str]],
-        conformer_coordinates: Optional[ArrayLike3D] = None,
-        energies: Optional[ArrayLike1D] = None,
-        connectivity_matrix: Optional[ArrayLike2D] = None,
-        degeneracies: Optional[ArrayLike1D] = None,
-        properties: Optional[Mapping[str, ArrayLike1D]] = None,
-        charge: Optional[int] = None,
-        multiplicity: Optional[int] = None,
-        formal_charges: Optional[ArrayLike1D] = None,
-        ref_cip_label: Optional[Tuple[str, ...]] = None,
+        elements: Iterable[int] | Iterable[str],
+        conformer_coordinates: ArrayLike3D | None = None,
+        energies: ArrayLike1D | None = None,
+        connectivity_matrix: ArrayLike2D | None = None,
+        degeneracies: ArrayLike1D | None = None,
+        properties: Mapping[str, ArrayLike1D] | None = None,
+        charge: int | None = None,
+        multiplicity: int | None = None,
+        formal_charges: ArrayLike1D | None = None,
+        ref_cip_label: tuple[str, ...] | None = None,
     ) -> None:
         elements: Array1DInt = np.array(convert_elements(elements, output="numbers"))
         self.elements = elements
@@ -295,7 +282,7 @@ class ConformerEnsemble:
             multiplicity = 1
 
         # Store conformers
-        self.conformers: List[Conformer] = []
+        self.conformers: list[Conformer] = []
         self._add_conformers(conformer_coordinates, energies, degeneracies, properties)
 
         # Set up attributes
@@ -309,10 +296,10 @@ class ConformerEnsemble:
     def add_conformers(
         self,
         conformer_coordinates: ArrayLike3D,
-        energies: Optional[ArrayLike1D] = None,
-        degeneracies: Optional[ArrayLike1D] = None,
-        properties: Optional[Mapping[str, ArrayLike1D]] = None,
-    ) -> "ConformerEnsemble":
+        energies: ArrayLike1D | None = None,
+        degeneracies: ArrayLike1D | None = None,
+        properties: Mapping[str, ArrayLike1D] | None = None,
+    ) -> ConformerEnsemble:
         """Add conformer to ensemble.
 
         Args:
@@ -328,7 +315,7 @@ class ConformerEnsemble:
 
         return self
 
-    def add_inverted(self) -> "ConformerEnsemble":
+    def add_inverted(self) -> ConformerEnsemble:
         """Add inverted images of all conformers.
 
         Scrambles stereochemistry and leads to redundant conformers so use with
@@ -338,8 +325,8 @@ class ConformerEnsemble:
             self: Self
         """
         conformers = self.conformers
-        conformer_coordinates: List[Array2DFloat] = []
-        energies: List[Optional[float]] = []
+        conformer_coordinates: list[Array2DFloat] = []
+        energies: list[float | None] = []
         for conformer in conformers:
             coordinates = conformer.coordinates * np.array([-1, -1, -1])
             conformer_coordinates.append(coordinates)
@@ -348,13 +335,13 @@ class ConformerEnsemble:
         if not all([isinstance(energy, float) for energy in energies]):
             self._add_conformers(conformer_coordinates)
         else:
-            energies_ = cast(List[float], energies)
+            energies_ = cast(list[float], energies)
             self.add_conformers(conformer_coordinates, energies_)
 
         return self
 
     @requires_dependency([Import(module="rdkit.Chem", item="AllChem")], globals())
-    def align_conformers(self) -> "ConformerEnsemble":
+    def align_conformers(self) -> ConformerEnsemble:
         """Align conformers with RDKit."""
         self.update_mol()
         AllChem.AlignMolConformers(self.mol)
@@ -416,7 +403,7 @@ class ConformerEnsemble:
 
     def detect_enantiomers(
         self, thres: float = 0.01, method: str = "rdkit", include_hs: bool = False
-    ) -> Dict[int, List[int]]:
+    ) -> dict[int, list[int]]:
         """Detect enantiomers in ensemble.
 
         Args:
@@ -434,7 +421,7 @@ class ConformerEnsemble:
         self.add_inverted()
 
         # Map conformers to enantiomers
-        enantiomer_map: Dict[int, Set[int]] = {i: set() for i in range(n_conformers)}
+        enantiomer_map: dict[int, set[int]] = {i: set() for i in range(n_conformers)}
         rmsds = self.get_rmsd(method=method, include_hs=include_hs, symmetry=False)
         for i in range(n_conformers):
             # Do test that inverted conformer should have 0 RMSD to be
@@ -453,7 +440,7 @@ class ConformerEnsemble:
         return enantiomers
 
     @classmethod
-    def from_crest(cls: Type[T], path: Union[str, PathLike]) -> T:
+    def from_crest(cls: Type[T], path: str | PathLike) -> T:
         """Generate conformer ensemble from CREST output.
 
         Args:
@@ -662,7 +649,7 @@ class ConformerEnsemble:
             self.set_multiplicity_from_mol()
 
     @requires_dependency([Import(module="rdkit", item="Chem")], globals())
-    def get_cip_labels(self) -> List[Tuple[str, ...]]:
+    def get_cip_labels(self) -> list[tuple[str, ...]]:
         """Generate tuples of CIP labels for conformer.
 
         Returns:
@@ -722,17 +709,17 @@ class ConformerEnsemble:
         )
         return energies
 
-    def get_properties(self) -> Dict[str, Array1DFloat]:
+    def get_properties(self) -> dict[str, Array1DFloat]:
         """Get conformer properties.
 
         Returns:
             properties: Conformer properties
         """
-        properties: Dict[str, List[float]] = {}
+        properties: dict[str, list[float]] = {}
         for conformer in self.conformers:
             for key, value in conformer.properties.items():
                 properties.setdefault(key, []).append(value)
-        properties: Dict[str, Array1DFloat] = {
+        properties: dict[str, Array1DFloat] = {
             key: np.array(value) for key, value in properties.items()
         }
 
@@ -767,8 +754,8 @@ class ConformerEnsemble:
 
     def get_rmsd(
         self,
-        i_s: Optional[ArrayLike1D] = None,
-        j_s: Optional[ArrayLike1D] = None,
+        i_s: ArrayLike1D | None = None,
+        j_s: ArrayLike1D | None = None,
         include_hs: bool = False,
         symmetry: bool = False,
         method: str = "rdkit",
@@ -828,13 +815,13 @@ class ConformerEnsemble:
 
     def optimize_qc_engine(
         self,
-        ids: Optional[Sequence[int]] = None,
-        program: Optional[str] = None,
-        model: Optional[Dict[str, Any]] = None,
-        keywords: Optional[Dict[str, Any]] = None,
-        local_options: Optional[Dict[str, Any]] = None,
+        ids: Sequence[int] | None = None,
+        program: str | None = None,
+        model: dict[str, Any] | None = None,
+        keywords: dict[str, Any] | None = None,
+        local_options: dict[str, Any] | None = None,
         procedure: str = "berny",
-    ) -> "ConformerEnsemble":
+    ) -> ConformerEnsemble:
         """Optimize conformers with QCEngine interface.
 
         Args:
@@ -885,9 +872,7 @@ class ConformerEnsemble:
 
         return self
 
-    def condense_enantiomeric(
-        self, thres: Optional[float] = None
-    ) -> "ConformerEnsemble":
+    def condense_enantiomeric(self, thres: float | None = None) -> ConformerEnsemble:
         """Condense enantiomers into single enantiomer per pair.
 
         Args:
@@ -918,8 +903,8 @@ class ConformerEnsemble:
         return self
 
     def prune_enantiomers(
-        self, keep: str = "original", ref_label: Optional[Tuple[str, ...]] = None
-    ) -> "ConformerEnsemble":
+        self, keep: str = "original", ref_label: tuple[str, ...] | None = None
+    ) -> ConformerEnsemble:
         """Prune conformers so that only one enantiomer is present in the ensemble.
 
         Args:
@@ -941,7 +926,7 @@ class ConformerEnsemble:
         elif keep == "specified":
             pass
         if keep == "most common":
-            counter: Counter[Tuple[str, ...]] = Counter(cip_labels)
+            counter: Counter[tuple[str, ...]] = Counter(cip_labels)
             ref_label = counter.most_common(n=1)[0][0]
 
         # Prune conformers
@@ -955,7 +940,7 @@ class ConformerEnsemble:
 
     def prune_energy(
         self, threshold: float = 3.0, unit: str = "kcal/mol"
-    ) -> "ConformerEnsemble":
+    ) -> ConformerEnsemble:
         """Prune conformers based on energy compared to minimum energy conformer.
 
         Args:
@@ -989,7 +974,7 @@ class ConformerEnsemble:
         include_hs: bool = False,
         symmetry: bool = False,
         method: str = "rdkit",
-    ) -> "ConformerEnsemble":
+    ) -> ConformerEnsemble:
         """Prune conformers based on RMSD.
 
         Args:
@@ -1042,9 +1027,7 @@ class ConformerEnsemble:
 
         return self
 
-    def set_coordinates(
-        self, conformer_coordinates: ArrayLike3D
-    ) -> "ConformerEnsemble":
+    def set_coordinates(self, conformer_coordinates: ArrayLike3D) -> ConformerEnsemble:
         """Set conformer coordinates.
 
         Args:
@@ -1069,7 +1052,7 @@ class ConformerEnsemble:
 
         return self
 
-    def set_degeneracies(self, degeneracies: ArrayLike1D) -> "ConformerEnsemble":
+    def set_degeneracies(self, degeneracies: ArrayLike1D) -> ConformerEnsemble:
         """Set degeneracies.
 
         Args:
@@ -1094,7 +1077,7 @@ class ConformerEnsemble:
 
         return self
 
-    def set_energies(self, energies: ArrayLike1D) -> "ConformerEnsemble":
+    def set_energies(self, energies: ArrayLike1D) -> ConformerEnsemble:
         """Set energies.
 
         Args:
@@ -1120,7 +1103,7 @@ class ConformerEnsemble:
         return self
 
     @requires_dependency([Import(module="rdkit.Chem", item="Descriptors")], globals())
-    def set_multiplicity_from_mol(self) -> "ConformerEnsemble":
+    def set_multiplicity_from_mol(self) -> ConformerEnsemble:
         """Sets multiplicity based on unpaired electrons in Mol object."""
         num_radical = Descriptors.NumRadicalElectrons(self.mol)
 
@@ -1134,7 +1117,7 @@ class ConformerEnsemble:
 
         return self
 
-    def set_properties(self, key: str, values: Iterable[float]) -> "ConformerEnsemble":
+    def set_properties(self, key: str, values: Iterable[float]) -> ConformerEnsemble:
         """Set conformer properties.
 
         Args:
@@ -1149,12 +1132,12 @@ class ConformerEnsemble:
 
         return self
 
-    def sort(self) -> "ConformerEnsemble":
+    def sort(self) -> ConformerEnsemble:
         """Sort conformers based on energy."""
         energies = [conformer.energy for conformer in self.conformers]
         if not all([isinstance(energy, float) for energy in energies]):
             raise ValueError("Not all conformers have energies.")
-        energies = cast(List[float], energies)
+        energies = cast(list[float], energies)
         indices = np.argsort(energies)
         self.conformers = [self.conformers[i] for i in indices]
 
@@ -1162,12 +1145,12 @@ class ConformerEnsemble:
 
     def sp_qc_engine(
         self,
-        ids: Optional[Sequence[int]] = None,
+        ids: Sequence[int] | None = None,
         program: str = "xtb",
-        model: Optional[Dict[str, Any]] = None,
-        keywords: Optional[Dict[str, Any]] = None,
-        local_options: Optional[Dict[str, Any]] = None,
-    ) -> "ConformerEnsemble":
+        model: dict[str, Any] | None = None,
+        keywords: dict[str, Any] | None = None,
+        local_options: dict[str, Any] | None = None,
+    ) -> ConformerEnsemble:
         """Calculate conformer energies with QCEngine interface.
 
         Args:
@@ -1216,8 +1199,8 @@ class ConformerEnsemble:
 
     def write_xyz(
         self,
-        file: Union[str, PathLike],
-        ids: Optional[Iterable[int]] = None,
+        file: str | PathLike,
+        ids: Iterable[int] | None = None,
         unit: str = "kcal/mol",
         relative: bool = True,
         separate: bool = False,
@@ -1263,9 +1246,9 @@ class ConformerEnsemble:
     def _add_conformers(
         self,
         conformer_coordinates: ArrayLike3D,
-        energies: Optional[ArrayLike1D] = None,
-        degeneracies: Optional[ArrayLike1D] = None,
-        properties: Optional[Mapping[str, ArrayLike1D]] = None,
+        energies: ArrayLike1D | None = None,
+        degeneracies: ArrayLike1D | None = None,
+        properties: Mapping[str, ArrayLike1D] | None = None,
     ) -> None:
         conformer_coordinates: Array3DFloat = np.array(conformer_coordinates)
         n_conformers = len(conformer_coordinates)
@@ -1439,7 +1422,7 @@ class ConformerEnsemble:
             for j in j_s:
                 conformer = conformers[j - 1]
                 ref_mol.AddConformer(conformer)
-            rmsds_row: List[float] = []
+            rmsds_row: list[float] = []
             AllChem.AlignMolConformers(ref_mol, atomIds=atom_ids, RMSlist=rmsds_row)
             rmsds.append(rmsds_row)
         rmsds: Array2DFloat = np.array(rmsds)
@@ -1468,7 +1451,7 @@ class ConformerEnsemble:
             mask = np.ones(len(self.elements), dtype=bool)
 
         # Calculate RMSD row-wise with spyrmsd
-        rmsds: List[Array1DFloat] = []
+        rmsds: list[Array1DFloat] = []
         for i in i_s:
             ref_coordinates = self.conformers[i - 1].coordinates[mask]
             if symmetry:
@@ -1503,7 +1486,7 @@ class ConformerEnsemble:
 
         return rmsds
 
-    def update_mol(self) -> "ConformerEnsemble":
+    def update_mol(self) -> ConformerEnsemble:
         """Update Mol object with conformers."""
         self.mol.RemoveAllConformers()
         conformer_coordinates = self.get_coordinates()
@@ -1511,7 +1494,7 @@ class ConformerEnsemble:
 
         return self
 
-    def __copy__(self) -> "ConformerEnsemble":
+    def __copy__(self) -> ConformerEnsemble:
         # Generate copy where conformers and mol object are shared with old
         # ensemble.
         cls = type(self)
@@ -1527,7 +1510,7 @@ class ConformerEnsemble:
         ce.conformers = self.conformers
         return ce
 
-    def __deepcopy__(self, memo: Dict[int, object]) -> "ConformerEnsemble":
+    def __deepcopy__(self, memo: dict[int, object]) -> ConformerEnsemble:
         # Generate copy where conformers and mol object are new
         cls = type(self)
         ce = cls(
@@ -1549,8 +1532,8 @@ class ConformerEnsemble:
         del self.conformers[index]
 
     def __getitem__(
-        self, index: Union[slice, numbers.Integral]
-    ) -> Union["ConformerEnsemble", Conformer]:
+        self, index: slice | numbers.Integral
+    ) -> ConformerEnsemble | Conformer:
         cls = type(self)
         if isinstance(index, slice):
             # Generate copy of ensemble with selected conformers.
@@ -1580,12 +1563,12 @@ class ConformerEnsemble:
     globals(),
 )
 def conformers_from_ob_ff(
-    mol: Union[str, "ob.OBMol"],
+    mol: str | ob.OBMol,
     num_conformers: int = 30,
     ff: str = "MMFF94",
     method: str = "systematic",
     rings: bool = False,
-) -> Tuple[Array1DInt, Array3DFloat, Array2DInt, Array1DInt, ob.OBMol]:
+) -> tuple[Array1DInt, Array3DFloat, Array2DInt, Array1DInt, ob.OBMol]:
     """Generates conformers based on the force field algorithm in OpenBabel.
 
     Follows the recipe of the command line script obabel --conformer:
@@ -1654,17 +1637,17 @@ def conformers_from_ob_ff(
     globals(),
 )
 def conformers_from_ob_ga(  # noqa: C901
-    mol: Union[str, ob.OBMol],
-    num_conformers: Optional[int] = None,
-    num_children: Optional[int] = None,
-    mutability: Optional[float] = None,
-    convergence: Optional[int] = None,
+    mol: str | ob.OBMol,
+    num_conformers: int | None = None,
+    num_children: int | None = None,
+    mutability: float | None = None,
+    convergence: int | None = None,
     score: str = "rmsd",
     filter_method: str = "steric",
     cutoff: float = 0.8,
     vdw_factor: float = 0.5,
     check_hydrogens: bool = True,
-) -> Tuple[Array1DInt, Array3DFloat, Array2DInt, Array1DInt, ob.OBMol]:
+) -> tuple[Array1DInt, Array3DFloat, Array2DInt, Array1DInt, ob.OBMol]:
     """Generates conformers based on the genetic algorithm in OpenBabel.
 
     Follows the recipe of the command line script obabel --conformer:
@@ -1759,18 +1742,18 @@ def conformers_from_ob_ga(  # noqa: C901
     globals(),
 )
 def conformers_from_rdkit(  # noqa: C901
-    mol: Union[str, Chem.Mol],
-    n_confs: Optional[int] = None,
-    optimize: Optional[str] = "MMFF94",
+    mol: str | Chem.Mol,
+    n_confs: int | None = None,
+    optimize: str | None = "MMFF94",
     version: int = 2,
     small_rings: bool = True,
     macrocycles: bool = True,
-    random_seed: Optional[int] = None,
-    rmsd_thres: Optional[float] = 0.35,
+    random_seed: int | None = None,
+    rmsd_thres: float | None = 0.35,
     rmsd_symmetry: bool = False,
     n_threads: int = 1,
-) -> Tuple[
-    Array1DInt, Array3DFloat, Optional[Array1DFloat], Array2DFloat, Array1DInt, Chem.Mol
+) -> tuple[
+    Array1DInt, Array3DFloat, Array1DFloat | None, Array2DFloat, Array1DInt, Chem.Mol
 ]:
     """Generates conformers for an RDKit mol object.
 
@@ -1908,10 +1891,10 @@ def _add_conformers_to_mol(mol: Chem.Mol, conformer_coordinates: ArrayLike3D) ->
 @requires_dependency([Import(module="rdkit", item="Chem")], globals())
 def _extract_from_mol(
     mol: Chem.Mol,
-) -> Tuple[List[str], Array3DFloat, Array2DFloat, Array1DInt]:
+) -> tuple[list[str], Array3DFloat, Array2DFloat, Array1DInt]:
     """Extract information from RDKit Mol object with conformers."""
     # Take out elements, coordinates and connectivity matrix
-    elements: List[str] = [atom.GetSymbol() for atom in mol.GetAtoms()]
+    elements: list[str] = [atom.GetSymbol() for atom in mol.GetAtoms()]
     charges: Array1DInt = np.array([atom.GetFormalCharge() for atom in mol.GetAtoms()])
 
     conformer_coordinates = []
@@ -1935,7 +1918,7 @@ def _extract_from_mol(
 )
 def _extract_from_ob_mol(
     ob_mol: ob.OBMol,
-) -> Tuple[Array1DInt, Array3DFloat, Array2DInt, Array1DInt]:
+) -> tuple[Array1DInt, Array3DFloat, Array2DInt, Array1DInt]:
     """Extract information from Openbabel OBMol object with conformers."""
     py_mol = pybel.Molecule(ob_mol)
     elements: Array1DInt = np.array([atom.atomicnum for atom in py_mol.atoms])
@@ -1963,10 +1946,10 @@ def _extract_from_ob_mol(
 
 @requires_dependency([Import(module="openbabel.openbabel", alias="ob")], globals())
 def _get_ob_mol(
-    elements: Union[Iterable[int], Iterable[str]],
+    elements: Iterable[int] | Iterable[str],
     coordinates: ArrayLike2D,
     connectivity_matrix: ArrayLike2D,
-    charges: Optional[ArrayLike1D] = None,
+    charges: ArrayLike1D | None = None,
 ) -> ob.OBMol:
     """Generate OpenBabel OBMol object.
 
@@ -2009,10 +1992,10 @@ def _get_ob_mol(
 
 @requires_dependency([Import(module="rdkit", item="Chem")], globals())
 def _get_rdkit_mol(
-    elements: Union[Iterable[int], Iterable[str]],
+    elements: Iterable[int] | Iterable[str],
     conformer_coordinates: ArrayLike3D,
     connectivity_matrix: ArrayLike2D,
-    charges: Optional[ArrayLike1D] = None,
+    charges: ArrayLike1D | None = None,
 ) -> Chem.Mol:
     _RDKIT_BOND_TYPES = {
         1.0: Chem.BondType.SINGLE,

@@ -1,8 +1,11 @@
 """xtb interface code."""
 
+from __future__ import annotations
+
+from collections.abc import Iterable
 import functools
 import typing
-from typing import Any, Dict, Iterable, Optional, Union
+from typing import Any
 
 import numpy as np
 
@@ -34,22 +37,22 @@ class XTB:
 
     _charge: int
     _coordinates: Array2DFloat
-    _electronic_temperature: Optional[int]
+    _electronic_temperature: int | None
     _elements: Array1DFloat
-    _n_unpaired: Optional[int]
+    _n_unpaired: int | None
     _results: Any
-    _solvent: Optional[str]
+    _solvent: str | None
     _version: str
 
     def __init__(
         self,
-        elements: Union[Iterable[int], Iterable[str]],
+        elements: Iterable[int] | Iterable[str],
         coordinates: ArrayLike2D,
         version: str = "2",
         charge: int = 0,
-        n_unpaired: Optional[int] = None,
-        solvent: Optional[str] = None,
-        electronic_temperature: Optional[int] = None,
+        n_unpaired: int | None = None,
+        solvent: str | None = None,
+        electronic_temperature: int | None = None,
     ) -> None:
         # Converting elements to atomic numbers if the are symbols
         self._elements = np.array(convert_elements(elements, output="numbers"))
@@ -110,7 +113,7 @@ class XTB:
 
         return charges
 
-    def get_charges(self, charge_state: int = 0) -> Dict[int, float]:
+    def get_charges(self, charge_state: int = 0) -> dict[int, float]:
         """Returns atomic charges.
 
         Args:
@@ -159,7 +162,7 @@ class XTB:
 
         return ea
 
-    def get_fukui(self, variety: str) -> Dict[int, float]:
+    def get_fukui(self, variety: str) -> dict[int, float]:
         """Calculate Fukui coefficients.
 
         Args:

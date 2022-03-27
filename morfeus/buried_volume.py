@@ -1,11 +1,14 @@
 """Buried volume code."""
 
+from __future__ import annotations
+
+from collections.abc import Iterable, Sequence
 import copy
 import functools
 import itertools
 import math
 import typing
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
+from typing import Any
 import warnings
 
 import numpy as np
@@ -32,7 +35,7 @@ if typing.TYPE_CHECKING:
 
 # Quadrant and octant signs taken from
 # https://en.wikipedia.org/wiki/Octant_(solid_geometry)
-QUADRANT_SIGNS: Dict[int, str] = {
+QUADRANT_SIGNS: dict[int, str] = {
     1: "+,+",
     2: "-,+",
     3: "-,-",
@@ -40,7 +43,7 @@ QUADRANT_SIGNS: Dict[int, str] = {
 }
 """Coventional signs for quadrants."""
 
-OCTANT_SIGNS: Dict[int, str] = {
+OCTANT_SIGNS: dict[int, str] = {
     0: "+,+,+",
     1: "-,+,+",
     3: "+,-,+",
@@ -52,7 +55,7 @@ OCTANT_SIGNS: Dict[int, str] = {
 }
 """Conventional signs for octants."""
 
-QUADRANT_NAMES: Dict[int, str] = {
+QUADRANT_NAMES: dict[int, str] = {
     1: "NE",
     2: "NW",
     3: "SW",
@@ -61,7 +64,7 @@ QUADRANT_NAMES: Dict[int, str] = {
 """Conventional names for quadrants."""
 
 # Maps octants to quadrants
-QUADRANT_OCTANT_MAP: Dict[int, Tuple[int, int]] = {
+QUADRANT_OCTANT_MAP: dict[int, tuple[int, int]] = {
     1: (0, 7),
     2: (1, 6),
     3: (2, 5),
@@ -104,33 +107,33 @@ class BuriedVolume:
     fraction_buried_volume: float
     free_volume: float
     molecular_volume: float
-    octants: Dict[str, Dict[int, float]]
-    quadrants: Dict[str, Dict[int, float]]
+    octants: dict[str, dict[int, float]]
+    quadrants: dict[str, dict[int, float]]
     _all_coordinates: Array2DFloat
-    _atoms: List[Atom]
+    _atoms: list[Atom]
     _buried_points: Array2DFloat
     _density: float
-    _excluded_atoms: Set[int]
+    _excluded_atoms: set[int]
     _free_points: Array2DFloat
-    _octant_limits: Dict[
-        int, Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]
+    _octant_limits: dict[
+        int, tuple[tuple[float, float], tuple[float, float], tuple[float, float]]
     ]
     _sphere: Sphere
 
     def __init__(
         self,
-        elements: Union[Iterable[int], Iterable[str]],
+        elements: Iterable[int] | Iterable[str],
         coordinates: ArrayLike2D,
         metal_index: int,
-        excluded_atoms: Optional[Sequence[int]] = None,
-        radii: Optional[ArrayLike1D] = None,
+        excluded_atoms: Sequence[int] | None = None,
+        radii: ArrayLike1D | None = None,
         include_hs: bool = False,
         radius: float = 3.5,
         radii_type: str = "bondi",
         radii_scale: float = 1.17,
         density: float = 0.001,
-        z_axis_atoms: Optional[Sequence[int]] = None,
-        xz_plane_atoms: Optional[Sequence[int]] = None,
+        z_axis_atoms: Sequence[int] | None = None,
+        xz_plane_atoms: Sequence[int] | None = None,
     ) -> None:
         # Get center and and reortient coordinate system
         coordinates: Array2DFloat = np.array(coordinates)
@@ -344,13 +347,13 @@ class BuriedVolume:
         Raises:
             ValueError: When method is not specified correctly.
         """
-        loop_coordinates: List[Array1DFloat]
+        loop_coordinates: list[Array1DFloat]
         # Use SASA to calculate total volume of the molecule
         if method == "sasa":
             # Calculate total volume
-            elements: List[int] = []
+            elements: list[int] = []
             loop_coordinates = []
-            radii: List[float] = []
+            radii: list[float] = []
             for atom in self._atoms:
                 elements.append(atom.element)
                 loop_coordinates.append(atom.coordinates)
@@ -432,7 +435,7 @@ class BuriedVolume:
     @requires_dependency([Import(module="matplotlib.pyplot", alias="plt")], globals())
     def plot_steric_map(  # noqa: C901
         self,
-        filename: Optional[str] = None,
+        filename: str | None = None,
         levels: float = 150,
         grid: int = 100,
         all_positive: bool = True,

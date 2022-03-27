@@ -1,7 +1,10 @@
 """Visible volume code."""
 
+from __future__ import annotations
+
+from collections.abc import Iterable
 import functools
-from typing import Any, Iterable, Optional, Union
+from typing import Any
 
 import numpy as np
 
@@ -66,11 +69,11 @@ class VisibleVolume:
 
     def __init__(
         self,
-        elements: Union[Iterable[int], Iterable[str]],
+        elements: Iterable[int] | Iterable[str],
         coordinates: ArrayLike2D,
         metal_index: int,
         include_hs: bool = True,
-        radii: Optional[ArrayLike1D] = None,
+        radii: ArrayLike1D | None = None,
         radii_type: str = "pyykko",
         radius: float = 3.5,
         density: float = 0.01,

@@ -1,10 +1,11 @@
 """Sterimol code."""
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 import functools
 import math
 import typing
-from typing import Any, Iterable, List, Optional, Sequence, Set, Union
+from typing import Any
 
 import numpy as np
 import scipy.spatial
@@ -64,10 +65,10 @@ class Sterimol:
     L_value_uncorrected: float
     L_value: float
     L: Array1DFloat
-    _atoms: List[Atom]
+    _atoms: list[Atom]
     _attached_atom: Atom
     _dummy_atom: Atom
-    _excluded_atoms: Set[int]
+    _excluded_atoms: set[int]
     _n_rot_vectors: int
     _origin: Array1DFloat
     _plotter: "BackgroundPlotter"
@@ -76,14 +77,14 @@ class Sterimol:
 
     def __init__(
         self,
-        elements: Union[Iterable[int], Iterable[str]],
+        elements: Iterable[int] | Iterable[str],
         coordinates: ArrayLike2D,
         dummy_index: int,
-        attached_index: Union[int, Iterable[int]],
-        radii: Optional[ArrayLike1D] = None,
+        attached_index: int | Iterable[int],
+        radii: ArrayLike1D | None = None,
         radii_type: str = "crc",
         n_rot_vectors: int = 3600,
-        excluded_atoms: Optional[Sequence[int]] = None,
+        excluded_atoms: Sequence[int] | None = None,
         calculate: bool = True,
     ) -> None:
         # Convert elements to atomic numbers if the are symbols
