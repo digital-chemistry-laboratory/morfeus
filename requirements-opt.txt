@@ -1,4 +1,5 @@
 dftd4
+libconeangle
 matplotlib
 openbabel
 pymeshfix

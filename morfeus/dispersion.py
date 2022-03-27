@@ -1,9 +1,12 @@
 """Dispersion code."""
 
+from __future__ import annotations
+
+from collections.abc import Iterable, Sequence
 import functools
 from os import PathLike
 import typing
-from typing import Any, cast, Dict, Iterable, List, Optional, Sequence, Union
+from typing import Any
 
 import numpy as np
 import scipy.spatial
@@ -13,7 +16,14 @@ from morfeus.data import ANGSTROM_TO_BOHR, atomic_symbols, HARTREE_TO_KCAL, jmol
 from morfeus.geometry import Atom
 from morfeus.io import CubeParser, D3Parser, D4Parser, read_geometry, VertexParser
 from morfeus.sasa import SASA
-from morfeus.typing import Array1D, Array2D, ArrayLike1D, ArrayLike2D
+from morfeus.typing import (
+    Array1DFloat,
+    Array1DInt,
+    Array2DFloat,
+    Array2DInt,
+    ArrayLike1D,
+    ArrayLike2D,
+)
 from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
@@ -59,36 +69,36 @@ class Dispersion:
     """
 
     area: float
-    atom_areas: Dict[int, float]
-    atom_p_int: Dict[int, float]
-    atom_p_max: Dict[int, float]
-    atom_p_min: Dict[int, float]
+    atom_areas: dict[int, float]
+    atom_p_int: dict[int, float]
+    atom_p_max: dict[int, float]
+    atom_p_min: dict[int, float]
     p_int: float
     p_max: float
     p_min: float
-    p_values: Array1D
+    p_values: Array1DFloat
     volume: float
-    _atoms: List[Atom]
-    _c_n_coefficients: Dict[int, Array1D]
+    _atoms: list[Atom]
+    _c_n_coefficients: dict[int, Array1DFloat]
     _density: float
-    _excluded_atoms: List[int]
-    _point_areas: Array1D
-    _point_map: Array1D
-    _points: Array2D
-    _radii: Array1D
+    _excluded_atoms: list[int]
+    _point_areas: Array1DFloat
+    _point_map: Array1DInt
+    _points: Array2DFloat
+    _radii: Array1DFloat
     _surface: "pv.PolyData"
 
     def __init__(
         self,
-        elements: Union[Iterable[int], Iterable[str]],
+        elements: Iterable[int] | Iterable[str],
         coordinates: ArrayLike2D,
-        radii: Optional[ArrayLike1D] = None,
+        radii: ArrayLike1D | None = None,
         radii_type: str = "rahm",
         point_surface: bool = True,
         compute_coefficients: bool = True,
         density: float = 0.1,
-        excluded_atoms: Optional[Sequence[int]] = None,
-        included_atoms: Optional[Sequence[int]] = None,
+        excluded_atoms: Sequence[int] | None = None,
+        included_atoms: Sequence[int] | None = None,
     ) -> None:
         # Check that only excluded or included atoms are given
         if excluded_atoms is not None and included_atoms is not None:
@@ -96,7 +106,7 @@ class Dispersion:
 
         # Converting elements to atomic numbers if the are symbols
         elements = convert_elements(elements, output="numbers")
-        coordinates = np.array(coordinates)
+        coordinates: Array2DFloat = np.array(coordinates)
 
         # Set excluded atoms
         all_atoms = set(range(1, len(elements) + 1))
@@ -117,7 +127,7 @@ class Dispersion:
         # Getting radii if they are not supplied
         if radii is None:
             radii = get_radii(elements, radii_type=radii_type)
-        radii = np.array(radii)
+        radii: Array1DFloat = np.array(radii)
 
         self._radii = radii
 
@@ -126,7 +136,7 @@ class Dispersion:
             self._surface_from_sasa(elements, coordinates)
         else:
             # Get list of atoms as Atom objects
-            atoms: List[Atom] = []
+            atoms: list[Atom] = []
             for i, (element, coord, radius) in enumerate(
                 zip(elements, coordinates, radii), start=1
             ):
@@ -144,7 +154,7 @@ class Dispersion:
 
     def _surface_from_sasa(
         self,
-        elements: Union[Iterable[int], Iterable[str]],
+        elements: Iterable[int] | Iterable[str],
         coordinates: ArrayLike2D,
     ) -> None:
         """Get surface from SASA."""
@@ -173,7 +183,7 @@ class Dispersion:
         )
 
         # Get point areas and map from point to atom
-        point_areas: List[np.ndarray] = []
+        point_areas: list[Array1DFloat] = []
         point_map = []
         for atom in self._atoms:
             n_points = len(atom.accessible_points)
@@ -190,7 +200,7 @@ class Dispersion:
     @requires_dependency([Import(module="pyvista", alias="pv")], globals())
     def surface_from_cube(
         self,
-        file: Union[str, PathLike],
+        file: str | PathLike,
         isodensity: float = 0.001,
         method: str = "flying_edges",
     ) -> "Dispersion":
@@ -226,7 +236,7 @@ class Dispersion:
         [Import("pymeshfix"), Import(module="pyvista", alias="pv")], globals()
     )
     def surface_from_multiwfn(
-        self, file: Union[str, PathLike], fix_mesh: bool = True
+        self, file: str | PathLike, fix_mesh: bool = True
     ) -> "Dispersion":
         """Adds surface from Multiwfn vertex file with connectivity information.
 
@@ -239,9 +249,9 @@ class Dispersion:
         """
         # Read the vertices and faces from the Multiwfn output file
         parser = VertexParser(file)
-        vertices = np.array(parser.vertices)
-        faces = np.array(parser.faces)
-        faces = np.insert(faces, 0, values=3, axis=1)
+        vertices: Array2DFloat = np.array(parser.vertices)
+        faces: Array2DInt = np.array(parser.faces)
+        faces: Array2DInt = np.insert(faces, 0, values=3, axis=1)
 
         # Construct surface and fix it with pymeshfix
         surface = pv.PolyData(vertices, faces, show_edges=True)
@@ -263,15 +273,15 @@ class Dispersion:
         self.volume = self._surface.volume
 
         # Assign face centers to atoms according to Voronoi partitioning
-        coordinates = np.array([atom.coordinates for atom in self._atoms])
-        points = np.array(self._surface.cell_centers().points)
+        coordinates: Array2DFloat = np.array([atom.coordinates for atom in self._atoms])
+        points: Array2DFloat = np.array(self._surface.cell_centers().points)
         kd_tree = scipy.spatial.cKDTree(coordinates)
         _, point_regions = kd_tree.query(points, k=1)
         point_regions = point_regions + 1
 
         # Compute faces areas
         area_data = self._surface.compute_cell_sizes()
-        areas = np.array(area_data.cell_arrays["Area"])
+        areas: Array1DFloat = np.array(area_data.cell_arrays["Area"])
 
         # Assign face centers and areas to atoms
         atom_areas = {}
@@ -320,7 +330,7 @@ class Dispersion:
 
         return surface
 
-    def compute_p_int(self, points: Optional[ArrayLike2D] = None) -> "Dispersion":
+    def compute_p_int(self, points: ArrayLike2D | None = None) -> "Dispersion":
         """Compute P_int values for surface or points.
 
         Args:
@@ -330,14 +340,14 @@ class Dispersion:
             self: Self
         """
         # Set up atoms and coefficients that are part of the calculation
-        atom_indices = np.array(
+        atom_indices: Array1DInt = np.array(
             [
                 atom.index - 1
                 for atom in self._atoms
                 if atom.index not in self._excluded_atoms
             ]
         )
-        coordinates = np.array([atom.coordinates for atom in self._atoms])
+        coordinates: Array2DFloat = np.array([atom.coordinates for atom in self._atoms])
         coordinates = coordinates[atom_indices]
         c_n_coefficients = dict(self._c_n_coefficients)
         for key, value in c_n_coefficients.items():
@@ -366,7 +376,6 @@ class Dispersion:
             ],
             axis=0,
         )
-        p = cast(np.ndarray, p)
 
         self.p_values = p
 
@@ -441,14 +450,14 @@ class Dispersion:
         """
         # Set up atoms and coordinates
         elements = [atom.element for atom in self._atoms]
-        coordinates = np.array([atom.coordinates for atom in self._atoms])
+        coordinates: Array2DFloat = np.array([atom.coordinates for atom in self._atoms])
 
         calculators = {
             "id3": D3Calculator,
             "gd3": D3Grimme,
             "gd4": D4Grimme,
         }
-        calc: Union[D3Calculator, D3Grimme, D4Grimme]
+        calc: D3Calculator | D3Grimme | D4Grimme
         # Calculate  D3 values with internal model
         if model in ["id3", "gd3"]:
             calc = calculators[model](elements, coordinates, order=order)
@@ -460,7 +469,7 @@ class Dispersion:
 
         return self
 
-    def load_coefficients(self, file: Union[str, PathLike], model: str) -> "Dispersion":
+    def load_coefficients(self, file: str | PathLike, model: str) -> "Dispersion":
         """Load the C₆ and C₈ coefficients.
 
         Output can be read from the dftd3 and dftd4 programs by giving a file in
@@ -476,7 +485,7 @@ class Dispersion:
         Raises:
             ValueError: When model not supported
         """
-        parser: Union[D3Parser, D4Parser]
+        parser: D3Parser | D4Parser
         if model == "d3":
             parser = D3Parser(file)
         elif model == "d4":
@@ -554,7 +563,7 @@ class Dispersion:
                 sphere, color=color, opacity=molecule_opacity, name=str(atom.index)
             )
 
-        cmap: Optional[str]
+        cmap: str | None
         # Set up plotting of mapped surface
         if display_p_int is True:
             color = None

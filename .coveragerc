@@ -1,6 +1,0 @@
-[run]
-branch=True
-omit = */site-packages/*
-
-[report]
-show_missing=True

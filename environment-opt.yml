@@ -1,16 +1,17 @@
 channels:
   - conda-forge
 dependencies:
-- dftd4
-- matplotlib
-- openbabel
-- pip
-- pyvista
-- pyvistaqt
-- qcengine
-- rdkit
-- spyrmsd
-- vtk
-- xtb-python
-- pip:
-  - pymeshfix
+  - dftd4
+  - libconeangle
+  - matplotlib
+  - openbabel
+  - pip
+  - pyvista
+  - pyvistaqt
+  - qcengine
+  - rdkit
+  - spyrmsd
+  - vtk
+  - xtb-python
+  - pip:
+      - pymeshfix

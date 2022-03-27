@@ -1,10 +1,13 @@
 """Plotting functions."""
 
+from __future__ import annotations
+
+from collections.abc import Sequence
 import typing
-from typing import Optional, Sequence
 
 import numpy as np
 
+from morfeus.typing import Array1DFloat
 from morfeus.utils import Import, requires_dependency
 
 if typing.TYPE_CHECKING:
@@ -14,8 +17,8 @@ if typing.TYPE_CHECKING:
 
 @requires_dependency([Import(module="pyvista", alias="pv")], globals())
 def get_drawing_arrow(
-    start: Optional[Sequence[float]] = None,
-    direction: Optional[Sequence[float]] = None,
+    start: Sequence[float] | None = None,
+    direction: Sequence[float] | None = None,
     length: float = 1,
     shaft_radius: float = 0.05,
     shaft_resolution: int = 20,
@@ -43,7 +46,7 @@ def get_drawing_arrow(
         start = [0, 0, 0]
     if direction is None:
         direction = [1, 0, 0]
-    start = np.array(start)
+    start: Array1DFloat = np.array(start)
     direction = np.array(direction) / np.linalg.norm(direction)
 
     # Create cylinder
@@ -77,12 +80,12 @@ def get_drawing_arrow(
 
 @requires_dependency([Import(module="pyvista", alias="pv"), Import("vtk")], globals())
 def get_drawing_cone(
-    center: Optional[Sequence[float]] = None,
-    direction: Optional[Sequence[float]] = None,
+    center: Sequence[float] | None = None,
+    direction: Sequence[float] | None = None,
     height: float = 1.0,
-    radius: Optional[float] = None,
+    radius: float | None = None,
     capping: bool = True,
-    angle: Optional[float] = None,
+    angle: float | None = None,
     resolution: int = 6,
 ) -> "pv.PolyData":
     """Create a cone.
