@@ -7,7 +7,7 @@ on:
   pull_request:
     branches:
       - "*"
-      
+
 jobs:
   test:
     name: ${{ matrix.os }} / ${{ matrix.python_version }}
@@ -16,14 +16,16 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu, macos, windows]
-        python_version: ["3.9"]
+        python_version: ["3.10"]
         include:
           - os: ubuntu
+            python_version: "3.9"
+          - os: ubuntu
             python_version: "3.8"
-    steps:          
-      - uses: actions/checkout@v2
+    steps:
+      - uses: actions/checkout@v3
       - name: Install Python ${{ matrix.python_version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python_version }}
       - name: Install dependencies
@@ -31,6 +33,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --upgrade nox
         shell: bash
-      - name: Run `nox -s tests`     
-        run: python -m nox -s tests-${{ matrix.python_version }}          
-        shell: bash 
+      - name: Run `nox -s tests`
+        run: python -m nox -s tests-${{ matrix.python_version }}
+        shell: bash
