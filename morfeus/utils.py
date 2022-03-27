@@ -288,12 +288,12 @@ def convert_elements(
         raise ValueError(f"ouput={output} not supported. Use 'numbers' or 'symbols'")
 
     if all(isinstance(element, str) for element in elements):
-        elements = cast(list[str], elements)
+        elements = cast("list[str]", elements)
         if output == "numbers":
             elements = [atomic_numbers[element.capitalize()] for element in elements]
         return elements
     elif all(isinstance(element, Integral) for element in elements):
-        elements = cast(list[int], elements)
+        elements = cast("list[int]", elements)
         if output == "symbols":
             elements = [atomic_symbols[element] for element in elements]
         return elements
