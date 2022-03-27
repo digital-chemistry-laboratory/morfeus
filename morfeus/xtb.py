@@ -8,7 +8,7 @@ import numpy as np
 
 from morfeus.data import ANGSTROM_TO_BOHR, HARTREE_TO_EV
 from morfeus.io import read_geometry
-from morfeus.typing import Array1DFloat, ArrayLike2D
+from morfeus.typing import Array1DFloat, Array2DFloat, ArrayLike2D
 from morfeus.utils import convert_elements, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
@@ -33,9 +33,9 @@ class XTB:
     """
 
     _charge: int
-    _coordinates: np.ndarray
+    _coordinates: Array2DFloat
     _electronic_temperature: Optional[int]
-    _elements: np.ndarray
+    _elements: Array1DFloat
     _n_unpaired: Optional[int]
     _results: Any
     _solvent: Optional[str]
@@ -99,14 +99,14 @@ class XTB:
             bond_orders: Bond orders
         """
         self._check_results(charge_state)
-        bond_orders: np.ndarray = self._results[charge_state].get_bond_orders()
+        bond_orders = self._results[charge_state].get_bond_orders()
 
         return bond_orders
 
     def _get_charges(self, charge_state: int = 0) -> Array1DFloat:
         """Returns atomic charges."""
         self._check_results(charge_state)
-        charges: np.ndarray = self._results[charge_state].get_charges()
+        charges = self._results[charge_state].get_charges()
 
         return charges
 
@@ -135,7 +135,7 @@ class XTB:
             dipole: Dipole vector
         """
         self._check_results(charge_state)
-        dipole: np.ndarray = self._results[charge_state].get_dipole()
+        dipole = self._results[charge_state].get_dipole()
 
         return dipole
 
@@ -318,7 +318,7 @@ class XTB:
     def _get_eigenvalues(self) -> Array1DFloat:
         """Get orbital eigenvalues."""
         self._check_results(0)
-        eigenvalues: np.ndarray = self._results[0].get_orbital_eigenvalues()
+        eigenvalues = self._results[0].get_orbital_eigenvalues()
         return eigenvalues
 
     def _get_energy(self, charge_state: int = 0) -> float:
@@ -330,7 +330,7 @@ class XTB:
     def _get_occupations(self) -> Array1DFloat:
         """Get occupation numbers."""
         self._check_results(0)
-        occupations: np.ndarray = self._results[0].get_orbital_occupations()
+        occupations = self._results[0].get_orbital_occupations()
         return occupations
 
     def _sp(self, charge_state: int = 0) -> None:

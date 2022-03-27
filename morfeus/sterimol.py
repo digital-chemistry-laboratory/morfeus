@@ -4,7 +4,7 @@ from __future__ import annotations
 import functools
 import math
 import typing
-from typing import Any, cast, Iterable, List, Optional, Sequence, Set, Union
+from typing import Any, Iterable, List, Optional, Sequence, Set, Union
 
 import numpy as np
 import scipy.spatial
@@ -104,7 +104,6 @@ class Sterimol:
             attached_dummy_coordinates = np.mean(
                 [coordinates[i - 1] for i in attached_index], axis=0
             )
-            attached_dummy_coordinates = cast(np.ndarray, attached_dummy_coordinates)
             coordinates = np.vstack([coordinates, attached_dummy_coordinates])
             elements.append(0)
             radii = np.concatenate([radii, [0.0]])

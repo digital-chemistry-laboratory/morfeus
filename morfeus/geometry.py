@@ -172,7 +172,7 @@ class Cone:
                 )
 
             # Determine if distance is smaller than cone radius.
-            inside = orth_distances < cone_radii
+            is_inside = orth_distances < cone_radii
         elif method == "angle":
             norm_points = points / np.linalg.norm(points, axis=1).reshape(-1, 1)
 
@@ -188,11 +188,9 @@ class Cone:
             # Check if atom lies inside cone, within numerical reason
             diff = self.angle - angle
 
-            inside = diff > -1e-5
+            is_inside = diff > -1e-5
         else:
             raise ValueError(f"method={method} not supported.")
-
-        is_inside: np.ndarray = inside
 
         return is_inside
 
@@ -273,7 +271,7 @@ class Sphere:
         z = r * np.cos(theta)
 
         # Stack coordinates as columns
-        points: np.ndarray = np.column_stack((x, y, z))
+        points: Array2DFloat = np.column_stack((x, y, z))
 
         return points
 
@@ -305,7 +303,7 @@ class Sphere:
         # Generate points and adjust with radius and center
         points: Array2DFloat = np.column_stack((x, y, z))
         points = points * self.radius
-        points: np.ndarray = points + self.center
+        points = points + self.center
 
         return points
 
@@ -336,7 +334,7 @@ class Sphere:
         points = self._get_cartesian_coordinates(self.radius, theta, phi)
 
         # Adjust to sphere center
-        points: np.ndarray = points + self.center
+        points = points + self.center
 
         return points
 
@@ -375,7 +373,7 @@ class Sphere:
             points = points / np.linalg.norm(points, axis=1).reshape(-1, 1) * r
 
         # Adjust with sphere center
-        points: np.ndarray = points + self.center
+        points = points + self.center
 
         return points
 
@@ -836,7 +834,7 @@ def rotate_coordinates(
 
     # Rotate atomic coordinates
     rotation = Rotation.from_quat(q)
-    rotated_coordinates: np.ndarray = rotation.apply(coordinates)
+    rotated_coordinates = rotation.apply(coordinates)
 
     return rotated_coordinates
 
@@ -877,7 +875,7 @@ def kabsch_rotation_matrix(
     d = np.sign(np.linalg.det(V_T.T @ U.T))
 
     # Obtain rotation matrix
-    R: np.ndarray = V_T.T @ np.array([[1, 0, 0], [0, 1, 0], [0, 0, d]]) @ U.T
+    R = V_T.T @ np.array([[1, 0, 0], [0, 1, 0], [0, 0, d]]) @ U.T
 
     return R
 

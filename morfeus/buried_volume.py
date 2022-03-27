@@ -344,7 +344,7 @@ class BuriedVolume:
         Raises:
             ValueError: When method is not specified correctly.
         """
-        loop_coordinates: List[np.ndarray]
+        loop_coordinates: List[Array1DFloat]
         # Use SASA to calculate total volume of the molecule
         if method == "sasa":
             # Calculate total volume

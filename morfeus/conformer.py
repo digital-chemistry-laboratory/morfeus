@@ -732,7 +732,7 @@ class ConformerEnsemble:
         for conformer in self.conformers:
             for key, value in conformer.properties.items():
                 properties.setdefault(key, []).append(value)
-        properties: Dict[str, np.ndarray] = {
+        properties: Dict[str, Array1DFloat] = {
             key: np.array(value) for key, value in properties.items()
         }
 

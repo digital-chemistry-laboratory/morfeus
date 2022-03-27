@@ -3,7 +3,7 @@
 import functools
 from os import PathLike
 import typing
-from typing import Any, cast, Dict, Iterable, List, Optional, Sequence, Union
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Union
 
 import numpy as np
 import scipy.spatial
@@ -180,7 +180,7 @@ class Dispersion:
         )
 
         # Get point areas and map from point to atom
-        point_areas: List[np.ndarray] = []
+        point_areas: List[Array1DFloat] = []
         point_map = []
         for atom in self._atoms:
             n_points = len(atom.accessible_points)
@@ -373,7 +373,6 @@ class Dispersion:
             ],
             axis=0,
         )
-        p = cast(np.ndarray, p)
 
         self.p_values = p
 

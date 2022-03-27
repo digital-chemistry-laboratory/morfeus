@@ -45,7 +45,7 @@ class Pyramidalization:
     """
 
     alpha: float
-    alphas: np.ndarray
+    alphas: Array1DFloat
     neighbor_indices: List[int]
     P_angle: float
     P: float

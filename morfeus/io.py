@@ -15,6 +15,7 @@ from morfeus.typing import (
     Array1DInt,
     Array1DStr,
     Array2DFloat,
+    Array2DInt,
     Array3DFloat,
     ArrayLike2D,
     ArrayLike3D,
@@ -289,8 +290,8 @@ class VertexParser:
         vertices: Vertices of surface
     """
 
-    faces: Optional[np.ndarray]
-    vertices: np.ndarray
+    faces: Optional[Array2DInt]
+    vertices: Array1DFloat
 
     def __init__(self, file: Union[str, PathLike]) -> None:  # noqa: C901
         # Parse file to see if it containts connectivity

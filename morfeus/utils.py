@@ -374,7 +374,7 @@ def get_connectivity_matrix(
     radii: Array1DFloat = np.array(radii)
     distance_matrix = scipy.spatial.distance_matrix(coordinates, coordinates)
     radii_matrix = np.add.outer(radii, radii) * scale_factor
-    connectivity_matrix: np.ndarray = (distance_matrix < radii_matrix) - np.identity(
+    connectivity_matrix = (distance_matrix < radii_matrix) - np.identity(
         n_atoms
     ).astype(int)
 
