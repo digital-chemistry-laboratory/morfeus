@@ -9,7 +9,7 @@ from scipy.spatial.distance import cdist
 from morfeus.d3_data import c6_reference_data, r2_r4
 from morfeus.data import ANGSTROM, BOHR, EV, HARTREE
 from morfeus.geometry import Atom
-from morfeus.typing import Array1D, ArrayLike2D
+from morfeus.typing import Array1DFloat, Array2DFloat, ArrayLike2D
 from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
@@ -39,8 +39,8 @@ class D3Grimme:
         polarizabilities: Atomic polarizabilities (a.u.)
     """
 
-    c_n_coefficients: Dict[int, Array1D]
-    polarizabilities: Array1D
+    c_n_coefficients: Dict[int, Array1DFloat]
+    polarizabilities: Array1DFloat
     _atoms: List["ase.Atoms"]
 
     def __init__(
@@ -64,7 +64,7 @@ class D3Grimme:
             / HARTREE
             * (ANGSTROM / BOHR) ** 6
         )
-        c6_coefficients = np.diag(c6_coefficients_all)
+        c6_coefficients: Array1DFloat = np.diag(c6_coefficients_all)
         c_n_coefficients = {}
         c_n_coefficients[6] = c6_coefficients
 
@@ -109,9 +109,9 @@ class D4Grimme:
         polarizabilities: Atomic polarizabilities (a.u.)
     """
 
-    c_n_coefficients: Dict[int, Array1D]
-    charges: Array1D
-    polarizabilities: Array1D
+    c_n_coefficients: Dict[int, Array1DFloat]
+    charges: Array1DFloat
+    polarizabilities: Array1DFloat
     _atoms: List["ase.Atoms"]
 
     def __init__(
@@ -143,7 +143,7 @@ class D4Grimme:
             / HARTREE
             * (ANGSTROM / BOHR) ** 6
         )
-        c6_coefficients = np.diag(c6_coefficients_all)
+        c6_coefficients: Array1DFloat = np.diag(c6_coefficients_all)
         c_n_coefficients = {}
         c_n_coefficients[6] = c6_coefficients
 
@@ -181,8 +181,8 @@ class D3Calculator:
         coordination_numbers: Atomic coordination numbers.
     """
 
-    c_n_coefficients: Dict[int, Array1D]
-    coordination_numbers: Array1D
+    c_n_coefficients: Dict[int, Array1DFloat]
+    coordination_numbers: Array1DFloat
     _atoms: List[Atom]
 
     def __init__(
@@ -193,7 +193,7 @@ class D3Calculator:
     ) -> None:
         # Convert elements to atomic numbers
         elements = convert_elements(elements, output="numbers")
-        coordinates = np.array(coordinates)
+        coordinates: Array2DFloat = np.array(coordinates)
 
         # Load the covalent radii
         radii = get_radii(elements, radii_type="pyykko")
@@ -213,10 +213,10 @@ class D3Calculator:
         k_3 = 4
         for cn_atom in atoms:
             # Get coordinates and radii of all other atoms
-            other_coordinates = np.array(
+            other_coordinates: Array2DFloat = np.array(
                 [atom.coordinates for atom in atoms if atom is not cn_atom]
             )
-            other_radii = np.array(
+            other_radii: Array1DFloat = np.array(
                 [atom.radius for atom in atoms if atom is not cn_atom]
             )
 
@@ -279,10 +279,10 @@ class D3Calculator:
                 c_n_coefficients[key].append(value)
 
         # Set up attributes
-        coordination_numbers = np.array(
+        coordination_numbers: Array1DFloat = np.array(
             [atom.coordination_number for atom in self._atoms]
         )
-        c_n_coefficients = {
+        c_n_coefficients: Array1DFloat = {
             key: np.array(value) for key, value in c_n_coefficients.items()
         }
 

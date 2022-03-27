@@ -8,7 +8,7 @@ import numpy as np
 
 from morfeus.data import ANGSTROM_TO_BOHR, HARTREE_TO_EV
 from morfeus.io import read_geometry
-from morfeus.typing import Array1D, ArrayLike2D
+from morfeus.typing import Array1DFloat, ArrayLike2D
 from morfeus.utils import convert_elements, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
@@ -89,7 +89,7 @@ class XTB:
 
         return bond_order
 
-    def get_bond_orders(self, charge_state: int = 0) -> Array1D:
+    def get_bond_orders(self, charge_state: int = 0) -> Array1DFloat:
         """Returns bond orders.
 
         Args:
@@ -103,7 +103,7 @@ class XTB:
 
         return bond_orders
 
-    def _get_charges(self, charge_state: int = 0) -> Array1D:
+    def _get_charges(self, charge_state: int = 0) -> Array1DFloat:
         """Returns atomic charges."""
         self._check_results(charge_state)
         charges: np.ndarray = self._results[charge_state].get_charges()
@@ -125,7 +125,7 @@ class XTB:
 
         return charges
 
-    def get_dipole(self, charge_state: int = 0) -> Array1D:
+    def get_dipole(self, charge_state: int = 0) -> Array1DFloat:
         """Calculate dipole vector (a.u.).
 
         Args:
@@ -180,7 +180,7 @@ class XTB:
             "nucleophilicity",
             "radical",
         ]
-        fukui: np.ndarray
+        fukui: Array1DFloat
         if variety in ["local_nucleophilicity", "nucleophilicity"]:
             fukui = self._get_charges(0) - self._get_charges(1)
         elif variety == "electrophilicity":
@@ -192,8 +192,10 @@ class XTB:
                 2 * self._get_charges(0) - self._get_charges(1) - self._get_charges(-1)
             )
         elif variety == "local_electrophilicity":
-            fukui_radical = np.array(list(self.get_fukui("radical").values()))
-            fukui_dual = np.array(list(self.get_fukui("dual").values()))
+            fukui_radical: Array1DFloat = np.array(
+                list(self.get_fukui("radical").values())
+            )
+            fukui_dual: Array1DFloat = np.array(list(self.get_fukui("dual").values()))
             chem_pot = -(self.get_ip() + self.get_ea()) / 2
             hardness = self.get_ip() - self.get_ea()
             fukui = (
@@ -313,7 +315,7 @@ class XTB:
         if self._results[charge_state] is None:
             self._sp(charge_state)
 
-    def _get_eigenvalues(self) -> Array1D:
+    def _get_eigenvalues(self) -> Array1DFloat:
         """Get orbital eigenvalues."""
         self._check_results(0)
         eigenvalues: np.ndarray = self._results[0].get_orbital_eigenvalues()
@@ -325,7 +327,7 @@ class XTB:
         energy: float = self._results[charge_state].get_energy()
         return energy
 
-    def _get_occupations(self) -> Array1D:
+    def _get_occupations(self) -> Array1DFloat:
         """Get occupation numbers."""
         self._check_results(0)
         occupations: np.ndarray = self._results[0].get_orbital_occupations()

@@ -9,7 +9,16 @@ import numpy as np
 
 from morfeus.d3_data import r2_r4
 from morfeus.data import BOHR_TO_ANGSTROM, KCAL_TO_HARTREE
-from morfeus.typing import Array1D, Array2D, Array3D, ArrayLike2D, ArrayLike3D
+from morfeus.typing import (
+    Array1DAny,
+    Array1DFloat,
+    Array1DInt,
+    Array1DStr,
+    Array2DFloat,
+    Array3DFloat,
+    ArrayLike2D,
+    ArrayLike3D,
+)
 from morfeus.utils import convert_elements, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
@@ -31,10 +40,10 @@ class CrestParser:
         energies: Energies (a.u.)
     """
 
-    conformer_coordinates: Array3D
-    degeneracies: Array1D
-    elements: Array1D
-    energies: Array1D
+    conformer_coordinates: Array3DFloat
+    degeneracies: Array1DInt
+    elements: Array1DInt
+    energies: Array1DFloat
 
     def __init__(self, path: Union[str, PathLike]) -> None:
         path = Path(path)
@@ -46,7 +55,7 @@ class CrestParser:
             strip_line = line.strip().split()
             if len(strip_line) != 1:
                 degeneracies.append(int(strip_line[0]))
-        degeneracies = np.array(degeneracies)
+        degeneracies: Array1DInt = np.array(degeneracies)
 
         with open(path / "crest.energies") as f:
             lines = f.readlines()
@@ -95,10 +104,10 @@ class CubeParser:
     step_x: float
     step_y: float
     step_z: float
-    X: Array3D
-    Y: Array3D
-    Z: Array3D
-    S: Array3D
+    X: Array3DFloat
+    Y: Array3DFloat
+    Z: Array3DFloat
+    S: Array3DFloat
     n_points_x: int
     n_points_y: int
     n_points_z: int
@@ -144,7 +153,7 @@ class CubeParser:
             data.extend(line_data)
 
         # Create array
-        S = np.array(data).reshape(X.shape)
+        S: Array2DFloat = np.array(data).reshape(X.shape)
 
         # Set up attributes
         self.X = X
@@ -181,8 +190,8 @@ class D3Parser:
         c8_coefficients: C₈ᴬᴬ coefficients (a.u.)
     """
 
-    c6_coefficients: Array1D
-    c8_coefficients: Array1D
+    c6_coefficients: Array1DFloat
+    c8_coefficients: Array1DFloat
 
     def __init__(self, file: Union[str, PathLike]) -> None:
         # Read the file
@@ -227,8 +236,8 @@ class D4Parser:
         c8_coefficients: C₈ᴬᴬ coefficients (a.u.)
     """
 
-    c6_coefficients: Array1D
-    c8_coefficients: Array1D
+    c6_coefficients: Array1DFloat
+    c8_coefficients: Array1DFloat
 
     def __init__(self, file: Union[str, PathLike]) -> None:
         # Read the file
@@ -251,8 +260,8 @@ class D4Parser:
                 c6_coefficients.append(c6)
             if "C6AA" in line:
                 read = True
-        c6_coefficients = np.array(c6_coefficients)
-        c8_coefficients = np.array(
+        c6_coefficients: Array1DFloat = np.array(c6_coefficients)
+        c8_coefficients: Array1DFloat = np.array(
             [
                 3 * c6 * r2_r4[element] ** 2
                 for c6, element in zip(c6_coefficients, elements)
@@ -349,7 +358,7 @@ class VertexParser:
         return f"{self.__class__.__name__}({len(self.vertices)!r} points)"
 
 
-def read_gjf(file: Union[str, PathLike]) -> Tuple[Array1D, Array1D]:
+def read_gjf(file: Union[str, PathLike]) -> Tuple[Array1DAny, Array1DFloat]:
     """Reads Gaussian gjf/com file and returns elements and coordinates.
 
     Args:
@@ -377,15 +386,15 @@ def read_gjf(file: Union[str, PathLike]) -> Tuple[Array1D, Array1D]:
             elements.append(element)
         atom_coordinates = [float(i) for i in split_line[1:]]
         coordinates.append(atom_coordinates)
-    elements = np.array(elements)
-    coordinates = np.array(coordinates)
+    elements: Union[Array1DInt, Array1DStr] = np.array(elements)
+    coordinates: Array2DFloat = np.array(coordinates)
 
     return elements, coordinates
 
 
 def read_geometry(
     file: Union[str, PathLike]
-) -> Tuple[Array1D, Union[Array2D, Array3D]]:
+) -> Tuple[Union[Array1DInt, Array1DStr], Union[Array2DFloat, Array3DFloat]]:
     """Read geometry file and guess parser based on suffix.
 
     Args:
@@ -414,7 +423,9 @@ def read_geometry(
     return elements, coordinates
 
 
-def read_xyz(file: Union[str, PathLike]) -> Tuple[Array1D, Union[Array2D, Array3D]]:
+def read_xyz(
+    file: Union[str, PathLike]
+) -> Tuple[Union[Array1DInt, Array1DStr], Union[Array2DFloat, Array3DFloat]]:
     """Reads xyz file.
 
     Returns elements as written (atomic numbers or symbols) and coordinates.
@@ -446,7 +457,9 @@ def read_xyz(file: Union[str, PathLike]) -> Tuple[Array1D, Union[Array2D, Array3
                 [float(strip_line[1]), float(strip_line[2]), float(strip_line[3])]
             )
     elements = np.array(elements)[:n_atoms]
-    coordinates = np.array(coordinates).reshape(-1, n_atoms, 3)
+    coordinates: Union[Array2DFloat, Array3DFloat] = np.array(coordinates).reshape(
+        -1, n_atoms, 3
+    )
     if coordinates.shape[0] == 1:
         coordinates = coordinates[0]
 
@@ -454,7 +467,7 @@ def read_xyz(file: Union[str, PathLike]) -> Tuple[Array1D, Union[Array2D, Array3
 
 
 @requires_dependency([Import("cclib")], globals())
-def read_cclib(file: Any) -> Tuple[Array1D, Array1D]:
+def read_cclib(file: Any) -> Tuple[Array1DFloat, Union[Array2DFloat, Array3DFloat]]:
     """Reads geometry file with cclib.
 
     Returns elements as atomic numbers and coordinates.
@@ -513,7 +526,9 @@ def write_xyz(
     """
     # Convert elements to symbols
     symbols = convert_elements(elements, output="symbols")
-    coordinates = np.array(coordinates).reshape(-1, len(symbols), 3)
+    coordinates: Union[Array2DFloat, Array3DFloat] = np.array(coordinates).reshape(
+        -1, len(symbols), 3
+    )
     if comments is None:
         comments = [""] * len(coordinates)
 

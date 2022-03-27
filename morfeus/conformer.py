@@ -1,5 +1,7 @@
 """Conformer tools."""
 
+from __future__ import annotations
+
 from copy import copy, deepcopy
 import functools
 import numbers
@@ -40,9 +42,11 @@ from morfeus.data import (
 from morfeus.io import CrestParser, write_xyz
 from morfeus.qc import optimize_qc_engine, sp_qc_engine
 from morfeus.typing import (
-    Array1D,
-    Array2D,
-    Array3D,
+    Array1DFloat,
+    Array1DInt,
+    Array2DFloat,
+    Array2DInt,
+    Array3DFloat,
     ArrayLike1D,
     ArrayLike2D,
     ArrayLike3D,
@@ -77,7 +81,8 @@ def boltzmann_average_dT(
     Returns:
         derivative: Derivative of Boltzmann average.
     """
-    energies = np.array(energies)
+    energies: Array1DFloat = np.array(energies)
+    properties: Array1DFloat = np.array(properties)
 
     # Calculate Boltzmann averaged properties
     avg_prop_en = boltzmann_statistic(
@@ -119,7 +124,7 @@ def boltzmann_statistic(
     Raises:
         ValueError: When statistic not specified correctly
     """
-    properties = np.array(properties)
+    properties: Array1DFloat = np.array(properties)
 
     # Get conformer weights
     weights = boltzmann_weights(energies, temperature)
@@ -147,7 +152,9 @@ def boltzmann_statistic(
     return result
 
 
-def boltzmann_weights(energies: ArrayLike1D, temperature: float = 298.15) -> Array1D:
+def boltzmann_weights(
+    energies: ArrayLike1D, temperature: float = 298.15
+) -> Array1DFloat:
     """Compute Boltzmann weights.
 
     Args:
@@ -157,10 +164,10 @@ def boltzmann_weights(energies: ArrayLike1D, temperature: float = 298.15) -> Arr
     Returns:
         weights: Conformer weights (normalized to unity)
     """
-    energies = np.array(energies)
+    energies: Array1DFloat = np.array(energies)
     energies -= energies.min()
     terms = np.exp(-energies / (K_B / HARTREE * temperature))
-    weights: np.ndarray = terms / np.sum(terms)
+    weights: Array1DFloat = terms / np.sum(terms)
 
     return weights
 
@@ -186,9 +193,9 @@ class Conformer:
     """
 
     cip_label: Optional[Tuple[str, ...]]
-    coordinates: Array2D
+    coordinates: Array2DFloat
     degeneracy: int
-    elements: Array1D
+    elements: Array1DFloat
     energy: Optional[float]
     properties: Dict[str, float]
 
@@ -248,9 +255,9 @@ class ConformerEnsemble:
 
     charge: int
     confomers: List[Conformer]
-    connectivity_matrix: Array2D
-    elements: Array1D
-    formal_charges: Array1D
+    connectivity_matrix: Array2DInt
+    elements: Array1DInt
+    formal_charges: Array1DInt
     mol: "Chem.Mol"
     multiplicity: int
     ref_cip_label: Optional[Tuple[str, ...]]
@@ -268,7 +275,7 @@ class ConformerEnsemble:
         formal_charges: Optional[ArrayLike1D] = None,
         ref_cip_label: Optional[Tuple[str, ...]] = None,
     ) -> None:
-        elements = np.array(convert_elements(elements, output="numbers"))
+        elements: Array1DInt = np.array(convert_elements(elements, output="numbers"))
         self.elements = elements
 
         if conformer_coordinates is None:
@@ -331,7 +338,7 @@ class ConformerEnsemble:
             self: Self
         """
         conformers = self.conformers
-        conformer_coordinates: List[List[float]] = []
+        conformer_coordinates: List[Array2DFloat] = []
         energies: List[Optional[float]] = []
         for conformer in conformers:
             coordinates = conformer.coordinates * np.array([-1, -1, -1])
@@ -393,7 +400,7 @@ class ConformerEnsemble:
 
         return statistic
 
-    def boltzmann_weights(self, temperature: float = 298.15) -> Array1D:
+    def boltzmann_weights(self, temperature: float = 298.15) -> Array1DFloat:
         """Calculate Boltzmann weights for ensemble.
 
         Args:
@@ -680,38 +687,42 @@ class ConformerEnsemble:
 
         return cip_labels
 
-    def get_coordinates(self) -> Array1D:
-        """Get conformers coordinates.
+    def get_coordinates(self) -> Array3DFloat:
+        """Get conformer coordinates.
 
         Returns:
             conformer_coordinates: Conformer coordinates (Å)
         """
-        conformer_coordinates = np.array(
+        conformer_coordinates: Array3DFloat = np.array(
             [conformer.coordinates for conformer in self.conformers]
         )
 
         return conformer_coordinates
 
-    def get_degeneracies(self) -> Array1D:
+    def get_degeneracies(self) -> Array1DInt:
         """Get conformer degeneracies.
 
         Returns:
             degeneriacies: Degeneracies
         """
-        degeneracies = np.array([conformer.degeneracy for conformer in self.conformers])
+        degeneracies: Array1DInt = np.array(
+            [conformer.degeneracy for conformer in self.conformers]
+        )
 
         return degeneracies
 
-    def get_energies(self) -> Array1D:
+    def get_energies(self) -> Array1DFloat:
         """Get conformer energies.
 
         Returns:
             energies: Energy (a.u.)
         """
-        energies = np.array([conformer.energy for conformer in self.conformers])
+        energies: Array1DFloat = np.array(
+            [conformer.energy for conformer in self.conformers]
+        )
         return energies
 
-    def get_properties(self) -> Dict[str, Array1D]:
+    def get_properties(self) -> Dict[str, Array1DFloat]:
         """Get conformer properties.
 
         Returns:
@@ -729,7 +740,7 @@ class ConformerEnsemble:
 
     def get_relative_energies(
         self, unit: str = "kcal/mol", relative: bool = True
-    ) -> Array1D:
+    ) -> Array1DFloat:
         """Get conformer energies with choice of units and reference value.
 
         Args:
@@ -756,12 +767,12 @@ class ConformerEnsemble:
 
     def get_rmsd(
         self,
-        i_s: Optional[Sequence[int]] = None,
-        j_s: Optional[Sequence[int]] = None,
+        i_s: Optional[ArrayLike1D] = None,
+        j_s: Optional[ArrayLike1D] = None,
         include_hs: bool = False,
         symmetry: bool = False,
         method: str = "rdkit",
-    ) -> Array1D:
+    ) -> Array2DFloat:
         """Get RSMD between conformers.
 
         For very small systems 'openbabel' or 'spyrmsd' work well. For larger systems a
@@ -779,6 +790,9 @@ class ConformerEnsemble:
 
         Returns:
             rmsds: RSMDs (Å)
+
+        Raises:
+            ValueError: If method not supported.
         """
         if i_s is None:
             i_s_ = np.arange(1, len(self.conformers) + 1)
@@ -791,7 +805,6 @@ class ConformerEnsemble:
             j_s_ = np.array(j_s)
         j_s = j_s_
 
-        rmsds: np.ndarray
         if method == "obrms-batch":
             rmsds = self._get_rmsd_obrms_batch(i_s, j_s)
         elif method == "obrms-iter":
@@ -802,6 +815,8 @@ class ConformerEnsemble:
             rmsds = self._get_rmsd_rdkit(i_s, j_s, include_hs)
         elif method == "spyrmsd":
             rmsds = self._get_rmsd_spyrmsd(i_s, j_s, include_hs, symmetry)
+        else:
+            raise ValueError("Method not supported.")
         return rmsds
 
     @property
@@ -1042,7 +1057,7 @@ class ConformerEnsemble:
             ValueError: When Number of conformer coordinates is different from number of
                 conformers
         """
-        conformer_coordinates = np.array(conformer_coordinates)
+        conformer_coordinates: Array3DFloat = np.array(conformer_coordinates)
         if len(conformer_coordinates) != self.n_conformers:
             msg = (
                 f"Number of coordinates ({len(conformer_coordinates)}) "
@@ -1067,7 +1082,7 @@ class ConformerEnsemble:
             ValueError: When number of degeneracies is different from number of
                 conformers
         """
-        degeneracies = np.array(degeneracies)
+        degeneracies: Array1DInt = np.array(degeneracies)
         if len(degeneracies) != self.n_conformers:
             msg = (
                 f"Number of degeneracies ({len(degeneracies)}) "
@@ -1092,7 +1107,7 @@ class ConformerEnsemble:
             ValueError: When number of energies is different from number of
                 conformers
         """
-        energies = np.array(energies)
+        energies: Array1DFloat = np.array(energies)
         if len(energies) != self.n_conformers:
             msg = (
                 f"Number of energies ({len(energies)}) != number of "
@@ -1252,7 +1267,7 @@ class ConformerEnsemble:
         degeneracies: Optional[ArrayLike1D] = None,
         properties: Optional[Mapping[str, ArrayLike1D]] = None,
     ) -> None:
-        conformer_coordinates = np.array(conformer_coordinates)
+        conformer_coordinates: Array3DFloat = np.array(conformer_coordinates)
         n_conformers = len(conformer_coordinates)
 
         if energies is None:
@@ -1273,12 +1288,14 @@ class ConformerEnsemble:
             conformer = Conformer(self.elements, coordinates, energy, degeneracy)
             self.conformers.append(conformer)
         if properties is not None:
-            properties_ = {key: np.array(value) for key, value in properties.items()}
+            properties_: dict[str, Array1DFloat] = {
+                key: np.array(value) for key, value in properties.items()
+            }
             for key, value in properties_.items():
                 self.set_properties(key, value)
 
     @requires_executable(["obrms"])
-    def _get_rmsd_obrms_batch(self, i_s: Array1D, j_s: Array1D) -> Array2D:
+    def _get_rmsd_obrms_batch(self, i_s: Array1DInt, j_s: Array1DInt) -> Array2DFloat:
         """Calculate RMSD with obrms in batch mode.
 
         First calculates matrix of all pairwise RMSDs and then takes those of interest.
@@ -1303,12 +1320,12 @@ class ConformerEnsemble:
             result = result.reshape(1, -1)
         rmsds = result[:, 1:]
 
-        rmsds: np.ndarray = rmsds[i_s - 1, :][:, j_s - 1]
+        rmsds: Array2DFloat = rmsds[i_s - 1, :][:, j_s - 1]
 
         return rmsds
 
     @requires_executable(["obrms"])
-    def _get_rmsd_obrms_iter(self, i_s: Array1D, j_s: Array1D) -> Array2D:
+    def _get_rmsd_obrms_iter(self, i_s: Array1DInt, j_s: Array1DInt) -> Array2DFloat:
         """Calculate RMSD with obrms.
 
         Does iterative row-wise mode for heavy atoms and without symmetry.
@@ -1336,14 +1353,14 @@ class ConformerEnsemble:
                 )
             row_rmsds = np.genfromtxt(process.stdout.splitlines(), usecols=(-1))
             rmsds.append(row_rmsds)
-        rmsds = np.vstack(rmsds)
+        rmsds: Array2DFloat = np.vstack(rmsds)
 
         return rmsds
 
     @requires_dependency([Import(module="openbabel.openbabel", alias="ob")], globals())
     def _get_rmsd_openbabel(
-        self, i_s: Array1D, j_s: Array1D, include_hs: bool, symmetry: bool
-    ) -> Array2D:
+        self, i_s: Array1DInt, j_s: Array1DInt, include_hs: bool, symmetry: bool
+    ) -> Array2DFloat:
         """Calculate RMSD row-wise with openbabel python interface.
 
         Args:
@@ -1374,7 +1391,7 @@ class ConformerEnsemble:
                 rmsd = align.GetRMSD()
                 rmsds_row.append(rmsd)
             rmsds.append(rmsds_row)
-        rmsds = np.array(rmsds)
+        rmsds: Array2DFloat = np.array(rmsds)
 
         return rmsds
 
@@ -1385,7 +1402,9 @@ class ConformerEnsemble:
         ],
         globals(),
     )
-    def _get_rmsd_rdkit(self, i_s: Array1D, j_s: Array1D, include_hs: bool) -> Array2D:
+    def _get_rmsd_rdkit(
+        self, i_s: Array1DInt, j_s: Array1DInt, include_hs: bool
+    ) -> Array2DFloat:
         """Calculate RMSD row-wise with RDKit.
 
         Args:
@@ -1423,14 +1442,14 @@ class ConformerEnsemble:
             rmsds_row: List[float] = []
             AllChem.AlignMolConformers(ref_mol, atomIds=atom_ids, RMSlist=rmsds_row)
             rmsds.append(rmsds_row)
-        rmsds = np.array(rmsds)
+        rmsds: Array2DFloat = np.array(rmsds)
 
         return rmsds
 
     @requires_dependency([Import("spyrmsd"), Import("spyrmsd.rmsd")], globals())
     def _get_rmsd_spyrmsd(
-        self, i_s: Array1D, j_s: Array1D, include_hs: bool, symmetry: bool
-    ) -> Array2D:
+        self, i_s: Array1DInt, j_s: Array1DInt, include_hs: bool, symmetry: bool
+    ) -> Array2DFloat:
         """Calculate RMSD row-wise with spyrmsd.
 
         Args:
@@ -1449,7 +1468,7 @@ class ConformerEnsemble:
             mask = np.ones(len(self.elements), dtype=bool)
 
         # Calculate RMSD row-wise with spyrmsd
-        rmsds = []
+        rmsds: List[Array1DFloat] = []
         for i in i_s:
             ref_coordinates = self.conformers[i - 1].coordinates[mask]
             if symmetry:
@@ -1480,7 +1499,7 @@ class ConformerEnsemble:
                     )
                     row_rmsds.append(rmsd)
             rmsds.append(np.array(row_rmsds))
-        rmsds = np.vstack(rmsds)
+        rmsds: Array2DFloat = np.vstack(rmsds)
 
         return rmsds
 
@@ -1566,7 +1585,7 @@ def conformers_from_ob_ff(
     ff: str = "MMFF94",
     method: str = "systematic",
     rings: bool = False,
-) -> Tuple[Array1D, Array3D, Array2D, Array1D, "ob.OBMol"]:
+) -> Tuple[Array1DInt, Array3DFloat, Array2DInt, Array1DInt, ob.OBMol]:
     """Generates conformers based on the force field algorithm in OpenBabel.
 
     Follows the recipe of the command line script obabel --conformer:
@@ -1635,7 +1654,7 @@ def conformers_from_ob_ff(
     globals(),
 )
 def conformers_from_ob_ga(  # noqa: C901
-    mol: Union[str, "ob.OBMol"],
+    mol: Union[str, ob.OBMol],
     num_conformers: Optional[int] = None,
     num_children: Optional[int] = None,
     mutability: Optional[float] = None,
@@ -1645,7 +1664,7 @@ def conformers_from_ob_ga(  # noqa: C901
     cutoff: float = 0.8,
     vdw_factor: float = 0.5,
     check_hydrogens: bool = True,
-) -> Tuple[Array1D, Array3D, Array2D, Array1D, "ob.OBMol"]:
+) -> Tuple[Array1DInt, Array3DFloat, Array2DInt, Array1DInt, ob.OBMol]:
     """Generates conformers based on the genetic algorithm in OpenBabel.
 
     Follows the recipe of the command line script obabel --conformer:
@@ -1740,7 +1759,7 @@ def conformers_from_ob_ga(  # noqa: C901
     globals(),
 )
 def conformers_from_rdkit(  # noqa: C901
-    mol: Union[str, "Chem.Mol"],
+    mol: Union[str, Chem.Mol],
     n_confs: Optional[int] = None,
     optimize: Optional[str] = "MMFF94",
     version: int = 2,
@@ -1750,7 +1769,9 @@ def conformers_from_rdkit(  # noqa: C901
     rmsd_thres: Optional[float] = 0.35,
     rmsd_symmetry: bool = False,
     n_threads: int = 1,
-) -> Tuple[Array1D, Array3D, Optional[Array1D], Array2D, Array1D, "Chem.Mol"]:
+) -> Tuple[
+    Array1DInt, Array3DFloat, Optional[Array1DFloat], Array2DFloat, Array1DInt, Chem.Mol
+]:
     """Generates conformers for an RDKit mol object.
 
     Recipe based on J. Chem. Inf. Modeling 2012, 52, 1146.
@@ -1789,7 +1810,7 @@ def conformers_from_rdkit(  # noqa: C901
         mol = Chem.MolFromSmiles(mol)
     except TypeError:
         pass
-    mol = Chem.AddHs(mol)
+    mol: Chem.Mol = Chem.AddHs(mol)
 
     # If n_confs is not set, set number of conformers based on number of
     # rotatable bonds
@@ -1844,7 +1865,7 @@ def conformers_from_rdkit(  # noqa: C901
         energies = None
 
     # Extract information from mol
-    (elements, conformer_coordinates, connectivity_matrix, charges) = _extract_from_mol(
+    elements, conformer_coordinates, connectivity_matrix, charges = _extract_from_mol(
         mol
     )
 
@@ -1865,14 +1886,14 @@ def conformers_from_rdkit(  # noqa: C901
     ],
     globals(),
 )
-def _add_conformers_to_mol(mol: "Chem.Mol", conformer_coordinates: ArrayLike3D) -> None:
+def _add_conformers_to_mol(mol: Chem.Mol, conformer_coordinates: ArrayLike3D) -> None:
     """Add conformers to RDKit Mol object.
 
     Args:
         mol: RDKit mol object
         conformer_coordinates: Conformer coordinates (Å)
     """
-    conformer_coordinates = np.array(conformer_coordinates)
+    conformer_coordinates: Array3DFloat = np.array(conformer_coordinates)
     if len(conformer_coordinates.shape) == 2:
         conformer_coordinates.reshape(-1, conformer_coordinates.shape[0], 3)
 
@@ -1886,20 +1907,20 @@ def _add_conformers_to_mol(mol: "Chem.Mol", conformer_coordinates: ArrayLike3D) 
 
 @requires_dependency([Import(module="rdkit", item="Chem")], globals())
 def _extract_from_mol(
-    mol: "Chem.Mol",
-) -> Tuple[List[str], Array3D, Array2D, Array1D]:
+    mol: Chem.Mol,
+) -> Tuple[List[str], Array3DFloat, Array2DFloat, Array1DInt]:
     """Extract information from RDKit Mol object with conformers."""
     # Take out elements, coordinates and connectivity matrix
-    elements = [atom.GetSymbol() for atom in mol.GetAtoms()]
-    charges = np.array([atom.GetFormalCharge() for atom in mol.GetAtoms()])
+    elements: List[str] = [atom.GetSymbol() for atom in mol.GetAtoms()]
+    charges: Array1DInt = np.array([atom.GetFormalCharge() for atom in mol.GetAtoms()])
 
     conformer_coordinates = []
     for conformer in mol.GetConformers():
         coordinates = conformer.GetPositions()
         conformer_coordinates.append(coordinates)
-    conformer_coordinates = np.array(conformer_coordinates)
+    conformer_coordinates: Array3DFloat = np.array(conformer_coordinates)
 
-    connectivity_matrix = Chem.GetAdjacencyMatrix(mol, useBO=True)
+    connectivity_matrix: Array2DFloat = Chem.GetAdjacencyMatrix(mol, useBO=True)
 
     return elements, conformer_coordinates, connectivity_matrix, charges
 
@@ -1913,15 +1934,15 @@ def _extract_from_mol(
     globals(),
 )
 def _extract_from_ob_mol(
-    ob_mol: "ob.OBMol",
-) -> Tuple[Array1D, Array3D, Array2D, Array1D]:
+    ob_mol: ob.OBMol,
+) -> Tuple[Array1DInt, Array3DFloat, Array2DInt, Array1DInt]:
     """Extract information from Openbabel OBMol object with conformers."""
     py_mol = pybel.Molecule(ob_mol)
-    elements = np.array([atom.atomicnum for atom in py_mol.atoms])
-    charges = np.array([atom.formalcharge for atom in py_mol.atoms])
+    elements: Array1DInt = np.array([atom.atomicnum for atom in py_mol.atoms])
+    charges: Array1DInt = np.array([atom.formalcharge for atom in py_mol.atoms])
 
     n_atoms = len(py_mol.atoms)
-    connectivity_matrix = np.zeros((n_atoms, n_atoms))
+    connectivity_matrix: Array2DInt = np.zeros((n_atoms, n_atoms), dtype=int)
     for bond in ob.OBMolBondIter(ob_mol):
         i = bond.GetBeginAtomIdx() - 1
         j = bond.GetEndAtomIdx() - 1
@@ -1933,9 +1954,9 @@ def _extract_from_ob_mol(
     conformer_coordinates = []
     for i in range(ob_mol.NumConformers()):
         ob_mol.SetConformer(i)
-        coordinates = np.array([atom.coords for atom in py_mol.atoms])
+        coordinates: Array2DFloat = np.array([atom.coords for atom in py_mol.atoms])
         conformer_coordinates.append(coordinates)
-    conformer_coordinates = np.array(conformer_coordinates)
+    conformer_coordinates: Array3DFloat = np.array(conformer_coordinates)
 
     return elements, conformer_coordinates, connectivity_matrix, charges
 
@@ -1946,7 +1967,7 @@ def _get_ob_mol(
     coordinates: ArrayLike2D,
     connectivity_matrix: ArrayLike2D,
     charges: Optional[ArrayLike1D] = None,
-) -> "ob.OBMol":
+) -> ob.OBMol:
     """Generate OpenBabel OBMol object.
 
     Args:
@@ -1965,8 +1986,8 @@ def _get_ob_mol(
         charges_ = np.array(charges)
     charges = charges_
 
-    connectivity_matrix = np.array(connectivity_matrix)
-    coordinates = np.array(coordinates)
+    connectivity_matrix: Array2DInt = np.array(connectivity_matrix)
+    coordinates: Array2DFloat = np.array(coordinates)
 
     mol = ob.OBMol()
 
@@ -1992,7 +2013,7 @@ def _get_rdkit_mol(
     conformer_coordinates: ArrayLike3D,
     connectivity_matrix: ArrayLike2D,
     charges: Optional[ArrayLike1D] = None,
-) -> "Chem.Mol":
+) -> Chem.Mol:
     _RDKIT_BOND_TYPES = {
         1.0: Chem.BondType.SINGLE,
         1.5: Chem.BondType.AROMATIC,
@@ -2009,8 +2030,8 @@ def _get_rdkit_mol(
     else:
         charges_ = np.array(charges)
     charges = charges_
-    conformer_coordinates = np.array(conformer_coordinates)
-    connectivity_matrix = np.array(connectivity_matrix)
+    conformer_coordinates: Array3DFloat = np.array(conformer_coordinates)
+    connectivity_matrix: Array2DInt = np.array(connectivity_matrix)
 
     mol = Chem.RWMol()
 

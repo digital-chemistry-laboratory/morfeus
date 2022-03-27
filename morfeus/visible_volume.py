@@ -8,7 +8,14 @@ import numpy as np
 from morfeus.geometry import Cone
 from morfeus.io import read_geometry
 from morfeus.sasa import SASA
-from morfeus.typing import ArrayLike1D, ArrayLike2D
+from morfeus.typing import (
+    Array1DAny,
+    Array1DFloat,
+    Array1DInt,
+    Array2DFloat,
+    ArrayLike1D,
+    ArrayLike2D,
+)
 from morfeus.utils import check_distances, convert_elements, get_radii
 
 
@@ -69,11 +76,11 @@ class VisibleVolume:
         density: float = 0.01,
     ) -> None:
         # Set up arrays and get radii
-        elements = np.array(convert_elements(elements, output="numbers"))
-        coordinates = np.array(coordinates)
+        elements: Array1DInt = np.array(convert_elements(elements, output="numbers"))
+        coordinates: Array2DFloat = np.array(coordinates)
         if radii is None:
             radii = get_radii(elements, radii_type=radii_type)
-        radii = np.array(radii)
+        radii: Array1DFloat = np.array(radii)
 
         # Check so that no atom is within vdW distance of metal atom
         within = check_distances(elements, coordinates, metal_index, radii=radii)
@@ -83,9 +90,9 @@ class VisibleVolume:
 
         # Center coordinate system around metal and remove it
         coordinates -= coordinates[metal_index - 1]
-        elements = np.delete(elements, metal_index - 1)
-        coordinates = np.delete(coordinates, metal_index - 1, axis=0)
-        radii = np.delete(radii, metal_index - 1)
+        elements: Array1DFloat = np.delete(elements, metal_index - 1)
+        coordinates: Array2DFloat = np.delete(coordinates, metal_index - 1, axis=0)
+        radii: Array1DFloat = np.delete(radii, metal_index - 1)
 
         # Remove H atoms
         if include_hs is False:
@@ -111,8 +118,8 @@ class VisibleVolume:
             atom.proximal_mask = np.linalg.norm(atom.accessible_points, axis=1) < radius
 
         # Check points on other atoms against cone for each atom
-        atom_coordinates = np.array([atom.coordinates for atom in atoms])
-        atoms = np.array(atoms)
+        atom_coordinates: Array2DFloat = np.array([atom.coordinates for atom in atoms])
+        atoms: Array1DAny = np.array(atoms)
         for atom in atoms:
             # Calculate distances to other atoms
             atom.get_cone()

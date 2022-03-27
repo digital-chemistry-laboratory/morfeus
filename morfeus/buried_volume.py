@@ -15,7 +15,13 @@ from morfeus.data import jmol_colors
 from morfeus.geometry import Atom, kabsch_rotation_matrix, rotate_coordinates, Sphere
 from morfeus.io import read_geometry
 from morfeus.sasa import SASA
-from morfeus.typing import Array1D, Array2D, ArrayLike1D, ArrayLike2D
+from morfeus.typing import (
+    Array1DBool,
+    Array1DFloat,
+    Array2DFloat,
+    ArrayLike1D,
+    ArrayLike2D,
+)
 from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
@@ -100,12 +106,12 @@ class BuriedVolume:
     molecular_volume: float
     octants: Dict[str, Dict[int, float]]
     quadrants: Dict[str, Dict[int, float]]
-    _all_coordinates: Array2D
+    _all_coordinates: Array2DFloat
     _atoms: List[Atom]
-    _buried_points: Array1D
+    _buried_points: Array2DFloat
     _density: float
     _excluded_atoms: Set[int]
-    _free_points: Array1D
+    _free_points: Array2DFloat
     _octant_limits: Dict[
         int, Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]
     ]
@@ -127,7 +133,7 @@ class BuriedVolume:
         xz_plane_atoms: Optional[Sequence[int]] = None,
     ) -> None:
         # Get center and and reortient coordinate system
-        coordinates = np.array(coordinates)
+        coordinates: Array2DFloat = np.array(coordinates)
         center = coordinates[metal_index - 1]
         coordinates -= center
 
@@ -147,8 +153,9 @@ class BuriedVolume:
 
             v_1 = z_point - center
             v_2 = xz_point - center
-            v_3 = np.cross(v_2, v_1)
-            real = np.vstack([v_1, v_3])
+            # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released
+            v_3: Array1DFloat = np.cross(v_2, v_1)
+            real: Array2DFloat = np.vstack([v_1, v_3])  # type: ignore
             real /= np.linalg.norm(real, axis=1).reshape(-1, 1)
             ref_1 = np.array([0.0, 0.0, -1.0])
             ref_2 = np.array([0.0, 1.0, 0.0])
@@ -175,7 +182,7 @@ class BuriedVolume:
         # Getting radii if they are not supplied
         if radii is None:
             radii = get_radii(elements, radii_type=radii_type, scale=radii_scale)
-        radii = np.array(radii)
+        radii: Array1DFloat = np.array(radii)
 
         # Get list of atoms as Atom objects
         atoms = []
@@ -290,7 +297,7 @@ class BuriedVolume:
         self, center: ArrayLike1D, radius: float, density: float
     ) -> None:
         """Compute buried volume."""
-        center = np.array(center)
+        center: Array1DFloat = np.array(center)
         # Construct sphere at metal center
         sphere = Sphere(
             center, radius, method="projection", density=density, filled=True
@@ -300,7 +307,7 @@ class BuriedVolume:
         tree = scipy.spatial.cKDTree(
             sphere.points, compact_nodes=False, balanced_tree=False
         )
-        mask = np.zeros(len(sphere.points), dtype=bool)
+        mask: Array1DBool = np.zeros(len(sphere.points), dtype=bool)
         for atom in self._atoms:
             if atom.radius + sphere.radius > np.linalg.norm(atom.coordinates):
                 to_prune = tree.query_ball_point(atom.coordinates, atom.radius)
@@ -348,7 +355,7 @@ class BuriedVolume:
                 elements.append(atom.element)
                 loop_coordinates.append(atom.coordinates)
                 radii.append(atom.radius)
-            coordinates = np.vstack(loop_coordinates)
+            coordinates: Array2DFloat = np.vstack(loop_coordinates)
             sasa = SASA(
                 elements,
                 coordinates,
@@ -447,9 +454,9 @@ class BuriedVolume:
             raise ValueError("Must give z-axis atoms when instantiating BuriedVolume.")
         # Set up coordinates
         atoms = self._atoms
-        center = np.array(self._sphere.center)
-        all_coordinates = self._all_coordinates
-        coordinates = np.array([atom.coordinates for atom in atoms])
+        center: Array1DFloat = np.array(self._sphere.center)
+        all_coordinates: Array2DFloat = self._all_coordinates
+        coordinates: Array2DFloat = np.array([atom.coordinates for atom in atoms])
 
         # Translate coordinates
         all_coordinates -= center
@@ -506,7 +513,7 @@ class BuriedVolume:
             z.append(z_max)
 
         # Create interaction surface
-        z = np.array(z).reshape(len(x_), len(y_))
+        z: Array2DFloat = np.array(z).reshape(len(x_), len(y_))
 
         # Plot surface
         fig, ax = plt.subplots()

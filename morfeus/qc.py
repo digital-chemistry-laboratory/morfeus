@@ -1,12 +1,20 @@
 """Interface to quantum-chemical programs."""
 
+from __future__ import annotations
+
 import typing
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 
 from morfeus.data import ANGSTROM_TO_BOHR, BOHR_TO_ANGSTROM
-from morfeus.typing import ArrayLike2D
+from morfeus.typing import (
+    Array1DFloat,
+    Array1DStr,
+    Array2DFloat,
+    Array3DFloat,
+    ArrayLike2D,
+)
 from morfeus.utils import convert_elements, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
@@ -27,7 +35,7 @@ def optimize_qc_engine(
     local_options: Optional[Dict[str, Any]] = None,
     procedure: str = "berny",
     return_trajectory: bool = False,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[Union[Array2DFloat, Array3DFloat], Array1DFloat]:
     """Optimize molecule with QCEngine.
 
     Args:
@@ -89,9 +97,9 @@ def optimize_qc_engine(
         raise Exception(opt.error.error_message)
 
     # Take out results
-    energies = np.array(opt.energies)
+    energies: Array1DFloat = np.array(opt.energies)
     if return_trajectory:
-        opt_coordinates = np.array(
+        opt_coordinates: Array2DFloat = np.array(
             [result.molecule.geometry for result in opt.trajectory]
         )
     else:
@@ -189,7 +197,7 @@ def _generate_qcel_molecule(
     charge: Optional[int] = None,
     multiplicity: Optional[int] = None,
     connectivity_matrix: Optional[ArrayLike2D] = None,
-) -> "qcel.models.Molecule":
+) -> qcel.models.Molecule:
     """Generate QCElemental molecule object.
 
     Args:
@@ -217,7 +225,7 @@ def _generate_qcel_molecule(
         bos = None
 
     # Create molecule object
-    elements = np.array(convert_elements(elements, output="symbols"))
+    elements: Array1DStr = np.array(convert_elements(elements, output="symbols"))
     coordinates = np.array(coordinates) * ANGSTROM_TO_BOHR
     molecule = qcel.models.Molecule(
         symbols=elements,

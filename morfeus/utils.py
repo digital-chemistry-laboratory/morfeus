@@ -32,7 +32,15 @@ from morfeus.data import (
     radii_rahm,
     radii_truhlar,
 )
-from morfeus.typing import Array2D, ArrayLike1D, ArrayLike2D
+from morfeus.typing import (
+    Array1DBool,
+    Array1DFloat,
+    Array1DInt,
+    Array2DFloat,
+    Array2DInt,
+    ArrayLike1D,
+    ArrayLike2D,
+)
 
 
 def get_excluded_from_connectivity(
@@ -59,16 +67,16 @@ def get_excluded_from_connectivity(
         ValueError: When connected atoms belong to different fragments or when connected
             atoms belong to same fragment as other neighbors of center atoms (1-indexed)
     """
-    connectivity_matrix = np.array(connectivity_matrix)
-    center_atoms = np.array(center_atoms).reshape(-1) - 1
-    connected_atoms = np.array(connected_atoms).reshape(-1) - 1
+    connectivity_matrix: Array2DInt = np.array(connectivity_matrix)
+    center_atoms: Array1DInt = np.array(center_atoms).reshape(-1) - 1
+    connected_atoms: Array1DInt = np.array(connected_atoms).reshape(-1) - 1
     # Determine other neihgbors to the central atoms
     other_neighbors = set(
         connectivity_matrix[center_atoms].reshape(-1).nonzero()[0]
     ).difference(connected_atoms)
 
     # Calculate fragment labels
-    mask = np.ones(len(connectivity_matrix), dtype=bool)
+    mask: Array1DBool = np.ones(len(connectivity_matrix), dtype=bool)
     mask[center_atoms] = False
     graph = csr_matrix(connectivity_matrix)[mask, :][:, mask]
     n_components, labels = connected_components(
@@ -121,16 +129,18 @@ def check_distances(
     # Get radii if they are not supplied
     if radii is None:
         radii = get_radii(elements, radii_type=radii_type)
-    radii = np.array(radii)
+    radii: Array1DFloat = np.array(radii)
 
     if excluded_atoms is None:
         excluded_atoms = []
     else:
         excluded_atoms = list(excluded_atoms)
 
-    coordinates = np.array(coordinates)
-    atom_coordinates = np.array(coordinates)
-    check_coordinates = np.array(coordinates[check_atom - 1]).reshape(-1, 3)
+    coordinates: Array2DFloat = np.array(coordinates)
+    atom_coordinates: Array2DFloat = np.array(coordinates)
+    check_coordinates: Array1DFloat = np.array(coordinates[check_atom - 1]).reshape(
+        -1, 3
+    )
 
     # Calculate distances between check atom and all atoms
     distances = (
@@ -338,7 +348,7 @@ def get_connectivity_matrix(
     radii: Optional[ArrayLike1D] = None,
     radii_type: str = "pyykko",
     scale_factor: float = 1.2,
-) -> Array2D:
+) -> Array2DInt:
     """Get connectivity matrix from covalent radii.
 
     Args:
@@ -354,14 +364,14 @@ def get_connectivity_matrix(
     Raises:
         RuntimeError: When neither elements nor radii given
     """
-    coordinates = np.array(coordinates)
+    coordinates: Array2DFloat = np.array(coordinates)
     n_atoms = len(coordinates)
     if radii is None:
         if elements is None:
             raise RuntimeError("Either elements or radii needed.")
         elements = convert_elements(elements, output="numbers")
         radii = get_radii(elements, radii_type=radii_type)
-    radii = np.array(radii)
+    radii: Array1DFloat = np.array(radii)
     distance_matrix = scipy.spatial.distance_matrix(coordinates, coordinates)
     radii_matrix = np.add.outer(radii, radii) * scale_factor
     connectivity_matrix: np.ndarray = (distance_matrix < radii_matrix) - np.identity(

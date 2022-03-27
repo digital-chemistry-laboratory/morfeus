@@ -7,7 +7,13 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 from morfeus.data import ANGSTROM_TO_BOHR
-from morfeus.typing import Array1D, Array2D, ArrayLike1D, ArrayLike2D
+from morfeus.typing import (
+    Array1DBool,
+    Array1DFloat,
+    Array2DFloat,
+    ArrayLike1D,
+    ArrayLike2D,
+)
 from morfeus.utils import get_connectivity_matrix
 
 
@@ -41,22 +47,22 @@ class Atom:
         volume: Volume inside solvent-accessible surface area (Å³)
     """
 
-    accessible_mask: Array1D
-    accessible_points: Array2D
+    accessible_mask: Array1DBool
+    accessible_points: Array2DFloat
     area: float
     cone: "Cone"
-    coordinates: Array1D
+    coordinates: Array2DFloat
     coordination_number: float
     element: int
     index: int
-    invisible_mask: Array1D
-    occluded_mask: Array1D
-    occluded_points: Array2D
-    p_values: Array1D
-    point_areas: Array1D
-    point_volumes: Array1D
-    points: Array2D
-    proximal_mask: Array1D
+    invisible_mask: Array1DBool
+    occluded_mask: Array1DBool
+    occluded_points: Array2DFloat
+    p_values: Array1DFloat
+    point_areas: Array1DFloat
+    point_volumes: Array1DFloat
+    points: Array2DFloat
+    proximal_mask: Array1DBool
     radius: float
     volume: float
 
@@ -98,7 +104,7 @@ class Cone:
 
     angle: float
     atoms: List[Atom]
-    normal: Array1D
+    normal: Array1DFloat
 
     def __init__(
         self, angle: float, atoms: Sequence[Atom], normal: ArrayLike1D
@@ -135,7 +141,9 @@ class Cone:
         else:
             return False
 
-    def is_inside_points(self, points: ArrayLike2D, method: str = "cross") -> Array1D:
+    def is_inside_points(
+        self, points: ArrayLike2D, method: str = "cross"
+    ) -> Array1DBool:
         """Test if points are inside cone of atom.
 
         Args:
@@ -148,7 +156,7 @@ class Cone:
         Raises:
             ValueError: When method not supported
         """
-        points = np.array(points)
+        points: Array2DFloat = np.array(points)
         if method in ["cross", "dot"]:
             # Calculate radius of cone at distance of each point
             cone_distances = np.dot(points, self.normal)
@@ -216,10 +224,10 @@ class Sphere:
     """
 
     area: float
-    center: Array1D
+    center: Array1DFloat
     circumference: float
     density: float
-    points: Array1D
+    points: Array2DFloat
     radius: float
     volume: float
 
@@ -248,7 +256,7 @@ class Sphere:
     @staticmethod
     def _get_cartesian_coordinates(
         r: float, theta: ArrayLike1D, phi: ArrayLike1D
-    ) -> Array2D:
+    ) -> Array2DFloat:
         """Converts polar to Cartesian coordinates.
 
         Args:
@@ -269,7 +277,7 @@ class Sphere:
 
         return points
 
-    def _get_points_fibonacci(self, density: float) -> Array2D:
+    def _get_points_fibonacci(self, density: float) -> Array2DFloat:
         """Construct points on sphere surface by the Fibonacci golden spiral method.
 
         Method vectorized from
@@ -295,13 +303,13 @@ class Sphere:
         z = np.sin(phi) * r
 
         # Generate points and adjust with radius and center
-        points = np.column_stack((x, y, z))
+        points: Array2DFloat = np.column_stack((x, y, z))
         points = points * self.radius
         points: np.ndarray = points + self.center
 
         return points
 
-    def _get_points_polar(self, density: float) -> Array2D:
+    def _get_points_polar(self, density: float) -> Array2DFloat:
         """Construct points on sphere by polar coordinate method.
 
         Args:
@@ -318,7 +326,9 @@ class Sphere:
         phi = np.linspace(0, 2 * math.pi, 2 * n)
 
         # Combine together all the possible combinations of theta and phi
-        combined_theta_phi = np.dstack(np.meshgrid(theta, phi)).reshape(-1, 2)
+        combined_theta_phi: Array2DFloat = np.dstack(np.meshgrid(theta, phi)).reshape(
+            -1, 2
+        )
         theta = combined_theta_phi[:, 0]
         phi = combined_theta_phi[:, 1]
 
@@ -330,7 +340,9 @@ class Sphere:
 
         return points
 
-    def _get_points_projected(self, density: float, filled: bool = False) -> Array2D:
+    def _get_points_projected(
+        self, density: float, filled: bool = False
+    ) -> Array2DFloat:
         """Construct points on sphere surface by projection.
 
         Args:
@@ -352,7 +364,7 @@ class Sphere:
         x = np.linspace(-r, r, n)
         y = np.linspace(-r, r, n)
         z = np.linspace(-r, r, n)
-        points = np.stack(np.meshgrid(x, y, z), -1).reshape(-1, 3)
+        points: Array2DFloat = np.stack(np.meshgrid(x, y, z), -1).reshape(-1, 3)
 
         # Remove points outside of sphere
         lengths = np.linalg.norm(points, axis=1)
@@ -395,7 +407,7 @@ class Bond:
         self.j = atom_2
         self.atoms = [atom_1, atom_2]
 
-    def get_b_vector(self, coordinates: ArrayLike2D) -> Array1D:
+    def get_b_vector(self, coordinates: ArrayLike2D) -> Array1DFloat:
         """Calculate vector of B matrix for internal coordinate.
 
         Code adapted from pyberny: https://github.com/jhrmnn/pyberny.
@@ -406,11 +418,11 @@ class Bond:
         Returns:
             b_vector: Vector of B matrix (a.u.)
         """
-        coordinates = np.array(coordinates)
+        coordinates: Array2DFloat = np.array(coordinates)
         i, j = self.i - 1, self.j - 1
         v = (coordinates[i] - coordinates[j]) * ANGSTROM_TO_BOHR
         r = np.linalg.norm(v)
-        grad = np.array([v / r, -v / r])
+        grad: Array1DFloat = np.array([v / r, -v / r])
 
         b_vector = np.zeros(coordinates.size)
         b_vector[i * 3 : i * 3 + 3] = grad[0]
@@ -461,7 +473,7 @@ class Angle:
         self.k = atom_3
         self.atoms = [atom_1, atom_2, atom_3]
 
-    def get_b_vector(self, coordinates: ArrayLike2D) -> Array1D:
+    def get_b_vector(self, coordinates: ArrayLike2D) -> Array1DFloat:
         """Calculate vector of B matrix for internal coordinate.
 
         Code adapted from pyberny: https://github.com/jhrmnn/pyberny.
@@ -472,7 +484,7 @@ class Angle:
         Returns:
             b_vector: Vector of B matrix (a.u.)
         """
-        coordinates = np.array(coordinates)
+        coordinates: Array2DFloat = np.array(coordinates)
         i, j, k = self.i - 1, self.j - 1, self.k - 1
         v_1 = (coordinates[i] - coordinates[j]) * ANGSTROM_TO_BOHR
         v_2 = (coordinates[k] - coordinates[j]) * ANGSTROM_TO_BOHR
@@ -559,7 +571,7 @@ class Dihedral:
         self.l = atom_4
         self.atoms = [atom_1, atom_2, atom_3, atom_4]
 
-    def get_b_vector(self, coordinates: ArrayLike2D) -> Array1D:
+    def get_b_vector(self, coordinates: ArrayLike2D) -> Array1DFloat:
         """Calculate vector of B matrix for internal coordinate.
 
         Code adapted from pyberny: https://github.com/jhrmnn/pyberny.
@@ -570,7 +582,7 @@ class Dihedral:
         Returns:
             b_vector: Vector of B matrix (a.u.)
         """
-        coordinates = np.array(coordinates)
+        coordinates: Array2DFloat = np.array(coordinates)
         i, j, k, l = self.i - 1, self.j - 1, self.k - 1, self.l - 1
         v_1 = (coordinates[i] - coordinates[j]) * ANGSTROM_TO_BOHR
         v_2 = (coordinates[l] - coordinates[k]) * ANGSTROM_TO_BOHR
@@ -586,10 +598,11 @@ class Dihedral:
         elif dot_product > 1:
             dot_product = 1
         phi = np.arccos(dot_product) * sgn
-
+        g: Array1DFloat
         if abs(phi) > np.pi - 1e-6:
+            # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released
             g = np.cross(w, a_1)
-            g = g / np.linalg.norm(g)
+            g = g / np.linalg.norm(g)  # type: ignore
             A = np.dot(v_1, ew) / np.linalg.norm(w)
             B = np.dot(v_2, ew) / np.linalg.norm(w)
             grad = [
@@ -599,8 +612,9 @@ class Dihedral:
                 g / (np.linalg.norm(g) * np.linalg.norm(a_2)),
             ]
         elif abs(phi) < 1e-6:
+            # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released
             g = np.cross(w, a_1)
-            g = g / np.linalg.norm(g)
+            g = g / np.linalg.norm(g)  # type: ignore
             A = np.dot(v_1, ew) / np.linalg.norm(w)
             B = np.dot(v_2, ew) / np.linalg.norm(w)
             grad = [
@@ -760,7 +774,7 @@ class InternalCoordinates:
             i, j = sorted(bond)
             self.add_bond(i, j)
 
-    def get_B_matrix(self, coordinates: ArrayLike2D) -> Array2D:
+    def get_B_matrix(self, coordinates: ArrayLike2D) -> Array2DFloat:
         """Calculate B matrix for coordinates.
 
         Args:
@@ -769,11 +783,11 @@ class InternalCoordinates:
         Returns:
             B_matrix: B matrix
         """
-        coordinates = np.array(coordinates)
+        coordinates: Array2DFloat = np.array(coordinates)
         b_vectors = []
         for internal_coordinate in self.internal_coordinates:
             b_vectors.append(internal_coordinate.get_b_vector(coordinates))
-        B_matrix = np.vstack(b_vectors)
+        B_matrix: Array2DFloat = np.vstack(b_vectors)
 
         return B_matrix
 
@@ -788,7 +802,7 @@ def rotate_coordinates(
     coordinates: ArrayLike2D,
     vector: ArrayLike1D,
     axis: ArrayLike1D,
-) -> Array2D:
+) -> Array2DFloat:
     """Rotates coordinates by the rotation that aligns vector with axis.
 
     Args:
@@ -799,23 +813,25 @@ def rotate_coordinates(
     Returns:
         rotated_coordinates: Rotated coordinates.
     """
-    coordinates = np.array(coordinates)
-    vector = np.array(vector)
-    axis = np.array(axis)
+    coordinates: Array2DFloat = np.array(coordinates)
+    vector: Array1DFloat = np.array(vector)
+    axis: Array1DFloat = np.array(axis)
 
     # Get real part of quaternion
     real = np.dot(vector, axis).reshape(1) + 1
 
     # Get imaginary dimensions and handle case of antiparallel vectors
     if real < 1e-6:
-        w = np.cross(vector, np.array([0, 0, 1]))
-        if np.linalg.norm(w) < 1e-6:
+        # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released
+        w: Array1DFloat = np.cross(vector, np.array([0, 0, 1]))
+        if np.linalg.norm(w) < 1e-6:  # type: ignore
             w = np.cross(vector, np.array([1, 0, 0]))
     else:
         w = np.cross(vector, axis)
 
     # Form quaternion and normalize
-    q = np.concatenate((w, real))
+    # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released
+    q = np.concatenate((w, real))  # type: ignore
     q = q / np.linalg.norm(q)
 
     # Rotate atomic coordinates
@@ -827,7 +843,7 @@ def rotate_coordinates(
 
 def kabsch_rotation_matrix(
     P: ArrayLike2D, Q: ArrayLike2D, center: bool = True
-) -> Array2D:
+) -> Array2DFloat:
     """Construct Kabsch rotation matrix.
 
     Constructs the rotation matrix that overlays the points in P with the points in Q
@@ -841,8 +857,8 @@ def kabsch_rotation_matrix(
     Returns:
         R: Rotation matrix
     """
-    P = np.array(P)
-    Q = np.array(Q)
+    P: Array2DFloat = np.array(P)
+    Q: Array2DFloat = np.array(Q)
 
     # Calculate centroids and center coordinates
     if center:
@@ -868,7 +884,7 @@ def kabsch_rotation_matrix(
 
 def sphere_line_intersection(
     vector: ArrayLike1D, center: ArrayLike1D, radius: float
-) -> Array2D:
+) -> Array2DFloat:
     """Get points of intersection between line and sphere.
 
     Follows the procedure outlined here: http://paulbourke.net/geometry/circlesphere/.
@@ -881,8 +897,8 @@ def sphere_line_intersection(
     Returns:
         intersection_points: Intersection points
     """
-    vector = np.array(vector)
-    center = np.array(center)
+    vector: Array1DFloat = np.array(vector)
+    center: Array1DFloat = np.array(center)
 
     # Set up points
     p_1 = vector
@@ -919,6 +935,6 @@ def sphere_line_intersection(
         ]
 
     # Calculate intersection points.
-    intersection_points = np.vstack([p_1 + u * (p_2 - p_1) for u in us])
+    intersection_points: Array2DFloat = np.vstack([p_1 + u * (p_2 - p_1) for u in us])
 
     return intersection_points

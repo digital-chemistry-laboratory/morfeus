@@ -1,4 +1,5 @@
 """Sterimol code."""
+from __future__ import annotations
 
 import functools
 import math
@@ -13,7 +14,14 @@ from morfeus.geometry import Atom, kabsch_rotation_matrix, sphere_line_intersect
 from morfeus.io import read_geometry
 from morfeus.plotting import get_drawing_arrow
 from morfeus.sasa import SASA
-from morfeus.typing import Array1D, ArrayLike1D, ArrayLike2D
+from morfeus.typing import (
+    Array1DFloat,
+    Array1DInt,
+    Array2DFloat,
+    Array2DInt,
+    ArrayLike1D,
+    ArrayLike2D,
+)
 from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
@@ -49,21 +57,21 @@ class Sterimol:
     """
 
     B_1_value: float
-    B_1: Array1D
+    B_1: Array1DFloat
     B_5_value: float
-    B_5: Array1D
+    B_5: Array1DFloat
     bond_length: float
     L_value_uncorrected: float
     L_value: float
-    L: Array1D
+    L: Array1DFloat
     _atoms: List[Atom]
     _attached_atom: Atom
     _dummy_atom: Atom
     _excluded_atoms: Set[int]
     _n_rot_vectors: int
-    _origin: Array1D
+    _origin: Array1DFloat
     _plotter: "BackgroundPlotter"
-    _points: Array1D
+    _points: Array2DFloat
     _sphere_radius: float
 
     def __init__(
@@ -80,16 +88,16 @@ class Sterimol:
     ) -> None:
         # Convert elements to atomic numbers if the are symbols
         elements = convert_elements(elements, output="numbers")
-        coordinates = np.array(coordinates)
+        coordinates: Array2DFloat = np.array(coordinates)
 
         if excluded_atoms is None:
             excluded_atoms = []
-        excluded_atoms = np.array(excluded_atoms)
+        excluded_atoms: Array2DInt = np.array(excluded_atoms)
 
         # Get radii if they are not supplied
         if radii is None:
             radii = get_radii(elements, radii_type=radii_type)
-        radii = np.array(radii)
+        radii: Array1DFloat = np.array(radii)
 
         # Add dummy atom if multiple attached indices are given
         if isinstance(attached_index, Iterable):
@@ -118,7 +126,7 @@ class Sterimol:
         vector_2_to_1 = vector_2_to_1 / np.linalg.norm(vector_2_to_1)
 
         # Get rotation quaternion that overlays vector with x-axis
-        x_axis = np.array([[1.0, 0.0, 0.0]])
+        x_axis: Array1DFloat = np.array([[1.0, 0.0, 0.0]])
         R = kabsch_rotation_matrix(vector_2_to_1.reshape(1, -1), x_axis, center=False)
         all_coordinates = (R @ all_coordinates.T).T
         self._rotation_matrix = R
@@ -143,7 +151,7 @@ class Sterimol:
         self._dummy_atom = dummy_atom
         self._attached_atom = attached_atom
 
-        self.bond_length = bond_length
+        self.bond_length = float(bond_length)
 
         self._n_rot_vectors = n_rot_vectors
 
@@ -152,7 +160,7 @@ class Sterimol:
 
     def set_points(
         self, points: Sequence[Sequence[float]], shift: bool = True
-    ) -> "Sterimol":
+    ) -> Sterimol:
         """Set points for calculation of Sterimol.
 
         Args:
@@ -162,7 +170,7 @@ class Sterimol:
         Returns:
             self: Self
         """
-        points = np.array(points)
+        points: Array2DFloat = np.array(points)
         if shift is True:
             points -= self._origin
 
@@ -174,7 +182,7 @@ class Sterimol:
         method: str = "delete",
         radii_scale: float = 0.5,
         density: float = 0.01,
-    ) -> "Sterimol":
+    ) -> Sterimol:
         """Do a Buried Sterimol calculation.
 
         There are three available schemes based on deletion, truncation or slicing.
@@ -194,8 +202,10 @@ class Sterimol:
         """
         if method == "delete":
             # Remove all atoms outside sphere (taking vdW radii into account)
-            coordinates = np.vstack([atom.coordinates for atom in self._atoms])
-            radii = np.array([atom.radius for atom in self._atoms])
+            coordinates: Array2DFloat = np.vstack(
+                [atom.coordinates for atom in self._atoms]
+            )
+            radii: Array1DFloat = np.array([atom.radius for atom in self._atoms])
             distances = scipy.spatial.distance.cdist(
                 self._dummy_atom.coordinates.reshape(1, -1), coordinates
             ).reshape(-1)
@@ -242,14 +252,14 @@ class Sterimol:
             if np.linalg.norm(self.L) > np.linalg.norm(new_vectors[0]):
                 self.L = new_vectors[0]
                 L_value = np.linalg.norm(self.L)
-                self.L_value = L_value + 0.40
-                self.L_value_uncorrected = L_value
+                self.L_value = float(L_value) + 0.40
+                self.L_value_uncorrected = float(L_value)
             if np.linalg.norm(self.B_1) > np.linalg.norm(new_vectors[1]):
                 self.B_1 = new_vectors[1]
-                self.B_1_value = np.linalg.norm(self.B_1)
+                self.B_1_value = float(np.linalg.norm(self.B_1))
             if np.linalg.norm(self.B_5) > np.linalg.norm(new_vectors[2]):
                 self.B_5 = new_vectors[2]
-                self.B_5_value = np.linalg.norm(self.B_5)
+                self.B_5_value = float(np.linalg.norm(self.B_5))
 
         elif method == "slice":
             if not hasattr(self, "_points"):
@@ -270,7 +280,7 @@ class Sterimol:
 
         return self
 
-    def surface_from_radii(self, density: float = 0.01) -> "Sterimol":
+    def surface_from_radii(self, density: float = 0.01) -> Sterimol:
         """Create surface points from vdW surface.
 
         Args:
@@ -288,13 +298,13 @@ class Sterimol:
                 elements.append(atom.element)
                 coordinates.append(atom.coordinates)
                 radii.append(atom.radius)
-        elements = np.array(elements)
-        coordinates = np.vstack(coordinates)
+        elements: Array1DInt = np.array(elements)
+        coordinates: Array2DFloat = np.vstack(coordinates)
         radii = radii
         sasa = SASA(elements, coordinates, radii=radii, density=density, probe_radius=0)
 
         # Take out points of vdW surface
-        points = np.vstack(
+        points: Array2DFloat = np.vstack(
             [
                 atom.accessible_points
                 for atom in sasa._atoms
@@ -306,7 +316,7 @@ class Sterimol:
 
         return self
 
-    def calculate(self) -> "Sterimol":
+    def calculate(self) -> Sterimol:
         """Calculate Sterimol parameters."""
         # Use coordinates and radii if points are not given
         if not hasattr(self, "_points"):
@@ -319,8 +329,8 @@ class Sterimol:
                 ):
                     coordinates.append(atom.coordinates)
                     radii.append(atom.radius)
-            coordinates = np.vstack(coordinates)
-            radii = np.vstack(radii).reshape(-1)
+            coordinates: Array2DFloat = np.vstack(coordinates)
+            radii: Array1DFloat = np.vstack(radii).reshape(-1)
 
         # Project coordinates onto vector between atoms 1 and 2
         vector = self._attached_atom.coordinates - self._dummy_atom.coordinates
@@ -344,7 +354,7 @@ class Sterimol:
         x = np.zeros(len(theta))
         y = r * np.cos(theta)
         z = r * np.sin(theta)
-        rot_vectors = np.column_stack((x, y, z))
+        rot_vectors: Array2DFloat = np.column_stack((x, y, z))
 
         # Project coordinates onto rotation vectors
         if not hasattr(self, "_points"):
@@ -471,7 +481,7 @@ class Sterimol:
         p.add_mesh(B_5_arrow, color=arrow_color)
 
         # Add labels
-        points = np.vstack([stop_L, stop_B_1, stop_B_5])
+        points: Array2DFloat = np.vstack([stop_L, stop_B_1, stop_B_5])
         labels = ["L", "B1", "B5"]
         p.add_point_labels(
             points,
