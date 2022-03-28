@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Optional, Sequence
+from collections.abc import Iterable
 
 import numpy as np
 
-from morfeus.typing import ArrayLike1D, ArrayLike2D
+from morfeus.typing import Array2DFloat, ArrayLike1D, ArrayLike2D
 
 
 class BiteAngle:
@@ -15,7 +15,7 @@ class BiteAngle:
     The bite angle can become 'inverted' if it goes beyond 180°. This cannot be detected
     automatically, so the user has to supply a reference vector that should point in the
     'direction' of the ligand. As a convenience, the vector can be constructed
-    automatically from the metal atom to the geometric mean of the given 'ref_atoms'.
+    automatically from the metal atom to the geometric mean of a set of 'ref_atoms'.
 
     Args:
         coordinates: Coordinates (Å)
@@ -39,12 +39,14 @@ class BiteAngle:
         metal_index: int,
         ligand_index_1: int,
         ligand_index_2: int,
-        ref_atoms: Optional[Sequence[int]] = None,
-        ref_vector: Optional[ArrayLike1D] = None,
+        ref_atoms: Iterable[int] | None = None,
+        ref_vector: ArrayLike1D | None = None,
     ) -> None:
         # Check keywords
         if ref_atoms is not None and ref_vector is not None:
             raise ValueError("ref_atoms and ref_vector cannot be set at the same time.")
+
+        coordinates: Array2DFloat = np.asarray(coordinates)
 
         # Construct vectors
         v_1 = coordinates[ligand_index_1 - 1] - coordinates[metal_index - 1]
@@ -53,10 +55,11 @@ class BiteAngle:
         v_2_norm = v_2 / np.linalg.norm(v_2)
 
         # Calculate angle between vectors
+        # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released
         angle_rad = np.arctan2(
             np.linalg.norm(np.cross(v_1_norm, v_2_norm)), np.dot(v_1_norm, v_2_norm)
         )
-        angle = np.rad2deg(angle_rad)
+        angle = np.rad2deg(angle_rad)  # type: ignore
 
         # Check if angle should be inverted
         if ref_atoms is not None:
