@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-# external
-from __future__ import annotations
-
 import nox
 from nox.sessions import Session
 
