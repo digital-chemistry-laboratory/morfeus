@@ -40,5 +40,5 @@ show_traceback = true
 plugins = "numpy.typing.mypy_plugin"
 
 [tool.pytest.ini_options]
-addopts = "-m 'not benchmark'"
-markers = ["benchmark: mark a test as method benchmark"]
+addopts = "-m 'not (benchmark or xtb)'"
+markers = ["benchmark: mark a test as method benchmark", "xtb: mark a test as requiring the xtb-python dependency"]
