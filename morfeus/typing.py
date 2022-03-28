@@ -4,8 +4,6 @@ Borrowed from gpaw/typing.py
 """
 from __future__ import annotations
 
-from __future__ import annotations
-
 from typing import Any
 
 # import numpy as np
