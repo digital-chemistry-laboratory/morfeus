@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Add capacity to Boltzmann average 1D arrays in `ConformerEnsemble`
 - `ConeAngle` now uses libconeangle as default with the internal algorithm as backup.
+- Added `BiteAngle` for bite angle calculations.
 
 ### Fixed
 - Fixed ``XTB.get_fukui``, affecting the varieties "electrophilicity" (wrong sign), "nucleophilicity" (wrong sign), "radical" (wrong number) and "local_electrophilicty" (wrong number)
