@@ -1,13 +1,12 @@
 """Reference data for D3 calculations."""
-
-from typing import Dict
+from __future__ import annotations
 
 import numpy as np
 
-from morfeus.typing import Array2D
+from morfeus.typing import Array2DFloat
 
 # These values are used in the D3 dispersion model. Taken from Grimme's program.
-r2_r4: Dict[int, float] = {
+r2_r4: dict[int, float] = {
     1: 2.00734898,
     2: 1.56637132,
     3: 5.01986934,
@@ -105,7 +104,7 @@ r2_r4: Dict[int, float] = {
 }
 """Atomic numbers as keys and r2r4 values as values."""
 
-c6_reference_data: Dict[int, Array2D] = {
+c6_reference_data: dict[int, Array2DFloat] = {
     1: np.array(
         [
             [3.0267, 0.9118, 0.9118],

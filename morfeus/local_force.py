@@ -1,8 +1,11 @@
 """Local force constant code."""
 
+from __future__ import annotations
+
+from collections.abc import Iterable, Sequence
 import functools
 from os import PathLike
-from typing import Any, Dict, FrozenSet, Iterable, List, Optional, Sequence, Union
+from typing import Any
 
 import numpy as np
 
@@ -26,7 +29,13 @@ from morfeus.geometry import (
     kabsch_rotation_matrix,
 )
 from morfeus.io import read_geometry
-from morfeus.typing import Array1D, Array2D, ArrayLike1D, ArrayLike2D
+from morfeus.typing import (
+    Array1DFloat,
+    Array1DInt,
+    Array2DFloat,
+    ArrayLike1D,
+    ArrayLike2D,
+)
 from morfeus.utils import convert_elements
 
 
@@ -48,29 +57,29 @@ class LocalForce:
         n_imag: Number of normal modes with imaginary frequencies
     """
 
-    internal_coordinates: List[Union[Bond, Angle, Dihedral]]
-    local_force_constants: Array1D
-    local_frequencies: Array1D
+    internal_coordinates: list[Bond | Angle | Dihedral]
+    local_force_constants: Array1DFloat
+    local_frequencies: Array1DFloat
     n_imag: int
-    _B_inv: Array2D
-    _B: Array2D
-    _coordinates: Array2D
-    _D_full: Array2D
-    _D: Array2D
-    _elements: List[int]
-    _fc_matrix: Array2D
-    _force_constants: Array1D
-    _ifc_matrix: Array2D
-    _input_coordinates: Array2D
+    _B_inv: Array2DFloat
+    _B: Array2DFloat
+    _coordinates: Array2DFloat
+    _D_full: Array2DFloat
+    _D: Array2DFloat
+    _elements: list[int]
+    _fc_matrix: Array2DFloat
+    _force_constants: Array1DFloat
+    _ifc_matrix: Array2DFloat
+    _input_coordinates: Array2DFloat
     _internal_coordinates: InternalCoordinates
-    _masses: Array1D
-    _normal_modes: Array2D
-    _standard_coordinates: Array2D
+    _masses: Array1DFloat
+    _normal_modes: Array2DFloat
+    _standard_coordinates: Array2DFloat
 
     def __init__(
         self,
-        elements: Optional[Union[Iterable[int], Iterable[str]]] = None,
-        coordinates: Optional[ArrayLike2D] = None,
+        elements: Iterable[int] | Iterable[str] | None = None,
+        coordinates: ArrayLike2D | None = None,
     ) -> None:
         # Set up attributes
         self._internal_coordinates = InternalCoordinates()
@@ -79,10 +88,15 @@ class LocalForce:
         if elements is not None:
             elements = convert_elements(elements, output="numbers")
             self._elements = elements
-            self._masses = np.array([atomic_masses[i] for i in elements])
+            self._masses: Array1DFloat = np.array([atomic_masses[i] for i in elements])
+        else:
+            self._elements = []
+            self._masses: Array1DFloat = np.empty(0, dtype=float)
 
         if coordinates is not None:
-            self._coordinates = np.array(coordinates)
+            self._coordinates: Array2DFloat = np.array(coordinates)
+        else:
+            self._coordinates: Array2DFloat = np.empty(0, dtype=float)
 
     def add_internal_coordinate(self, atoms: Sequence[int]) -> "LocalForce":
         """Add internal coordinate.
@@ -116,7 +130,7 @@ class LocalForce:
     def compute_frequencies(self) -> "LocalForce":
         """Compute local frequencies."""
         # Compute local frequencies
-        M = np.diag(np.repeat(self._masses, 3))
+        M: Array1DFloat = np.diag(np.repeat(self._masses, 3))
         G = self._B @ np.linalg.inv(M) @ self._B.T
         frequencies = (
             np.sqrt(
@@ -125,7 +139,7 @@ class LocalForce:
                     / AMU
                     * (self.local_force_constants / ANGSTROM * DYNE / 1000)
                 )
-                / (4 * np.pi ** 2 * C ** 2)
+                / (4 * np.pi**2 * C**2)
             )
             / 100
         )
@@ -168,7 +182,7 @@ class LocalForce:
                 self._force_constants[indices_small] = np.array(cutoff).reshape(-1)
 
         # Compute local mode force constants
-        K = np.diag(self._force_constants)
+        K: Array1DFloat = np.diag(self._force_constants)
 
         k_s = []
         for row in self._D:
@@ -177,7 +191,7 @@ class LocalForce:
                 k_s.append(k)
             else:
                 k_s.append(0.0)
-        k_s = np.array(k_s)
+        k_s: Array1DFloat = np.array(k_s)
 
         # Scale force constants due to projection of imaginary normal modes
         if project_imag and self.n_imag > 0:
@@ -191,7 +205,7 @@ class LocalForce:
 
     def detect_bonds(
         self,
-        radii: Optional[ArrayLike1D] = None,
+        radii: ArrayLike1D | None = None,
         radii_type: str = "pyykko",
         scale_factor: float = 1.2,
     ) -> "LocalForce":
@@ -256,7 +270,7 @@ class LocalForce:
         return frequency
 
     def load_file(
-        self, file: Union[str, PathLike], program: str, filetype: str
+        self, file: str | PathLike, program: str, filetype: str
     ) -> "LocalForce":
         """Load data from external file.
 
@@ -289,7 +303,7 @@ class LocalForce:
 
     def normal_mode_analysis(
         self,
-        hessian: Optional[ArrayLike2D] = None,
+        hessian: ArrayLike2D | None = None,
         save_hessian: bool = False,
     ) -> "LocalForce":
         """Perform normal mode analysis.
@@ -305,7 +319,7 @@ class LocalForce:
             self: Self
         """
         # Set up
-        coordinates = np.array(self._coordinates) * ANGSTROM_TO_BOHR
+        coordinates: Array2DFloat = self._coordinates * ANGSTROM_TO_BOHR
         masses = self._masses
         if hessian is None:
             hessian = self._fc_matrix
@@ -314,8 +328,8 @@ class LocalForce:
         n_atoms = len(coordinates)
 
         # Create mass matrices
-        M_minus = np.diag(np.repeat(masses, 3) ** (-1 / 2))
-        M_plus = np.diag(np.repeat(masses, 3) ** (1 / 2))
+        M_minus: Array1DFloat = np.diag(np.repeat(masses, 3) ** (-1 / 2))
+        M_plus: Array1DFloat = np.diag(np.repeat(masses, 3) ** (1 / 2))
         m_plus = np.repeat(masses, 3) ** (1 / 2)
         m_minus = np.repeat(masses, 3) ** (-1 / 2)
 
@@ -323,20 +337,23 @@ class LocalForce:
         hessian_mw = M_minus @ hessian @ M_minus
 
         # Find center of mass
-        com = np.sum(masses.reshape(-1, 1) * coordinates, axis=0) / np.sum(masses)
+        com: Array1DFloat = np.sum(
+            masses.reshape(-1, 1) * coordinates, axis=0
+        ) / np.sum(masses)
 
         # Shift origin to center of mass
         coordinates -= com
 
         # Construct translation vectors
-        t_x = (np.tile(np.array([1, 0, 0]), n_atoms)).reshape(-1, 3)
-        t_y = (np.tile(np.array([0, 1, 0]), n_atoms)).reshape(-1, 3)
-        t_z = (np.tile(np.array([0, 0, 1]), n_atoms)).reshape(-1, 3)
+        t_x: Array2DFloat = (np.tile(np.array([1, 0, 0]), n_atoms)).reshape(-1, 3)
+        t_y: Array2DFloat = (np.tile(np.array([0, 1, 0]), n_atoms)).reshape(-1, 3)
+        t_z: Array2DFloat = (np.tile(np.array([0, 0, 1]), n_atoms)).reshape(-1, 3)
 
         # Construct mass-weighted rotation vectors
-        R_x = np.cross(coordinates, t_x).flatten() * m_plus
-        R_y = np.cross(coordinates, t_y).flatten() * m_plus
-        R_z = np.cross(coordinates, t_z).flatten() * m_plus
+        # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released
+        R_x: Array2DFloat = np.cross(coordinates, t_x).flatten() * m_plus  # type: ignore
+        R_y: Array2DFloat = np.cross(coordinates, t_y).flatten() * m_plus  # type: ignore
+        R_z: Array2DFloat = np.cross(coordinates, t_z).flatten() * m_plus
 
         # Mass-weight translation vectors
         T_x = t_x.flatten() * m_plus
@@ -367,21 +384,21 @@ class LocalForce:
         cart = eigenvectors.T * m_minus
         N = 1 / np.linalg.norm(cart, axis=1)
         norm_cart = cart * N.reshape(-1, 1)
-        reduced_masses = N ** 2
+        reduced_masses = N**2
 
         # Calculate frequencies and force constants
         n_imag = np.sum(eigenvalues < 0)
         frequencies = (
-            np.sqrt(np.abs(eigenvalues) * HARTREE / BOHR ** 2 / AMU)
+            np.sqrt(np.abs(eigenvalues) * HARTREE / BOHR**2 / AMU)
             / (2 * np.pi * C)
             / 100
         )
         frequencies[:n_imag] = -frequencies[:n_imag]
         force_constants = (
             4
-            * np.pi ** 2
+            * np.pi**2
             * (frequencies * 100) ** 2
-            * C ** 2
+            * C**2
             * reduced_masses
             * AMU
             / (DYNE / 1000)
@@ -434,7 +451,7 @@ class LocalForce:
 
             # Convert units for angles and dihedrals
             if len(coordinate.atoms) > 2 and angle_units:
-                force_constant = force_constant * BOHR_TO_ANGSTROM ** 2
+                force_constant = force_constant * BOHR_TO_ANGSTROM**2
 
             # Print out the results
             string = f"{repr(coordinate):30s}" + f"{force_constant:50.3f}"
@@ -450,7 +467,7 @@ class LocalForce:
 
         return self
 
-    def _parse_gaussian_fchk(self, file: Union[str, PathLike]) -> None:  # noqa: C901
+    def _parse_gaussian_fchk(self, file: str | PathLike) -> None:  # noqa: C901
         # Read fchk file
         with open(file) as f:
             lines = f.readlines()
@@ -465,15 +482,15 @@ class LocalForce:
         read_masses = False
 
         # Set up containers for reading data
-        modes: List[float] = []
-        hessian: List[float] = []
-        vib_e2: List[float] = []
+        modes: list[float] = []
+        hessian: list[float] = []
+        vib_e2: list[float] = []
         internal_coordinates = []
         n_atoms: int
         n_imag: int
-        atomic_numbers: List[int] = []
-        masses: List[float] = []
-        coordinates: List[float] = []
+        atomic_numbers: list[int] = []
+        masses: list[float] = []
+        coordinates: list[float] = []
 
         # Parse fchk file
         for line in lines:
@@ -553,22 +570,25 @@ class LocalForce:
             elif "Current cartesian coordinates " in line:
                 read_coordinates = True
         # Take out normal mode force constants
-        force_constants = np.array(vib_e2[n_modes * 2 : n_modes * 3])
+        force_constants: Array1DFloat = np.array(vib_e2[n_modes * 2 : n_modes * 3])
 
         # Construct force constant matrix from lower triangular matrix
-        fc_matrix = np.zeros((n_atoms * 3, n_atoms * 3))
+        fc_matrix: Array2DFloat = np.zeros((n_atoms * 3, n_atoms * 3), dtype=float)
         fc_matrix[np.tril_indices_from(fc_matrix)] = hessian
-        fc_matrix = np.triu(fc_matrix.T, 1) + fc_matrix
+        fc_matrix: Array2DFloat = np.triu(fc_matrix.T, 1) + fc_matrix
 
         # Take out the internal coordinates
-        internal_coordinates = np.array(internal_coordinates)
-        for i, coordinate in enumerate(np.split(internal_coordinates, n_redundant)):
+        internal_coordinates: Array1DInt = np.array(internal_coordinates)
+        coordinate: Array1DInt
+        for _, coordinate in enumerate(np.split(internal_coordinates, n_redundant)):
             if all(coordinate >= 0):  # Sort out linear bends
                 atoms = [i for i in coordinate if i != 0]
                 self.add_internal_coordinate(atoms)
 
         # Convert coordinates to right Ångström
-        coordinates = np.array(coordinates).reshape(-1, 3) * BOHR_TO_ANGSTROM
+        coordinates: Array2DFloat = (
+            np.array(coordinates).reshape(-1, 3) * BOHR_TO_ANGSTROM
+        )
 
         # Set up attributes
         self._fc_matrix = fc_matrix
@@ -579,7 +599,7 @@ class LocalForce:
         self._coordinates = coordinates
         self._masses = np.array(masses)
 
-    def _parse_gaussian_log(self, file: Union[str, PathLike]) -> None:  # noqa: C901
+    def _parse_gaussian_log(self, file: str | PathLike) -> None:  # noqa: C901
         # Read the log file
         with open(file) as f:
             lines = f.readlines()
@@ -597,26 +617,26 @@ class LocalForce:
         read_masses = False
 
         # Set up containers for reading data
-        B_atom_map: Dict[int, List[int]] = {}
-        B_vectors: Dict[int, List[float]] = {}
-        normal_modes: List[List[List[float]]] = []
-        internal_modes: List[List[float]] = []
-        force_constants: List[float] = []
-        masses: List[float] = []
-        fc_matrix = np.array([])
-        ifc_matrix = np.array([])
-        input_coordinates: List[float] = []
-        standard_coordinates: List[float] = []
+        B_atom_map: dict[int, list[int]] = {}
+        B_vectors: dict[int, list[float]] = {}
+        normal_modes: list[list[list[float]]] = []
+        internal_modes: list[list[float]] = []
+        force_constants: list[float] = []
+        masses: list[float] = []
+        fc_matrix: Array2DFloat = np.empty([])
+        ifc_matrix: Array2DFloat = np.empty([])
+        input_coordinates: list[float] = []
+        standard_coordinates: list[float] = []
         n_imag: int = 0
         n_atoms: int = 0
-        internal_indices: Dict[FrozenSet[int], int] = {}
-        atomic_numbers: List[int] = []
-        coordinates: List[List[float]] = []
+        internal_indices: dict[frozenset[int], int] = {}
+        atomic_numbers: list[int] = []
+        coordinates: list[list[float]] = []
 
         # Parse through log file content
         counter = 0
-        internal_names: List[str] = []
-        internal_vector: List[float] = []
+        internal_names: list[str] = []
+        internal_vector: list[float] = []
 
         values: Any
         value: Any
@@ -846,8 +866,10 @@ class LocalForce:
 
         # Detect whether the input coordinates have been rotated. If so, rotate
         # B matrix and its inverse.
-        input_coordinates = np.array(input_coordinates).reshape(-1, 3)
-        standard_coordinates = np.array(standard_coordinates).reshape(-1, 3)
+        input_coordinates: Array2DFloat = np.array(input_coordinates).reshape(-1, 3)
+        standard_coordinates: Array2DFloat = np.array(standard_coordinates).reshape(
+            -1, 3
+        )
 
         if (
             not np.array_equal(input_coordinates, standard_coordinates)
@@ -881,7 +903,7 @@ class LocalForce:
         self._coordinates = input_coordinates
         self._elements = convert_elements(atomic_numbers, output="numbers")
 
-    def _parse_unimovib_local(self, file: Union[str, PathLike]) -> None:  # noqa: C901
+    def _parse_unimovib_local(self, file: str | PathLike) -> None:  # noqa: C901
         # Read file
         with open(file) as f:
             lines = f.readlines()
@@ -966,7 +988,7 @@ class LocalForce:
 
         # Convert data to right format
         coordinates = np.array(coordinates).reshape(-1, 3) * BOHR_TO_ANGSTROM
-        hessian = np.array(hessian).reshape(n_atoms * 3, n_atoms * 3)
+        hessian: Array2DFloat = np.array(hessian).reshape(n_atoms * 3, n_atoms * 3)
         normal_modes = np.array(normal_modes).reshape(-1, n_atoms * 3)[:n_modes]
         elements = convert_elements(atomic_numbers, output="numbers")
 
@@ -977,7 +999,7 @@ class LocalForce:
         self._coordinates = coordinates
         self._elements = elements
 
-    def _parse_unimovib_log(self, file: Union[str, PathLike]) -> None:  # noqa: C901
+    def _parse_unimovib_log(self, file: str | PathLike) -> None:  # noqa: C901
         # Read file
         with open(file) as f:
             lines = f.readlines()
@@ -996,7 +1018,7 @@ class LocalForce:
         frequencies = []
 
         # Parse file
-        normal_modes_chunk: List[List[float]] = []
+        normal_modes_chunk: list[list[float]] = []
         counter = 0
         n_modes_chunk = 0
         values: Any
@@ -1049,12 +1071,12 @@ class LocalForce:
 
         # Convert quantities to right format
         n_atoms = len(masses)
-        coordinates = np.array(coordinates).reshape(-1, 3)
-        normal_modes = np.array(normal_modes).reshape(-1, n_atoms * 3)
+        coordinates: Array2DFloat = np.array(coordinates).reshape(-1, 3)
+        normal_modes: Array2DFloat = np.array(normal_modes).reshape(-1, n_atoms * 3)
         elements = convert_elements(atomic_numbers, output="numbers")
-        force_constants = np.array(force_constants)
-        frequencies = np.array(frequencies)
-        masses = np.array(masses)
+        force_constants: Array1DFloat = np.array(force_constants)
+        frequencies: Array1DFloat = np.array(frequencies)
+        masses: Array1DFloat = np.array(masses)
 
         # Detect imaginary modes
         self.n_imag = np.sum(frequencies < 0)
@@ -1066,7 +1088,7 @@ class LocalForce:
         self._force_constants = force_constants
         self._normal_modes = normal_modes
 
-    def _parse_unimovib_umv(self, file: Union[str, PathLike]) -> None:  # noqa: C901
+    def _parse_unimovib_umv(self, file: str | PathLike) -> None:  # noqa: C901
         # Read file
         with open(file) as f:
             lines = f.readlines()
@@ -1143,8 +1165,10 @@ class LocalForce:
                 read_hessian = True
 
         # Convert data to right format
-        coordinates = np.array(coordinates).reshape(-1, 3) * BOHR_TO_ANGSTROM
-        hessian = np.array(hessian).reshape(n_atoms * 3, n_atoms * 3)
+        coordinates: Array2DFloat = (
+            np.array(coordinates).reshape(-1, 3) * BOHR_TO_ANGSTROM
+        )
+        hessian: Array2DFloat = np.array(hessian).reshape(n_atoms * 3, n_atoms * 3)
         elements = convert_elements(atomic_numbers, output="numbers")
 
         # Set up attributes
@@ -1153,7 +1177,7 @@ class LocalForce:
         self._coordinates = coordinates
         self._elements = elements
 
-    def _parse_xtb_hessian(self, file: Union[str, PathLike]) -> None:
+    def _parse_xtb_hessian(self, file: str | PathLike) -> None:
         # Read hessian file
         with open(file) as f:
             lines = f.readlines()
@@ -1174,7 +1198,7 @@ class LocalForce:
         return f"{self.__class__.__name__}({n_internal!r} internal coordinates)"
 
 
-def _get_internal_coordinate(atoms: Sequence[int]) -> Union[Bond, Angle, Dihedral]:
+def _get_internal_coordinate(atoms: Sequence[int]) -> Bond | Angle | Dihedral:
     """Returns internal coordinate."""
     # Return bond, angle or dihedral
     if len(atoms) == 2:
@@ -1187,7 +1211,7 @@ def _get_internal_coordinate(atoms: Sequence[int]) -> Union[Bond, Angle, Dihedra
         raise ValueError(f"Sequence of atoms must be 2-4 atoms, not {len(atoms)}.")
 
 
-def cli(file: Optional[str] = None) -> Any:
+def cli(file: str | None = None) -> Any:
     """CLI for local force.
 
     Args:
