@@ -1,4 +1,6 @@
-![Logo](docs/_static/logo-light.svg)
+![Logo Light](docs/_static/logo-light.svg#gh-light-mode-only)
+![Logo Dark](docs/_static/logo-dark.svg#gh-dark-mode-only)
+
 ![PyPI - License](https://img.shields.io/pypi/l/morfeus-ml)
 [![PyPI](https://img.shields.io/pypi/v/morfeus-ml)](https://pypi.org/project/morfeus-ml/)
 [![Conda (channel only)](https://img.shields.io/conda/vn/conda-forge/morfeus-ml)](https://anaconda.org/conda-forge/morfeus-ml)
