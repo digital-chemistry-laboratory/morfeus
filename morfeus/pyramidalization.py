@@ -1,13 +1,24 @@
 """Pyramidalization code."""
 
+from __future__ import annotations
+
+from collections.abc import Iterable, Sequence
 import functools
 import itertools
-from typing import Any, Iterable, List, Optional, Sequence, Union
+from typing import Any
 
 import numpy as np
 import scipy.spatial
 
 from morfeus.io import read_geometry
+from morfeus.typing import (
+    Array1DBool,
+    Array1DFloat,
+    Array1DInt,
+    Array2DFloat,
+    ArrayLike1D,
+    ArrayLike2D,
+)
 from morfeus.utils import get_connectivity_matrix
 
 
@@ -37,24 +48,24 @@ class Pyramidalization:
     """
 
     alpha: float
-    alphas: np.ndarray
-    neighbor_indices: List[int]
+    alphas: Array1DFloat
+    neighbor_indices: list[int]
     P_angle: float
     P: float
 
     def __init__(  # noqa: C901
         self,
-        coordinates: Sequence[Sequence[float]],
+        coordinates: ArrayLike2D,
         atom_index: int,
-        neighbor_indices: Optional[Sequence[int]] = None,
-        elements: Optional[Union[Iterable[int], Iterable[str]]] = None,
-        radii: Optional[Sequence[float]] = None,
+        neighbor_indices: Sequence[int] | None = None,
+        elements: Iterable[int] | Iterable[str] | None = None,
+        radii: ArrayLike1D | None = None,
         radii_type: str = "pyykko",
-        excluded_atoms: Optional[Sequence[int]] = None,
+        excluded_atoms: Sequence[int] | None = None,
         method: str = "distance",
         scale_factor: float = 1.2,
     ) -> None:
-        coordinates = np.array(coordinates)
+        coordinates: Array2DFloat = np.array(coordinates)
         atom_coordinates = coordinates[atom_index - 1]
 
         if neighbor_indices is None:
@@ -64,16 +75,16 @@ class Pyramidalization:
 
         if excluded_atoms is None:
             excluded_atoms = []
-        excluded_atoms = excluded_atoms = np.array(excluded_atoms, dtype=bool)
+        excluded_atoms: Array1DBool = np.array(excluded_atoms, dtype=bool)
 
         # Get 3 closest neighbors
         if len(neighbor_indices) > 0:
             if len(neighbor_indices) != 3:
                 raise Exception(f"Only {len(neighbor_indices)} neighbors.")
-            neighbors = np.array(neighbor_indices) - 1
+            neighbors: Array1DInt = np.array(neighbor_indices) - 1
         elif method == "distance":
             # Generate mask for excluded atoms
-            mask = np.zeros(len(coordinates), dtype=bool)
+            mask: Array1DBool = np.zeros(len(coordinates), dtype=bool)
             mask[excluded_atoms - 1] = True
             mask[atom_index - 1] = True
 
@@ -110,14 +121,15 @@ class Pyramidalization:
         c /= np.linalg.norm(c)
 
         # Calculate alpha for all permutations
-        alphas = []
-        vectors = []
-        cos_alphas = []
-        thetas = []
+        alphas: list[float] = []
+        vectors: list[Array1DFloat] = []
+        cos_alphas: list[float] = []
+        thetas: list[float] = []
         for v_1, v_2, v_3 in itertools.permutations([a, b, c], 3):
             # Calculate cos_alpha
-            normal = np.cross(v_1, v_2)
-            normal /= np.linalg.norm(normal)
+            # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released
+            normal: Array1DFloat = np.cross(v_1, v_2)
+            normal /= np.linalg.norm(normal)  # type: ignore
             cos_alpha = np.dot(v_3, normal)
 
             # Test if normal vector is colinear with v_3
@@ -142,8 +154,9 @@ class Pyramidalization:
 
         # Calculate P
         v_1, v_2 = vectors[0]
+        # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released
         sin_theta = np.linalg.norm(np.cross(v_1, v_2))
-        P = sin_theta * cos_alphas[0]
+        P = sin_theta * cos_alphas[0]  # type: ignore
 
         # Correct P if pyramid is "acute" on average
         if np.mean(alphas) < 0:
