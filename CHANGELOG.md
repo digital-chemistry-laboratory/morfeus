@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add capacity to Boltzmann average 1D arrays in `ConformerEnsemble`
 - `ConeAngle` now uses libconeangle as default with the internal algorithm as backup.
 
+### Fixed
+- Fixed crash when `ConformerEnsemble` was initiated with `connectivity_matrix=None`
+
 ## [0.5.5] - 2021-10-07
 
 ### Fixed
