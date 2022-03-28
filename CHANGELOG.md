@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ConeAngle` now uses libconeangle as default with the internal algorithm as backup.
 
 ### Fixed
+- Fixed ``XTB.get_fukui``, affecting the varieties "electrophilicity" (wrong sign), "nucleophilicity" (wrong sign), "radical" (wrong number) and "local_electrophilicty" (wrong number)
 - Fixed crash when `ConformerEnsemble` was initiated with `connectivity_matrix=None`
 
 ## [0.5.5] - 2021-10-07
