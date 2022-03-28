@@ -2,6 +2,11 @@ channels:
   - conda-forge
 dependencies:
   - dftd4
+  - matplotlib
+  - openbabel
+  - pip
+  - pymeshfix
+  - python >= 3.8
   - libconeangle
   - matplotlib
   - openbabel
@@ -13,5 +18,3 @@ dependencies:
   - spyrmsd
   - vtk
   - xtb-python
-  - pip:
-      - pymeshfix

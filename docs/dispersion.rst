@@ -30,7 +30,7 @@ Exported surface from the `Multiwfn program`_ generated with the surface
 analysis module (option 12 in the main menu). After generating the surface, it
 should be exported to a file using the hidden option 66. This generates a file,
 "vtx.pdb" that can be read by ᴍᴏʀғᴇᴜs. For more information, see Section 3.15.4
-of the `Multiwfn manual`_. 
+of the `Multiwfn manual`_.
 
 ******
 Module
@@ -112,7 +112,7 @@ For more detailed information, use ``help(Dispersion)`` or see the API:
 .. note::
 
   Use the command line flag ``--molc6`` to get the dftd4 program to print the
-  dispersion coefficients. 
+  dispersion coefficients.
 
 *******************
 Command line script
@@ -120,10 +120,10 @@ Command line script
 
 The command line script provides access to the basic functionality through
 the terminal.
-  
+
 .. code-block:: console
   :caption: Example
-  
+
   $ morfeus dispersion tBu.xyz - - print_report
   Surface area (Å²): 142.6
   Surface volume (Å³): 121.2
@@ -135,11 +135,11 @@ Background
 
 The 🍺P\ :sub:`int` dispersion descriptor was introduced by Pollice and Chen as
 a quantitative descriptor for dispersion interactions
-:footcite:`pollice_universal_2019`. ᴍᴏʀғᴇᴜs can calculate P\ :sub:`int` based on an
-electron density isosurface, as in the original article. In addition, we have
-found that a very fast method based on surfaces constructed from vdW radii
+:footcite:`pollice_universal_2019`. ᴍᴏʀғᴇᴜs can calculate P\ :sub:`int` based
+on an electron density isosurface, as in the original article. In addition, we
+have found that a very fast method based on surfaces constructed from vdW radii
 correlate well with P\ :sub:`int` from electron densities, at a fraction of the
-cost.   
+cost.
 
 .. todo::
   add figure here benchmarks/local_force/benchmark.png

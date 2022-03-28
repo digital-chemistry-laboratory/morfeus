@@ -16,9 +16,9 @@ The entry point to the CLI is the command line script ``morfeus``. Running this
 command in the terminal gives a help page with all the possible subcommands.
 
 .. tab:: Input 1
-  
+
   .. code-block:: console
-  
+
     $ morfeus
 
 .. tab:: Output 1
@@ -27,42 +27,42 @@ command in the terminal gives a help page with all the possible subcommands.
 
     NAME
       morfeus
-    
+
     SYNOPSIS
       morfeus COMMAND
-    
+
     COMMANDS
       COMMAND is one of the following:
-    
+
        buried_volume
          CLI for buried volume.
-    
+
        cone_angle
          CLI for cone angle.
-    
+
        conformer
          CLI for cone angle.
-    
+
        dispersion
          CLI for dispersion descriptor.
-    
+
        local_force
          CLI for local force.
-    
+
        pyramidalization
          CLI for pyramidalization.
-    
+
        sasa
          CLI for solvent accessible surface area.
-    
+
        sterimol
          CLI for Sterimol.
-    
+
        visible_volume
          CLI for visible volume.
-    
+
        xtb
-         CLI for XTB.    
+         CLI for XTB.
 
 There is also a help page for each subcommand:
 
@@ -70,7 +70,7 @@ There is also a help page for each subcommand:
 
   .. code-block:: console
 
-    $ morfeus sterimol -- --help  
+    $ morfeus sterimol -- --help
 
 .. tab:: Output 2
 
@@ -78,32 +78,32 @@ There is also a help page for each subcommand:
 
     NAME
         morfeus sterimol - CLI for Sterimol.
-    
+
     SYNOPSIS
         morfeus sterimol FILE
-    
+
     DESCRIPTION
         CLI for Sterimol.
-    
+
     POSITIONAL ARGUMENTS
         FILE
             Type: str
             Geometry file
-    
+
     NOTES
         You can also use flags syntax for POSITIONAL ARGUMENTS
 
 All the subcommands serve as entry points to the corresponding Python classes
 used in the module system. For example, ``morfeus sterimol tBu.xyz -`` creates
-a partially instantiated :py:class:`Sterimol <morfeus.sterimol.Sterimol>` object
-where the ``elements`` and ``coordinates`` arguments have been set from the
-geometry file. To find out what other argument can be given to this object, we
-run
+a partially instantiated :py:class:`Sterimol <morfeus.sterimol.Sterimol>`
+object where the ``elements`` and ``coordinates`` arguments have been set from
+the geometry file. To find out what other argument can be given to this object,
+we run
 
 .. tab:: Input 3
 
   .. code-block:: console
-    
+
     $ morfeus sterimol tBu.xyz - -- --help
 
 .. tab:: Output 3
@@ -112,19 +112,19 @@ run
 
     NAME
         morfeus sterimol tBu.xyz - partial(func, *args, **keywords) - new function with partial application of the given arguments and keywords.
-    
+
     SYNOPSIS
         morfeus sterimol tBu.xyz - GROUP | COMMAND | --dummy_index=DUMMY_INDEX --attached_index=ATTACHED_INDEX <flags>
-    
+
     DESCRIPTION
         partial(func, *args, **keywords) - new function with partial application of the given arguments and keywords.
-    
+
     ARGUMENTS
         DUMMY_INDEX
             Type: int
         ATTACHED_INDEX
             Type: typing.Union[int, ...
-    
+
     FLAGS
         --radii=RADII
             Type: Optional[typing.Union[int, float, complex, str, bytes, numpy.ge...
@@ -141,17 +141,17 @@ run
         --calculate=CALCULATE
             Type: bool
             Default: True
-    
+
     GROUPS
         GROUP is one of the following:
-    
+
          args
-    
+
          keywords
-    
+
     COMMANDS
         COMMAND is one of the following:
-    
+
          func
            Performs and stores results of Sterimol calculation.
 
@@ -164,7 +164,7 @@ values are available.
 .. tab:: Input 4
 
   .. code-block:: console
-  
+
       $ morfeus sterimol tBu.xyz - 1 2 --radii_type=bondi - -- --help
 
 .. tab:: Output 4
@@ -229,8 +229,8 @@ We could for example access the ``B_1_value`` attribute or run the method
   $ morfeus sterimol tBu.xyz - 1 2 --radii_type=bondi - B_1_value
   2.964748534441907
   $ morfeus sterimol tBu.xyz - 1 2 --radii_type=bondi - print_report
-  L         B_1       B_5       
-  4.31      2.96      3.37  
+  L         B_1       B_5
+  4.31      2.96      3.37
 
 The last command correspond to the following Python code using the module
 system.
@@ -250,16 +250,16 @@ Detailed use
 Positional arguments are passed in sequence separated by spaces, for example:
 
 .. code-block:: console
-  
-  $ morfeus sterimol tBu.xyz - 1 2 
+
+  $ morfeus sterimol tBu.xyz - 1 2
 
 Keyword arguments are passed with or without an equals sign, so both of these
 commands give the same result:
 
 .. code-block:: console
-  
-  $ morfeus sterimol tBu.xyz - 1 2 --radii_type=bondi 
-  $ morfeus sterimol tBu.xyz - 1 2 --radii_type bondi 
+
+  $ morfeus sterimol tBu.xyz - 1 2 --radii_type=bondi
+  $ morfeus sterimol tBu.xyz - 1 2 --radii_type bondi
 
 A single ``-`` is used to indicate that all arguments have been provided and
 the function/class should be evaluated. For example, the ``-`` before
@@ -273,7 +273,7 @@ class, as we don't want to give more keyword arguments. Then the
 
 Arguments following the ``--`` separator go directly to the Fire program. For
 example, the ``--`` in the line below makes sure that ``--help`` is sent to
-Python Fire instead of the ``Sterimol`` object. 
+Python Fire instead of the ``Sterimol`` object.
 
 .. code-block:: console
 
@@ -309,7 +309,7 @@ Chaining
 A very powerful feature of Fire is chaining, which allows a series of commands
 to be run on the same object. The commands (and their arguments) are separated
 by hyphens, and the chain should end with a command that gives some output.
-Here is one example where we create an electron density isosurface from a cube 
+Here is one example where we create an electron density isosurface from a cube
 file for a dispersion descriptor calculation.
 
 .. code-block:: console
@@ -345,7 +345,7 @@ We can break down the chaining in detail:
   Run ``compute_p_int`` method and return same object
 
 ``print_report``
-  Run print_report method and return output 
+  Run print_report method and return output
 
 ****************
 Interactive mode
@@ -356,27 +356,27 @@ interactive Python session, where it can be manipulated further. This is
 triggered with the Fire argument ``--interactive`` and could be used to,
 *e.g.*, access the 3D drawing capabilities of ᴍᴏʀғᴇᴜs.
 
-.. code-block:: none
+.. code-block::
 
   $ morfeus sterimol tBu.xyz - 1 2 - -- --interactive
 
   Fire is starting a Python REPL with the following objects:
   Modules: fire
   Objects: component, main, morfeus, result, trace
-  
-  Python 3.9.2 | packaged by conda-forge | (default, Feb 21 2021, 05:02:20) 
+
+  Python 3.9.2 | packaged by conda-forge | (default, Feb 21 2021, 05:02:20)
   Type 'copyright', 'credits' or 'license' for more information
   IPython 7.22.0 -- An enhanced Interactive Python. Type '?' for help.
-  
+
   In [1]: result
   Out[1]: Sterimol(14 atoms)
-  
+
   In [2]: result.bond_length
   Out[2]: 1.1
-  
+
   In [3]: result.print_report()
-  L         B_1       B_5       
-  4.21      2.86      3.27      
+  L         B_1       B_5
+  4.21      2.86      3.27
 
   In [4]: result.draw_3D()
   ...
@@ -404,13 +404,13 @@ bool  True
 *********
 Resources
 *********
- 
+
 More detailed information on using the CLI can be found in the Fire
 documentation:
 
 - `The Python Fire guide`__
 - `Using the CLI`__
-- `Specifying arguments`__ 
+- `Specifying arguments`__
 
 .. __: https://google.github.io/python-fire/guide/
 .. __: https://google.github.io/python-fire/using-cli/

@@ -1,5 +1,5 @@
 """Automated testing linting and formatting apparatus."""
-# external
+
 from __future__ import annotations
 
 import nox

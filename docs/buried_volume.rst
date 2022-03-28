@@ -3,7 +3,7 @@ Buried volume
 =============
 
 Buried volumes are implemented as described by Cavallo and co-workers
-:footcite:`falivene_sambvca_2016`. 
+:footcite:`falivene_sambvca_2016`.
 
 ******
 Module
@@ -46,7 +46,7 @@ method. To get meaningful results, the system should to be oriented in a
 reproducible way. Orientation is acheived by specifiying the
 ``z_axis_atoms=<list>``and ``xz_plane_atoms=<list>`` keyword arguments. For
 more information on the orientation convention, see the original reference
-:footcite:`falivene_sambvca_2016`. 
+:footcite:`falivene_sambvca_2016`.
 
 z-axis orientation
   The list of atom indices from ``z_axis_atoms`` is used to define the
@@ -58,9 +58,9 @@ xz-plane orientation
   orientation of the xz-plane. The coordinate system will be rotateed so that
   the geometric mean of the given atoms lies in the xz plane.
 
-The results of the octant analysis is stored in the ``octants`` attribute, 
+The results of the octant analysis is stored in the ``octants`` attribute,
 giving percent buried volume, buried volume (in Å³) and the free volume (in Å³)
-for each octant. 
+for each octant.
 
 .. code-block:: python
   :caption: Quadrant and octant analysis
@@ -80,10 +80,10 @@ for each octant.
    'free_volume': {1: 32.53704789624491, ...}}
 
 The octants are numbered__ from 0–7 according to the Gray code and their signs
-are given by the 
+are given by the
 :py:data:`OCTANT_SIGNS <morfeus.buried_volume.OCTANT_SIGNS>` dictionary.
 The quadrants are numbered from 1–4 corresponding to the Roman numerals I–V and
-the corresponding signs are given in the 
+the corresponding signs are given in the
 :py:data:`QUADRANT_SIGNS <morfeus.buried_volume.QUADRANT_SIGNS>` dictionary.
 
 .. __: https://en.wikipedia.org/wiki/Octant_(solid_geometry)
@@ -115,7 +115,7 @@ the entries ``distal_volume`` and ``molecular_volume`` to the results.
    'buried_volume': {0: 0.0, ...},
    'free_volume': {0: 22.449297503777064, ...},
    'distal_volume': {0: 0.0, ...},
-   'molecular_volume': {0: 0.0, ...}} 
+   'molecular_volume': {0: 0.0, ...}}
 
 ########
 Plotting
@@ -123,7 +123,7 @@ Plotting
 
 A steric map can be plotted with
 :py:meth:`plot_steric_map <morfeus.buried_volume.BuriedVolume.plot_steric_map>`
-if the ``z_axis_atoms=<list>`` keyword has been given. 
+if the ``z_axis_atoms=<list>`` keyword has been given.
 
 .. code-block:: python
   :caption: Steric map
@@ -156,8 +156,8 @@ Background
 **********
 
 The percent of buried volume is a measure of the steric hindrance induced by a
-ligand of a transition metal complex :footcite:`falivene_sambvca_2016`. A web tool
-to calculate buried volumes, SambVca, was made available for scientific
+ligand of a transition metal complex :footcite:`falivene_sambvca_2016`. A web
+tool to calculate buried volumes, SambVca, was made available for scientific
 purposes by Cavallo and co-workers in 2009 :footcite:`poater_sambvca_2009` with
 version 2 in 2016 :footcite:`falivene_sambvca_2016`. .
 

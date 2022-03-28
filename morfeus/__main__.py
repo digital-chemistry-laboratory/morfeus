@@ -1,4 +1,5 @@
 """Run in command line mode."""
+
 import fire
 
 import morfeus.buried_volume
@@ -17,6 +18,7 @@ def main() -> None:
     """Call Fire to access command line scripts."""
     fire.Fire(
         {
+            "bite_angle": morfeus.bite_angle.cli,
             "buried_volume": morfeus.buried_volume.cli,
             "cone_angle": morfeus.cone_angle.cli,
             "conformer": morfeus.conformer.cli,

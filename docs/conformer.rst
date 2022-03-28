@@ -38,8 +38,8 @@ Below is an example where the RDKit is used to generate conformers for
 
 Here, conformers are first generated with the RDKit and optimized with the
 MMFF94 force field. Then a pruning based on RMSD brings the number of
-conformers down to 3, which are are sorted based on energy. For full information, 
-use ``help(ConformerEnsemble)`` or consult the API:
+conformers down to 3, which are are sorted based on energy. For full
+information, use ``help(ConformerEnsemble)`` or consult the API:
 :py:class:`ConformerEnsemble <morfeus.conformer.ConformerEnsemble>`.
 
 ####################
@@ -81,14 +81,14 @@ CREST
 #####
 
 Output from the CREST__ program can be parsed. Mᴏʀғᴇᴜs does not currently have
-any functionality for running CREST. The following files must be present in 
+any functionality for running CREST. The following files must be present in
 the output folder: *crest_conformers.xyz*, *cre_members* and *crest.eneriges*.
 
 .. tab:: Mᴏʀғᴇᴜs
 
   .. code-block:: python
     :caption: Conformer ensemble from CREST output
-  
+
     >>> ce = ce = ConformerEnsemble.from_crest("crest_output_folder")
     >>> ce
     ConformerEnsemble(8 conformers)
@@ -101,7 +101,7 @@ the output folder: *crest_conformers.xyz*, *cre_members* and *crest.eneriges*.
     array([0.45642055, 0.20716615, 0.11264294, 0.11207402, 0.11169634])
 
 .. tab:: CREST output
-  
+
   .. code-block:: none
 
     Erel/kcal        Etot weight/tot  conformer     set   degen     origin
@@ -179,7 +179,7 @@ The default of the function
 is to calculate the Boltzmann average at 298.15 K, but this can be changed with
 ``temperature=<float>`` and ``statistic=<str>``, where "var" or "std" are
 available. The temperature derivative of the Boltzmann average can also be
-calculated with the method 
+calculated with the method
 :py:meth:`ConformerEnsemble.boltzmann_average_dT <morfeus.conformer.ConformerEnsemble.boltzmann_average_dT>`
 
 ############
@@ -188,7 +188,7 @@ RMSD pruning
 
 Conformers are usually pruned on root mean square deviation in terms of (heavy)
 atom coordinates to remove redundant structures which correspond to essentially
-the same conformation. In Mᴏʀғᴇᴜs, this is achieved with the 
+the same conformation. In Mᴏʀғᴇᴜs, this is achieved with the
 :py:meth:`ConformerEnsemble.prune_rmsd <morfeus.conformer.ConformerEnsemble.prune_rmsd>`
 method. By default, the ``AllChem.AlignMolConformers`` function from RDKit is
 used to calculate the RMSD, but this can be changed with the keyword argument
@@ -218,7 +218,7 @@ installed for that option to work.
     - Optional
 
 The distinguishing factors are whether symmetry and non-heavy atoms are
-considered when calculating the RMSD. For the ``method="openbabel"`` and 
+considered when calculating the RMSD. For the ``method="openbabel"`` and
 ``method="spyrmsd"``, the keyword arguments ``symmetry=<bool>``and
 ``include_hs=<bool>`` are used to control the behavior. For the rest of the
 methods, these arguments will be ignored. Pruning out conformers that are the
@@ -238,9 +238,9 @@ Energy pruning
 
 Conformers are often pruned based on energy. The Boltzman weight for conformers
 above 3 kcal/mol are expected to contribute in a neglible fashion to the
-properties at room temperature. Therefore, the default of the 
+properties at room temperature. Therefore, the default of the
 :py:meth:`ConformerEnsemble.prune_energy <morfeus.conformer.ConformerEnsemble.prune_energy>`
-is to prune out all conformers above this energy. This can be changed with the 
+is to prune out all conformers above this energy. This can be changed with the
 keyword argument ``threshold=<float>``.
 
 .. code-block:: python
@@ -285,7 +285,7 @@ with GFN2-xTB.
   >>> ce.get_relative_energies()
   array([0.        , 0.63087431, 0.6308743 ])
 
-.. note:: 
+.. note::
 
   Optimization of many molecules with many conformers through the QCEngine
   interface is not efficient. The CREST_ program is recommended in these
@@ -306,9 +306,9 @@ type. :footcite:`merrill_solvent_2020`
 
 .. code-block:: python
   :caption: Degeneracies
-    
+
   >>> ce = ConformerEnsemble.from_rdkit("CCOCC", optimize="MMFF94")
-  >>> ce 
+  >>> ce
   ConformerEnsemble(50 conformers)
   >>> ce.prune_rmsd()
   ConformerEnsemble(7 conformers)
@@ -348,14 +348,14 @@ is an example for alanine.
   >>> ce.get_cip_labels()
   [('', 'S', '', '', '', '', '', '', '', '', '', '', ''),
    ('', 'S', '', '', '', '', '', '', '', '', '', '', ''),
-   ('', 'S', '', '', '', '', '', '', '', '', '', '', '')]  
+   ('', 'S', '', '', '', '', '', '', '', '', '', '', '')]
 
 .. code-block:: python
   :caption: Generating both enantiomers
 
   >>> ce = ConformerEnsemble.from_rdkit("CC(N)C(O)=O", optimize="MMFF94")
   >>> ce.prune_rmsd()
-  >>> ce.sort()  
+  >>> ce.sort()
   >>> ce.get_cip_labels()
   [('', 'R', '', '', '', '', '', '', '', '', '', '', ''),
    ('', 'S', '', '', '', '', '', '', '', '', '', '', ''),
@@ -365,12 +365,12 @@ is an example for alanine.
    ('', 'R', '', '', '', '', '', '', '', '', '', '', ''),
    ('', 'S', '', '', '', '', '', '', '', '', '', '', ''),
    ('', 'R', '', '', '', '', '', '', '', '', '', '', '')]
-  >>> ce.prune_enantiomers() 
-  >>> ce.get_cip_labels()  
+  >>> ce.prune_enantiomers()
+  >>> ce.get_cip_labels()
   [('', 'R', '', '', '', '', '', '', '', '', '', '', ''),
    ('', 'R', '', '', '', '', '', '', '', '', '', '', ''),
    ('', 'R', '', '', '', '', '', '', '', '', '', '', ''),
-   ('', 'R', '', '', '', '', '', '', '', '', '', '', '')]  
+   ('', 'R', '', '', '', '', '', '', '', '', '', '', '')]
 
 For more information, see the
 :py:meth:`ConformerEnsemble.prune_enantiomers <morfeus.conformer.ConformerEnsemble.prune_enantiomers>`

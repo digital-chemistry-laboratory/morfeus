@@ -1,4 +1,5 @@
 """Reference data for D3 calculations."""
+
 from __future__ import annotations
 
 import numpy as np

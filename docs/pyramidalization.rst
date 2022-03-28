@@ -49,7 +49,7 @@ The functionality is also available from the command line.
 
 .. code-block:: console
   :caption: Example
-  
+
   $ morfeus pyramidalization pyr.xyz - 1 - print_report
   P: 0.938
   P_angle: 7.579
@@ -64,8 +64,7 @@ Agranat and Radhakrishnan
 
 Pyramidalization can be calculated for any tetracoordinate atom as described in
 :footcite:`radhakrishnan_measures_1991`. Here, the pyramidalization *P* is
-calculated from the two angles *ɑ* and *θ* defined in
-:numref:`fig_pyramidalization`.
+calculated from the two angles *ɑ* and *θ* defined in the figure
 
 .. math::
 
@@ -86,7 +85,7 @@ differently. The sign of *ɑ* is taken from the average of these three angles.
 .. figure:: images/pyramidalization/pyramidalization.svg
   :name: fig_pyramidalization
   :width: 100%
-  
+
   Definition of α angle as negative for extreme pyramidalization.
 
 #######
@@ -100,7 +99,7 @@ An alternative and related measure of pyramidalization is due to Gavrish
 
   P = \sqrt{360° - \sum{\theta}}
 
-where *θ* is the bond angle in :numref:`fig_pyramidalization` and the sum is
-over the three possible bond angles.  
+where *θ* is the bond angle in the figure and the sum is over the three
+possible bond angles.
 
 .. footbibliography::

@@ -15,7 +15,7 @@ The Sterimol class calculates and stores Sterimol parameters.
 
 .. code-block:: python
   :caption: Example
-  
+
   >>> from morfeus import Sterimol, read_xyz
   >>> elements, coordinates = read_xyz("tBu.xyz")
   >>> sterimol = Sterimol(elements, coordinates, 1, 2)
@@ -30,7 +30,7 @@ The Sterimol class calculates and stores Sterimol parameters.
   4.21      2.87      3.27
 
 Radii can be changed with the argument ``radii_type=<str>`` and custom radii
-can be supplied as a list with ``radii=<list>``. 
+can be supplied as a list with ``radii=<list>``.
 
 The bond length between atoms 1 and 2 and the uncorrected L values (without the
 historical addition of 0.40 Å) can also be obtained.
@@ -58,44 +58,44 @@ The Sterimol vectors can be "buried":
 .. tab:: Delete
 
   .. code-block:: python
- 
+
     >>> elements, coordinates = read_xyz("P_p-Tol_3.xyz")
     >>> sterimol = Sterimol(elements, coordinates, 1, 2)
     >>> sterimol.print_report()
-    L         B_1       B_5       
-    7.44      4.94      7.44      
+    L         B_1       B_5
+    7.44      4.94      7.44
     >>> sterimol.bury(method="delete")
     >>> sterimol.print_report()
-    L         B_1       B_5       
-    6.92      4.27      6.04     
+    L         B_1       B_5
+    6.92      4.27      6.04
 
 .. tab:: Truncate
 
   .. code-block:: python
- 
+
     >>> elements, coordinates = read_xyz("P_p-Tol_3.xyz")
     >>> sterimol = Sterimol(elements, coordinates, 1, 2)
     >>> sterimol.print_report()
-    L         B_1       B_5       
-    7.44      4.94      7.44      
+    L         B_1       B_5
+    7.44      4.94      7.44
     >>> sterimol.bury(method="truncate")
     >>> sterimol.print_report()
-    L         B_1       B_5       
-    5.90      4.27      5.01  
-    
+    L         B_1       B_5
+    5.90      4.27      5.01
+
 .. tab:: Slice
 
   .. code-block:: python
- 
+
     >>> elements, coordinates = read_xyz("P_p-Tol_3.xyz")
     >>> sterimol = Sterimol(elements, coordinates, 1, 2)
     >>> sterimol.print_report()
-    L         B_1       B_5       
-    7.44      4.94      7.44      
+    L         B_1       B_5
+    7.44      4.94      7.44
     >>> sterimol.bury(method="slice")
     >>> sterimol.print_report()
-    L         B_1       B_5       
-    5.82      3.77      5.24    
+    L         B_1       B_5
+    5.82      3.77      5.24
 
 There are three different methods for doing this:
 
@@ -107,13 +107,14 @@ There are three different methods for doing this:
   sphere.
 ``slice``
   A point vdW surface is constructed from the atoms and all points outside the
-  sphere are removed. Then the Sterimol vectors are computed based on the 
+  sphere are removed. Then the Sterimol vectors are computed based on the
   remaining points.
 
 A standard sphere radius of 5.5 Å is used that can be changed with
-``sphere_radius=<float>``. For the ``delete`` method, the scaling factor for the
-atom cutoff can be changed with ``radii_scale=<float>``. For more information,
-see the API: :py:meth:`Sterimol.bury <morfeus.sterimol.Sterimol.bury>`
+``sphere_radius=<float>``. For the ``delete`` method, the scaling factor for
+the atom cutoff can be changed with ``radii_scale=<float>``. For more
+information, see the API:
+:py:meth:`Sterimol.bury <morfeus.sterimol.Sterimol.bury>`
 
 *******************
 Command line script
@@ -124,10 +125,10 @@ terminal.
 
 .. code-block:: console
   :caption: Example
-  
+
   $ morfeus sterimol tBu.xyz - 1 2 - print_report
-  L         B_1       B_5       
-  4.21      2.86      3.27      
+  L         B_1       B_5
+  4.21      2.86      3.27
 
 **********
 Background

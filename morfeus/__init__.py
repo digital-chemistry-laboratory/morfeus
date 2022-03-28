@@ -25,6 +25,7 @@ Scripts:
 """
 from importlib import metadata
 
+from morfeus.bite_angle import BiteAngle
 from morfeus.buried_volume import BuriedVolume
 from morfeus.cone_angle import ConeAngle
 from morfeus.dispersion import Dispersion
@@ -40,6 +41,7 @@ __all__ = [
     "read_geometry",
     "read_gjf",
     "read_xyz",
+    "BiteAngle",
     "BuriedVolume",
     "ConeAngle",
     "Dispersion",
