@@ -289,7 +289,10 @@ class ConformerEnsemble:
         self.charge = charge
         self.formal_charges = np.array(formal_charges)
         self.multiplicity = multiplicity
-        self.connectivity_matrix = np.array(connectivity_matrix)
+        if connectivity_matrix is not None:
+            self.connectivity_matrix = np.array(connectivity_matrix)
+        else:
+            self.connectivity_matrix = None
         self.mol = None
         self.ref_cip_label = ref_cip_label
 
