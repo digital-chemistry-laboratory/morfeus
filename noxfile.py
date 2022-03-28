@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 # external
+from __future__ import annotations
+
 import nox
 from nox.sessions import Session
 
 package = "morfeus"
 nox.options.sessions = "lint", "tests", "mypy"  # default session
 locations = "morfeus", "tests", "noxfile.py"  # Linting locations
-pyversions = ["3.8", "3.9"]
+pyversions = ["3.8", "3.9", "3.10"]
 
 
 # Testing
@@ -17,14 +19,13 @@ pyversions = ["3.8", "3.9"]
 def tests(session: Session) -> None:
     """Run tests."""
     args = session.posargs + ["--cov=morfeus", "--import-mode=importlib", "-s"]
-    session.install("-r", "requirements.txt")
     session.install("pytest", "pytest-cov")
-    session.install("-e", ".", "--no-deps")
+    session.install(".")
     session.run("pytest", *args)
 
 
 # Linting
-@nox.session(python="3.9")
+@nox.session(python="3.10")
 def lint(session: Session) -> None:
     """Lint code."""
     args = session.posargs or locations
@@ -41,7 +42,7 @@ def lint(session: Session) -> None:
 
 
 # Code formatting
-@nox.session(python="3.9")
+@nox.session(python="3.10")
 def black(session: Session) -> None:
     """Format code."""
     args = session.posargs or locations
@@ -50,10 +51,11 @@ def black(session: Session) -> None:
 
 
 # Static typing
-@nox.session(python="3.9")
+@nox.session(python="3.10")
 def mypy(session: Session) -> None:
     """Run the static type checker."""
     args = session.posargs or locations
     session.install("mypy")
     session.install("types-pkg_resources")
+    session.install("numpy")
     session.run("mypy", *args)

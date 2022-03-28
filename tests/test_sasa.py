@@ -8,6 +8,7 @@ from numpy.testing import assert_almost_equal, assert_array_almost_equal
 import pytest
 
 from morfeus import read_xyz, SASA
+from morfeus.typing import Array1DFloat
 
 DATA_DIR = Path(__file__).parent / "data" / "sasa"
 XYZ_DIR = Path(__file__).parent / "data" / "buried_volume" / "xyz"
@@ -19,7 +20,7 @@ def test_one():
 
     elements, coordinates = read_xyz(XYZ_DIR / "1.xyz")
     sasa = SASA(elements, coordinates)
-    atom_areas = np.array(list(sasa.atom_areas.values()))
+    atom_areas: Array1DFloat = np.array(list(sasa.atom_areas.values()))
     assert_almost_equal(sasa.area, 624, decimal=0)
     assert_array_almost_equal(atom_areas, atom_areas_ref, decimal=0)
 
@@ -42,6 +43,6 @@ def test_reference(sasa_data):
     atom_areas_ref = np.loadtxt(DATA_DIR / f"atom_areas/{idx}.txt")
     elements, coordinates = read_xyz(XYZ_DIR / f"{idx}.xyz")
     sasa = SASA(elements, coordinates)
-    atom_areas = np.array(list(sasa.atom_areas.values()))
+    atom_areas: Array1DFloat = np.array(list(sasa.atom_areas.values()))
     assert_almost_equal(sasa.area, sasa_ref, decimal=0)
     assert_array_almost_equal(atom_areas, atom_areas_ref, decimal=0)

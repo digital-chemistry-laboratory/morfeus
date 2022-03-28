@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 import functools
 import typing
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Any
 
 import numpy as np
 import scipy.spatial
@@ -12,7 +13,7 @@ import scipy.spatial
 from morfeus.data import atomic_symbols, jmol_colors
 from morfeus.geometry import Atom, Sphere
 from morfeus.io import read_geometry
-from morfeus.typing import ArrayLike1D, ArrayLike2D
+from morfeus.typing import Array1DFloat, Array2DFloat, ArrayLike1D, ArrayLike2D
 from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
@@ -40,32 +41,32 @@ class SASA:
     """
 
     area: float
-    atom_areas: Dict[int, float]
-    atom_volumes: Dict[int, float]
+    atom_areas: dict[int, float]
+    atom_volumes: dict[int, float]
     volume: float
-    _atoms: List[Atom]
+    _atoms: list[Atom]
     _density: float
     _probe_radius: float
 
     def __init__(
         self,
-        elements: Union[Iterable[int], Iterable[str]],
+        elements: Iterable[int] | Iterable[str],
         coordinates: ArrayLike2D,
-        radii: Optional[ArrayLike1D] = None,
+        radii: ArrayLike1D | None = None,
         radii_type: str = "crc",
         probe_radius: float = 1.4,
         density: float = 0.01,
     ) -> None:
         # Converting elements to atomic numbers if the are symbols
         elements = convert_elements(elements, output="numbers")
-        coordinates = np.array(coordinates)
+        coordinates: Array2DFloat = np.array(coordinates)
 
         # Getting radii if they are not supplied
         if radii is None:
             radii = get_radii(elements, radii_type=radii_type)
 
         # Increment the radii with the probe radius
-        radii = np.array(radii)
+        radii: Array1DFloat = np.array(radii)
         radii = radii + probe_radius
 
         # Construct list of atoms
@@ -100,7 +101,7 @@ class SASA:
             ratio_accessible = 1 - ratio_occluded
 
             # Calculate area
-            area = 4 * np.pi * atom.radius ** 2 * ratio_accessible
+            area = 4 * np.pi * atom.radius**2 * ratio_accessible
             atom.area = area
             atom.point_areas = np.zeros(n_points)
             if n_accessible > 0:
@@ -115,8 +116,8 @@ class SASA:
 
             # Calculate volume
             volume = (4 * np.pi / 3 / n_points) * (
-                atom.radius ** 2 * np.dot(atom.coordinates, accessible_summed)
-                + atom.radius ** 3 * n_accessible
+                atom.radius**2 * np.dot(atom.coordinates, accessible_summed)
+                + atom.radius**3 * n_accessible
             )
             atom.volume = volume
             atom.point_volumes = np.zeros(n_points)
@@ -152,7 +153,7 @@ class SASA:
             # Select coordinates and radii for other atoms
             test_coordinates = [test_atom.coordinates for test_atom in test_atoms]
             test_radii = [test_atom.radius for test_atom in test_atoms]
-            test_radii = np.array(test_radii).reshape(-1, 1)
+            test_radii: Array1DFloat = np.array(test_radii).reshape(-1, 1)
 
             # Get distances to other atoms and subtract radii
             if test_coordinates:
@@ -224,7 +225,9 @@ class SASA:
             p.add_mesh(sphere, color=color, opacity=1, name=str(atom.index))
 
         # Draw surface points
-        surface_points = np.vstack([atom.accessible_points for atom in self._atoms])
+        surface_points: Array2DFloat = np.vstack(
+            [atom.accessible_points for atom in self._atoms]
+        )
         p.add_points(
             surface_points, color=point_color, opacity=opacity, point_size=size
         )

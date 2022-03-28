@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 import functools
 import typing
-from typing import Any, Dict, Iterable, Optional, Union
+from typing import Any
 
 import numpy as np
 
 from morfeus.data import ANGSTROM_TO_BOHR, HARTREE_TO_EV
 from morfeus.io import read_geometry
-from morfeus.typing import Array1D, ArrayLike2D
+from morfeus.typing import Array1DFloat, Array2DFloat, ArrayLike2D
 from morfeus.utils import convert_elements, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
@@ -35,23 +36,23 @@ class XTB:
     """
 
     _charge: int
-    _coordinates: np.ndarray
-    _electronic_temperature: Optional[int]
-    _elements: np.ndarray
-    _n_unpaired: Optional[int]
+    _coordinates: Array2DFloat
+    _electronic_temperature: int | None
+    _elements: Array1DFloat
+    _n_unpaired: int | None
     _results: Any
-    _solvent: Optional[str]
+    _solvent: str | None
     _version: str
 
     def __init__(
         self,
-        elements: Union[Iterable[int], Iterable[str]],
+        elements: Iterable[int] | Iterable[str],
         coordinates: ArrayLike2D,
         version: str = "2",
         charge: int = 0,
-        n_unpaired: Optional[int] = None,
-        solvent: Optional[str] = None,
-        electronic_temperature: Optional[int] = None,
+        n_unpaired: int | None = None,
+        solvent: str | None = None,
+        electronic_temperature: int | None = None,
     ) -> None:
         # Converting elements to atomic numbers if the are symbols
         self._elements = np.array(convert_elements(elements, output="numbers"))
@@ -91,7 +92,7 @@ class XTB:
 
         return bond_order
 
-    def get_bond_orders(self, charge_state: int = 0) -> Array1D:
+    def get_bond_orders(self, charge_state: int = 0) -> Array1DFloat:
         """Returns bond orders.
 
         Args:
@@ -101,18 +102,18 @@ class XTB:
             bond_orders: Bond orders
         """
         self._check_results(charge_state)
-        bond_orders: np.ndarray = self._results[charge_state].get_bond_orders()
+        bond_orders = self._results[charge_state].get_bond_orders()
 
         return bond_orders
 
-    def _get_charges(self, charge_state: int = 0) -> Array1D:
+    def _get_charges(self, charge_state: int = 0) -> Array1DFloat:
         """Returns atomic charges."""
         self._check_results(charge_state)
-        charges: np.ndarray = self._results[charge_state].get_charges()
+        charges = self._results[charge_state].get_charges()
 
         return charges
 
-    def get_charges(self, charge_state: int = 0) -> Dict[int, float]:
+    def get_charges(self, charge_state: int = 0) -> dict[int, float]:
         """Returns atomic charges.
 
         Args:
@@ -127,7 +128,7 @@ class XTB:
 
         return charges
 
-    def get_dipole(self, charge_state: int = 0) -> Array1D:
+    def get_dipole(self, charge_state: int = 0) -> Array1DFloat:
         """Calculate dipole vector (a.u.).
 
         Args:
@@ -137,7 +138,7 @@ class XTB:
             dipole: Dipole vector
         """
         self._check_results(charge_state)
-        dipole: np.ndarray = self._results[charge_state].get_dipole()
+        dipole = self._results[charge_state].get_dipole()
 
         return dipole
 
@@ -161,7 +162,7 @@ class XTB:
 
         return ea
 
-    def get_fukui(self, variety: str) -> Dict[int, float]:
+    def get_fukui(self, variety: str) -> dict[int, float]:
         """Calculate Fukui coefficients.
 
         Args:
@@ -182,20 +183,22 @@ class XTB:
             "nucleophilicity",
             "radical",
         ]
-        fukui: np.ndarray
+        fukui: Array1DFloat
         if variety in ["local_nucleophilicity", "nucleophilicity"]:
-            fukui = self._get_charges(0) - self._get_charges(1)
+            fukui = self._get_charges(1) - self._get_charges(0)
         elif variety == "electrophilicity":
-            fukui = self._get_charges(-1) - self._get_charges(0)
+            fukui = self._get_charges(0) - self._get_charges(-1)
         elif variety == "radical":
-            fukui = (self._get_charges(-1) - self._get_charges(0)) / 2
+            fukui = (self._get_charges(1) - self._get_charges(-1)) / 2
         elif variety == "dual":
             fukui = (
                 2 * self._get_charges(0) - self._get_charges(1) - self._get_charges(-1)
             )
         elif variety == "local_electrophilicity":
-            fukui_radical = np.array(list(self.get_fukui("radical").values()))
-            fukui_dual = np.array(list(self.get_fukui("dual").values()))
+            fukui_radical: Array1DFloat = np.array(
+                list(self.get_fukui("radical").values())
+            )
+            fukui_dual: Array1DFloat = np.array(list(self.get_fukui("dual").values()))
             chem_pot = -(self.get_ip() + self.get_ea()) / 2
             hardness = self.get_ip() - self.get_ea()
             fukui = (
@@ -315,10 +318,10 @@ class XTB:
         if self._results[charge_state] is None:
             self._sp(charge_state)
 
-    def _get_eigenvalues(self) -> Array1D:
+    def _get_eigenvalues(self) -> Array1DFloat:
         """Get orbital eigenvalues."""
         self._check_results(0)
-        eigenvalues: np.ndarray = self._results[0].get_orbital_eigenvalues()
+        eigenvalues = self._results[0].get_orbital_eigenvalues()
         return eigenvalues
 
     def _get_energy(self, charge_state: int = 0) -> float:
@@ -327,10 +330,10 @@ class XTB:
         energy: float = self._results[charge_state].get_energy()
         return energy
 
-    def _get_occupations(self) -> Array1D:
+    def _get_occupations(self) -> Array1DFloat:
         """Get occupation numbers."""
         self._check_results(0)
-        occupations: np.ndarray = self._results[0].get_orbital_occupations()
+        occupations = self._results[0].get_orbital_occupations()
         return occupations
 
     def _sp(self, charge_state: int = 0) -> None:

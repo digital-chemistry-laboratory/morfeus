@@ -5,11 +5,9 @@ Data taken from the Mendeleev package unless otherwise specified.
 
 from __future__ import annotations
 
-from typing import Dict, Optional
-
 import scipy.constants
 
-atomic_symbols: Dict[int, str] = {
+atomic_symbols: dict[int, str] = {
     1: "H",
     2: "He",
     3: "Li",
@@ -138,7 +136,7 @@ atomic_symbols: Dict[int, str] = {
 # Commission on Isotopic Abundances and Atomic Weights. Tables can be found here:
 # https://www.ciaaw.org/. See Pure and Applied Chemistry 2016, 88,
 # 265. and revisions. Summary of latest data: https://www.qmul.ac.uk/sbcs/iupac/AtWt/
-atomic_masses: Dict[int, float] = {
+atomic_masses: dict[int, float] = {
     1: 1.00782503223,
     2: 4.00260325413,
     3: 7.0160034366,
@@ -260,7 +258,7 @@ atomic_masses: Dict[int, float] = {
 }
 """Atomic numbers as keys and masses as values."""
 
-atomic_numbers: Dict[str, int] = {
+atomic_numbers: dict[str, int] = {
     "H": 1,
     "He": 2,
     "Li": 3,
@@ -384,7 +382,7 @@ atomic_numbers: Dict[str, int] = {
 
 # William M Haynes. CRC Handbook of Chemistry and Physics.
 # CRC Press, London, 95th edition, 2014. ISBN 9781482208689.
-radii_crc: Dict[int, float] = {
+radii_crc: dict[int, float] = {
     1: 1.1,
     2: 1.4,
     3: 1.82,
@@ -492,7 +490,7 @@ radii_crc: Dict[int, float] = {
 """Atomic numbers as keys and CRC vdW radii as values."""
 
 # Bondi, A. J. Phys. Chem. 1964, 68, 441.
-radii_bondi: Dict[int, float] = {
+radii_bondi: dict[int, float] = {
     1: 1.2,
     2: 1.4,
     3: 1.81,
@@ -526,7 +524,7 @@ radii_bondi: Dict[int, float] = {
 
 # Mantina, M.; Chamberlin, A. C.; Valero, R.; Cramer, C. J.; Truhlar, D. G. J.
 # Phys. Chem. A 2009, 113, 5806.
-radii_truhlar: Dict[int, float] = {
+radii_truhlar: dict[int, float] = {
     1: 1.1,
     2: 1.4,
     3: 1.81,
@@ -576,7 +574,7 @@ radii_truhlar: Dict[int, float] = {
 
 # Alvarez, S. Dalton Trans. 2013, 42, 8617.
 # Vogt, J.; Alvarez, S. Inorg. Chem. 2014, 53, 9260.
-radii_alvarez: Dict[int, float] = {
+radii_alvarez: dict[int, float] = {
     1: 1.2,
     2: 1.43,
     3: 2.12,
@@ -676,7 +674,7 @@ radii_alvarez: Dict[int, float] = {
 
 # Rahm, M.; Hoffmann, R.; Ashcroft, N. W. Chem. - Eur. J. 2016, 22, 14625.
 # Rahm, M.; Hoffmann, R.; Ashcroft, N. W. Chem. - Eur. J. 2017, 23, 4017
-radii_rahm: Dict[int, float] = {
+radii_rahm: dict[int, float] = {
     1: 1.54,
     2: 1.34,
     3: 2.2,
@@ -777,7 +775,7 @@ radii_rahm: Dict[int, float] = {
 """Atomic numbers as keys and Rahm radii as values."""
 
 # Pyykkö, P.; Atsumi, M. Chem. - Eur. J. 2009, 15, 186.
-cov_radii_pyykko: Dict[int, float] = {
+cov_radii_pyykko: dict[int, float] = {
     1: 0.32,
     2: 0.46,
     3: 1.33,
@@ -899,7 +897,7 @@ cov_radii_pyykko: Dict[int, float] = {
 }
 """Atomic numbers as keys and Pyykkö radii as values."""
 
-jmol_colors: Dict[int, Optional[str]] = {
+jmol_colors: dict[int, str | None] = {
     0: "#ffffff",
     1: "#ffffff",
     2: "#ffc0cb",
