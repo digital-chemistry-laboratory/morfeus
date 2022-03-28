@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+import functools
+from typing import Any
 
 import numpy as np
 
+from morfeus.io import read_geometry
 from morfeus.typing import Array2DFloat, ArrayLike1D, ArrayLike2D
 
 
@@ -78,3 +81,16 @@ class BiteAngle:
 
         self.angle = angle
         self.inverted = inverted
+
+
+def cli(file: str) -> Any:
+    """CLI for bite angle.
+
+    Args:
+        file: Geometry file
+
+    Returns:
+        Partially instantiated class
+    """
+    _, coordinates = read_geometry(file)
+    return functools.partial(BiteAngle, coordinates)

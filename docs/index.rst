@@ -100,6 +100,7 @@ both academic and commercial use.
    :caption: Methods
    :hidden:
 
+   bite_angle
    buried_volume
    cone_angle
    conformer

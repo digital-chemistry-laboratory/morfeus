@@ -24,7 +24,7 @@ extensions = [
     "sphinxcontrib.bibtex",
 ]
 master_doc = "index"
-numfig = True
+# numfig = True
 source_suffix = ".rst"
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 

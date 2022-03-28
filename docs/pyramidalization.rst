@@ -64,8 +64,7 @@ Agranat and Radhakrishnan
 
 Pyramidalization can be calculated for any tetracoordinate atom as described in
 :footcite:`radhakrishnan_measures_1991`. Here, the pyramidalization *P* is
-calculated from the two angles *ɑ* and *θ* defined in
-:numref:`fig_pyramidalization`.
+calculated from the two angles *ɑ* and *θ* defined in the figure
 
 .. math::
 
@@ -100,7 +99,7 @@ An alternative and related measure of pyramidalization is due to Gavrish
 
   P = \sqrt{360° - \sum{\theta}}
 
-where *θ* is the bond angle in :numref:`fig_pyramidalization` and the sum is
-over the three possible bond angles.
+where *θ* is the bond angle in the figure and the sum is over the three
+possible bond angles.
 
 .. footbibliography::
