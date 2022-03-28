@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `BiteAngle` for bite angle calculations.
 
 ### Fixed
-- Fixed ``XTB.get_fukui``, affecting the varieties "electrophilicity" (wrong sign), "nucleophilicity" (wrong sign), "radical" (wrong number) and "local_electrophilicty" (wrong number)
+- Fixed `XTB.get_fukui`, affecting the varieties "electrophilicity" (wrong sign), "nucleophilicity" (wrong sign), "radical" (wrong number) and "local_electrophilicty" (wrong number)
 - Fixed crash when `ConformerEnsemble` was initiated with `connectivity_matrix=None`
 
 ## [0.5.5] - 2021-10-07

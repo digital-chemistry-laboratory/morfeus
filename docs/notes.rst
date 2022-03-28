@@ -32,11 +32,11 @@ lists and used with zero-indexing if needed:
   >>> from morfeus import SASA, read_geometry
   >>> elements, coordinates = read_geometry("Et.gjf")
   >>> sasa = SASA(elements, coordinates)
-  >>> sasa.atom_areas  
+  >>> sasa.atom_areas
   {1: 22.489947408719903,
   2: 19.180448148100027,
   3: 22.529947315182724,
-  ...  
+  ...
   >>> list(sasa.atom_areas.values())
   [22.489947408719903,
   19.180448148100027,
@@ -49,7 +49,7 @@ Geometry files
 
 Many features of ᴍᴏʀғᴇᴜs makes use of atomic numbers/symbols and coordinates.
 These can be read from geometry files, and currently the files formats ``gjf``
-(Gaussian input file) and ``xyz`` (XMOL )are supported. These files can be 
+(Gaussian input file) and ``xyz`` (XMOL )are supported. These files can be
 read with two different functions. There is also the
 :py:func:`read_geometry <morfeus.io.read_geometry>`
 function that will try to guess the file type based on its suffix. If the

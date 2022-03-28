@@ -8,13 +8,13 @@ Installation
 
   .. code-block:: console
 
-    $ pip install morfeus-ml
+    $ pip install morfeus-ml
 
 .. tab:: conda
 
   .. code-block:: console
 
-    $ conda install -c conda-forge morfeus-ml
+    $ conda install -c conda-forge morfeus-ml
 
 ************
 Dependencies

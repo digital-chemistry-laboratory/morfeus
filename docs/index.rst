@@ -1,9 +1,10 @@
-.. raw:: html
+.. image:: _static/logo-dark.svg
+   :align: center
+   :class: only-dark
 
-  <picture>
-      <source srcset="_static/logo-dark.svg" media="(prefers-color-scheme: dark)">
-      <img src="_static/logo-light.svg?text=Light+mode" /> 
-  </picture>
+.. image:: _static/logo-light.svg
+   :align: center
+   :class: only-light
 
 ᴍᴏʀғᴇᴜs calculates molecular features from 3D structures with a focus on steric
 descriptors. It can be used as a Python library or through command line
@@ -18,21 +19,21 @@ workflows. It can also be used from the command line. Here is an example for
 calculating the exact ligand cone angle:
 
 .. tab:: Module
-  
+
   .. code-block:: python
 
     >>> from morfeus import ConeAngle, read_xyz
     >>> elements, coordinates = read_xyz("PdPMe3.xyz")
     >>> cone_angle = ConeAngle(elements, coordinates, 1)
     >>> print(cone_angle.cone_angle)
-    117.11012922937584 
+    117.11012922937584
 
 .. tab:: Command line
 
   .. code-block:: console
 
     $ morfeus cone_angle PdPMe3.xyz - 1 - cone_angle
-    117.11012922937584    
+    117.11012922937584
 
 ************
 Installation
@@ -82,7 +83,7 @@ developing its functionality:
 License
 *******
 
-ᴍᴏʀғᴇᴜs is released under the `MIT license`_ and is thus completely free for 
+ᴍᴏʀғᴇᴜs is released under the `MIT license`_ and is thus completely free for
 both academic and commercial use.
 
 .. toctree::
@@ -112,8 +113,8 @@ both academic and commercial use.
 .. toctree::
    :maxdepth: 3
    :caption: API
-   :hidden:   
-   
+   :hidden:
+
    api/morfeus
 
 .. toctree::

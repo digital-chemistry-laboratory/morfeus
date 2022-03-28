@@ -3,7 +3,7 @@ XTB
 ===
 
 Electronic parameters can be calculated at the GFN1-xTB or GFN2-xTB levels
-using the xtb-python__ interface (which needs to be installed). 
+using the xtb-python__ interface (which needs to be installed).
 
 ******
 Module
@@ -47,7 +47,7 @@ theory can also be calculated.
   >>> from morfeus import read_xyz
   >>> from morfeus import XTB
   >>> elements, coordinates = read_xyz("ammonia.xyz")
-  >>> xtb = XTB(elements, coordinates)  
+  >>> xtb = XTB(elements, coordinates)
   >>> xtb.get_global_descriptor("electrophilicity", corrected=True)
   0.00643909828825333
   >>> xtb.get_global_descriptor("nucleophilicity", corrected=True)
@@ -63,10 +63,10 @@ theory can also be calculated.
    3: -0.19235729,
    4:-0.19235026}
 
-The version of GFNX-xTB can be set using ``version=<int>`` with versions 1 and 
-2 currently supported. A correction term can be applied for the calculation of 
+The version of GFNX-xTB can be set using ``version=<int>`` with versions 1 and
+2 currently supported. A correction term can be applied for the calculation of
 the ionization potential and electron affinity using ``corrected=True``, which
-also affects some of the global and local descriptors. For a full list of 
+also affects some of the global and local descriptors. For a full list of
 descriptors and their definitions, see the Background_.
 
 For more information, use ``help(XTB)`` or consult the API:
@@ -82,14 +82,14 @@ terminal.
 .. tab:: Get charge
 
   .. code-block:: console
-  
+
     $ morfeus xtb Et.gjf - - get_charges - 1
     0.03220302786615441
 
 .. tab:: Change version
 
   .. code-block:: console
-  
+
     $ morfeus xtb Et.gjf - --version='"1"' - get_charges - 1
     0.02564834649261168
 
@@ -115,17 +115,17 @@ They are calculated according to the following definitions
   \omega &= \frac{(IP + EA)^2}{8(IP - EA)} = \frac{\mu^2}{2\eta}
 
   N &= -IP
-  
+
   \nu_{electrofugality} &= \frac{(IP - 3EA)^2}{8(IP - EA)} = -EA + \omega
 
   \nu_{nucleofugality} &= \frac{(3IP - EA)^2}{8(IP - EA)} = IP + \omega
 
 Where :math:`IP` is the ionization potential, :math:`EA` is the electron
-affinity, :math:`\mu` is the chemical potential and :math:`\eta` is the 
+affinity, :math:`\mu` is the chemical potential and :math:`\eta` is the
 hardness given by
 
 .. math::
-  
+
   \mu &= - \frac{IP + EA}{2}
 
   \eta &= IP - EA
@@ -136,7 +136,7 @@ approach using the atomic charges from *xtb*. These include:
 * Electron removal: :math:`f^-`
 * Electron addition: :math:`f^+`
 * Radical attack: :math:`f`
-* Dual descriptor: :math:`f^{(2)}` 
+* Dual descriptor: :math:`f^{(2)}`
 
 Which are calculated as follows.
 
@@ -157,7 +157,8 @@ a measure of electrophilicity. The somewhat unintuitive names is due to the
 notion that *another* molecule would attack as a nucleophile/electrophile. The
 coefficient for radical attack is often used for radical reactivity. In
 addition, the local electrophilicity (:math:`l_{\omega}`) and nucleophilicity
-(:math:`l_N`) are also available and calculated as :footcite:`oller_global_2018`.
+(:math:`l_N`) are also available and calculated as
+:footcite:`oller_global_2018`.
 
 .. math::
 
