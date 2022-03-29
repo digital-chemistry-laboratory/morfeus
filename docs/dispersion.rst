@@ -100,11 +100,10 @@ installed in the same Python environment as Morfeus. An example is given below:
   Surface volume (Å³): 157.8
   P_int (kcal¹ᐟ² mol⁻¹ᐟ²): 20.1
 
-The D4 model is available with 'gd4', a D3-like model with 'gd3' and the
-internal D3 code with 'id3'. The maximum order of the dispersion coefficients
-can be set with the keyword argument 'order', but should be left by the
-non-expert user at the default setting of 8 (*i.e.* C\ :sub:`6` and C\
-:sub:`8`)
+The D4 model is available with 'gd4' and the internal D3 code with 'id3'. The
+maximum order of the dispersion coefficients can be set with the keyword
+argument 'order', but should be left by the non-expert user at the default
+setting of 8 (*i.e.* C\ :sub:`6` and C\ :sub:`8`)
 
 For more detailed information, use ``help(Dispersion)`` or see the API:
 :py:class:`Dispersion <morfeus.dispersion.Dispersion>`

@@ -11,7 +11,7 @@ from typing import Any
 import numpy as np
 import scipy.spatial
 
-from morfeus.calculators import D3Calculator, D3Grimme, D4Grimme
+from morfeus.calculators import D3Calculator, D4Grimme
 from morfeus.data import ANGSTROM_TO_BOHR, atomic_symbols, HARTREE_TO_KCAL, jmol_colors
 from morfeus.geometry import Atom
 from morfeus.io import CubeParser, D3Parser, D4Parser, read_geometry, VertexParser
@@ -434,11 +434,10 @@ class Dispersion:
     ) -> "Dispersion":
         """Compute dispersion coefficients.
 
-        Can either use internal D3 model or D4 or D3-like model available through
-        Grimme's dftd4 program.
+        Can either use internal D3 model or D4 via Grimme's dftd4 program.
 
         Args:
-            model: Calculation model: 'id3'. 'gd3' or 'gd4'
+            model: Calculation model: 'id3' (default) or 'gd4'
             order: Order of the Cᴬᴬ coefficients
             charge: Molecular charge for D4 model
 
@@ -454,14 +453,13 @@ class Dispersion:
 
         calculators = {
             "id3": D3Calculator,
-            "gd3": D3Grimme,
             "gd4": D4Grimme,
         }
-        calc: D3Calculator | D3Grimme | D4Grimme
+        calc: D3Calculator | D4Grimme
         # Calculate  D3 values with internal model
-        if model in ["id3", "gd3"]:
+        if model == "id3":
             calc = calculators[model](elements, coordinates, order=order)
-        elif model in ["gd4"]:
+        elif model == "gd4":
             calc = calculators[model](elements, coordinates, order=order, charge=charge)
         else:
             raise ValueError(f"model={model} not supported.")
