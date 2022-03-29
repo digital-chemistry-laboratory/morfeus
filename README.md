@@ -47,6 +47,7 @@ For further information, see the separate [documentation](https://kjelljorner.gi
 
 # Features
 
+* Bite angle
 * Buried volume
 * Conformer tools
 * Dispersion descriptor
