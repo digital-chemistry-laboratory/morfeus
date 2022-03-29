@@ -9,142 +9,60 @@ import numpy as np
 from scipy.spatial.distance import cdist
 
 from morfeus.d3_data import c6_reference_data, r2_r4
-from morfeus.data import ANGSTROM, BOHR, EV, HARTREE
+from morfeus.data import ANGSTROM_TO_BOHR
 from morfeus.geometry import Atom
-from morfeus.typing import Array1DFloat, Array2DFloat, ArrayLike2D
+from morfeus.typing import Array1DFloat, Array1DInt, Array2DFloat, ArrayLike2D
 from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
-    import ase
-    from dftd4.calculators import D3_model, D4_model
-    from dftd4.utils import extrapolate_c_n_coeff
+    from dftd4.interface import DispersionModel
 
 
 @requires_dependency(
     [
-        Import("ase"),
-        Import(module="dftd4.calculators", item="D3_model"),
-        Import(module="dftd4.utils", item="extrapolate_c_n_coeff"),
+        Import(module="dftd4.interface", item="DispersionModel"),
     ],
     globals(),
 )
-class D3Grimme:
-    """Calculates D3-like Cᴬᴬ coefficients with dftd4.
+class D4Grimme:
+    """Calculates D4 Cᴬᴬ coefficients with dftd4.
 
     Args:
         elements : Elements as atomic symbols or numbers
         coordinates : Coordinates (Å)
         order: Maximum order for the CN coefficients.
-
-    Attributes:
-        c_n_coefficients: Cᴬᴬ coefficients (a.u.)
-        polarizabilities: Atomic polarizabilities (a.u.)
-    """
-
-    c_n_coefficients: dict[int, Array1DFloat]
-    polarizabilities: Array1DFloat
-    _atoms: list["ase.Atoms"]
-
-    def __init__(
-        self,
-        elements: Iterable[int] | Iterable[str],
-        coordinates: ArrayLike2D,
-        order: int = 6,
-    ) -> None:
-        # Convert elements to atomic numbers
-        elements = convert_elements(elements, output="numbers")
-
-        # Do calculation
-        atoms = ase.Atoms(numbers=elements, positions=coordinates)
-        calc = D3_model(energy=False, forces=False)
-        polarizabilities = (
-            calc.get_property("polarizibilities", atoms=atoms) * (ANGSTROM / BOHR) ** 3
-        )
-        c6_coefficients_all = (
-            calc.get_property("c6_coefficients", atoms=atoms)
-            * EV
-            / HARTREE
-            * (ANGSTROM / BOHR) ** 6
-        )
-        c6_coefficients: Array1DFloat = np.diag(c6_coefficients_all)
-        c_n_coefficients = {}
-        c_n_coefficients[6] = c6_coefficients
-
-        # Extrapolate
-        for i in range(8, order + 1, 2):
-            c_n_coefficients[i] = np.array(
-                [
-                    extrapolate_c_n_coeff(c6, element, element, i)
-                    for c6, element in zip(c6_coefficients, elements)
-                ]
-            )
-
-        # Store attributes
-        self.polarizabilities = polarizabilities
-        self.c_n_coefficients = c_n_coefficients
-        self._atoms = atoms
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
-
-
-@requires_dependency(
-    [
-        Import("ase"),
-        Import(module="dftd4.calculators", item="D4_model"),
-        Import(module="dftd4.utils", item="extrapolate_c_n_coeff"),
-    ],
-    globals(),
-)
-class D4Grimme:
-    """Calculates D4 Cᴬᴬ dispersion coefficients with dftd4.
-
-    Args:
-        elements: Elements as atomic symbols or numbers
-        coordinates: Coordinates (Å)
-        order: Maximum order for the CN coefficients.
         charge: Molecular charge
 
     Attributes:
+        charges: Partial charges
         c_n_coefficients: Cᴬᴬ coefficients (a.u.)
-        charges: Atomic charges.
+        coordination_numbers: Coordination numbers
         polarizabilities: Atomic polarizabilities (a.u.)
     """
 
+    charges: dict[int, float]
     c_n_coefficients: dict[int, Array1DFloat]
-    charges: Array1DFloat
-    polarizabilities: Array1DFloat
-    _atoms: list[ase.Atoms]
+    coordination_numbers: dict[int, float]
+    polarizabilities: dict[int, float]
 
     def __init__(
         self,
         elements: Iterable[int] | Iterable[str],
         coordinates: ArrayLike2D,
-        order: int = 8,
         charge: int = 0,
+        order: int = 8,
     ) -> None:
         # Convert elements to atomic numbers
-        elements = convert_elements(elements, output="numbers")
-
-        # Set up atoms object
-        charges = np.zeros(len(elements))
-        charges[0] = charge
-        atoms = atoms = ase.Atoms(
-            numbers=elements, positions=coordinates, charges=charges
-        )
+        elements: Array1DInt = np.array(convert_elements(elements, output="numbers"))
+        coordinates = np.array(coordinates) * ANGSTROM_TO_BOHR
 
         # Do calculation
-        calc = D4_model(energy=False, forces=False)
-        polarizabilities = (
-            calc.get_property("polarizibilities", atoms=atoms) * (ANGSTROM / BOHR) ** 3
-        )
-        charges = calc.get_property("charges", atoms=atoms)
-        c6_coefficients_all = (
-            calc.get_property("c6_coefficients", atoms=atoms)
-            * EV
-            / HARTREE
-            * (ANGSTROM / BOHR) ** 6
-        )
+        calc = DispersionModel(elements, coordinates, charge=charge)
+        properties = calc.get_properties()
+        polarizabilities = properties["polarizibilities"]
+        charges = properties["partial charges"]
+        coordination_numbers = properties["coordination numbers"]
+        c6_coefficients_all = properties["c6 coefficients"]
         c6_coefficients: Array1DFloat = np.diag(c6_coefficients_all)
         c_n_coefficients = {}
         c_n_coefficients[6] = c6_coefficients
@@ -153,7 +71,7 @@ class D4Grimme:
         for i in range(8, order + 1, 2):
             c_n_coefficients[i] = np.array(
                 [
-                    extrapolate_c_n_coeff(c6, element, element, i)
+                    extrapolate_c_n(c6, element, element, i)
                     for c6, element in zip(c6_coefficients, elements)
                 ]
             )
@@ -162,10 +80,10 @@ class D4Grimme:
         self.polarizabilities = polarizabilities
         self.charges = charges
         self.c_n_coefficients = c_n_coefficients
-        self._atoms = atoms
+        self.coordination_numbers = coordination_numbers
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
+        return f"{self.__class__.__name__}({len(self.polarizabilities)!r} atoms)"
 
 
 class D3Calculator:
@@ -294,3 +212,40 @@ class D3Calculator:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({len(self._atoms)!r} atoms)"
+
+
+def extrapolate_c_n(c_6: float, i: int, j: int, n: int) -> float:
+    """Cᴬᴮ coefficients to order n.
+
+    Following eqs. 6-8 in 10.1063/1.3382344
+
+    Args:
+        c_6: C_6 coefficient (a.u.)
+        i: Atom number of atom A
+        j: Atom number of atom B
+        n: Order
+
+    Returns:
+        c_n: C_n coefficient (a.u.)
+
+    Raises:
+        ValueError: For n < 6 and uneven n.
+    """
+    if n == 6:
+        c_n = c_6
+    elif n == 8:
+        c_n = 3 * r2_r4[i] * r2_r4[j] * c_6
+    elif n == 10:
+        c_8 = extrapolate_c_n(c_6, i, j, 8)
+        c_n = 49.0 / 40.0 * c_8**2 / c_6
+    elif n == 9:
+        pass
+    elif n > 10 and n % 2 == 0:
+        c_n = (
+            extrapolate_c_n(c_6, i, j, n - 6)
+            * (extrapolate_c_n(c_6, i, j, n - 2) / extrapolate_c_n(c_6, i, j, n - 4))
+            ** 3
+        )
+    else:
+        raise ValueError("Only defined for even n >= 6.")
+    return c_n
