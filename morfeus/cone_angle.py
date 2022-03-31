@@ -42,13 +42,16 @@ class ConeAngle:
         atom_1: Index of central atom (1-inexed)
         radii: vdW radii (Å)
         radii_type: Type of vdW radii: 'alvarez', 'bondi', 'crc' or 'truhlar'
+        method: Method of calculation: 'internal' or 'libconeangle' (default)
 
     Attributes:
         cone_angle: Exact cone angle (degrees)
         tangent_atoms: Atoms tangent to cone (1-indexed)
 
     Raises:
-        Exception: If cone angle could not be found
+        RunTimeError: If cone angle could not be found by internal algorithm
+        ValueError: If atoms within vdW radius of central atom or if exception happened
+            with libconeangle or if wrong method chosen
     """
 
     cone_angle: float
@@ -78,7 +81,7 @@ class ConeAngle:
         within = check_distances(elements, coordinates, atom_1, radii=radii)
         if len(within) > 0:
             atom_string = " ".join([str(i) for i in within])
-            raise Exception("Atoms within vdW radius of central atom:", atom_string)
+            raise ValueError("Atoms within vdW radius of central atom:", atom_string)
 
         # Set up coordinate array and translate coordinates
         coordinates -= coordinates[atom_1 - 1]
@@ -132,7 +135,11 @@ class ConeAngle:
         print(f"Tangent to: {tangent_string}")
 
     def _cone_angle_internal(self) -> None:
-        """Calculates cone angle with internal algorithm."""
+        """Calculates cone angle with internal algorithm.
+
+        Raises:
+            RuntimeError: If cone cannot be found.
+        """
         # Search for cone over single atoms
         cone = self._search_one_cones()
 
@@ -156,6 +163,10 @@ class ConeAngle:
         # Search for cones over triples of atoms
         if cone is None:
             cone = self._search_three_cones()
+
+        # Check if no cone was found
+        if cone is None:
+            raise RuntimeError("Cone not found")
 
         # Set attributes
         self._cone = cone
