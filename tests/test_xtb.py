@@ -19,14 +19,14 @@ def test_fukui():
 
     ref_data = np.genfromtxt(DATA_DIR / "fukui.csv", delimiter=",", names=True)
     f_nuc = list(xtb.get_fukui(variety="nucleophilicity").values())
-    assert_array_almost_equal(f_nuc, ref_data["f_nuc"], decimal=3)
+    assert_array_almost_equal(f_nuc, ref_data["f_nuc"], decimal=3)  # type: ignore
     f_elec = list(xtb.get_fukui(variety="electrophilicity").values())
-    assert_array_almost_equal(f_elec, ref_data["f_elec"], decimal=3)
+    assert_array_almost_equal(f_elec, ref_data["f_elec"], decimal=3)  # type: ignore
     f_rad = list(xtb.get_fukui(variety="radical").values())
-    assert_array_almost_equal(f_rad, ref_data["f_rad"], decimal=3)
+    assert_array_almost_equal(f_rad, ref_data["f_rad"], decimal=3)  # type: ignore
     f_dual = list(xtb.get_fukui(variety="dual").values())
-    assert_array_almost_equal(f_dual, ref_data["f_dual"], decimal=3)
+    assert_array_almost_equal(f_dual, ref_data["f_dual"], decimal=3)  # type: ignore
     f_loc_nuc = list(xtb.get_fukui(variety="local_nucleophilicity").values())
-    assert_array_almost_equal(f_loc_nuc, ref_data["f_loc_nuc"], decimal=3)
+    assert_array_almost_equal(f_loc_nuc, ref_data["f_loc_nuc"], decimal=3)  # type: ignore
     f_loc_elec = list(xtb.get_fukui(variety="local_electrophilicity").values())
-    assert_array_almost_equal(f_loc_elec, ref_data["f_loc_elec"], decimal=3)
+    assert_array_almost_equal(f_loc_elec, ref_data["f_loc_elec"], decimal=3)  # type: ignore

@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Sequence
 import functools
 import itertools
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import scipy.spatial
@@ -127,9 +127,8 @@ class Pyramidalization:
         thetas: list[float] = []
         for v_1, v_2, v_3 in itertools.permutations([a, b, c], 3):
             # Calculate cos_alpha
-            # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released
             normal: Array1DFloat = np.cross(v_1, v_2)
-            normal /= np.linalg.norm(normal)  # type: ignore
+            normal /= np.linalg.norm(normal)
             cos_alpha = np.dot(v_3, normal)
 
             # Test if normal vector is colinear with v_3
@@ -154,9 +153,9 @@ class Pyramidalization:
 
         # Calculate P
         v_1, v_2 = vectors[0]
-        # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released
         sin_theta = np.linalg.norm(np.cross(v_1, v_2))
-        P = sin_theta * cos_alphas[0]  # type: ignore
+        sin_theta = cast(float, sin_theta)
+        P = sin_theta * cos_alphas[0]
 
         # Correct P if pyramid is "acute" on average
         if np.mean(alphas) < 0:

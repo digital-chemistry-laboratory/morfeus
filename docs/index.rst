@@ -62,6 +62,7 @@ Features
 * Exact ligand cone angle
 * Local force constant
 * Pyramidalization
+* Solid angle
 * Solvent accessible surface area
 * Sterimol parameters
 * XTB electronic descriptors
@@ -109,6 +110,7 @@ both academic and commercial use.
    local_force
    pyramidalization
    sasa
+   solid_angle
    sterimol
    xtb
 

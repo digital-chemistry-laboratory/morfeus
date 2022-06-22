@@ -68,7 +68,7 @@ class ConeAngle:
         radii_type: str = "crc",
         method: str = "libconeangle",
     ) -> None:
-        # Convert elements to atomic numbers if the are symbols
+        # Convert elements to atomic numbers if they are symbols
         elements = convert_elements(elements, output="numbers")
         coordinates: Array2DFloat = np.array(coordinates)
 

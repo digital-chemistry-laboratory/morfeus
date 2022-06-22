@@ -600,9 +600,8 @@ class Dihedral:
         phi = np.arccos(dot_product) * sgn
         g: Array1DFloat
         if abs(phi) > np.pi - 1e-6:
-            # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released
             g = np.cross(w, a_1)
-            g = g / np.linalg.norm(g)  # type: ignore
+            g = g / np.linalg.norm(g)
             A = np.dot(v_1, ew) / np.linalg.norm(w)
             B = np.dot(v_2, ew) / np.linalg.norm(w)
             grad = [
@@ -612,9 +611,8 @@ class Dihedral:
                 g / (np.linalg.norm(g) * np.linalg.norm(a_2)),
             ]
         elif abs(phi) < 1e-6:
-            # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released
             g = np.cross(w, a_1)
-            g = g / np.linalg.norm(g)  # type: ignore
+            g = g / np.linalg.norm(g)
             A = np.dot(v_1, ew) / np.linalg.norm(w)
             B = np.dot(v_2, ew) / np.linalg.norm(w)
             grad = [
@@ -822,16 +820,14 @@ def rotate_coordinates(
 
     # Get imaginary dimensions and handle case of antiparallel vectors
     if real < 1e-6:
-        # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released
         w: Array1DFloat = np.cross(vector, np.array([0, 0, 1]))
-        if np.linalg.norm(w) < 1e-6:  # type: ignore
+        if np.linalg.norm(w) < 1e-6:
             w = np.cross(vector, np.array([1, 0, 0]))
     else:
         w = np.cross(vector, axis)
 
     # Form quaternion and normalize
-    # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released
-    q = np.concatenate((w, real))  # type: ignore
+    q = np.concatenate((w, real))
     q = q / np.linalg.norm(q)
 
     # Rotate atomic coordinates
