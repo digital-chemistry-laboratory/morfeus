@@ -62,7 +62,7 @@ Features
 * Exact ligand cone angle
 * Local force constant
 * Pyramidalization
-* Solid angle
+* Ligand solid angle
 * Solvent accessible surface area
 * Sterimol parameters
 * XTB electronic descriptors
