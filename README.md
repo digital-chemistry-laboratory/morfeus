@@ -54,6 +54,7 @@ For further information, see the separate [documentation](https://kjelljorner.gi
 * Exact ligand cone angle
 * Local force constant
 * Pyramidalization
+* Solid angle
 * Solvent accessible surface area
 * Sterimol parameters
 * XTB electronic descriptors

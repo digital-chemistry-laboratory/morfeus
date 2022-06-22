@@ -11,14 +11,13 @@ from morfeus import read_xyz, SASA
 from morfeus.typing import Array1DFloat
 
 DATA_DIR = Path(__file__).parent / "data" / "sasa"
-XYZ_DIR = Path(__file__).parent / "data" / "buried_volume" / "xyz"
 
 
 def test_one():
     """Test complex one."""
     atom_areas_ref = np.loadtxt(DATA_DIR / "atom_areas/1.txt")
 
-    elements, coordinates = read_xyz(XYZ_DIR / "1.xyz")
+    elements, coordinates = read_xyz(DATA_DIR / "xyz" / "1.xyz")
     sasa = SASA(elements, coordinates)
     atom_areas: Array1DFloat = np.array(list(sasa.atom_areas.values()))
     assert_almost_equal(sasa.area, 624, decimal=0)
@@ -41,7 +40,7 @@ def test_reference(sasa_data):
     idx, data = sasa_data
     sasa_ref = float(data["area"])
     atom_areas_ref = np.loadtxt(DATA_DIR / f"atom_areas/{idx}.txt")
-    elements, coordinates = read_xyz(XYZ_DIR / f"{idx}.xyz")
+    elements, coordinates = read_xyz(DATA_DIR / "xyz" / f"{idx}.xyz")
     sasa = SASA(elements, coordinates)
     atom_areas: Array1DFloat = np.array(list(sasa.atom_areas.values()))
     assert_almost_equal(sasa.area, sasa_ref, decimal=0)

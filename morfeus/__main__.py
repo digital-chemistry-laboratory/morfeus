@@ -9,6 +9,7 @@ import morfeus.dispersion
 import morfeus.local_force
 import morfeus.pyramidalization
 import morfeus.sasa
+import morfeus.solid_angle
 import morfeus.sterimol
 import morfeus.visible_volume
 import morfeus.xtb
@@ -26,6 +27,7 @@ def main() -> None:
             "local_force": morfeus.local_force.cli,
             "pyramidalization": morfeus.pyramidalization.cli,
             "sasa": morfeus.sasa.cli,
+            "solid_angle": morfeus.solid_angle.cli,
             "sterimol": morfeus.sterimol.cli,
             "visible_volume": morfeus.visible_volume.cli,
             "xtb": morfeus.xtb.cli,
