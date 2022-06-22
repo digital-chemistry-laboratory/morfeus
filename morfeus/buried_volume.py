@@ -156,9 +156,8 @@ class BuriedVolume:
 
             v_1 = z_point - center
             v_2 = xz_point - center
-            # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released
             v_3: Array1DFloat = np.cross(v_2, v_1)
-            real: Array2DFloat = np.vstack([v_1, v_3])  # type: ignore
+            real: Array2DFloat = np.vstack([v_1, v_3])
             real /= np.linalg.norm(real, axis=1).reshape(-1, 1)
             ref_1 = np.array([0.0, 0.0, -1.0])
             ref_2 = np.array([0.0, 1.0, 0.0])

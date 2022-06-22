@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 import functools
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
 from morfeus.io import read_geometry
-from morfeus.typing import Array2DFloat, ArrayLike1D, ArrayLike2D
+from morfeus.typing import Array1DFloat, Array2DFloat, ArrayLike1D, ArrayLike2D
 
 
 class BiteAngle:
@@ -58,11 +58,10 @@ class BiteAngle:
         v_2_norm = v_2 / np.linalg.norm(v_2)
 
         # Calculate angle between vectors
-        # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released
         angle_rad = np.arctan2(
             np.linalg.norm(np.cross(v_1_norm, v_2_norm)), np.dot(v_1_norm, v_2_norm)
         )
-        angle = np.rad2deg(angle_rad)  # type: ignore
+        angle = np.rad2deg(angle_rad)
 
         # Check if angle should be inverted
         if ref_atoms is not None:
@@ -70,6 +69,7 @@ class BiteAngle:
                 np.mean(coordinates[[i - 1 for i in ref_atoms]], axis=0)
                 - coordinates[metal_index - 1]
             )
+        ref_vector = cast(Array1DFloat, ref_vector)
         inverted = False
         if ref_vector is not None:
             ref_vector /= np.linalg.norm(ref_vector)
