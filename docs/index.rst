@@ -60,9 +60,9 @@ Features
 * Conformer tools
 * Dispersion descriptor
 * Exact ligand cone angle
+* Ligand solid angle
 * Local force constant
 * Pyramidalization
-* Ligand solid angle
 * Solvent accessible surface area
 * Sterimol parameters
 * XTB electronic descriptors
