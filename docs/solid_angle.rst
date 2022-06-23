@@ -2,7 +2,7 @@
 Solid angle
 ###########
 
-Solid angle and solid cone angles are implemented with a numerical recipe as
+Ligand solid angle and solid cone angles are implemented with a numerical recipe as
 described by Guzei and Wendt :footcite:`guzei_2006`.
 
 ******
