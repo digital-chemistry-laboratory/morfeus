@@ -1337,7 +1337,7 @@ class ConformerEnsemble:
                     f"{p_test.as_posix()} --minimize".split(" "),
                     capture_output=True,
                 )
-            row_rmsds = np.genfromtxt(process.stdout.splitlines(), usecols=(-1))
+            row_rmsds = np.genfromtxt(process.stdout.splitlines(), usecols=(-1))  # type: ignore
             rmsds.append(row_rmsds)
         rmsds: Array2DFloat = np.vstack(rmsds)
 
