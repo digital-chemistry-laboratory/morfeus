@@ -7,6 +7,7 @@
 ![Conda](https://img.shields.io/conda/pn/conda-forge/morfeus-ml)
 ![Python requires](https://img.shields.io/badge/dynamic/json?query=info.requires_python&label=python&url=https%3A%2F%2Fpypi.org%2Fpypi%2Fmorfeus-ml%2Fjson)
 [![Testing](https://github.com/kjelljorner/morfeus/actions/workflows/test.yml/badge.svg)](https://github.com/kjelljorner/morfeus/actions/workflows/test.yml)
+[![DOI](https://zenodo.org/badge/291745112.svg)](https://zenodo.org/badge/latestdoi/291745112)
 
 A Python package for calculating molecular features.
 
