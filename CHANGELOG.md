@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2022-06-27
+
+### Fixed
+- Fixed type errors related to ConformerEnsemble and Python 3.8 
+
 ## [0.7.0] - 2022-06-22
 
 ### Added
