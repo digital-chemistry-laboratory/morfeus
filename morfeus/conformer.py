@@ -338,7 +338,7 @@ class ConformerEnsemble:
         if not all([isinstance(energy, float) for energy in energies]):
             self._add_conformers(conformer_coordinates)
         else:
-            energies_ = cast(list[float], energies)
+            energies_ = cast("list[float]", energies)
             self.add_conformers(conformer_coordinates, energies_)
 
         return self
@@ -1140,7 +1140,7 @@ class ConformerEnsemble:
         energies = [conformer.energy for conformer in self.conformers]
         if not all([isinstance(energy, float) for energy in energies]):
             raise ValueError("Not all conformers have energies.")
-        energies = cast(list[float], energies)
+        energies = cast("list[float]", energies)
         indices = np.argsort(energies)
         self.conformers = [self.conformers[i] for i in indices]
 
