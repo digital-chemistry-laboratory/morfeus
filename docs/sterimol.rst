@@ -159,12 +159,12 @@ to L. B\ :sub:`5` is obtained from the largest projection, while B\ :sub:`1` is
 obtained from the smallest maximum projection for the set of vectors.
 
 Buried Sterimol was developed by Tobias Gensch while working in the group of
-Matthew Sigman at the University of Utah [ref to come]. It is intended to limit
-the Sterimol vectors to a volume of interest in the philosophy of the buried
-volume. The original implementation uses the ``delete`` algorithm. ᴍᴏʀғᴇᴜs uses
-the CRC handbook radii by default instead of the modified Bondi radii in the
-original article, so results with the defualt settings might be slighly
-different.
+Matthew Sigman at the University of Utah :footcite:`gensch_kraken_2022`. It is
+intended to limit the Sterimol vectors to a volume of interest in the
+philosophy of the buried volume. The original implementation uses the
+``delete`` algorithm. ᴍᴏʀғᴇᴜs uses the CRC handbook radii by default instead of
+the modified Bondi radii in the original article, so results with the defualt
+settings might be slighly different.
 
 .. __: https://github.com/bobbypaton/Sterimol
 
