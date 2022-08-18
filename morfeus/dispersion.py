@@ -122,6 +122,7 @@ class Dispersion:
 
         # Set up
         self._surface = None
+        self._point_areas = None
         self._density = density
 
         # Getting radii if they are not supplied
@@ -254,7 +255,7 @@ class Dispersion:
         faces: Array2DInt = np.insert(faces, 0, values=3, axis=1)
 
         # Construct surface and fix it with pymeshfix
-        surface = pv.PolyData(vertices, faces, show_edges=True)
+        surface = pv.PolyData(vertices, faces)
         if fix_mesh:
             meshfix = pymeshfix.MeshFix(surface)
             meshfix.repair()
@@ -281,7 +282,7 @@ class Dispersion:
 
         # Compute faces areas
         area_data = self._surface.compute_cell_sizes()
-        areas: Array1DFloat = np.array(area_data.cell_arrays["Area"])
+        areas: Array1DFloat = np.array(area_data.cell_data["Area"])
 
         # Assign face centers and areas to atoms
         atom_areas = {}
@@ -365,6 +366,7 @@ class Dispersion:
             )
             atomic = True
         else:
+            atomic = False
             points = np.array(points)
 
         # Calculate p_int for each point
@@ -407,8 +409,9 @@ class Dispersion:
             self.atom_p_min = atom_p_min
             self.atom_p_int = atom_p_int
 
-        point_areas = self._point_areas[np.isin(self._point_map, atom_indices + 1)]
-        self.p_int = np.sum(p * point_areas / self.area)
+        if self._point_areas:
+            point_areas = self._point_areas[np.isin(self._point_map, atom_indices + 1)]
+            self.p_int = np.sum(p * point_areas / self.area)
 
         # Calculate p_min and p_max with slight modification to Robert's
         # definitions
@@ -421,7 +424,7 @@ class Dispersion:
             for atom in self._atoms:
                 if atom.index not in self._excluded_atoms:
                     mapped_p[self._point_map == atom.index] = atom.p_values
-            self._surface.cell_arrays["values"] = mapped_p
+            self._surface.cell_data["values"] = mapped_p
             self._surface = self._surface.cell_data_to_point_data()
 
         # Store points for later use
