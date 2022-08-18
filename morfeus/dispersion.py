@@ -331,7 +331,9 @@ class Dispersion:
 
         return surface
 
-    def compute_p_int(self, points: ArrayLike2D | None = None) -> "Dispersion":
+    def compute_p_int(  # noqa: C901
+        self, points: ArrayLike2D | None = None
+    ) -> "Dispersion":
         """Compute P_int values for surface or points.
 
         Args:
@@ -382,7 +384,7 @@ class Dispersion:
         self.p_values = p
 
         # Take out atomic p_ints if no points are given
-        if atomic:
+        if atomic is True:
             atom_p_max = {}
             atom_p_min = {}
             atom_p_int = {}
@@ -409,7 +411,7 @@ class Dispersion:
             self.atom_p_min = atom_p_min
             self.atom_p_int = atom_p_int
 
-        if self._point_areas:
+        if self._point_areas is not None:
             point_areas = self._point_areas[np.isin(self._point_map, atom_indices + 1)]
             self.p_int = np.sum(p * point_areas / self.area)
 
@@ -419,7 +421,7 @@ class Dispersion:
         self.p_max = np.max(p)
 
         # Map p_values onto surface
-        if self._surface:
+        if self._surface is not None:
             mapped_p = np.zeros(len(p))
             for atom in self._atoms:
                 if atom.index not in self._excluded_atoms:
