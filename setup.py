@@ -16,6 +16,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url=URL,
     packages=["morfeus"],
+    package_data={"morfeus": ["py.typed"]},
     python_requires=">=3.8",
     install_requires=["fire", "numpy", "scipy"],
     license="MIT",
