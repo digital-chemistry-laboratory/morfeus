@@ -6,9 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2022-08-23
+
 ### Fixed 
 - Calculation of p values of point clouds for Dispersion now works
 - Updated PyVista calls to be consistent with changes in their API
+- Added `py.typed` for compatibility with other typed code
 
 ## [0.7.1] - 2022-06-27
 
