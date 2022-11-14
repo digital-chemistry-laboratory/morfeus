@@ -314,7 +314,7 @@ Command line script
 The command line script provides access to the basic functionality through
 the terminal.
 
-.. code-block:: console
+.. code-block:: shell
   :caption: Example with Gaussian log file.
 
   $ morfeus local_force - - load_file freq-lm.log gaussian log - compute_local - compute_frequencies - print_report
@@ -346,7 +346,7 @@ the terminal.
 
 Another example using xtb where a geometry file is loaded:
 
-.. code-block:: console
+.. code-block:: shell
   :caption: Example with xtb and hessian file.
 
   $ morfeus local_force xtb.xyz - - load_file hessian xtb hessian - normal_mode_analysis -  detect_bonds - compute_local - compute_frequencies - print_report

@@ -11,7 +11,7 @@ to the RDKit__ and OpenBabel__.
 
 OpenBabel and RDKit are avaible for install via, *e.g.*, the conda-forge:
 
-.. code-block:: console
+.. code-block:: shell
 
   conda install -c conda-forge rdkit
   conda install -c conda-forge openbabel
@@ -291,8 +291,20 @@ with GFN2-xTB.
   interface is not efficient. The CREST_ program is recommended in these
   cases.
 
+.. warning::
+
+  Optimization requires the installation of either PyBerny__ or geomeTRIC__. They can be installed with pip or in the case of geomeTRIC, also with conda.
+
+  .. code-block:: shell
+
+      pip install pyberny
+      pip install geometric
+      conda install -c conda-forge geometric
+
 .. __: https://github.com/MolSSI/QCEngine
 .. __: http://docs.qcarchive.molssi.org/projects/QCEngine/
+.. __: https://github.com/jhrmnn/pyberny
+.. __: https://github.com/leeping/geomeTRIC
 
 #######################
 Enantiomeric conformers

@@ -123,7 +123,7 @@ Command line script
 The command line script gives access to the basic functionality from the
 terminal.
 
-.. code-block:: console
+.. code-block:: shell
   :caption: Example
 
   $ morfeus sterimol tBu.xyz - 1 2 - print_report

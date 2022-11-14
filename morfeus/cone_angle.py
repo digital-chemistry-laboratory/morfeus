@@ -422,8 +422,7 @@ def _get_three_atom_cones(atom_i: Atom, atom_j: Atom, atom_k: Atom) -> list[Cone
     N: Array2DFloat = np.array(
         [np.cross(m_j, m_k), np.cross(m_k, m_i), np.cross(m_i, m_j)]
     ).T
-    # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released
-    P: Array2DFloat = N.T @ N  # type: ignore
+    P: Array2DFloat = N.T @ N
     gamma = np.dot(m_i, np.cross(m_j, m_k))
 
     # Set up coefficients of quadratic equation

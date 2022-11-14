@@ -17,7 +17,7 @@ command in the terminal gives a help page with all the possible subcommands.
 
 .. tab:: Input 1
 
-  .. code-block:: console
+  .. code-block:: shell
 
     $ morfeus
 
@@ -68,7 +68,7 @@ There is also a help page for each subcommand:
 
 .. tab:: Input 2
 
-  .. code-block:: console
+  .. code-block:: shell
 
     $ morfeus sterimol -- --help
 
@@ -102,7 +102,7 @@ we run
 
 .. tab:: Input 3
 
-  .. code-block:: console
+  .. code-block:: shell
 
     $ morfeus sterimol tBu.xyz - -- --help
 
@@ -163,7 +163,7 @@ values are available.
 
 .. tab:: Input 4
 
-  .. code-block:: console
+  .. code-block:: shell
 
       $ morfeus sterimol tBu.xyz - 1 2 --radii_type=bondi - -- --help
 
@@ -223,7 +223,7 @@ values are available.
 We could for example access the ``B_1_value`` attribute or run the method
 ``print_report`` with the ``verbose=True`` keyword argument.
 
-.. code-block:: console
+.. code-block:: shell
   :caption: Example of Sterimol CLI
 
   $ morfeus sterimol tBu.xyz - 1 2 --radii_type=bondi - B_1_value
@@ -249,14 +249,14 @@ Detailed use
 
 Positional arguments are passed in sequence separated by spaces, for example:
 
-.. code-block:: console
+.. code-block:: shell
 
   $ morfeus sterimol tBu.xyz - 1 2
 
 Keyword arguments are passed with or without an equals sign, so both of these
 commands give the same result:
 
-.. code-block:: console
+.. code-block:: shell
 
   $ morfeus sterimol tBu.xyz - 1 2 --radii_type=bondi
   $ morfeus sterimol tBu.xyz - 1 2 --radii_type bondi
@@ -267,7 +267,7 @@ the function/class should be evaluated. For example, the ``-`` before
 class, as we don't want to give more keyword arguments. Then the
 ``print_report`` method is excuted.
 
-.. code-block:: console
+.. code-block:: shell
 
   $ morfeus sterimol tBu.xyz - 1 2 --radii_type bondi - print_report
 
@@ -275,7 +275,7 @@ Arguments following the ``--`` separator go directly to the Fire program. For
 example, the ``--`` in the line below makes sure that ``--help`` is sent to
 Python Fire instead of the ``Sterimol`` object.
 
-.. code-block:: console
+.. code-block:: shell
 
   $ morfeus sterimol tBu.xyz - -- --help
 
@@ -312,7 +312,7 @@ by hyphens, and the chain should end with a command that gives some output.
 Here is one example where we create an electron density isosurface from a cube
 file for a dispersion descriptor calculation.
 
-.. code-block:: console
+.. code-block:: shell
 
   $ morfeus dispersion corannulene.xyz - --point_surface=False - surface_from_cube corannulene.cub - compute_p_int - print_report
   Surface area (Å²): 248.0

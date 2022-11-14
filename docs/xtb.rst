@@ -81,14 +81,14 @@ terminal.
 
 .. tab:: Get charge
 
-  .. code-block:: console
+  .. code-block:: shell
 
     $ morfeus xtb Et.gjf - - get_charges - 1
     0.03220302786615441
 
 .. tab:: Change version
 
-  .. code-block:: console
+  .. code-block:: shell
 
     $ morfeus xtb Et.gjf - --version='"1"' - get_charges - 1
     0.02564834649261168
