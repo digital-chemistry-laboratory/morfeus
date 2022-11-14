@@ -38,7 +38,7 @@ Command line script
 
 The command-line script outputs total SASA and volume as well as SASA per atom.
 
-.. code-block:: console
+.. code-block:: shell
   :caption: Example
 
   $ morfeus sasa PdPMe3.xyz - - print_report

@@ -47,7 +47,7 @@ Command line script
 
 The functionality is also available from the command line.
 
-.. code-block:: console
+.. code-block:: shell
   :caption: Example
 
   $ morfeus pyramidalization pyr.xyz - 1 - print_report

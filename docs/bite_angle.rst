@@ -59,13 +59,13 @@ Command line script
 
 The basic functionality is available through the command line script.
 
-.. code-block:: console
+.. code-block:: shell
   :caption: Example
 
   $ morfeus bite_angle bpy.xyz - 1 2 3 - angle
   77.29254645757716
 
-.. code-block:: console
+.. code-block:: shell
   :caption: Example inverted
 
   $ morfeus bite_angle bpy_inverted.xyz - 1 2 3 --ref_atoms='[4, 17]' - angle

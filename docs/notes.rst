@@ -118,6 +118,6 @@ computer clusters. This can be solved by changing the plotting backend to
 Alternatively, set the environment variable in the shell before launching the
 script (Linux example):
 
-.. code-block:: console
+.. code-block:: shell
 
   export MPLBACKEND="agg"

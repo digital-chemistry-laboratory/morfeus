@@ -15,13 +15,13 @@ A Python package for calculating molecular features.
 
 ## pip
 
-```console
+```shell
 $ pip install morfeus-ml
 ```
 
 ## conda
 
-```console
+```shell
 $ conda install -c conda-forge morfeus-ml
 ```
 
@@ -30,7 +30,7 @@ $ conda install -c conda-forge morfeus-ml
 ᴍᴏʀғᴇᴜs can be imported as a Python module that is easily integrated into
 workflows. Here is an example for calculating the exact ligand cone angle.
 
-```python
+```shell
 >>> from morfeus import ConeAngle, read_xyz
 >>> elements, coordinates = read_xyz("PdPMe3.xyz")
 >>> cone_angle = ConeAngle(elements, coordinates, 1)

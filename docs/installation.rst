@@ -6,13 +6,13 @@ Installation
 
 .. tab:: pip
 
-  .. code-block:: console
+  .. code-block:: shell
 
     $ pip install morfeus-ml
 
 .. tab:: conda
 
-  .. code-block:: console
+  .. code-block:: shell
 
     $ conda install -c conda-forge morfeus-ml
 
