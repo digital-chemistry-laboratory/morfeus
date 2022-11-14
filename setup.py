@@ -8,7 +8,7 @@ LONG_DESCRIPTION = f"""\
 
 setuptools.setup(
     name="morfeus-ml",
-    version="0.7.1",
+    version="0.7.2",
     author="Kjell Jorner",
     author_email="kjell.jorner@gmail.com",
     description=DESCRIPTION,
@@ -16,6 +16,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url=URL,
     packages=["morfeus"],
+    package_data={"morfeus": ["py.typed"]},
     python_requires=">=3.8",
     install_requires=["fire", "numpy", "scipy"],
     license="MIT",
