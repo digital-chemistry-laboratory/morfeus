@@ -17,11 +17,12 @@ from morfeus.utils import convert_elements, Import, requires_dependency
 if typing.TYPE_CHECKING:
     import xtb
     import xtb.interface
+    import xtb.utils
 
 IPEA_CORRECTIONS = {"1": 5.700, "2": 4.846}
 
 
-@requires_dependency([Import("xtb"), Import("xtb.interface")], globals())
+@requires_dependency([Import("xtb"), Import("xtb.interface"), Import("xtb.utils")], globals())
 class XTB:
     """Calculates electronic properties with the xtb-python package.
 
