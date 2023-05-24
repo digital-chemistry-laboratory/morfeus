@@ -126,6 +126,6 @@ both academic and commercial use.
   :caption: Source
   :hidden:
 
-  GitHub <https://github.com/kjelljorner/morfeus>
+  GitHub <https://github.com/digital-chemistry-laboratory/morfeus>
 
 .. _MIT license: https://en.wikipedia.org/wiki/MIT_License

@@ -32,7 +32,7 @@ jobs:
         run: python -m build
 
       - name: Publish package to PyPI
-        if: github.repository == 'kjelljorner/morfeus' && github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+        if: github.repository == 'digital-chemistry-laboratory/morfeus/morfeus' && github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
         uses: pypa/gh-action-pypi-publish@master
         with:
           user: __token__

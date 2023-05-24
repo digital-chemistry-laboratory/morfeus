@@ -6,7 +6,7 @@
 [![Conda (channel only)](https://img.shields.io/conda/vn/conda-forge/morfeus-ml)](https://anaconda.org/conda-forge/morfeus-ml)
 ![Conda](https://img.shields.io/conda/pn/conda-forge/morfeus-ml)
 ![Python requires](https://img.shields.io/badge/dynamic/json?query=info.requires_python&label=python&url=https%3A%2F%2Fpypi.org%2Fpypi%2Fmorfeus-ml%2Fjson)
-[![Testing](https://github.com/kjelljorner/morfeus/actions/workflows/test.yml/badge.svg)](https://github.com/kjelljorner/morfeus/actions/workflows/test.yml)
+[![Testing](https://github.com/digital-chemistry-laboratory/morfeus/actions/workflows/test.yml/badge.svg)](https://github.com/digital-chemistry-laboratory/morfeus/actions/workflows/test.yml)
 [![DOI](https://zenodo.org/badge/291745112.svg)](https://zenodo.org/badge/latestdoi/291745112)
 
 A Python package for calculating molecular features.
@@ -44,7 +44,7 @@ It can also be used from the command line.
 $ morfeus cone_angle PdPMe3.xyz - 1 - cone_angle
 117.11012922937584   
 ```
-For further information, see the separate [documentation](https://kjelljorner.github.io/morfeus/).
+For further information, see the separate [documentation](https://digital-chemistry-laboratory.github.io/morfeus/).
 
 # Features
 
