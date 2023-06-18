@@ -763,7 +763,7 @@ class InternalCoordinates:
         indices = np.where(connectivity_matrix)
 
         bonds = set()
-        for i, j in zip(*indices, strict=True):
+        for i, j in zip(*indices):
             bond = frozenset([i + 1, j + 1])
             bonds.add(bond)
 

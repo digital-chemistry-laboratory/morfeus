@@ -1,6 +1,6 @@
 [flake8]
 select = ANN,C,E,F,W,I,BLK,B,B9,D,DAR
-ignore = ANN002,ANN003,ANN101,ANN401,E203,E501,E741,W503,D105,D107,DAR203
+ignore = ANN002,ANN003,ANN101,ANN401,B905, E203,E501,E741,W503,D105,D107,DAR203
 max-line-length = 90
 max-complexity = 10
 application-import-names = morfeus,tests

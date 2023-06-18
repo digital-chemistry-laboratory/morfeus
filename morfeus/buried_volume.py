@@ -189,7 +189,7 @@ class BuriedVolume:
         # Get list of atoms as Atom objects
         atoms = []
         for i, (element, radius_, coord) in enumerate(
-            zip(elements, radii, coordinates, strict=True), start=1
+            zip(elements, radii, coordinates), start=1
         ):
             if i in excluded_atoms:
                 continue

@@ -89,7 +89,7 @@ class ConeAngle:
         # Get list of atoms as Atom objects
         atoms: list[Atom] = []
         for i, (element, coord, radius) in enumerate(
-            zip(elements, coordinates, radii, strict=True), start=1
+            zip(elements, coordinates, radii), start=1
         ):
             if i != atom_1:
                 atom = Atom(element, coord, radius, i)

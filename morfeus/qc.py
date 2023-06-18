@@ -217,7 +217,7 @@ def _generate_qcel_molecule(
         connectivity_matrix = np.array(connectivity_matrix)
         bos = []
         i, j = np.tril_indices_from(connectivity_matrix)
-        for k, l in zip(i, j, strict=True):
+        for k, l in zip(i, j):
             if k != l:
                 bo = int(connectivity_matrix[k, l])
                 if bo != 0:

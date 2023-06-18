@@ -69,7 +69,7 @@ class SolidAngle:
         # Get list of atoms as Atom objects
         atoms = []
         for i, (element, coords, radius) in enumerate(
-            zip(elements, coordinates, radii, strict=True), start=1
+            zip(elements, coordinates, radii), start=1
         ):
             if i == metal_index:
                 continue

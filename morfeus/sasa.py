@@ -72,7 +72,7 @@ class SASA:
         # Construct list of atoms
         atoms = []
         for i, (coordinate, radius, element) in enumerate(
-            zip(coordinates, radii, elements, strict=True), start=1
+            zip(coordinates, radii, elements), start=1
         ):
             atom = Atom(element, coordinate, radius, i)
             atoms.append(atom)
@@ -182,9 +182,7 @@ class SASA:
         print("Volume inside solvent accessible surface (Å³): " f"{self.volume:.1f}")
         if verbose:
             print(f"{'Symbol':<10s}{'Index':<10s}{'Area (Å²)':<10s}")
-            for atom, (i, area) in zip(
-                self._atoms, self.atom_areas.items(), strict=True
-            ):
+            for atom, (i, area) in zip(self._atoms, self.atom_areas.items()):
                 symbol = atomic_symbols[atom.element]
                 print(f"{symbol:<10s}{i:<10d}{area:<10.1f}")
 

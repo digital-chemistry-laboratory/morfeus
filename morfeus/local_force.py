@@ -700,7 +700,7 @@ class LocalForce:
                             B_atom_map[atom] = []
                     if counter > 0 and counter < 5:
                         values = [int(value) for value in line.strip().split()[1:]]
-                        for atom, value in zip(atoms, values, strict=True):
+                        for atom, value in zip(atoms, values):
                             B_atom_map[atom].append(value)
                     counter += 1
                     if counter == 5:
@@ -723,7 +723,7 @@ class LocalForce:
                             float(value.replace("D", "E"))
                             for value in line.strip().split()[1:]
                         ]
-                        for atom, value in zip(atoms, values, strict=True):
+                        for atom, value in zip(atoms, values):
                             B_vectors[atom].append(value)
                     counter += 1
                     if counter == 13:
@@ -835,7 +835,7 @@ class LocalForce:
 
         # Process internal coordinates
         if len(internal_indices) > 0:
-            for name, indices in zip(internal_names, internal_indices, strict=True):
+            for name, indices in zip(internal_names, internal_indices):
                 if name[0] == "R" and len(indices) == 2:
                     self._internal_coordinates.add_internal_coordinate(list(indices))
                 if name[0] == "A" and len(indices) == 3:

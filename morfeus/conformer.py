@@ -1050,9 +1050,7 @@ class ConformerEnsemble:
                 f"!= number of conformers ({self.n_conformers})."
             )
             raise ValueError(msg)
-        for conformer, coordinates in zip(
-            self.conformers, conformer_coordinates, strict=True
-        ):
+        for conformer, coordinates in zip(self.conformers, conformer_coordinates):
             conformer.coordinates = np.array(coordinates)
 
         return self
@@ -1077,7 +1075,7 @@ class ConformerEnsemble:
                 f"!= number of conformers ({self.n_conformers})."
             )
             raise ValueError(msg)
-        for conformer, degeneracy in zip(self.conformers, degeneracies, strict=True):
+        for conformer, degeneracy in zip(self.conformers, degeneracies):
             conformer.degeneracy = degeneracy
 
         return self
@@ -1102,7 +1100,7 @@ class ConformerEnsemble:
                 f"conformers ({self.n_conformers})."
             )
             raise ValueError(msg)
-        for conformer, energy in zip(self.conformers, energies, strict=True):
+        for conformer, energy in zip(self.conformers, energies):
             conformer.energy = energy
 
         return self
@@ -1132,7 +1130,7 @@ class ConformerEnsemble:
         Returns:
             self: Self
         """
-        for conformer, value in zip(self.conformers, values, strict=True):
+        for conformer, value in zip(self.conformers, values):
             conformer.properties[key] = value
 
         return self
@@ -1242,9 +1240,7 @@ class ConformerEnsemble:
         if separate:
             if not isinstance(file, str):
                 raise TypeError("file must be str when separate=True")
-            for i, coordinates, energy in zip(
-                ids, conformer_coordinates, energies, strict=True
-            ):
+            for i, coordinates, energy in zip(ids, conformer_coordinates, energies):
                 conf_filename = file.split(".")[0] + f"_{i + 1}.xyz"
                 write_xyz(conf_filename, symbols, coordinates, comments=[energy])
         else:
@@ -1273,7 +1269,7 @@ class ConformerEnsemble:
         degeneracies = degeneracies_
 
         for coordinates, energy, degeneracy in zip(
-            conformer_coordinates, energies, degeneracies, strict=True
+            conformer_coordinates, energies, degeneracies
         ):
             conformer = Conformer(self.elements, coordinates, energy, degeneracy)
             self.conformers.append(conformer)
@@ -1984,14 +1980,14 @@ def _get_ob_mol(
     mol = ob.OBMol()
 
     # Add atoms
-    for element, coordinate, charge in zip(elements, coordinates, charges, strict=True):
+    for element, coordinate, charge in zip(elements, coordinates, charges):
         a = mol.NewAtom()
         a.SetAtomicNum(int(element))
         a.SetVector(*coordinate)
         a.SetFormalCharge(int(charge))
 
     # Add bonds
-    for i, j in zip(*np.tril_indices_from(connectivity_matrix), strict=True):
+    for i, j in zip(*np.tril_indices_from(connectivity_matrix)):
         if i != j:
             bo = connectivity_matrix[i, j]
             if bo != 0:
@@ -2028,13 +2024,13 @@ def _get_rdkit_mol(
     mol = Chem.RWMol()
 
     # Add atoms
-    for element, charge in zip(elements, charges, strict=True):
+    for element, charge in zip(elements, charges):
         atom = Chem.Atom(element)
         atom.SetFormalCharge(int(charge))
         mol.AddAtom(atom)
 
     # Add bonds
-    for i, j in zip(*np.tril_indices_from(connectivity_matrix), strict=True):
+    for i, j in zip(*np.tril_indices_from(connectivity_matrix)):
         if i != j:
             bo = connectivity_matrix[i, j]
             if bo != 0:
