@@ -115,6 +115,7 @@ class BuriedVolume:
     _density: float
     _excluded_atoms: set[int]
     _free_points: Array2DFloat
+    _method: str
     _octant_limits: dict[
         int, tuple[tuple[float, float], tuple[float, float], tuple[float, float]]
     ]
@@ -208,6 +209,9 @@ class BuriedVolume:
         self._compute_buried_volume(
             center=center, radius=radius, density=density, method=method
         )
+
+        # Save method used
+        self._method = method
 
     def octant_analysis(self) -> "BuriedVolume":
         """Perform octant analysis of the buried volume."""
@@ -398,7 +402,7 @@ class BuriedVolume:
                 center=self._sphere.center,
                 radius=new_radius,
                 density=self._sphere.density,
-                method="projection",
+                method=self._method,
             )
             self.molecular_volume = temp_bv.buried_volume
             self.distal_volume = self.molecular_volume - self.buried_volume
