@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_almost_equal, assert_array_equal
 import pytest
 
 from morfeus import read_xyz, XTB
@@ -30,3 +30,14 @@ def test_fukui():
     assert_array_almost_equal(f_loc_nuc, ref_data["f_loc_nuc"], decimal=3)
     f_loc_elec = list(xtb.get_fukui(variety="local_electrophilicity").values())
     assert_array_almost_equal(f_loc_elec, ref_data["f_loc_elec"], decimal=3)
+
+
+@pytest.mark.xtb
+def test_homo_index():
+    """Test HOMO detection."""
+    elements, coordinates = read_xyz(DATA_DIR / "1-penten-3-one.xyz")
+    homo_indices = [
+        XTB(elements, coordinates, charge=i)._get_homo_index()
+        for i in [2, 1, 0, -1, -2, -3]
+    ]
+    assert_array_equal(homo_indices, [15, 16, 16, 17, 17, 18])

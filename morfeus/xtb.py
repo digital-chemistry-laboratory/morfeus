@@ -276,8 +276,7 @@ class XTB:
             homo_energy: HOMO energy (a.u.)
         """
         eigenvalues = self._get_eigenvalues()
-        occupations = self._get_occupations()
-        homo_index = int(occupations.sum().round(0) / 2) - 1
+        homo_index = self._get_homo_index()
         homo_energy: float = eigenvalues[homo_index]
 
         return homo_energy
@@ -309,8 +308,7 @@ class XTB:
             lumo_energy: LUMO energy (a.u.)
         """
         eigenvalues = self._get_eigenvalues()
-        occupations = self._get_occupations()
-        homo_index = int(occupations.sum().round(0) / 2) - 1
+        homo_index = self._get_homo_index()
         lumo_index = homo_index + 1
         lumo_energy: float = eigenvalues[lumo_index]
 
@@ -332,6 +330,11 @@ class XTB:
         self._check_results(charge_state)
         energy: float = self._results[charge_state].get_energy()
         return energy
+
+    def _get_homo_index(self) -> int:
+        occupations = self._get_occupations()
+        homo_index = int(np.ceil(occupations.sum().round(0) / 2 - 1))
+        return homo_index
 
     def _get_occupations(self) -> Array1DFloat:
         """Get occupation numbers."""
