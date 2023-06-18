@@ -153,7 +153,6 @@ class SASA:
         )
 
         for i, atom in enumerate(self._atoms):
-
             # Construct sphere for atom
             sphere = Sphere(atom.coordinates, atom.radius, density=self._density)
             atom.points = sphere.points
