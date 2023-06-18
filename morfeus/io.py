@@ -268,7 +268,7 @@ class D4Parser:
         c8_coefficients: Array1DFloat = np.array(
             [
                 3 * c6 * r2_r4[element] ** 2
-                for c6, element in zip(c6_coefficients, elements)
+                for c6, element in zip(c6_coefficients, elements, strict=True)
             ]
         )
 
@@ -449,7 +449,7 @@ def read_xyz(
     elements: list[int | str] = []
     coordinates: list[list[float]] = []
     n_atoms = int(lines[0].strip())
-    line_chunks = zip(*[iter(lines)] * (n_atoms + 2))
+    line_chunks = zip(*[iter(lines)] * (n_atoms + 2), strict=True)
     for line_chunk in line_chunks:
         for line in line_chunk[2:]:
             strip_line = line.strip().split()
@@ -508,7 +508,7 @@ def get_xyz_string(
     """
     string = f"{len(symbols)}\n"
     string += f"{comment}\n"
-    for s, c in zip(symbols, coordinates):
+    for s, c in zip(symbols, coordinates, strict=True):
         string += f"{s:10s}{c[0]:10.5f}{c[1]:10.5f}{c[2]:10.5f}\n"
 
     return string
@@ -538,6 +538,6 @@ def write_xyz(
 
     # Write the xyz file
     with open(file, "w") as f:
-        for coord, comment in zip(coordinates, comments):
+        for coord, comment in zip(coordinates, comments, strict=True):
             xyz_string = get_xyz_string(symbols, coord, comment=comment)
             f.write(xyz_string)

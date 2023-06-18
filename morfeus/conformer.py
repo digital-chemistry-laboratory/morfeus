@@ -1050,7 +1050,9 @@ class ConformerEnsemble:
                 f"!= number of conformers ({self.n_conformers})."
             )
             raise ValueError(msg)
-        for conformer, coordinates in zip(self.conformers, conformer_coordinates):
+        for conformer, coordinates in zip(
+            self.conformers, conformer_coordinates, strict=True
+        ):
             conformer.coordinates = np.array(coordinates)
 
         return self
@@ -1075,7 +1077,7 @@ class ConformerEnsemble:
                 f"!= number of conformers ({self.n_conformers})."
             )
             raise ValueError(msg)
-        for conformer, degeneracy in zip(self.conformers, degeneracies):
+        for conformer, degeneracy in zip(self.conformers, degeneracies, strict=True):
             conformer.degeneracy = degeneracy
 
         return self
@@ -1100,7 +1102,7 @@ class ConformerEnsemble:
                 f"conformers ({self.n_conformers})."
             )
             raise ValueError(msg)
-        for conformer, energy in zip(self.conformers, energies):
+        for conformer, energy in zip(self.conformers, energies, strict=True):
             conformer.energy = energy
 
         return self
@@ -1130,7 +1132,7 @@ class ConformerEnsemble:
         Returns:
             self: Self
         """
-        for conformer, value in zip(self.conformers, values):
+        for conformer, value in zip(self.conformers, values, strict=True):
             conformer.properties[key] = value
 
         return self
@@ -1240,7 +1242,9 @@ class ConformerEnsemble:
         if separate:
             if not isinstance(file, str):
                 raise TypeError("file must be str when separate=True")
-            for i, coordinates, energy in zip(ids, conformer_coordinates, energies):
+            for i, coordinates, energy in zip(
+                ids, conformer_coordinates, energies, strict=True
+            ):
                 conf_filename = file.split(".")[0] + f"_{i + 1}.xyz"
                 write_xyz(conf_filename, symbols, coordinates, comments=[energy])
         else:
@@ -1269,7 +1273,7 @@ class ConformerEnsemble:
         degeneracies = degeneracies_
 
         for coordinates, energy, degeneracy in zip(
-            conformer_coordinates, energies, degeneracies
+            conformer_coordinates, energies, degeneracies, strict=True
         ):
             conformer = Conformer(self.elements, coordinates, energy, degeneracy)
             self.conformers.append(conformer)
@@ -1702,7 +1706,8 @@ def conformers_from_ob_ga(  # noqa: C901
         if not (parse_version(openbabel.__version__) > parse_version("3.1.0")):
             warnings.warn(
                 "Scorer only works with openbabel version > 3.1.0. "
-                "Proceeding without scorer."
+                "Proceeding without scorer.",
+                stacklevel=2,
             )
         else:
             if score == "rmsd":
@@ -1719,7 +1724,8 @@ def conformers_from_ob_ga(  # noqa: C901
         if not (parse_version(openbabel.__version__) > parse_version("3.1.0")):
             warnings.warn(
                 "Filter only works with openbabel version > 3.1.0. "
-                "Proceeding without filter."
+                "Proceeding without filter.",
+                stacklevel=2,
             )
         else:
             ob_filter = ob.OBStericConformerFilter(cutoff, vdw_factor, check_hydrogens)
@@ -1978,14 +1984,14 @@ def _get_ob_mol(
     mol = ob.OBMol()
 
     # Add atoms
-    for element, coordinate, charge in zip(elements, coordinates, charges):
+    for element, coordinate, charge in zip(elements, coordinates, charges, strict=True):
         a = mol.NewAtom()
         a.SetAtomicNum(int(element))
         a.SetVector(*coordinate)
         a.SetFormalCharge(int(charge))
 
     # Add bonds
-    for i, j in zip(*np.tril_indices_from(connectivity_matrix)):
+    for i, j in zip(*np.tril_indices_from(connectivity_matrix), strict=True):
         if i != j:
             bo = connectivity_matrix[i, j]
             if bo != 0:
@@ -2022,13 +2028,13 @@ def _get_rdkit_mol(
     mol = Chem.RWMol()
 
     # Add atoms
-    for element, charge in zip(elements, charges):
+    for element, charge in zip(elements, charges, strict=True):
         atom = Chem.Atom(element)
         atom.SetFormalCharge(int(charge))
         mol.AddAtom(atom)
 
     # Add bonds
-    for i, j in zip(*np.tril_indices_from(connectivity_matrix)):
+    for i, j in zip(*np.tril_indices_from(connectivity_matrix), strict=True):
         if i != j:
             bo = connectivity_matrix[i, j]
             if bo != 0:

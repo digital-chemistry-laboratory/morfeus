@@ -1,3 +1,4 @@
+cclib
 dftd4
 libconeangle
 matplotlib

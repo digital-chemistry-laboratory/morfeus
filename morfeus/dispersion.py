@@ -139,7 +139,7 @@ class Dispersion:
             # Get list of atoms as Atom objects
             atoms: list[Atom] = []
             for i, (element, coord, radius) in enumerate(
-                zip(elements, coordinates, radii), start=1
+                zip(elements, coordinates, radii, strict=True), start=1
             ):
                 atom = Atom(element, coord, radius, i)
                 atoms.append(atom)
@@ -514,7 +514,9 @@ class Dispersion:
             print(
                 f"{'Symbol':<10s}{'Index':<10s}{'P_int (kcal^(1/2) mol^(-1/2))':<30s}"
             )
-            for atom, (i, p_int) in zip(self._atoms, self.atom_p_int.items()):
+            for atom, (i, p_int) in zip(
+                self._atoms, self.atom_p_int.items(), strict=True
+            ):
                 symbol = atomic_symbols[atom.element]
                 print(f"{symbol:<10s}{i:<10d}{p_int:<10.1f}")
 

@@ -72,7 +72,7 @@ class D4Grimme:
             c_n_coefficients[i] = np.array(
                 [
                     extrapolate_c_n(c6, element, element, i)
-                    for c6, element in zip(c6_coefficients, elements)
+                    for c6, element in zip(c6_coefficients, elements, strict=True)
                 ]
             )
 
@@ -121,7 +121,7 @@ class D3Calculator:
         # Set up the atoms objects
         atoms = []
         for i, (element, coordinate, radius) in enumerate(
-            zip(elements, coordinates, radii), start=1
+            zip(elements, coordinates, radii, strict=True), start=1
         ):
             atom = Atom(element, coordinate, radius, i)
             atoms.append(atom)

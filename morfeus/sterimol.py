@@ -134,7 +134,7 @@ class Sterimol:
         # Get list of atoms as Atom objects
         atoms = []
         for i, (element, radius, coord) in enumerate(
-            zip(elements, all_radii, all_coordinates), start=1
+            zip(elements, all_radii, all_coordinates, strict=True), start=1
         ):
             atom = Atom(element, coord, radius, i)
             atoms.append(atom)
