@@ -17,11 +17,14 @@ from morfeus.utils import convert_elements, Import, requires_dependency
 if typing.TYPE_CHECKING:
     import xtb
     import xtb.interface
+    import xtb.utils
 
 IPEA_CORRECTIONS = {"1": 5.700, "2": 4.846}
 
 
-@requires_dependency([Import("xtb"), Import("xtb.interface")], globals())
+@requires_dependency(
+    [Import("xtb"), Import("xtb.interface"), Import("xtb.utils")], globals()
+)
 class XTB:
     """Calculates electronic properties with the xtb-python package.
 
@@ -207,7 +210,7 @@ class XTB:
             )
         else:
             raise ValueError(
-                f"Variety '{variety}' does not exist. "
+                f"Variety {variety!r} does not exist. "
                 f"Choose one of {', '.join(varieties)}."
             )
 
@@ -260,7 +263,7 @@ class XTB:
             )
         else:
             raise ValueError(
-                f"Variety '{variety}' does not exist. "
+                f"Variety {variety!r} does not exist. "
                 f"Choose one of {', '.join(varieties)}."
             )
 
@@ -352,7 +355,7 @@ class XTB:
         if self._solvent:
             solvent = xtb.utils.get_solvent(self._solvent)
             if solvent is None:
-                raise Exception(f"Solvent '{self._solvent}' not recognized")
+                raise Exception(f"Solvent {self._solvent!r} not recognized")
             calc.set_solvent(solvent)
 
         # Set electronic temperature

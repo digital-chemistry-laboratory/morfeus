@@ -30,7 +30,7 @@ calculating the exact ligand cone angle:
 
 .. tab:: Command line
 
-  .. code-block:: console
+  .. code-block:: shell
 
     $ morfeus cone_angle PdPMe3.xyz - 1 - cone_angle
     117.11012922937584
@@ -41,13 +41,13 @@ Installation
 
 .. tab:: pip
 
-  .. code-block:: console
+  .. code-block:: shell
 
     $ pip install morfeus-ml
 
 .. tab:: conda
 
-  .. code-block:: console
+  .. code-block:: shell
 
     $ conda install -c conda-forge morfeus-ml
 
@@ -126,6 +126,6 @@ both academic and commercial use.
   :caption: Source
   :hidden:
 
-  GitHub <https://github.com/kjelljorner/morfeus>
+  GitHub <https://github.com/digital-chemistry-laboratory/morfeus>
 
 .. _MIT license: https://en.wikipedia.org/wiki/MIT_License

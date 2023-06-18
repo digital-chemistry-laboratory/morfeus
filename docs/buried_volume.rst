@@ -145,7 +145,7 @@ Command line script
 
 The basic functionality is available through the command line script.
 
-.. code-block:: console
+.. code-block:: shell
   :caption: Example
 
   $ morfeus buried_volume 1.xyz - 1 --excluded_atoms='[2,3,4,5,6,7]' - print_report

@@ -350,9 +350,8 @@ class LocalForce:
         t_z: Array2DFloat = (np.tile(np.array([0, 0, 1]), n_atoms)).reshape(-1, 3)
 
         # Construct mass-weighted rotation vectors
-        # TODO: Remove type ignores when https://github.com/numpy/numpy/pull/21216 is released
-        R_x: Array2DFloat = np.cross(coordinates, t_x).flatten() * m_plus  # type: ignore
-        R_y: Array2DFloat = np.cross(coordinates, t_y).flatten() * m_plus  # type: ignore
+        R_x: Array2DFloat = np.cross(coordinates, t_x).flatten() * m_plus
+        R_y: Array2DFloat = np.cross(coordinates, t_y).flatten() * m_plus
         R_z: Array2DFloat = np.cross(coordinates, t_z).flatten() * m_plus
 
         # Mass-weight translation vectors
@@ -387,7 +386,7 @@ class LocalForce:
         reduced_masses = N**2
 
         # Calculate frequencies and force constants
-        n_imag = np.sum(eigenvalues < 0)
+        n_imag = int(np.sum(eigenvalues < 0))
         frequencies = (
             np.sqrt(np.abs(eigenvalues) * HARTREE / BOHR**2 / AMU)
             / (2 * np.pi * C)

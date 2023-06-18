@@ -120,7 +120,7 @@ Command line script
 The command line script provides access to the basic functionality through
 the terminal.
 
-.. code-block:: console
+.. code-block:: shell
   :caption: Example
 
   $ morfeus dispersion tBu.xyz - - print_report

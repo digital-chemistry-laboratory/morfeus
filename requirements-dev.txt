@@ -18,3 +18,4 @@ sphinx-copybutton
 sphinx-inline-tabs
 sphinxcontrib-bibtex
 types-pkg_resources
+types-setuptools
