@@ -111,7 +111,8 @@ class ConeAngle:
                 self._cone = Cone(self.cone_angle, atoms, axis)
             except ImportError:
                 warnings.warn(
-                    "Failed to import libconeangle. Defaulting to method='internal'"
+                    "Failed to import libconeangle. Defaulting to method='internal'",
+                    stacklevel=2,
                 )
                 self._cone_angle_internal()
         elif method == "internal":

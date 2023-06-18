@@ -386,7 +386,7 @@ class LocalForce:
         reduced_masses = N**2
 
         # Calculate frequencies and force constants
-        n_imag = np.sum(eigenvalues < 0)
+        n_imag = int(np.sum(eigenvalues < 0))
         frequencies = (
             np.sqrt(np.abs(eigenvalues) * HARTREE / BOHR**2 / AMU)
             / (2 * np.pi * C)

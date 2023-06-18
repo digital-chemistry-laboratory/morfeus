@@ -1702,7 +1702,8 @@ def conformers_from_ob_ga(  # noqa: C901
         if not (parse_version(openbabel.__version__) > parse_version("3.1.0")):
             warnings.warn(
                 "Scorer only works with openbabel version > 3.1.0. "
-                "Proceeding without scorer."
+                "Proceeding without scorer.",
+                stacklevel=2,
             )
         else:
             if score == "rmsd":
@@ -1719,7 +1720,8 @@ def conformers_from_ob_ga(  # noqa: C901
         if not (parse_version(openbabel.__version__) > parse_version("3.1.0")):
             warnings.warn(
                 "Filter only works with openbabel version > 3.1.0. "
-                "Proceeding without filter."
+                "Proceeding without filter.",
+                stacklevel=2,
             )
         else:
             ob_filter = ob.OBStericConformerFilter(cutoff, vdw_factor, check_hydrogens)

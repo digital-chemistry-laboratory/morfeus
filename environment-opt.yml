@@ -1,7 +1,8 @@
 channels:
   - conda-forge
 dependencies:
-  - dftd4
+  - cclib
+  - dftd4-python
   - geometric
   - libconeangle
   - matplotlib
