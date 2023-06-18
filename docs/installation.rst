@@ -23,6 +23,14 @@ Dependencies
 It is recommended that dependencies are installed with conda if possible as the
 performance of the linear algebra backends is generally better than with pip.
 
+In some instances, such as when using `xtb`, it can help to switch the
+`BLAS implementation`_ used by conda. On Linux or Windows, MKL often works
+better than OpenBLAS, and it can be used with:
+
+.. code-block:: shell
+
+  conda install "libblas=*=*mkl"
+
 Core dependencies:
 
 * numpy_
@@ -55,3 +63,4 @@ Optional depedencies:
 .. _spyrmsd: https://github.com/RMeli/spyrmsd
 .. _vtk:  https://vtk.org
 .. _xtb-python: https://github.com/grimme-lab/xtb-python
+.. _BLAS implementation: https://conda-forge.org/docs/maintainer/knowledge_base.html#switching-blas-implementation
