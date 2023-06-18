@@ -1,6 +1,6 @@
 import setuptools
 
-URL = "https://github.com/kjelljorner/morfeus"
+URL = "https://github.com/digital-chemistry-laboratory/morfeus"
 DESCRIPTION = "A Python package for calculating molecular features"
 LONG_DESCRIPTION = f"""\
 {DESCRIPTION}. For more information, see the [project repository]({URL}).
