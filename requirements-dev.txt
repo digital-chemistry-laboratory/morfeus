@@ -1,5 +1,6 @@
 black
 darglint
+doc8
 flake8
 flake8-annotations
 flake8-black
@@ -13,6 +14,7 @@ nox
 pip
 pytest
 pytest-cov
+rstcheck
 sphinx
 sphinx-copybutton
 sphinx-inline-tabs
