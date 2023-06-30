@@ -223,7 +223,7 @@ class Dispersion:
         grid.dimensions = np.array(parser.X.shape)
         grid.origin = (parser.min_x, parser.min_y, parser.min_z)
         grid.spacing = (parser.step_x, parser.step_y, parser.step_z)
-        grid.point_arrays["values"] = parser.S.flatten(order="F")
+        grid.point_data["values"] = parser.S.flatten(order="F")
         self.grid = grid
 
         # Contour and process the surface
