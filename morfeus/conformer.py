@@ -163,7 +163,7 @@ class Conformer:
     """Conformer with coordinates, energy and properties.
 
     Args:
-        elemennts: Elements as atomic symbols or numbers
+        elements: Elements as atomic symbols or numbers
         coordinates: Coordinates (Å)
         energy: Energy (a.u.)
         degeneracy: Degeneracy
@@ -174,7 +174,7 @@ class Conformer:
         cip_label: Tuple of CIP labels for all atoms: 'R', 'S' or ''
         coordinates: Coordinates (Å)
         degeneracy: Degeneracy
-        elemennts: Elements as atomic symbols or numbers
+        elements: Elements as atomic symbols or numbers
         energy: Energy (a.u.)
         properties: Conformers properties.
     """
