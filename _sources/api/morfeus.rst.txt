@@ -1,0 +1,37 @@
+morfeus package
+===============
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   morfeus.bite_angle
+   morfeus.buried_volume
+   morfeus.calculators
+   morfeus.cone_angle
+   morfeus.conformer
+   morfeus.d3_data
+   morfeus.data
+   morfeus.dispersion
+   morfeus.geometry
+   morfeus.io
+   morfeus.local_force
+   morfeus.plotting
+   morfeus.pyramidalization
+   morfeus.qc
+   morfeus.sasa
+   morfeus.solid_angle
+   morfeus.sterimol
+   morfeus.typing
+   morfeus.utils
+   morfeus.visible_volume
+   morfeus.xtb
+
+Module contents
+---------------
+
+.. automodule:: morfeus
+   :members:
+   :show-inheritance:
