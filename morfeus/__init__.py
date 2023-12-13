@@ -38,6 +38,7 @@ from morfeus.sasa import SASA
 from morfeus.solid_angle import SolidAngle
 from morfeus.sterimol import Sterimol
 from morfeus.tau4 import Tau4
+from morfeus.tau5 import Tau5
 from morfeus.visible_volume import VisibleVolume
 from morfeus.xtb import XTB
 
@@ -55,6 +56,7 @@ __all__ = [
     "SolidAngle",
     "Sterimol",
     "Tau4",
+    "Tau5",
     "VisibleVolume",
     "XTB",
 ]

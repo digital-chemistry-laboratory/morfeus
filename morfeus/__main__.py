@@ -12,6 +12,7 @@ import morfeus.sasa
 import morfeus.solid_angle
 import morfeus.sterimol
 import morfeus.tau4
+import morfeus.tau5
 import morfeus.visible_volume
 import morfeus.xtb
 
@@ -31,6 +32,7 @@ def main() -> None:
             "solid_angle": morfeus.solid_angle.cli,
             "sterimol": morfeus.sterimol.cli,
             "tau4": morfeus.tau4.cli,
+            "tau5": morfeus.tau5.cli,
             "visible_volume": morfeus.visible_volume.cli,
             "xtb": morfeus.xtb.cli,
         }
