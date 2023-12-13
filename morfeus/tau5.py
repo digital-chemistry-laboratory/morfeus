@@ -22,6 +22,25 @@ from morfeus.utils import get_connectivity_matrix
 
 
 class Tau5:
+    """Calculates and stores results of Tau5.
+    As described by: ....
+
+    Args:
+        cooridinates: Coordinates (Å)
+        atom_index: Index of the metal center (1-indexed)
+        neighbor_indices: Indices of neighbors to metal center
+        elements: Elements as atomic symbols or numbers
+        radii: Covalent radii used to determine connectivity (Å)
+        radii_type: Covalent radii type: 'pyykko'
+        excluded_atoms: Indices of atoms to exclude
+        method: Method for detecting neighbors: 'connectivity' or 'distance'. Ignored if
+            neighbor_indices is given.
+
+    Attributes:
+        tau5: Tau5 distortion term
+        neighbor_indices: Indices of neighbors to metal center
+    """
+
     og_tau4: float
     imp_tau4: float
     neighbor_indices: list[int]
@@ -111,5 +130,14 @@ class Tau5:
 
 
 def cli(file: str) -> Any:
+    """CLI for Tau5.
+    
+    Args:
+        file: Geometry file
+
+    Returns:
+        Partially instantiated Tau5 class
+    """
+
     elements, coordinates = read_geometry(file)
     return functools.partial(Tau5, coordinates, elements=elements)

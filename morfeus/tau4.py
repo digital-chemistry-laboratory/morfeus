@@ -40,8 +40,8 @@ class Tau4:
             neighbor_indices is given.
 
     Attributes:
-        og_tau4: Original Tau4
-        imp_tau4: Improved Tau4
+        og_tau4: Original Tau4 distortion term
+        imp_tau4: Improved Tau4 distortion term
         neighbor_indices: Indices of neighbors to metal center
     """
     
@@ -148,7 +148,7 @@ def cli(file: str) -> Any:
     Returns:
         Partially instantiated Tau4 class
     """
-    
+
     elements, coordinates = read_geometry(file)
     return functools.partial(Tau4, coordinates, elements=elements)
     
