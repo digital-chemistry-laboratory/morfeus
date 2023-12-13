@@ -5,6 +5,7 @@ __pycache__/
 .coverage
 .mypy_cache
 .pytest_cache
+*.ipynb
 
 # Distribution/packaging
 build/
