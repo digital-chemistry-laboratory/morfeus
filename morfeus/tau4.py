@@ -40,12 +40,12 @@ class Tau4:
             neighbor_indices is given.
 
     Attributes:
-        og_tau4: Original Tau4 distortion term
+        tau4: Original Tau4 distortion term
         imp_tau4: Improved Tau4 distortion term
         neighbor_indices: Indices of neighbors to metal center
     """
     
-    og_tau4: float
+    tau4: float
     imp_tau4: float
     neighbor_indices: list[int]
       
@@ -121,21 +121,21 @@ class Tau4:
         
         tetrahedral_angle = np.rad2deg(np.arccos(-1/3))
         
-        og_tau4 = (360 - (alpha + beta)) / (360 - 2 * tetrahedral_angle)
+        tau4 = (360 - (alpha + beta)) / (360 - 2 * tetrahedral_angle)
         imp_tau4 = ((beta - alpha) / (360 - tetrahedral_angle) + (180 - beta) / (180 - tetrahedral_angle))
         
         #store attributes
-        self.og_tau4 = og_tau4
+        self.tau4 = tau4
         self.imp_tau4 = imp_tau4
         self.neighbor_indices = (neighbors + 1).tolist()
         
     def print_report(self) -> None:
         """Print report of results."""
-        print(f"Tau4: {self.og_tau4:.3f}")
+        print(f"Tau4: {self.tau4:.3f}")
         print(f"Improved Tau4: {self.imp_tau4:.3f}")
         
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({round(self.og_tau4, 3)!r})"
+        return f"{self.__class__.__name__}({round(self.tau4, 3)!r})"
         return f"{self.__class__.__name__}({round(self.imp_tau4, 3)!r})"
 
 
