@@ -115,6 +115,7 @@ class BuriedVolume:
     _density: float
     _excluded_atoms: set[int]
     _free_points: Array2DFloat
+    _method: str
     _octant_limits: dict[
         int, tuple[tuple[float, float], tuple[float, float], tuple[float, float]]
     ]
@@ -134,6 +135,7 @@ class BuriedVolume:
         density: float = 0.001,
         z_axis_atoms: Sequence[int] | None = None,
         xz_plane_atoms: Sequence[int] | None = None,
+        method: str = "projection",
     ) -> None:
         # Get center and and reortient coordinate system
         coordinates: Array2DFloat = np.array(coordinates)
@@ -178,7 +180,7 @@ class BuriedVolume:
         self._density = density
         self._all_coordinates = coordinates
 
-        # Converting element ids to atomic numbers if the are symbols
+        # Converting element ids to atomic numbers if they are symbols
         elements = convert_elements(elements, output="numbers")
 
         # Getting radii if they are not supplied
@@ -204,7 +206,12 @@ class BuriedVolume:
         self._excluded_atoms = set(excluded_atoms)
 
         # Compute buried volume
-        self._compute_buried_volume(center=center, radius=radius, density=density)
+        self._compute_buried_volume(
+            center=center, radius=radius, density=density, method=method
+        )
+
+        # Save method used
+        self._method = method
 
     def octant_analysis(self) -> "BuriedVolume":
         """Perform octant analysis of the buried volume."""
@@ -296,14 +303,16 @@ class BuriedVolume:
         return self
 
     def _compute_buried_volume(
-        self, center: ArrayLike1D, radius: float, density: float
+        self,
+        center: ArrayLike1D,
+        radius: float,
+        density: float,
+        method: str = "projection",
     ) -> None:
         """Compute buried volume."""
         center: Array1DFloat = np.array(center)
         # Construct sphere at metal center
-        sphere = Sphere(
-            center, radius, method="projection", density=density, filled=True
-        )
+        sphere = Sphere(center, radius, method=method, density=density, filled=True)
 
         # Prune sphere points which are within vdW radius of other atoms.
         tree = scipy.spatial.cKDTree(
@@ -393,6 +402,7 @@ class BuriedVolume:
                 center=self._sphere.center,
                 radius=new_radius,
                 density=self._sphere.density,
+                method=self._method,
             )
             self.molecular_volume = temp_bv.buried_volume
             self.distal_volume = self.molecular_volume - self.buried_volume

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from importlib import import_module
 from numbers import Integral
 import shutil
-from typing import Any, cast, Literal, overload
+from typing import Any, cast, Literal, overload, Type
 
 import numpy as np
 from scipy.sparse import csr_matrix
@@ -340,8 +340,9 @@ def get_connectivity_matrix(
     radii: ArrayLike1D | None = None,
     radii_type: str = "pyykko",
     scale_factor: float = 1.2,
+    matrix_type: Type = int,
 ) -> Array2DInt:
-    """Get connectivity matrix from covalent radii.
+    """Get connectivity matrix from radii.
 
     Args:
         elements: Elements as atomic symbols or numbers
@@ -349,6 +350,7 @@ def get_connectivity_matrix(
         radii: Radii (Å)
         radii_type: Radii type: 'pyykko'
         scale_factor: Factor for scaling covalent radii
+        matrix_type: Type of the returned matrix: int
 
     Returns:
         connectivity_matrix: Connectivity matrix
@@ -357,17 +359,24 @@ def get_connectivity_matrix(
         RuntimeError: When neither elements nor radii given
     """
     coordinates: Array2DFloat = np.array(coordinates)
-    n_atoms = len(coordinates)
     if radii is None:
         if elements is None:
             raise RuntimeError("Either elements or radii needed.")
         elements = convert_elements(elements, output="numbers")
         radii = get_radii(elements, radii_type=radii_type)
     radii: Array1DFloat = np.array(radii)
-    distance_matrix = scipy.spatial.distance_matrix(coordinates, coordinates)
-    radii_matrix = np.add.outer(radii, radii) * scale_factor
-    connectivity_matrix = (distance_matrix < radii_matrix) - np.identity(
-        n_atoms
-    ).astype(int)
 
-    return connectivity_matrix
+    # The connectivity matrix is an upper triangular.
+    n = len(radii)
+    connectivity_matrix = np.zeros((n, n))
+    row, col = np.triu_indices(n, 1)
+
+    # Connected if distance is smaller than sum of radii * factor.
+    connectivity_matrix[row, col] = connectivity_matrix[
+        col, row
+    ] = scipy.spatial.distance.pdist(
+        coordinates
+    ) - scale_factor * scipy.spatial.distance.pdist(
+        radii.reshape(-1, 1), metric=lambda x, y: x + y
+    )
+    return (connectivity_matrix < 0).astype(matrix_type)

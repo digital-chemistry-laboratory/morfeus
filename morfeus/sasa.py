@@ -14,7 +14,13 @@ from morfeus.data import atomic_symbols, jmol_colors
 from morfeus.geometry import Atom, Sphere
 from morfeus.io import read_geometry
 from morfeus.typing import Array1DFloat, Array2DFloat, ArrayLike1D, ArrayLike2D
-from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
+from morfeus.utils import (
+    convert_elements,
+    get_connectivity_matrix,
+    get_radii,
+    Import,
+    requires_dependency,
+)
 
 if typing.TYPE_CHECKING:
     from matplotlib.colors import hex2color
@@ -132,31 +138,30 @@ class SASA:
 
     def _determine_accessible_points(self) -> None:
         """Determine occluded and accessible points of each atom."""
-        # Based on distances to all other atoms (brute force).
-        for atom in self._atoms:
+        # Based on distances to other atoms.
+        radii: Array2DFloat = np.array([atom.radius for atom in self._atoms]).reshape(
+            -1, 1
+        )
+        radii_: Array1DFloat = np.array([atom.radius for atom in self._atoms])
+        coordinates: Array2DFloat = np.array(
+            [atom.coordinates for atom in self._atoms]
+        ).reshape(-1, 3)
+
+        # neighbor_masks[i] is a boolean mask that keeps neighbors of the ith atom
+        neighbor_masks = get_connectivity_matrix(
+            coordinates=coordinates, radii=radii_, scale_factor=1, matrix_type=bool
+        )
+
+        for i, atom in enumerate(self._atoms):
             # Construct sphere for atom
             sphere = Sphere(atom.coordinates, atom.radius, density=self._density)
             atom.points = sphere.points
 
-            # Select atoms that are at a distance less than the sum of radii
-            # !TODO can be vectorized
-            test_atoms = []
-            for test_atom in self._atoms:
-                if test_atom is not atom:
-                    distance = scipy.spatial.distance.euclidean(
-                        atom.coordinates, test_atom.coordinates
-                    )
-                    radii_sum = atom.radius + test_atom.radius
-                    if distance < radii_sum:
-                        test_atoms.append(test_atom)
+            if np.any(neighbor_masks[i]):
+                # Select atoms that are at a distance less than the sum of radii
+                test_coordinates = coordinates[neighbor_masks[i]]
+                test_radii = radii[neighbor_masks[i]]
 
-            # Select coordinates and radii for other atoms
-            test_coordinates = [test_atom.coordinates for test_atom in test_atoms]
-            test_radii = [test_atom.radius for test_atom in test_atoms]
-            test_radii: Array1DFloat = np.array(test_radii).reshape(-1, 1)
-
-            # Get distances to other atoms and subtract radii
-            if test_coordinates:
                 distances = scipy.spatial.distance.cdist(
                     test_coordinates, sphere.points
                 )
