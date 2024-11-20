@@ -31,7 +31,7 @@ from morfeus.bite_angle import BiteAngle
 from morfeus.buried_volume import BuriedVolume
 from morfeus.cone_angle import ConeAngle
 from morfeus.dispersion import Dispersion
-from morfeus.io import read_geometry, read_gjf, read_xyz
+from morfeus.io import read_geometry, read_gjf, read_xyz, write_xyz
 from morfeus.local_force import LocalForce
 from morfeus.pyramidalization import Pyramidalization
 from morfeus.sasa import SASA
