@@ -116,9 +116,9 @@ They are calculated according to the following definitions
 
   N &= -IP
 
-  \nu_{electrofugality} &= \frac{(IP - 3EA)^2}{8(IP - EA)} = -EA + \omega
+  \nu_{electrofugality} &= \frac{(3IP - EA)^2}{8(IP - EA)} = IP + \omega
 
-  \nu_{nucleofugality} &= \frac{(3IP - EA)^2}{8(IP - EA)} = IP + \omega
+  \nu_{nucleofugality} &= \frac{(IP - 3EA)^2}{8(IP - EA)} = -EA + \omega
 
 Where :math:`IP` is the ionization potential, :math:`EA` is the electron
 affinity, :math:`\mu` is the chemical potential and :math:`\eta` is the
