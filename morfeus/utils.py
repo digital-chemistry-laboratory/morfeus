@@ -257,15 +257,13 @@ def requires_dependency(  # noqa: C901
 @overload
 def convert_elements(
     elements: Iterable[int] | Iterable[str], output: Literal["numbers"]
-) -> list[int]:
-    ...
+) -> list[int]: ...
 
 
 @overload
 def convert_elements(
     elements: Iterable[int] | Iterable[str], output: Literal["symbols"]
-) -> list[str]:
-    ...
+) -> list[str]: ...
 
 
 def convert_elements(

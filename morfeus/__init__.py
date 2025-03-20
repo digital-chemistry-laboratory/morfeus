@@ -25,6 +25,7 @@ Modules:
 Scripts:
     morfeus: Command line interface
 """
+
 from importlib import metadata
 
 from morfeus.bite_angle import BiteAngle
