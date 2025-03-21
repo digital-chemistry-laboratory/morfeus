@@ -784,11 +784,13 @@ class ConformerEnsemble:
         Raises:
             ValueError: If method not supported.
         """
+        i_s_: np.ndarray
         if i_s is None:
             i_s_ = np.arange(1, len(self.conformers) + 1)
         else:
             i_s_ = np.array(i_s)
         i_s = i_s_
+        j_s_: np.ndarray
         if j_s is None:
             j_s_ = np.arange(1, len(self.conformers) + 1)
         else:
@@ -1223,6 +1225,7 @@ class ConformerEnsemble:
         Raises:
             TypeError: When separate=True and file is not str
         """
+        ids_: np.ndarray
         if ids is None:
             ids_ = np.arange(len(self.conformers))
         else:
@@ -1256,12 +1259,14 @@ class ConformerEnsemble:
         conformer_coordinates: Array3DFloat = np.array(conformer_coordinates)
         n_conformers = len(conformer_coordinates)
 
+        energies_: np.ndarray
         if energies is None:
             energies_ = np.full(n_conformers, np.nan)
         else:
             energies_ = np.array(energies)
         energies = energies_
 
+        degeneracies_: np.ndarray
         if degeneracies is None:
             degeneracies_ = np.ones(n_conformers)
         else:
@@ -1968,6 +1973,8 @@ def _get_ob_mol(
         mol: OpenBabel OBMol object
     """
     elements = convert_elements(elements, output="numbers")
+
+    charges_: np.ndarray
     if charges is None:
         charges_ = np.zeros(len(elements))
     else:
@@ -2013,6 +2020,7 @@ def _get_rdkit_mol(
     }
     elements = convert_elements(elements, output="symbols")
 
+    charges_: np.ndarray
     if charges is None:
         charges_ = np.zeros(len(elements))
     else:

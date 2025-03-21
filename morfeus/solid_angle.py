@@ -79,7 +79,7 @@ class SolidAngle:
         # Construct sphere and check which points on sphere are within atom cones
         sphere = Sphere(coordinates_metal, 1.0, density=density)
 
-        mask = np.zeros(len(sphere.points))
+        mask = np.zeros(len(sphere.points), dtype=bool)
         for atom in atoms:
             atom.get_cone()
             is_inside = atom.cone.is_inside_points(sphere.points)
