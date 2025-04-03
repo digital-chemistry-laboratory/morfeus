@@ -16,22 +16,12 @@ import shutil
 from dataclasses import dataclass
 import re
 
-from morfeus.data import DEBYE_TO_AU  # , ANGSTROM_TO_BOHR, HARTREE_TO_EV
+from morfeus.data import DEBYE_TO_AU
 from morfeus.io import read_geometry, write_xyz
 from morfeus.typing import Array1DFloat, Array2DFloat, ArrayLike2D
-from morfeus.utils import convert_elements  # , Import, requires_dependency
-
-# if typing.TYPE_CHECKING:
-#     import xtb
-#     import xtb.interface
-#     import xtb.utils
-
-# IPEA_CORRECTIONS = {"1": 5.700, "2": 4.846}
+from morfeus.utils import convert_elements, requires_executable
 
 
-# @requires_dependency(
-#     [Import("xtb"), Import("xtb.interface"), Import("xtb.utils")], globals()
-# )
 @dataclass
 class XTBResults:
     """Stores xTB descriptors."""
@@ -49,6 +39,7 @@ class XTBResults:
     fukui_radical: list[float] = None
 
 
+@requires_executable(["xtb"])
 class XTB:
     """Calculates electronic properties with the xtb program.
 
@@ -90,7 +81,7 @@ class XTB:
 
         # Store settings
         self._coordinates = np.array(coordinates)
-        self._version = version
+        self._version = int(version)
         self._charge = charge
         self._solvent = solvent
         self._n_unpaired = n_unpaired
@@ -120,6 +111,9 @@ class XTB:
 
         Returns:
             bond_order: Bond order
+
+        Raises:
+            ValueError: When no bond exists between the given atoms.
         """
         bonds_orders = self.get_bond_orders()
         if (i, j) in bonds_orders:
@@ -324,8 +318,10 @@ class XTB:
         elif variety == "radical":
             fukui = self._results.fukui_radical
         elif variety == "dual":
-            fukui = list(
-                np.array(self._results.fukui_plus) - np.array(self._results.fukui_minus)
+            fukui = np.around(
+                np.array(self._results.fukui_plus)
+                - np.array(self._results.fukui_minus),
+                decimals=len(str(self._results.fukui_plus).split(".")[-1]),
             )
         elif variety == "local_electrophilicity":
             fukui_radical: Array1DFloat = np.array(self._results.fukui_radical)
