@@ -4,29 +4,53 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 import functools
-import typing
+
+# import typing
 from typing import Any
-
 import numpy as np
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from contextlib import nullcontext
+import subprocess
+import shutil
+from dataclasses import dataclass
+import re
 
-from morfeus.data import ANGSTROM_TO_BOHR, HARTREE_TO_EV
-from morfeus.io import read_geometry
+from morfeus.data import DEBYE_TO_AU  # , ANGSTROM_TO_BOHR, HARTREE_TO_EV
+from morfeus.io import read_geometry, write_xyz
 from morfeus.typing import Array1DFloat, Array2DFloat, ArrayLike2D
-from morfeus.utils import convert_elements, Import, requires_dependency
+from morfeus.utils import convert_elements  # , Import, requires_dependency
 
-if typing.TYPE_CHECKING:
-    import xtb
-    import xtb.interface
-    import xtb.utils
+# if typing.TYPE_CHECKING:
+#     import xtb
+#     import xtb.interface
+#     import xtb.utils
 
-IPEA_CORRECTIONS = {"1": 5.700, "2": 4.846}
+# IPEA_CORRECTIONS = {"1": 5.700, "2": 4.846}
 
 
-@requires_dependency(
-    [Import("xtb"), Import("xtb.interface"), Import("xtb.utils")], globals()
-)
+# @requires_dependency(
+#     [Import("xtb"), Import("xtb.interface"), Import("xtb.utils")], globals()
+# )
+@dataclass
+class XTBResults:
+    """Stores xTB descriptors."""
+
+    charges: list[float] = None
+    bond_orders: list[tuple[int, int, float]] = None
+    homo: dict[str, float] = None  # Stores both Eh and eV units
+    lumo: dict[str, float] = None  # Stores both Eh and eV units
+    dipole_vect: Array1DFloat = None  # Unit in a.u.
+    dipole_moment: float = None  # Unit in debye
+    ip: float = None
+    ea: float = None
+    fukui_plus: list[float] = None
+    fukui_minus: list[float] = None
+    fukui_radical: list[float] = None
+
+
 class XTB:
-    """Calculates electronic properties with the xtb-python package.
+    """Calculates electronic properties with the xtb program.
 
     Args:
         elements: Elements as atomic symbols or numbers
@@ -34,8 +58,9 @@ class XTB:
         version: Version of xtb to use. Currently works with '1' or '2'.
         charge: Molecular charge
         n_unpaired: Number of unpaired electrons
-        solvent: Solvent. See xtb-python documentation
+        solvent: Solvent. Uses the ALPB solvation model
         electronic_temperature: Electronic temperature (K)
+        run_path: Folder path to run xTB calculation. If not provided, runs in a temporary folder
     """
 
     _charge: int
@@ -45,17 +70,20 @@ class XTB:
     _n_unpaired: int | None
     _results: Any
     _solvent: str | None
-    _version: str
+    _version: int
+
+    _xyz_input: str = "xtb.xyz"
 
     def __init__(
         self,
         elements: Iterable[int] | Iterable[str],
         coordinates: ArrayLike2D,
-        version: str = "2",
-        charge: int = 0,
+        version: int | str | None = 2,
+        charge: int | None = 0,
         n_unpaired: int | None = None,
         solvent: str | None = None,
         electronic_temperature: int | None = None,
+        run_path: Path | str | None = None,
     ) -> None:
         # Converting elements to atomic numbers if the are symbols
         self._elements = np.array(convert_elements(elements, output="numbers"))
@@ -68,17 +96,20 @@ class XTB:
         self._n_unpaired = n_unpaired
         self._electronic_temperature = electronic_temperature
 
-        # Set up results dictionary
-        self._results = {
-            -1: None,
-            0: None,
-            1: None,
-        }
+        self._run_path = Path(run_path) if run_path else None
 
-        self._params = {
-            "1": xtb.interface.Param.GFN1xTB,
-            "2": xtb.interface.Param.GFN2xTB,
-        }
+        self._default_xtb_command = (
+            f"xtb {XTB._xyz_input} --gfn {self._version} --chrg {self._charge}"
+        )
+        if self._solvent is not None:
+            self._default_xtb_command += f" --alpb {self._solvent}"
+        if self._n_unpaired is not None:
+            self._default_xtb_command += f" --uhf {self._n_unpaired}"
+        if self._electronic_temperature is not None:
+            self._default_xtb_command += f" --etemp {self._electronic_temperature}"
+
+        self._results = XTBResults()
+        self._corrected: bool | None = None
 
     def get_bond_order(self, i: int, j: int) -> float:
         """Returns bond order between two atoms.
@@ -90,87 +121,181 @@ class XTB:
         Returns:
             bond_order: Bond order
         """
-        bo_matrix = self.get_bond_orders()
-        bond_order: float = bo_matrix[i - 1, j - 1]
+        bonds_orders = self.get_bond_orders()
+        if (i, j) in bonds_orders:
+            bond_order = bonds_orders[(i, j)]
+        elif (j, i) in bonds_orders:
+            bond_order = bonds_orders[(j, i)]
+        else:
+            raise ValueError(f"No bond order calculated between atoms {i} and {j}.")
 
         return bond_order
 
-    def get_bond_orders(self, charge_state: int = 0) -> Array1DFloat:
-        """Returns bond orders.
+    def get_bond_orders(self) -> dict[tuple[int, int], float]:
+        """Returns bond orders."""
 
-        Args:
-            charge_state: Charge state relative to original charge
-
-        Returns:
-            bond_orders: Bond orders
-        """
-        self._check_results(charge_state)
-        bond_orders = self._results[charge_state].get_bond_orders()
+        if self._results.bond_orders is None:
+            self._run_xtb("sp")
+        bond_orders = {(x[0], x[1]): x[2] for x in self._results.bond_orders}
 
         return bond_orders
 
-    def _get_charges(self, charge_state: int = 0) -> Array1DFloat:
+    def get_charges(self) -> dict[int, float]:
         """Returns atomic charges."""
-        self._check_results(charge_state)
-        charges = self._results[charge_state].get_charges()
+
+        if self._results.charges is None:
+            self._run_xtb("sp")
+        charges = {i: charge for i, charge in enumerate(self._results.charges, start=1)}
 
         return charges
 
-    def get_charges(self, charge_state: int = 0) -> dict[int, float]:
-        """Returns atomic charges.
+    def get_homo(self, unit="Eh") -> float:
+        """Returns HOMO energy.
 
         Args:
-            charge_state: Charge state relative to original charge
+            unit: 'Eh' or 'eV'
 
         Returns:
-            charges: Atomic charges
+            HOMO energy (Eh or eV)
+
+        Raises:
+            ValueError: When unit does not exist
         """
-        self._check_results(charge_state)
-        charges = self._results[charge_state].get_charges()
-        charges = {i: charge for i, charge in enumerate(charges, start=1)}
 
-        return charges
+        if self._results.homo is None:
+            self._run_xtb("sp")
 
-    def get_dipole(self, charge_state: int = 0) -> Array1DFloat:
-        """Calculate dipole vector (a.u.).
+        if unit == "Eh":
+            return self._results.homo["Eh"]
+        elif unit == "eV":
+            return self._results.homo["eV"]
+        else:
+            raise ValueError("Unit must be either 'Eh' or 'eV'.")
+
+    def get_lumo(self, unit="Eh") -> float:
+        """Returns LUMO energy.
 
         Args:
-            charge_state: Charge state relative to original charge
+            unit: 'Eh' or 'eV'
 
         Returns:
-            dipole: Dipole vector
+            LUMO energy (Eh or eV)
+
+        Raises:
+            ValueError: When unit does not exist
         """
-        self._check_results(charge_state)
-        dipole = self._results[charge_state].get_dipole()
 
-        return dipole
+        if self._results.lumo is None:
+            self._run_xtb("sp")
 
-    def get_ea(self, corrected: bool = False) -> float:
-        """Calculate electron affinity.
+        if unit == "Eh":
+            return self._results.lumo["Eh"]
+        elif unit == "eV":
+            return self._results.lumo["eV"]
+        else:
+            raise ValueError("Unit must be either 'Eh' or 'eV'.")
+
+    def get_dipole(self) -> Array1DFloat:
+        """Returns molecular dipole vector (a.u.)."""
+
+        if self._results.dipole_vect is None:
+            self._run_xtb("sp")
+
+        return self._results.dipole_vect
+
+    def get_dipole_moment(self, unit="deybe") -> float:
+        """Returns molecular dipole moment.
 
         Args:
-            corrected: Whether to apply correction term
+            unit: 'deybe' or 'au'
 
         Returns:
-            ea: Electron affinity (eV)
+            Molecular dipole moment (deybe or a.u.)
+
+        Raises:
+            ValueError: When unit does not exist
         """
-        # Calculate energies
-        energy_neutral = self._get_energy(0)
-        energy_anion = self._get_energy(-1)
 
-        # Calculate electron affinity
-        ea = (energy_neutral - energy_anion) * HARTREE_TO_EV
-        if corrected:
-            ea -= IPEA_CORRECTIONS[self._version]
+        if self._results.dipole_moment is None:
+            self._run_xtb("sp")
 
-        return ea
+        if unit == "deybe":
+            return self._results.dipole_moment
+        elif unit == "au":
+            return round(
+                self._results.dipole_moment * DEBYE_TO_AU,
+                len(str(self._results.dipole_moment).split(".")[-1]),
+            )
+        else:
+            raise ValueError("Unit must be either 'deybe' or 'au'.")
 
-    def get_fukui(self, variety: str) -> dict[int, float]:
+    def get_ip(self, corrected: bool = True) -> float:
+        """Returns ionization potential.
+
+        Args:
+            corrected: Whether to apply empirical correction term
+
+        Returns:
+            Ionization potential (eV)
+        """
+        if self._results.ip is None or self._corrected != corrected:
+            self._corrected = corrected
+            self._run_xtb("ipea")
+
+        return self._results.ip
+
+    def get_ea(self, corrected: bool = True) -> float:
+        """Returns electron affinity.
+
+        Args:
+            corrected: Whether to apply empirical correction term
+
+        Returns:
+            Electron affinity (eV)
+        """
+        if self._results.ea is None or self._corrected != corrected:
+            self._corrected = corrected
+            self._run_xtb("ipea")
+
+        return self._results.ea
+
+    def get_chem_pot(self, corrected: bool = True) -> float:
+        """Returns chemical potential (eV).
+
+        Args:
+            corrected: Whether to apply empirical correction term
+        """
+        if self._results.ip is None or self._corrected != corrected:
+            self._corrected = corrected
+            self._run_xtb("ipea")
+        chem_pot = (
+            -(self.get_ip(corrected=corrected) + self.get_ea(corrected=corrected)) / 2
+        )
+
+        return chem_pot
+
+    def get_hardness(self, corrected: bool = True) -> float:
+        """Returns hardness (eV).
+
+        Args:
+            corrected: Whether to apply empirical correction term
+        """
+        if self._results.ip is None or self._corrected != corrected:
+            self._corrected = corrected
+            self._run_xtb("ipea")
+        hardness = self.get_ip(corrected=corrected) - self.get_ea(corrected=corrected)
+
+        return hardness
+
+    def get_fukui(self, variety: str, corrected: bool = True) -> dict[int, float]:
         """Calculate Fukui coefficients.
 
         Args:
-            variety: Type of Fukui coefficient: 'nucleophilicity', 'electrophilicity',
+            variety: Type of Fukui coefficient: 'nucleophilicity' = 'minus', 'electrophilicity' = 'plus',
                 'radical', 'dual', 'local_nucleophilicity' or 'local_electrophilicity'.
+                Note: 'nucleophilicity' and 'electrophilicity' are synonym for respectively 'minus' and 'plus'.
+            corrected: Whether to apply empirical correction term to the inonization potential and electron affinity
+                (only applicable for local electrophilicity calculation)
 
         Returns:
             fukui: Atomic Fukui coefficients
@@ -178,32 +303,37 @@ class XTB:
         Raises:
             ValueError: When variety does not exist
         """
+        if self._results.fukui_plus is None:
+            self._run_xtb("fukui")
+
         varieties = [
-            "dual",
+            "minus",
+            "nucleophilicity",
+            "plus",
             "electrophilicity",
+            "radical",
+            "dual",
             "local_electrophilicity",
             "local_nucleophilicity",
-            "nucleophilicity",
-            "radical",
         ]
         fukui: Array1DFloat
-        if variety in ["local_nucleophilicity", "nucleophilicity"]:
-            fukui = self._get_charges(1) - self._get_charges(0)
-        elif variety == "electrophilicity":
-            fukui = self._get_charges(0) - self._get_charges(-1)
+        if variety in ["local_nucleophilicity", "nucleophilicity", "minus"]:
+            fukui = self._results.fukui_minus
+        elif variety in ["electrophilicity", "plus"]:
+            fukui = self._results.fukui_plus
         elif variety == "radical":
-            fukui = (self._get_charges(1) - self._get_charges(-1)) / 2
+            fukui = self._results.fukui_radical
         elif variety == "dual":
-            fukui = (
-                2 * self._get_charges(0) - self._get_charges(1) - self._get_charges(-1)
+            fukui = list(
+                np.array(self._results.fukui_plus) - np.array(self._results.fukui_minus)
             )
         elif variety == "local_electrophilicity":
-            fukui_radical: Array1DFloat = np.array(
-                list(self.get_fukui("radical").values())
+            fukui_radical: Array1DFloat = np.array(self._results.fukui_radical)
+            fukui_dual: Array1DFloat = np.array(self._results.fukui_plus) - np.array(
+                self._results.fukui_minus
             )
-            fukui_dual: Array1DFloat = np.array(list(self.get_fukui("dual").values()))
-            chem_pot = -(self.get_ip() + self.get_ea()) / 2
-            hardness = self.get_ip() - self.get_ea()
+            chem_pot = self.get_chem_pot(corrected=corrected)
+            hardness = self.get_hardness(corrected=corrected)
             fukui = (
                 -(chem_pot / hardness) * fukui_radical
                 + 1 / 2 * (chem_pot / hardness) ** 2 * fukui_dual
@@ -212,17 +342,18 @@ class XTB:
             raise ValueError(
                 f"Variety {variety!r} does not exist. "
                 f"Choose one of {', '.join(varieties)}."
+                f"Note: 'nucleophilicity' and 'electrophilicity' are synonym for respectively 'minus' and 'plus'."
             )
 
-        fukui = {i: fukui for i, fukui in enumerate(fukui, start=1)}
+        fukui = {i: float(fukui) for i, fukui in enumerate(fukui, start=1)}
 
         return fukui
 
-    def get_global_descriptor(self, variety: str, corrected: bool = False) -> float:
+    def get_global_descriptor(self, variety: str, corrected: bool = True) -> float:
         """Calculate global reactivity descriptors.
 
         Args:
-            corrected: Whether to apply correction term
+            corrected: Whether to apply empirical correction term
             variety: Type of descriptor: 'electrophilicity', 'nucleophilicity',
                 'electrofugality' or 'nucleofugality'
 
@@ -269,105 +400,170 @@ class XTB:
 
         return descriptor
 
-    def get_homo(self) -> float:
-        """Calculate HOMO energy.
-
-        Returns:
-            homo_energy: HOMO energy (a.u.)
-        """
-        eigenvalues = self._get_eigenvalues()
-        homo_index = self._get_homo_index()
-        homo_energy: float = eigenvalues[homo_index]
-
-        return homo_energy
-
-    def get_ip(self, corrected: bool = False) -> float:
-        """Calculate ionization potential.
+    def _run_xtb(self, runtype: str) -> None:
+        """Run xTB calculation and parse results.
 
         Args:
-            corrected: Whether to apply correction term
-
-        Returns:
-            ip: Ionization potential (eV)
+            runtype: Type of calculation to perform: 'sp', 'ipea' or 'fukui'
+                'sp': Single point calculation
+                'ipea': Ionization potential and electron affinity calculation
+                'fukui': Fukui coefficient calculation
         """
-        # Calculate energies
-        energy_neutral = self._get_energy(0)
-        energy_cation = self._get_energy(1)
+        # Set xtb command
+        runtypes = ["sp", "ipea", "fukui"]
+        if runtype == "sp":
+            command = self._default_xtb_command
+        elif runtype == "ipea":
+            command = self._default_xtb_command + " --vipea"
+        elif runtype == "fukui":
+            command = self._default_xtb_command + " --vfukui"
+        else:
+            raise ValueError(
+                f"Runtype {runtype!r} does not exist. Choose one of {', '.join(runtypes)}."
+            )
 
-        # Calculate ionization potential
-        ip = (energy_cation - energy_neutral) * HARTREE_TO_EV
-        if corrected:
-            ip -= IPEA_CORRECTIONS[self._version]
-
-        return ip
-
-    def get_lumo(self) -> float:
-        """Calculate LUMO energy.
-
-        Returns:
-            lumo_energy: LUMO energy (a.u.)
-        """
-        eigenvalues = self._get_eigenvalues()
-        homo_index = self._get_homo_index()
-        lumo_index = homo_index + 1
-        lumo_energy: float = eigenvalues[lumo_index]
-
-        return lumo_energy
-
-    def _check_results(self, charge_state: int) -> None:
-        """Checks whether results are already calculated and does calculation."""
-        if self._results[charge_state] is None:
-            self._sp(charge_state)
-
-    def _get_eigenvalues(self) -> Array1DFloat:
-        """Get orbital eigenvalues."""
-        self._check_results(0)
-        eigenvalues = self._results[0].get_orbital_eigenvalues()
-        return eigenvalues
-
-    def _get_energy(self, charge_state: int = 0) -> float:
-        """Get total energy."""
-        self._check_results(charge_state)
-        energy: float = self._results[charge_state].get_energy()
-        return energy
-
-    def _get_homo_index(self) -> int:
-        occupations = self._get_occupations()
-        homo_index = int(np.ceil(occupations.sum().round(0) / 2 - 1))
-        return homo_index
-
-    def _get_occupations(self) -> Array1DFloat:
-        """Get occupation numbers."""
-        self._check_results(0)
-        occupations = self._results[0].get_orbital_occupations()
-        return occupations
-
-    def _sp(self, charge_state: int = 0) -> None:
-        """Perform single point calculation."""
-        # Set up calculator
-        calc = xtb.interface.Calculator(
-            self._params[self._version],
-            self._elements,
-            self._coordinates * ANGSTROM_TO_BOHR,
-            charge=self._charge + charge_state,
-            uhf=self._n_unpaired,
+        # Create temporary directory or use provided path
+        tmp_dir_context = (
+            TemporaryDirectory() if self._run_path is None else nullcontext()
         )
-        calc.set_verbosity(xtb.libxtb.VERBOSITY_MUTED)
+        with tmp_dir_context as tmp_dir:
+            run_folder = Path(tmp_dir) if self._run_path is None else self._run_path
+            if self._run_path:
+                if run_folder.exists():
+                    shutil.rmtree(run_folder)
+                run_folder.mkdir(parents=True)
 
-        # Set solvent
-        if self._solvent:
-            solvent = xtb.utils.get_solvent(self._solvent)
-            if solvent is None:
-                raise Exception(f"Solvent {self._solvent!r} not recognized")
-            calc.set_solvent(solvent)
+            # Write xyz input file
+            xyz_file = run_folder / XTB._xyz_input
+            write_xyz(xyz_file, self._elements, self._coordinates)
 
-        # Set electronic temperature
-        if self._electronic_temperature:
-            calc.set_electronic_temperature(self._electronic_temperature)
+            # Run xtb
+            with open(run_folder / "xtb.out", "w") as stdout, open(
+                run_folder / "xtb.err", "w"
+            ) as stderr:
+                subprocess.run(
+                    command.split(), cwd=run_folder, stdout=stdout, stderr=stderr
+                )
 
-        # Do singlepoint calculation and store the result
-        res = calc.singlepoint()
-        self._results[charge_state] = res
+            # Return error if xtb fails
+            with open(run_folder / "xtb.err", "r") as f:
+                err_content = f.read()
+            if not re.search(r"(?<!ab)normal termination of xtb", err_content):
+                with open(run_folder / "xtb.out", "r") as f:
+                    out_content = f.read()
+                    start_error_idx = out_content.find("######")
+                    error = (
+                        out_content[start_error_idx:]
+                        if start_error_idx != -1
+                        else err_content
+                    )
+                raise RuntimeError(f"xTB calculation failed. Error:\n{error}")
+
+            # Extract results from xtb files
+            if runtype == "sp":
+                self._parse_charges(run_folder / "charges")
+                self._parse_wbo(run_folder / "wbo")
+                self._parse_out_sp(run_folder / "xtb.out")
+            elif runtype == "ipea":
+                self._parse_out_ipea(run_folder / "xtb.out")
+            elif runtype == "fukui":
+                self._parse_out_fukui(run_folder / "xtb.out")
+
+    def _parse_charges(self, charges_file: Path | str) -> None:
+        """Parse 'charges' file."""
+        with open(charges_file, "r") as f:
+            lines = f.readlines()
+        charges = [float(line.strip()) for line in lines]
+        self._results.charges = charges
+
+    def _parse_wbo(self, wbo_file: Path | str) -> None:
+        """Parse 'wbo' file."""
+        wbos = []
+        with open(wbo_file, "r") as f:
+            for line in f:
+                columns = line.split()
+                wbos.append((int(columns[0]), int(columns[1]), float(columns[2])))
+        self._results.bond_orders = wbos
+
+    def _parse_out_sp(self, out_file: Path | str) -> None:
+        """Parse 'xtb.out' file from xtb sp calculation."""
+        with open(out_file, "r") as f:
+            lines = f.readlines()
+        homo, lumo, dipole_vect, dipole_moment = {}, {}, None, None
+        for i, line in enumerate(lines):
+            if "(HOMO)" in line:
+                homo["Eh"] = float(line.split()[-3])
+                homo["eV"] = float(line.split()[-2])
+            elif "(LUMO)" in line:
+                lumo["Eh"] = float(line.split()[-3])
+                lumo["eV"] = float(line.split()[-2])
+            elif "dipole" in line:
+                if self._version == 2:
+                    dipole_line = lines[i + 3].split()
+                    dipole_vect = np.array(
+                        [
+                            float(dipole_line[-4]),
+                            float(dipole_line[-3]),
+                            float(dipole_line[-2]),
+                        ]
+                    )
+                    dipole_moment = float(dipole_line[-1])
+                elif self._version == 1:
+                    dipole_line = lines[i + 2].split()
+                    dipole_vect = np.array(
+                        [
+                            float(dipole_line[0]),
+                            float(dipole_line[1]),
+                            float(dipole_line[2]),
+                        ]
+                    )
+                    dipole_moment = float(dipole_line[-1])
+            if homo and lumo and dipole_moment:
+                break
+        self._results.homo = homo
+        self._results.lumo = lumo
+        self._results.dipole_vect = dipole_vect
+        self._results.dipole_moment = dipole_moment
+
+    def _parse_out_ipea(self, out_file: Path | str) -> None:
+        """Parse 'xtb.out' file from xtb ipea calculation."""
+        with open(out_file, "r") as f:
+            ip = ea = shift = None
+            for line in f:
+                if "delta SCC IP (eV)" in line:
+                    ip = float(line.split()[-1])
+                elif "delta SCC EA (eV)" in line:
+                    ea = float(line.split()[-1])
+                elif "empirical IP shift (eV)" in line:
+                    shift = float(line.split()[-1])
+                if ip and ea and shift:
+                    break
+        if not self._corrected:
+            ip += shift
+            ea += shift
+        self._results.ip = ip
+        self._results.ea = ea
+
+    def _parse_out_fukui(self, out_file: Path | str) -> None:
+        """Parse 'xtb.out' file from xtb fukui calculation."""
+        with open(out_file, "r") as f:
+            fukui_plus, fukui_minus, fukui_radical = [], [], []
+            in_fukui_block = False
+            for line in f:
+                if "Fukui functions:" in line:
+                    in_fukui_block = True
+                if in_fukui_block:
+                    if "-------------" in line:
+                        in_fukui_block = False
+                        break
+                    if "Fukui functions" not in line and "#" not in line:
+                        columns = line.split()
+                        fukui_plus.append(float(columns[-3]))
+                        fukui_minus.append(float(columns[-2]))
+                        fukui_radical.append(float(columns[-1]))
+        self._results.fukui_plus = fukui_plus
+        self._results.fukui_minus = fukui_minus
+        self._results.fukui_radical = fukui_radical
 
 
 def cli(file: str) -> Any:
