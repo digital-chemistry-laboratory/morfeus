@@ -6,7 +6,7 @@ from collections.abc import Iterable
 import functools
 
 # import typing
-from typing import Any
+from typing import Any, cast
 import numpy as np
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -26,17 +26,17 @@ from morfeus.utils import convert_elements, requires_executable
 class XTBResults:
     """Stores xTB descriptors."""
 
-    charges: list[float] = None
-    bond_orders: list[tuple[int, int, float]] = None
-    homo: dict[str, float] = None  # Stores both Eh and eV units
-    lumo: dict[str, float] = None  # Stores both Eh and eV units
-    dipole_vect: Array1DFloat = None  # Unit in a.u.
-    dipole_moment: float = None  # Unit in debye
-    ip: float = None
-    ea: float = None
-    fukui_plus: list[float] = None
-    fukui_minus: list[float] = None
-    fukui_radical: list[float] = None
+    charges: list[float] | None = None
+    bond_orders: list[tuple[int, int, float]] | None = None
+    homo: dict[str, float] | None = None  # Stores both Eh and eV units
+    lumo: dict[str, float] | None = None  # Stores both Eh and eV units
+    dipole_vect: Array1DFloat | None = None  # Unit in a.u.
+    dipole_moment: float | None = None  # Unit in debye
+    ip: float | None = None
+    ea: float | None = None
+    fukui_plus: list[float] | None = None
+    fukui_minus: list[float] | None = None
+    fukui_radical: list[float] | None = None
 
 
 @requires_executable(["xtb"])
@@ -59,7 +59,7 @@ class XTB:
     _electronic_temperature: int | None
     _elements: Array1DFloat
     _n_unpaired: int | None
-    _results: Any
+    _results: XTBResults
     _solvent: str | None
     _version: int
 
@@ -69,8 +69,8 @@ class XTB:
         self,
         elements: Iterable[int] | Iterable[str],
         coordinates: ArrayLike2D,
-        version: int | str | None = 2,
-        charge: int | None = 0,
+        version: int | str = 2,
+        charge: int = 0,
         n_unpaired: int | None = None,
         solvent: str | None = None,
         electronic_temperature: int | None = None,
@@ -130,6 +130,9 @@ class XTB:
 
         if self._results.bond_orders is None:
             self._run_xtb("sp")
+            self._results.bond_orders = cast(
+                list[tuple[int, int, float]], self._results.bond_orders
+            )
         bond_orders = {(x[0], x[1]): x[2] for x in self._results.bond_orders}
 
         return bond_orders
@@ -139,6 +142,7 @@ class XTB:
 
         if self._results.charges is None:
             self._run_xtb("sp")
+            self._results.charges = cast(list[float], self._results.charges)
         charges = {i: charge for i, charge in enumerate(self._results.charges, start=1)}
 
         return charges
@@ -158,6 +162,7 @@ class XTB:
 
         if self._results.homo is None:
             self._run_xtb("sp")
+            self._results.homo = cast(dict[str, float], self._results.homo)
 
         if unit == "Eh":
             return self._results.homo["Eh"]
@@ -181,6 +186,7 @@ class XTB:
 
         if self._results.lumo is None:
             self._run_xtb("sp")
+            self._results.lumo = cast(dict[str, float], self._results.lumo)
 
         if unit == "Eh":
             return self._results.lumo["Eh"]
@@ -209,9 +215,9 @@ class XTB:
         Raises:
             ValueError: When unit does not exist
         """
-
         if self._results.dipole_moment is None:
             self._run_xtb("sp")
+            self._results.dipole_moment = cast(float, self._results.dipole_moment)
 
         if unit == "deybe":
             return self._results.dipole_moment
@@ -235,6 +241,7 @@ class XTB:
         if self._results.ip is None or self._corrected != corrected:
             self._corrected = corrected
             self._run_xtb("ipea")
+            self._results.ip = cast(float, self._results.ip)
 
         return self._results.ip
 
@@ -250,6 +257,7 @@ class XTB:
         if self._results.ea is None or self._corrected != corrected:
             self._corrected = corrected
             self._run_xtb("ipea")
+            self._results.ea = cast(float, self._results.ea)
 
         return self._results.ea
 
@@ -423,7 +431,9 @@ class XTB:
             TemporaryDirectory() if self._run_path is None else nullcontext()
         )
         with tmp_dir_context as tmp_dir:
-            run_folder = Path(tmp_dir) if self._run_path is None else self._run_path
+            run_folder = (
+                Path(cast(str, tmp_dir)) if self._run_path is None else self._run_path
+            )
             if self._run_path:
                 if run_folder.exists():
                     shutil.rmtree(run_folder)
@@ -516,6 +526,10 @@ class XTB:
                     dipole_moment = float(dipole_line[-1])
             if homo and lumo and dipole_moment:
                 break
+        if not homo or not lumo:
+            raise ValueError(f"Failed to parse HOMO and/or LUMO from {out_file}.")
+        if dipole_vect is None or dipole_moment is None:
+            raise ValueError(f"Failed to parse dipole from {out_file}.")
         self._results.homo = homo
         self._results.lumo = lumo
         self._results.dipole_vect = dipole_vect
@@ -534,6 +548,8 @@ class XTB:
                     shift = float(line.split()[-1])
                 if ip and ea and shift:
                     break
+        if ip is None or ea is None or shift is None:
+            raise ValueError(f"Failed to parse IP and/or EA from {out_file}.")
         if not self._corrected:
             ip += shift
             ea += shift
@@ -557,6 +573,8 @@ class XTB:
                         fukui_plus.append(float(columns[-3]))
                         fukui_minus.append(float(columns[-2]))
                         fukui_radical.append(float(columns[-1]))
+        if not fukui_plus or not fukui_minus or not fukui_radical:
+            raise ValueError(f"Failed to parse Fukui coefficients from {out_file}.")
         self._results.fukui_plus = fukui_plus
         self._results.fukui_minus = fukui_minus
         self._results.fukui_radical = fukui_radical
