@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections.abc import Iterable
 import functools
 
-# import typing
 from typing import Any, cast
 import numpy as np
 from pathlib import Path
@@ -46,7 +45,7 @@ class XTB:
     Args:
         elements: Elements as atomic symbols or numbers
         coordinates: Coordinates (Å)
-        version: Version of xtb to use. Currently works with '1' or '2'.
+        version: Version of xtb to use. Currently works with 1 or 2.
         charge: Molecular charge
         n_unpaired: Number of unpaired electrons
         solvent: Solvent. Uses the ALPB solvation model
@@ -61,7 +60,7 @@ class XTB:
     _n_unpaired: int | None
     _results: XTBResults
     _solvent: str | None
-    _version: int
+    _version: int | str
 
     _xyz_input: str = "xtb.xyz"
 
@@ -261,7 +260,7 @@ class XTB:
 
         return self._results.ea
 
-    def get_chem_pot(self, corrected: bool = True) -> float:
+    def get_chemical_potential(self, corrected: bool = True) -> float:
         """Returns chemical potential (eV).
 
         Args:
@@ -336,7 +335,7 @@ class XTB:
             fukui_dual: Array1DFloat = np.array(self._results.fukui_plus) - np.array(
                 self._results.fukui_minus
             )
-            chem_pot = self.get_chem_pot(corrected=corrected)
+            chem_pot = self.get_chemical_potential(corrected=corrected)
             hardness = self.get_hardness(corrected=corrected)
             fukui = (
                 -(chem_pot / hardness) * fukui_radical
