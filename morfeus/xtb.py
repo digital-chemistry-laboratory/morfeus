@@ -50,7 +50,10 @@ class XTB:
     Args:
         elements: Elements as atomic symbols or numbers
         coordinates: Coordinates (Å)
-        version: Version of xtb to use. Currently works with 1 (GFN1) or 2 (GFN2).
+        version: method to use in xtb. Currently works with:
+            - 2: GFN2-xTB, default version
+            - 1: GFN1-xTB
+            - ptb: PTB
         charge: Molecular charge
         n_unpaired: Number of unpaired electrons
         solvent: Solvent. Uses the ALPB solvation model
@@ -85,7 +88,7 @@ class XTB:
 
         # Store settings
         self._coordinates = np.array(coordinates)
-        self._version = int(version)
+        self._version = str(version).lower()
         self._charge = charge
         self._solvent = solvent
         self._n_unpaired = n_unpaired
@@ -93,10 +96,20 @@ class XTB:
 
         self._run_path = Path(run_path) if run_path else None
 
-        self._default_xtb_command = (
-            f"xtb {XTB._xyz_input} --gfn {self._version} --chrg {self._charge} --json"
-        )
+        self._default_xtb_command = f"xtb {XTB._xyz_input} --json --chrg {self._charge}"
+        if self._version in ["1", "2"]:
+            self._default_xtb_command += f" --gfn {int(self._version)}"
+        elif self._version == "ptb":
+            self._default_xtb_command += " --ptb"
+        else:
+            raise ValueError(
+                f"Version {self._version!r} not supported. Choose between: 2, 1, or ptb."
+            )
         if self._solvent is not None:
+            if self._version == "ptb":
+                raise ValueError(
+                    "Solvation is not available with PTB. Remove solvent or use another xTB method."
+                )
             self._default_xtb_command += f" --alpb {self._solvent}"
         if self._n_unpaired is not None:
             self._default_xtb_command += f" --uhf {self._n_unpaired}"
@@ -245,7 +258,7 @@ class XTB:
     def get_atom_polarizabilities(self) -> dict[int, float]:
         """Returns atomic polarizabilities."""
 
-        if self._version != 2:
+        if self._version != "2":
             raise ValueError("Polarizability is only available with GFN2-xTB.")
 
         if self._results.atom_polarizabilities is None:
@@ -263,7 +276,7 @@ class XTB:
     def get_molecular_polarizability(self) -> float:
         """Returns molecular polarizability."""
 
-        if self._version != 2:
+        if self._version != "2":
             raise ValueError("Polarizability is only available with GFN2-xTB.")
 
         if self._results.mol_polarizability is None:
@@ -476,6 +489,11 @@ class XTB:
         runtypes = ["sp", "ipea", "fukui", "fod"]
         if runtype == "sp":
             command = self._default_xtb_command
+        elif self._version == "ptb":
+            raise ValueError(
+                "PTB can only be used for calculations of bond orders, charges, dipole, and HOMO/LUMO energies."
+                "\nFor other descriptors, choose another xTB method."
+            )
         elif runtype == "ipea":
             command = self._default_xtb_command + " --vipea"
         elif runtype == "fukui":
@@ -543,7 +561,13 @@ class XTB:
     def _parse_json(self, json_file: Path | str) -> None:
         """Parse 'xtbout.json' file."""
         with open(json_file, "r") as f:
-            data = json.load(f)
+
+            # The code below fixes an error in the json file outputed when running PTB with xtb 6.7.1
+            # TODO: Remove/update when new xtb version is released
+            lines_without_error = [line for line in f if line.strip() != ","]
+            json_fixed = "".join(lines_without_error)
+            data = json.loads(json_fixed)
+
         self._results.charges = data["partial charges"]
         self._results.gap = data["HOMO-LUMO gap / eV"]
         self._results.dipole_vect = np.array(data["dipole / a.u."])
@@ -573,13 +597,17 @@ class XTB:
                 lumo["Eh"] = float(line.split()[-3])
                 lumo["eV"] = float(line.split()[-2])
             elif "dipole" in line:
-                if self._version == 2:
+                if self._version == "2":
                     dipole_line = lines[i + 3].split()
                     dipole_moment = float(dipole_line[-1])
-                elif self._version == 1:
+                elif self._version == "1":
                     dipole_line = lines[i + 2].split()
                     dipole_moment = float(dipole_line[-1])
-            elif self._version == 2 and "α(0)" in line:
+                elif self._version == "ptb":
+                    if "Total dipole" in line:
+                        dipole_line = lines[i + 1].split()
+                        dipole_moment = float(dipole_line[-1])
+            elif self._version == "2" and "α(0)" in line:
                 if "Mol." in line:
                     mol_polarizability = float(line.split()[-1])
                 else:
@@ -594,7 +622,7 @@ class XTB:
         self._results.homo = homo
         self._results.lumo = lumo
         self._results.dipole_moment = dipole_moment
-        if self._version == 2:
+        if self._version == "2":
             self._results.atom_polarizabilities = atom_polarizabilities
             self._results.mol_polarizability = mol_polarizability
 
@@ -633,7 +661,7 @@ class XTB:
                 if "Fukui functions:" in line:
                     in_fukui_block = True
                 if in_fukui_block:
-                    if "-------------" in line:
+                    if "-------------" in line or not line.strip():
                         in_fukui_block = False
                         break
                     if "Fukui functions" not in line and "#" not in line:
