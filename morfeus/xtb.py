@@ -14,6 +14,7 @@ import subprocess
 import shutil
 from dataclasses import dataclass
 import re
+import json
 
 from morfeus.data import DEBYE_TO_AU
 from morfeus.io import read_geometry, write_xyz
@@ -90,7 +91,7 @@ class XTB:
         self._run_path = Path(run_path) if run_path else None
 
         self._default_xtb_command = (
-            f"xtb {XTB._xyz_input} --gfn {self._version} --chrg {self._charge}"
+            f"xtb {XTB._xyz_input} --gfn {self._version} --chrg {self._charge} --json"
         )
         if self._solvent is not None:
             self._default_xtb_command += f" --alpb {self._solvent}"
@@ -476,7 +477,7 @@ class XTB:
 
             # Extract results from xtb files
             if runtype == "sp":
-                self._parse_charges(run_folder / "charges")
+                self._parse_json(run_folder / "xtbout.json")
                 self._parse_wbo(run_folder / "wbo")
                 self._parse_out_sp(run_folder / "xtb.out")
             elif runtype == "ipea":
@@ -484,12 +485,13 @@ class XTB:
             elif runtype == "fukui":
                 self._parse_out_fukui(run_folder / "xtb.out")
 
-    def _parse_charges(self, charges_file: Path | str) -> None:
-        """Parse 'charges' file."""
-        with open(charges_file, "r") as f:
-            lines = f.readlines()
-        charges = [float(line.strip()) for line in lines]
-        self._results.charges = charges
+    def _parse_json(self, json_file: Path | str) -> None:
+        """Parse 'xtbout.json' file."""
+        with open(json_file, "r") as f:
+            data = json.load(f)
+        self._results.charges = data["partial charges"]
+        self._results.gap = data["HOMO-LUMO gap / eV"]
+        self._results.dipole_vect = np.array(data["dipole / a.u."])
 
     def _parse_wbo(self, wbo_file: Path | str) -> None:
         """Parse 'wbo' file."""
@@ -505,7 +507,7 @@ class XTB:
 
         with open(out_file, "r") as f:
             lines = f.readlines()
-        homo, lumo, gap, dipole_vect, dipole_moment = {}, {}, None, None, None
+        homo, lumo, dipole_moment = {}, {}, None
         for i, line in enumerate(lines):
             if "(HOMO)" in line:
                 homo["Eh"] = float(line.split()[-3])
@@ -513,43 +515,23 @@ class XTB:
             elif "(LUMO)" in line:
                 lumo["Eh"] = float(line.split()[-3])
                 lumo["eV"] = float(line.split()[-2])
-            elif "HOMO-LUMO GAP" in line:
-                gap = float(line.split()[3])
             elif "dipole" in line:
                 if self._version == 2:
                     dipole_line = lines[i + 3].split()
-                    dipole_vect = np.array(
-                        [
-                            float(dipole_line[-4]),
-                            float(dipole_line[-3]),
-                            float(dipole_line[-2]),
-                        ]
-                    )
                     dipole_moment = float(dipole_line[-1])
                 elif self._version == 1:
                     dipole_line = lines[i + 2].split()
-                    dipole_vect = np.array(
-                        [
-                            float(dipole_line[0]),
-                            float(dipole_line[1]),
-                            float(dipole_line[2]),
-                        ]
-                    )
                     dipole_moment = float(dipole_line[-1])
-            if homo and lumo and gap and dipole_moment:
+            if homo and lumo and dipole_moment:
                 break
 
         if not homo or not lumo:
             raise ValueError(f"Failed to parse HOMO and/or LUMO from {out_file}.")
-        if gap is None:
-            raise ValueError(f"Failed to parse HOMO-LUMO gap from {out_file}.")
-        if dipole_vect is None or dipole_moment is None:
-            raise ValueError(f"Failed to parse dipole from {out_file}.")
+        if dipole_moment is None:
+            raise ValueError(f"Failed to parse dipole moment from {out_file}.")
 
         self._results.homo = homo
         self._results.lumo = lumo
-        self._results.gap = gap
-        self._results.dipole_vect = dipole_vect
         self._results.dipole_moment = dipole_moment
 
     def _parse_out_ipea(self, out_file: Path | str) -> None:
