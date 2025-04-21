@@ -29,6 +29,7 @@ class XTBResults:
     bond_orders: list[tuple[int, int, float]] | None = None
     homo: dict[str, float] | None = None  # Stores both Eh and eV units
     lumo: dict[str, float] | None = None  # Stores both Eh and eV units
+    gap: float | None = None  # Unit in eV
     dipole_vect: Array1DFloat | None = None  # Unit in a.u.
     dipole_moment: float | None = None  # Unit in debye
     ip: float | None = None
@@ -193,6 +194,15 @@ class XTB:
             return self._results.lumo["eV"]
         else:
             raise ValueError("Unit must be either 'Eh' or 'eV'.")
+
+    def get_homo_lumo_gap(self) -> float:
+        """Returns HOMO-LUMO gap (eV)."""
+
+        if self._results.gap is None:
+            self._run_xtb("sp")
+            self._results.gap = cast(float, self._results.gap)
+
+        return self._results.gap
 
     def get_dipole(self) -> Array1DFloat:
         """Returns molecular dipole vector (a.u.)."""
@@ -492,9 +502,10 @@ class XTB:
 
     def _parse_out_sp(self, out_file: Path | str) -> None:
         """Parse 'xtb.out' file from xtb sp calculation."""
+
         with open(out_file, "r") as f:
             lines = f.readlines()
-        homo, lumo, dipole_vect, dipole_moment = {}, {}, None, None
+        homo, lumo, gap, dipole_vect, dipole_moment = {}, {}, None, None, None
         for i, line in enumerate(lines):
             if "(HOMO)" in line:
                 homo["Eh"] = float(line.split()[-3])
@@ -502,6 +513,8 @@ class XTB:
             elif "(LUMO)" in line:
                 lumo["Eh"] = float(line.split()[-3])
                 lumo["eV"] = float(line.split()[-2])
+            elif "HOMO-LUMO GAP" in line:
+                gap = float(line.split()[3])
             elif "dipole" in line:
                 if self._version == 2:
                     dipole_line = lines[i + 3].split()
@@ -523,19 +536,25 @@ class XTB:
                         ]
                     )
                     dipole_moment = float(dipole_line[-1])
-            if homo and lumo and dipole_moment:
+            if homo and lumo and gap and dipole_moment:
                 break
+
         if not homo or not lumo:
             raise ValueError(f"Failed to parse HOMO and/or LUMO from {out_file}.")
+        if gap is None:
+            raise ValueError(f"Failed to parse HOMO-LUMO gap from {out_file}.")
         if dipole_vect is None or dipole_moment is None:
             raise ValueError(f"Failed to parse dipole from {out_file}.")
+
         self._results.homo = homo
         self._results.lumo = lumo
+        self._results.gap = gap
         self._results.dipole_vect = dipole_vect
         self._results.dipole_moment = dipole_moment
 
     def _parse_out_ipea(self, out_file: Path | str) -> None:
         """Parse 'xtb.out' file from xtb ipea calculation."""
+
         with open(out_file, "r") as f:
             ip = ea = shift = None
             for line in f:
@@ -547,16 +566,20 @@ class XTB:
                     shift = float(line.split()[-1])
                 if ip and ea and shift:
                     break
+
         if ip is None or ea is None or shift is None:
             raise ValueError(f"Failed to parse IP and/or EA from {out_file}.")
+
         if not self._corrected:
             ip += shift
             ea += shift
+
         self._results.ip = ip
         self._results.ea = ea
 
     def _parse_out_fukui(self, out_file: Path | str) -> None:
         """Parse 'xtb.out' file from xtb fukui calculation."""
+
         with open(out_file, "r") as f:
             fukui_plus, fukui_minus, fukui_radical = [], [], []
             in_fukui_block = False
@@ -572,8 +595,10 @@ class XTB:
                         fukui_plus.append(float(columns[-3]))
                         fukui_minus.append(float(columns[-2]))
                         fukui_radical.append(float(columns[-1]))
+
         if not fukui_plus or not fukui_minus or not fukui_radical:
             raise ValueError(f"Failed to parse Fukui coefficients from {out_file}.")
+
         self._results.fukui_plus = fukui_plus
         self._results.fukui_minus = fukui_minus
         self._results.fukui_radical = fukui_radical
