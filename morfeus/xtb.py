@@ -50,8 +50,8 @@ class XTB:
     Args:
         elements: Elements as atomic symbols or numbers
         coordinates: Coordinates (Å)
-        version: method to use in xtb. Currently works with:
-            - 2: GFN2-xTB, default version
+        method: method to use in xtb. Currently works with:
+            - 2: GFN2-xTB (default)
             - 1: GFN1-xTB
             - ptb: PTB
         charge: Molecular charge
@@ -68,7 +68,7 @@ class XTB:
     _n_unpaired: int | None
     _results: XTBResults
     _solvent: str | None
-    _version: int | str
+    _method: int | str
 
     _xyz_input: str = "xtb.xyz"
 
@@ -76,7 +76,7 @@ class XTB:
         self,
         elements: Iterable[int] | Iterable[str],
         coordinates: ArrayLike2D,
-        version: int | str = 2,
+        method: int | str = 2,
         charge: int = 0,
         n_unpaired: int | None = None,
         solvent: str | None = None,
@@ -88,7 +88,7 @@ class XTB:
 
         # Store settings
         self._coordinates = np.array(coordinates)
-        self._version = str(version).lower()
+        self._method = str(method).lower()
         self._charge = charge
         self._solvent = solvent
         self._n_unpaired = n_unpaired
@@ -97,16 +97,16 @@ class XTB:
         self._run_path = Path(run_path) if run_path else None
 
         self._default_xtb_command = f"xtb {XTB._xyz_input} --json --chrg {self._charge}"
-        if self._version in ["1", "2"]:
-            self._default_xtb_command += f" --gfn {int(self._version)}"
-        elif self._version == "ptb":
+        if self._method in ["1", "2"]:
+            self._default_xtb_command += f" --gfn {int(self._method)}"
+        elif self._method == "ptb":
             self._default_xtb_command += " --ptb"
         else:
             raise ValueError(
-                f"Version {self._version!r} not supported. Choose between: 2, 1, or ptb."
+                f"Method {self._method!r} not supported. Choose between: 2, 1, or ptb."
             )
         if self._solvent is not None:
-            if self._version == "ptb":
+            if self._method == "ptb":
                 raise ValueError(
                     "Solvation is not available with PTB. Remove solvent or use another xTB method."
                 )
@@ -258,7 +258,7 @@ class XTB:
     def get_atom_polarizabilities(self) -> dict[int, float]:
         """Returns atomic polarizabilities."""
 
-        if self._version != "2":
+        if self._method != "2":
             raise ValueError("Polarizability is only available with GFN2-xTB.")
 
         if self._results.atom_polarizabilities is None:
@@ -276,7 +276,7 @@ class XTB:
     def get_molecular_polarizability(self) -> float:
         """Returns molecular polarizability."""
 
-        if self._version != "2":
+        if self._method != "2":
             raise ValueError("Polarizability is only available with GFN2-xTB.")
 
         if self._results.mol_polarizability is None:
@@ -489,7 +489,7 @@ class XTB:
         runtypes = ["sp", "ipea", "fukui", "fod"]
         if runtype == "sp":
             command = self._default_xtb_command
-        elif self._version == "ptb":
+        elif self._method == "ptb":
             raise ValueError(
                 "PTB can only be used for calculations of bond orders, charges, dipole, and HOMO/LUMO energies."
                 "\nFor other descriptors, choose another xTB method."
@@ -597,17 +597,17 @@ class XTB:
                 lumo["Eh"] = float(line.split()[-3])
                 lumo["eV"] = float(line.split()[-2])
             elif "dipole" in line:
-                if self._version == "2":
+                if self._method == "2":
                     dipole_line = lines[i + 3].split()
                     dipole_moment = float(dipole_line[-1])
-                elif self._version == "1":
+                elif self._method == "1":
                     dipole_line = lines[i + 2].split()
                     dipole_moment = float(dipole_line[-1])
-                elif self._version == "ptb":
+                elif self._method == "ptb":
                     if "Total dipole" in line:
                         dipole_line = lines[i + 1].split()
                         dipole_moment = float(dipole_line[-1])
-            elif self._version == "2" and "α(0)" in line:
+            elif self._method == "2" and "α(0)" in line:
                 if "Mol." in line:
                     mol_polarizability = float(line.split()[-1])
                 else:
@@ -622,7 +622,7 @@ class XTB:
         self._results.homo = homo
         self._results.lumo = lumo
         self._results.dipole_moment = dipole_moment
-        if self._version == "2":
+        if self._method == "2":
             self._results.atom_polarizabilities = atom_polarizabilities
             self._results.mol_polarizability = mol_polarizability
 
