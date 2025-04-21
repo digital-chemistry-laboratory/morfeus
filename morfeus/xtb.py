@@ -33,6 +33,9 @@ class XTBResults:
     gap: float | None = None  # Unit in eV
     dipole_vect: Array1DFloat | None = None  # Unit in a.u.
     dipole_moment: float | None = None  # Unit in debye
+    atom_polarizabilities: list[float] | None = None
+    mol_polarizability: float | None = None
+    fod_pop: list[float] | None = None
     ip: float | None = None
     ea: float | None = None
     fukui_plus: list[float] | None = None
@@ -47,7 +50,7 @@ class XTB:
     Args:
         elements: Elements as atomic symbols or numbers
         coordinates: Coordinates (Å)
-        version: Version of xtb to use. Currently works with 1 or 2.
+        version: Version of xtb to use. Currently works with 1 (GFN1) or 2 (GFN2).
         charge: Molecular charge
         n_unpaired: Number of unpaired electrons
         solvent: Solvent. Uses the ALPB solvation model
@@ -239,6 +242,51 @@ class XTB:
         else:
             raise ValueError("Unit must be either 'deybe' or 'au'.")
 
+    def get_atom_polarizabilities(self) -> dict[int, float]:
+        """Returns atomic polarizabilities."""
+
+        if self._version != 2:
+            raise ValueError("Polarizability is only available with GFN2-xTB.")
+
+        if self._results.atom_polarizabilities is None:
+            self._run_xtb("sp")
+            self._results.atom_polarizabilities = cast(
+                list[float], self._results.atom_polarizabilities
+            )
+        atom_polarizabilities = {
+            i: polar
+            for i, polar in enumerate(self._results.atom_polarizabilities, start=1)
+        }
+
+        return atom_polarizabilities
+
+    def get_molecular_polarizability(self) -> float:
+        """Returns molecular polarizability."""
+
+        if self._version != 2:
+            raise ValueError("Polarizability is only available with GFN2-xTB.")
+
+        if self._results.mol_polarizability is None:
+            self._run_xtb("sp")
+            self._results.mol_polarizability = cast(
+                float, self._results.mol_polarizability
+            )
+
+        return self._results.mol_polarizability
+
+    def get_fod_population(self) -> dict[int, float]:
+        """
+        Returns atomic fractional occupation number weighted density population.
+        The FOD calculation is performed by default with an electronic temperature of 5000 K.
+        """
+        if self._results.fod_pop is None:
+            self._run_xtb("fod")
+            self._results.fod_pop = cast(list[float], self._results.fod_pop)
+
+        fod_pop = {i: pop for i, pop in enumerate(self._results.fod_pop, start=1)}
+
+        return fod_pop
+
     def get_ip(self, corrected: bool = True) -> float:
         """Returns ionization potential.
 
@@ -418,19 +466,22 @@ class XTB:
         """Run xTB calculation and parse results.
 
         Args:
-            runtype: Type of calculation to perform: 'sp', 'ipea' or 'fukui'
+            runtype: Type of calculation to perform: 'sp', 'ipea', 'fukui' or 'fod'
                 'sp': Single point calculation
                 'ipea': Ionization potential and electron affinity calculation
                 'fukui': Fukui coefficient calculation
+                'fod': Fractional occupation density calculation
         """
         # Set xtb command
-        runtypes = ["sp", "ipea", "fukui"]
+        runtypes = ["sp", "ipea", "fukui", "fod"]
         if runtype == "sp":
             command = self._default_xtb_command
         elif runtype == "ipea":
             command = self._default_xtb_command + " --vipea"
         elif runtype == "fukui":
             command = self._default_xtb_command + " --vfukui"
+        elif runtype == "fod":
+            command = self._default_xtb_command + " --fod"
         else:
             raise ValueError(
                 f"Runtype {runtype!r} does not exist. Choose one of {', '.join(runtypes)}."
@@ -442,7 +493,9 @@ class XTB:
         )
         with tmp_dir_context as tmp_dir:
             run_folder = (
-                Path(cast(str, tmp_dir)) if self._run_path is None else self._run_path
+                Path(cast(str, tmp_dir))
+                if self._run_path is None
+                else self._run_path / runtype
             )
             if self._run_path:
                 if run_folder.exists():
@@ -484,6 +537,8 @@ class XTB:
                 self._parse_out_ipea(run_folder / "xtb.out")
             elif runtype == "fukui":
                 self._parse_out_fukui(run_folder / "xtb.out")
+            elif runtype == "fod":
+                self._parse_fod(run_folder / "fod")
 
     def _parse_json(self, json_file: Path | str) -> None:
         """Parse 'xtbout.json' file."""
@@ -508,6 +563,8 @@ class XTB:
         with open(out_file, "r") as f:
             lines = f.readlines()
         homo, lumo, dipole_moment = {}, {}, None
+        mol_polarizability, atom_polarizabilities = None, []
+        in_polarizability_block = False
         for i, line in enumerate(lines):
             if "(HOMO)" in line:
                 homo["Eh"] = float(line.split()[-3])
@@ -522,17 +579,24 @@ class XTB:
                 elif self._version == 1:
                     dipole_line = lines[i + 2].split()
                     dipole_moment = float(dipole_line[-1])
-            if homo and lumo and dipole_moment:
-                break
-
-        if not homo or not lumo:
-            raise ValueError(f"Failed to parse HOMO and/or LUMO from {out_file}.")
-        if dipole_moment is None:
-            raise ValueError(f"Failed to parse dipole moment from {out_file}.")
+            elif self._version == 2 and "α(0)" in line:
+                if "Mol." in line:
+                    mol_polarizability = float(line.split()[-1])
+                else:
+                    in_polarizability_block = True
+                    continue
+            if in_polarizability_block:
+                if line.strip():
+                    atom_polarizabilities.append(float(line.split()[-1]))
+                else:
+                    in_polarizability_block = False
 
         self._results.homo = homo
         self._results.lumo = lumo
         self._results.dipole_moment = dipole_moment
+        if self._version == 2:
+            self._results.atom_polarizabilities = atom_polarizabilities
+            self._results.mol_polarizability = mol_polarizability
 
     def _parse_out_ipea(self, out_file: Path | str) -> None:
         """Parse 'xtb.out' file from xtb ipea calculation."""
@@ -584,6 +648,13 @@ class XTB:
         self._results.fukui_plus = fukui_plus
         self._results.fukui_minus = fukui_minus
         self._results.fukui_radical = fukui_radical
+
+    def _parse_fod(self, fod_file: Path | str) -> None:
+        """Parse 'fod' file."""
+        with open(fod_file, "r") as f:
+            lines = f.readlines()
+        fod = [float(line.strip()) for line in lines]
+        self._results.fod_pop = fod
 
 
 def cli(file: str) -> Any:
