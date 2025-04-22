@@ -17,7 +17,7 @@ import re
 import json
 
 from morfeus.data import DEBYE_TO_AU
-from morfeus.io import read_geometry, write_xyz
+from morfeus.io import read_geometry, write_xyz, write_xtb_inp
 from morfeus.typing import Array1DFloat, Array2DFloat, ArrayLike2D
 from morfeus.utils import convert_elements, requires_executable
 
@@ -35,6 +35,9 @@ class XTBResults:
     dipole_moment: float | None = None  # Unit in debye
     atom_polarizabilities: list[float] | None = None
     mol_polarizability: float | None = None
+    g_solv: float | None = None  # Unit in Eh
+    g_solv_hb: float | None = None  # Unit in Eh
+    atom_hb_strengths: list[float] | None = None
     fod_pop: list[float] | None = None
     ip: float | None = None
     ea: float | None = None
@@ -70,7 +73,8 @@ class XTB:
     _solvent: str | None
     _method: int | str
 
-    _xyz_input: str = "xtb.xyz"
+    _xyz_input_file: str = "xtb.xyz"
+    _xtb_input_file: str = "xtb.inp"
 
     def __init__(
         self,
@@ -96,7 +100,9 @@ class XTB:
 
         self._run_path = Path(run_path) if run_path else None
 
-        self._default_xtb_command = f"xtb {XTB._xyz_input} --json --chrg {self._charge}"
+        self._default_xtb_command = (
+            f"xtb {XTB._xyz_input_file} --json --chrg {self._charge}"
+        )
         if self._method in ["1", "2"]:
             self._default_xtb_command += f" --gfn {int(self._method)}"
         elif self._method == "ptb":
@@ -130,7 +136,7 @@ class XTB:
             bond_order: Bond order
 
         Raises:
-            ValueError: When no bond exists between the given atoms.
+            ValueError: If no bond exists between the given atoms.
         """
         bonds_orders = self.get_bond_orders()
         if (i, j) in bonds_orders:
@@ -150,7 +156,7 @@ class XTB:
             self._results.bond_orders = cast(
                 list[tuple[int, int, float]], self._results.bond_orders
             )
-        bond_orders = {(x[0], x[1]): x[2] for x in self._results.bond_orders}
+        bond_orders = {(x[0], x[1]): round(x[2], 12) for x in self._results.bond_orders}
 
         return bond_orders
 
@@ -174,7 +180,7 @@ class XTB:
             HOMO energy (Eh or eV)
 
         Raises:
-            ValueError: When unit does not exist
+            ValueError: If unit does not exist
         """
 
         if self._results.homo is None:
@@ -198,7 +204,7 @@ class XTB:
             LUMO energy (Eh or eV)
 
         Raises:
-            ValueError: When unit does not exist
+            ValueError: If unit does not exist
         """
 
         if self._results.lumo is None:
@@ -239,7 +245,7 @@ class XTB:
             Molecular dipole moment (deybe or a.u.)
 
         Raises:
-            ValueError: When unit does not exist
+            ValueError: If unit does not exist
         """
         if self._results.dipole_moment is None:
             self._run_xtb("sp")
@@ -256,8 +262,11 @@ class XTB:
             raise ValueError("Unit must be either 'deybe' or 'au'.")
 
     def get_atom_polarizabilities(self) -> dict[int, float]:
-        """Returns atomic polarizabilities."""
+        """Returns atomic polarizabilities.
 
+        Raises:
+            ValueError: If the chosen method is not GFN2-xTB (necessary for polarizability calculations)
+        """
         if self._method != "2":
             raise ValueError("Polarizability is only available with GFN2-xTB.")
 
@@ -274,8 +283,11 @@ class XTB:
         return atom_polarizabilities
 
     def get_molecular_polarizability(self) -> float:
-        """Returns molecular polarizability."""
+        """Returns molecular polarizability.
 
+        Raises:
+            ValueError: If the chosen method is not GFN2-xTB (necessary for polarizability calculations)
+        """
         if self._method != "2":
             raise ValueError("Polarizability is only available with GFN2-xTB.")
 
@@ -286,6 +298,71 @@ class XTB:
             )
 
         return self._results.mol_polarizability
+
+    def get_solvation_energy(self) -> float:
+        """Returns solvation free energy (Eh).
+
+        Raises:
+            ValueError: If no solvent is specified (necessary for solvation calculations)
+        """
+        if self._solvent is None:
+            raise ValueError("Solvation energy is only available with solvent.")
+
+        if self._results.g_solv is None:
+            self._run_xtb("sp")
+            self._results.g_solv = cast(float, self._results.g_solv)
+
+        return self._results.g_solv
+
+    def get_solvation_h_bond_correction(self) -> float:
+        """
+        Returns hydrogen bonding correction to the solvation free energy (Eh).
+        The hydrogen bonding correction is 0.0 for non-polar solvents.
+
+        Raises:
+            ValueError: If no solvent is specified (necessary for solvation calculations)
+        """
+
+        if self._solvent is None:
+            raise ValueError(
+                "Hydrogen bonding correction to solvation is only available with solvent."
+            )
+
+        if self._results.g_solv_hb is None:
+            self._run_xtb("sp")
+            self._results.g_solv_hb = cast(float, self._results.g_solv_hb)
+
+        return self._results.g_solv_hb
+
+    def get_atom_solvation_h_bond_strengths(self) -> dict[int, float]:
+        """Returns atomic hydrogen bonding strengths related to solvent.
+
+        Raises:
+            ValueError: If no solvent is specified (necessary for solvation calculations)
+            ValueError: If the specified solvent is not polar (necessary for hydrogen bonding contribution)
+        """
+        if self._solvent is None:
+            raise ValueError(
+                "Atomic hydrogen bonding strengths are only available with (polar) solvent."
+            )
+
+        if self._results.atom_hb_strengths is None:
+            self._run_xtb("sp")
+            self._results.atom_hb_strengths = cast(
+                list[float], self._results.atom_hb_strengths
+            )
+
+        if self._results.atom_hb_strengths == []:
+            raise ValueError(
+                f"No hydrogen bonding contribution calculated with {self._solvent!r}. Provide a polar solvent."
+            )
+
+        atom_hb_strengths = {
+            i: strength
+            for i, strength in enumerate(self._results.atom_hb_strengths, start=1)
+        }
+
+        return atom_hb_strengths
 
     def get_fod_population(self) -> dict[int, float]:
         """
@@ -475,20 +552,22 @@ class XTB:
 
         return descriptor
 
-    def _run_xtb(self, runtype: str) -> None:
+    def _run_xtb(self, runtype: str) -> None:  # noqa: C901
         """Run xTB calculation and parse results.
 
         Args:
-            runtype: Type of calculation to perform: 'sp', 'ipea', 'fukui' or 'fod'
-                'sp': Single point calculation
-                'ipea': Ionization potential and electron affinity calculation
-                'fukui': Fukui coefficient calculation
-                'fod': Fractional occupation density calculation
+            runtype: Type of calculation to perform:
+                - 'sp': Single point calculation
+                - 'ipea': Ionization potential and electron affinity calculation
+                - 'fukui': Fukui coefficient calculation
+                - 'fod': Fractional occupation density calculation
         """
         # Set xtb command
         runtypes = ["sp", "ipea", "fukui", "fod"]
         if runtype == "sp":
             command = self._default_xtb_command
+            if self._solvent is not None:
+                command += f" --input {XTB._xtb_input_file}"
         elif self._method == "ptb":
             raise ValueError(
                 "PTB can only be used for calculations of bond orders, charges, dipole, and HOMO/LUMO energies."
@@ -521,8 +600,13 @@ class XTB:
                 run_folder.mkdir(parents=True)
 
             # Write xyz input file
-            xyz_file = run_folder / XTB._xyz_input
+            xyz_file = run_folder / XTB._xyz_input_file
             write_xyz(xyz_file, self._elements, self._coordinates)
+
+            # To
+            if self._solvent is not None:
+                xtb_inp = run_folder / XTB._xtb_input_file
+                write_xtb_inp(xtb_inp, {"write": ["gbsa=true"]})
 
             # Run xtb
             with open(run_folder / "xtb.out", "w") as stdout, open(
@@ -581,14 +665,13 @@ class XTB:
                 wbos.append((int(columns[0]), int(columns[1]), float(columns[2])))
         self._results.bond_orders = wbos
 
-    def _parse_out_sp(self, out_file: Path | str) -> None:
+    def _parse_out_sp(self, out_file: Path | str) -> None:  # noqa: C901
         """Parse 'xtb.out' file from xtb sp calculation."""
 
         with open(out_file, "r") as f:
             lines = f.readlines()
-        homo, lumo, dipole_moment = {}, {}, None
-        mol_polarizability, atom_polarizabilities = None, []
-        in_polarizability_block = False
+        homo, lumo, atom_polarizabilities, atom_hb_strengths = {}, {}, [], []
+        in_polarizability_block, in_gbsa_block = False, False
         for i, line in enumerate(lines):
             if "(HOMO)" in line:
                 homo["Eh"] = float(line.split()[-3])
@@ -607,17 +690,29 @@ class XTB:
                     if "Total dipole" in line:
                         dipole_line = lines[i + 1].split()
                         dipole_moment = float(dipole_line[-1])
+
             elif self._method == "2" and "α(0)" in line:
                 if "Mol." in line:
                     mol_polarizability = float(line.split()[-1])
                 else:
                     in_polarizability_block = True
-                    continue
-            if in_polarizability_block:
+            elif in_polarizability_block:
                 if line.strip():
                     atom_polarizabilities.append(float(line.split()[-1]))
                 else:
                     in_polarizability_block = False
+
+            elif "Gsolv" in line:
+                g_solv = float(line.split()[-3])
+            elif "Ghb" in line:
+                g_solv_hb = float(line.split()[-3])
+            elif "H-bond" in line and "correction" not in line:
+                in_gbsa_block = True
+            elif in_gbsa_block:
+                if line.strip():
+                    atom_hb_strengths.append(float(line.split()[-1]))
+                else:
+                    in_gbsa_block = False
 
         self._results.homo = homo
         self._results.lumo = lumo
@@ -625,6 +720,10 @@ class XTB:
         if self._method == "2":
             self._results.atom_polarizabilities = atom_polarizabilities
             self._results.mol_polarizability = mol_polarizability
+        if self._solvent is not None:
+            self._results.g_solv = g_solv
+            self._results.g_solv_hb = g_solv_hb
+            self._results.atom_hb_strengths = atom_hb_strengths
 
     def _parse_out_ipea(self, out_file: Path | str) -> None:
         """Parse 'xtb.out' file from xtb ipea calculation."""
