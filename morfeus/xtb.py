@@ -561,6 +561,11 @@ class XTB:
                 - 'ipea': Ionization potential and electron affinity calculation
                 - 'fukui': Fukui coefficient calculation
                 - 'fod': Fractional occupation density calculation
+
+        Raises:
+            ValueError: If runtype does not exist
+            ValueError: If the xtb method chosen is not compatible with the requested calculation
+            RuntimeError: If the xtb calculation failed
         """
         # Set xtb command
         runtypes = ["sp", "ipea", "fukui", "fod"]
@@ -571,7 +576,7 @@ class XTB:
         elif self._method == "ptb":
             raise ValueError(
                 "PTB can only be used for calculations of bond orders, charges, dipole, and HOMO/LUMO energies."
-                "\nFor other descriptors, choose another xTB method."
+                "\nFor other descriptors, choose another xtb method."
             )
         elif runtype == "ipea":
             command = self._default_xtb_command + " --vipea"
@@ -628,7 +633,7 @@ class XTB:
                         if start_error_idx != -1
                         else err_content
                     )
-                raise RuntimeError(f"xTB calculation failed. Error:\n{error}")
+                raise RuntimeError(f"xtb calculation failed. Error:\n{error}")
 
             # Extract results from xtb files
             if runtype == "sp":
