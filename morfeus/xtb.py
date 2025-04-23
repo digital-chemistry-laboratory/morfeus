@@ -412,8 +412,7 @@ class XTB:
         return atom_hb_strengths
 
     def get_fod_population(self) -> dict[int, float]:
-        """
-        Returns atomic fractional occupation number weighted density population.
+        """Returns atomic fractional occupation number weighted density population.
         The FOD calculation is performed by default with an electronic temperature of 5000 K.
         """
         if self._results.fod_pop is None:
@@ -423,6 +422,16 @@ class XTB:
         fod_pop = {i: pop for i, pop in enumerate(self._results.fod_pop, start=1)}
 
         return fod_pop
+
+    def get_nfod(self) -> float:
+        """Returns NFOD descriptor.
+        NFOD is the integration over all space of the fractional occupation number weighted density (FOD).
+        The FOD calculation is performed by default with an electronic temperature of 5000 K.
+        """
+        fod_pop = self.get_fod_population()
+        nfod = sum(fod_pop.values())
+
+        return nfod
 
     def get_ip(self, corrected: bool = True) -> float:
         """Returns ionization potential.
