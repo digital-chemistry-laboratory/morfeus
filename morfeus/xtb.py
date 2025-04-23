@@ -235,14 +235,14 @@ class XTB:
 
         return self._results.dipole_vect
 
-    def get_dipole_moment(self, unit="deybe") -> float:
+    def get_dipole_moment(self, unit="au") -> float:
         """Returns molecular dipole moment.
 
         Args:
-            unit: 'deybe' or 'au'
+            unit: 'au' or 'debye'
 
         Returns:
-            Molecular dipole moment (deybe or a.u.)
+            Molecular dipole moment (a.u. or debye)
 
         Raises:
             ValueError: If unit does not exist
@@ -251,7 +251,7 @@ class XTB:
             self._run_xtb("sp")
             self._results.dipole_moment = cast(float, self._results.dipole_moment)
 
-        if unit == "deybe":
+        if unit == "debye":
             return self._results.dipole_moment
         elif unit == "au":
             return round(
@@ -259,7 +259,7 @@ class XTB:
                 len(str(self._results.dipole_moment).split(".")[-1]),
             )
         else:
-            raise ValueError("Unit must be either 'deybe' or 'au'.")
+            raise ValueError("Unit must be either 'au' or 'debye'.")
 
     def get_atom_polarizabilities(self) -> dict[int, float]:
         """Returns atomic polarizabilities.
