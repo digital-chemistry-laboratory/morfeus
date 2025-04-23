@@ -16,7 +16,7 @@ from dataclasses import dataclass
 import re
 import json
 
-from morfeus.data import DEBYE_TO_AU
+from morfeus.data import DEBYE_TO_AU, AU_TO_DEBYE
 from morfeus.io import read_geometry, write_xyz, write_xtb_inp
 from morfeus.typing import Array1DFloat, Array2DFloat, ArrayLike2D
 from morfeus.utils import convert_elements, requires_executable
@@ -31,6 +31,7 @@ class XTBResults:
     homo: dict[str, float] | None = None  # Stores both Eh and eV units
     lumo: dict[str, float] | None = None  # Stores both Eh and eV units
     gap: float | None = None  # Unit in eV
+    atom_dipole_vect: Array2DFloat | None = None  # Unit in a.u.
     dipole_vect: Array1DFloat | None = None  # Unit in a.u.
     dipole_moment: float | None = None  # Unit in debye
     atom_polarizabilities: list[float] | None = None
@@ -254,12 +255,58 @@ class XTB:
         if unit == "debye":
             return self._results.dipole_moment
         elif unit == "au":
-            return round(
-                self._results.dipole_moment * DEBYE_TO_AU,
-                len(str(self._results.dipole_moment).split(".")[-1]),
-            )
+            return round(self._results.dipole_moment * DEBYE_TO_AU, 3)
         else:
             raise ValueError("Unit must be either 'au' or 'debye'.")
+
+    def get_atom_dipoles(self) -> dict[int, Array1DFloat]:
+        """Returns atomic dipole vectors (a.u.).
+
+        Raises:
+            ValueError: If the chosen method is GFN1-xTB (does not support atomic dipoles)
+        """
+
+        if self._method == "1":
+            raise ValueError(
+                "Atomic dipoles are not available with GFN1-xTB. Choose another xtb method."
+            )
+
+        if self._results.atom_dipole_vect is None:
+            self._run_xtb("sp")
+            self._results.atom_dipole_vect = cast(
+                np.ndarray, self._results.atom_dipole_vect
+            )
+        atom_dipole_vectors = {
+            i: row for i, row in enumerate(self._results.atom_dipole_vect, start=1)
+        }
+
+        return atom_dipole_vectors
+
+    def get_atom_dipole_moments(self, unit="au") -> dict[int, float]:
+        """Returns atomic dipole moments.
+
+        Args:
+            unit: 'au' or 'debye'
+
+        Returns:
+            Atomic dipole moments (a.u. or debye)
+
+        Raises:
+            ValueError: If unit does not exist
+        """
+        dipole_vectors = self.get_atom_dipoles()
+        dipole_moments = {
+            i: round(float(np.linalg.norm(vect)), 8)
+            for i, vect in dipole_vectors.items()
+        }
+        if unit == "debye":
+            dipole_moments = {
+                i: round(norm * AU_TO_DEBYE, 8) for i, norm in dipole_moments.items()
+            }
+        elif unit != "au":
+            raise ValueError("Unit must be either 'au' or 'debye'.")
+
+        return dipole_moments
 
     def get_atom_polarizabilities(self) -> dict[int, float]:
         """Returns atomic polarizabilities.
@@ -477,7 +524,7 @@ class XTB:
             fukui = np.around(
                 np.array(self._results.fukui_plus)
                 - np.array(self._results.fukui_minus),
-                decimals=len(str(self._results.fukui_plus).split(".")[-1]),
+                3,
             )
         elif variety == "local_electrophilicity":
             fukui_radical: Array1DFloat = np.array(self._results.fukui_radical)
@@ -660,6 +707,8 @@ class XTB:
         self._results.charges = data["partial charges"]
         self._results.gap = data["HOMO-LUMO gap / eV"]
         self._results.dipole_vect = np.array(data["dipole / a.u."])
+        if self._method != "1":
+            self._results.atom_dipole_vect = np.array(data["atomic dipole moments"])
 
     def _parse_wbo(self, wbo_file: Path | str) -> None:
         """Parse 'wbo' file."""
