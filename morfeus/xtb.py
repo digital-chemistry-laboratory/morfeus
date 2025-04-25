@@ -565,6 +565,16 @@ class XTB:
 
         return hardness
 
+    def get_softness(self, corrected: bool = True) -> float:
+        """Returns softness (eV).
+
+        Args:
+            corrected: Whether to apply empirical correction term
+        """
+        hardness = self.get_hardness(corrected=corrected)
+
+        return round(1 / hardness, 4)
+
     def get_fukui(self, variety: str, corrected: bool = True) -> dict[int, float]:
         """Calculate Fukui coefficients.
 
