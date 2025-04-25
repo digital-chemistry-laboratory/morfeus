@@ -54,7 +54,7 @@ class XTB:
     Args:
         elements: Elements as atomic symbols or numbers
         coordinates: Coordinates (Å)
-        method: method to use in xtb. Currently works with:
+        method: Method to use in xtb. Currently works with:
             - 2: GFN2-xTB (default)
             - 1: GFN1-xTB
             - ptb: PTB
@@ -62,6 +62,7 @@ class XTB:
         n_unpaired: Number of unpaired electrons
         solvent: Solvent. Uses the ALPB solvation model
         electronic_temperature: Electronic temperature (K)
+        n_processes: Number of parallel processes in xtb
         run_path: Folder path to run xTB calculation. If not provided, runs in a temporary folder
     """
 
@@ -73,6 +74,7 @@ class XTB:
     _results: XTBResults
     _solvent: str | None
     _method: int | str
+    _n_processes: int | None
 
     _xyz_input_file: str = "xtb.xyz"
     _xtb_input_file: str = "xtb.inp"
@@ -86,6 +88,7 @@ class XTB:
         n_unpaired: int | None = None,
         solvent: str | None = None,
         electronic_temperature: int | None = None,
+        n_processes: int | None = None,
         run_path: Path | str | None = None,
     ) -> None:
         # Converting elements to atomic numbers if the are symbols
@@ -98,6 +101,7 @@ class XTB:
         self._solvent = solvent
         self._n_unpaired = n_unpaired
         self._electronic_temperature = electronic_temperature
+        self._n_processes = n_processes
 
         self._run_path = Path(run_path) if run_path else None
 
@@ -122,6 +126,8 @@ class XTB:
             self._default_xtb_command += f" --uhf {self._n_unpaired}"
         if self._electronic_temperature is not None:
             self._default_xtb_command += f" --etemp {self._electronic_temperature}"
+        if self._n_processes is not None:
+            self._default_xtb_command += f" --parallel {self._n_processes}"
 
         self._results = XTBResults()
         self._corrected: bool | None = None
