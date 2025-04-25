@@ -17,7 +17,14 @@ import re
 import json
 import os
 
-from morfeus.data import DEBYE_TO_AU, AU_TO_DEBYE
+from morfeus.data import (
+    DEBYE_TO_AU,
+    AU_TO_DEBYE,
+    HARTREE_TO_KCAL,
+    HARTREE_TO_KJ,
+    HARTREE_TO_EV,
+    EV_TO_HARTREE,
+)
 from morfeus.io import read_geometry, write_xyz, write_xtb_inp
 from morfeus.typing import Array1DFloat, Array2DFloat, ArrayLike2D
 from morfeus.utils import convert_elements, requires_executable
@@ -182,13 +189,13 @@ class XTB:
         """Returns HOMO energy.
 
         Args:
-            unit: 'Eh' or 'eV'
+            unit: 'Eh', 'eV', 'kcal/mol' or kJ/mol'
 
         Returns:
-            HOMO energy (Eh or eV)
+            HOMO energy (Eh, eV, kcal/mol or kJ/mol)
 
         Raises:
-            ValueError: If unit does not exist
+            ValueError: If given unit is not supported
         """
 
         if self._results.homo is None:
@@ -199,20 +206,24 @@ class XTB:
             return self._results.homo["Eh"]
         elif unit == "eV":
             return self._results.homo["eV"]
+        elif unit == "kcal/mol":
+            return round(self._results.homo["Eh"] * HARTREE_TO_KCAL, 7)
+        elif unit == "kJ/mol":
+            return round(self._results.homo["Eh"] * HARTREE_TO_KJ, 7)
         else:
-            raise ValueError("Unit must be either 'Eh' or 'eV'.")
+            raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
 
     def get_lumo(self, unit="Eh") -> float:
         """Returns LUMO energy.
 
         Args:
-            unit: 'Eh' or 'eV'
+            unit: 'Eh', 'eV', 'kcal/mol' or kJ/mol'
 
         Returns:
-            LUMO energy (Eh or eV)
+            LUMO energy (Eh, eV, kcal/mol or kJ/mol)
 
         Raises:
-            ValueError: If unit does not exist
+            ValueError: If given unit is not supported
         """
 
         if self._results.lumo is None:
@@ -223,17 +234,38 @@ class XTB:
             return self._results.lumo["Eh"]
         elif unit == "eV":
             return self._results.lumo["eV"]
+        elif unit == "kcal/mol":
+            return round(self._results.lumo["Eh"] * HARTREE_TO_KCAL, 7)
+        elif unit == "kJ/mol":
+            return round(self._results.lumo["Eh"] * HARTREE_TO_KJ, 7)
         else:
-            raise ValueError("Unit must be either 'Eh' or 'eV'.")
+            raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
 
-    def get_homo_lumo_gap(self) -> float:
-        """Returns HOMO-LUMO gap (eV)."""
+    def get_homo_lumo_gap(self, unit="eV") -> float:
+        """Returns HOMO-LUMO gap.
+
+        Args:
+            unit: 'Eh', 'eV', 'kcal/mol' or kJ/mol'
+
+        Returns:
+            HOMO-LUMO gap (Eh, eV, kcal/mol or kJ/mol)
+
+        Raises:
+            ValueError: If given unit is not supported
+        """
 
         if self._results.gap is None:
             self._run_xtb("sp")
             self._results.gap = cast(float, self._results.gap)
 
-        return self._results.gap
+        if unit == "eV":
+            return self._results.gap
+        elif unit == "Eh":
+            return round(self._results.gap * EV_TO_HARTREE, 8)
+        elif unit == "kcal/mol":
+            return round(self._results.gap * EV_TO_HARTREE * HARTREE_TO_KCAL, 8)
+        elif unit == "kJ/mol":
+            return round(self._results.gap * EV_TO_HARTREE * HARTREE_TO_KJ, 8)
 
     def get_dipole(self) -> Array1DFloat:
         """Returns molecular dipole vector (a.u.)."""
@@ -253,7 +285,7 @@ class XTB:
             Molecular dipole moment (a.u. or debye)
 
         Raises:
-            ValueError: If unit does not exist
+            ValueError: If given unit is not supported
         """
         if self._results.dipole_moment is None:
             self._run_xtb("sp")
@@ -299,7 +331,7 @@ class XTB:
             Atomic dipole moments (a.u. or debye)
 
         Raises:
-            ValueError: If unit does not exist
+            ValueError: If given unit is not supported
         """
         dipole_vectors = self.get_atom_dipoles()
         dipole_moments = {
@@ -353,11 +385,18 @@ class XTB:
 
         return self._results.mol_polarizability
 
-    def get_solvation_energy(self) -> float:
-        """Returns solvation free energy (Eh).
+    def get_solvation_energy(self, unit="Eh") -> float:
+        """Returns solvation free energy.
+
+        Args:
+            unit: 'Eh', 'eV', 'kcal/mol' or kJ/mol'
+
+        Returns:
+            Solvation free energy (Eh, eV, kcal/mol or kJ/mol)
 
         Raises:
             ValueError: If no solvent is specified (necessary for solvation calculations)
+            ValueError: If given unit is not supported
         """
         if self._solvent is None:
             raise ValueError("Solvation energy is only available with solvent.")
@@ -366,15 +405,32 @@ class XTB:
             self._run_xtb("sp")
             self._results.g_solv = cast(float, self._results.g_solv)
 
-        return self._results.g_solv
+        if unit == "Eh":
+            return self._results.g_solv
+        elif unit == "kcal/mol":
+            print(HARTREE_TO_KCAL)
+            return round(self._results.g_solv * HARTREE_TO_KCAL, 12)
+        elif unit == "kJ/mol":
+            return round(self._results.g_solv * HARTREE_TO_KJ, 12)
+        elif unit == "eV":
+            return round(self._results.g_solv * HARTREE_TO_EV, 12)
+        else:
+            raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
 
-    def get_solvation_h_bond_correction(self) -> float:
+    def get_solvation_h_bond_correction(self, unit="Eh") -> float:
         """
-        Returns hydrogen bonding correction to the solvation free energy (Eh).
+        Returns hydrogen bonding correction to the solvation free energy.
         The hydrogen bonding correction is 0.0 for non-polar solvents.
+
+        Args:
+            unit: 'Eh', 'eV', 'kcal/mol' or kJ/mol'
+
+        Returns:
+            Hydrogen bonding correction to the solvation free energy (Eh, eV, kcal/mol or kJ/mol)
 
         Raises:
             ValueError: If no solvent is specified (necessary for solvation calculations)
+            ValueError: If given unit is not supported
         """
 
         if self._solvent is None:
@@ -386,7 +442,16 @@ class XTB:
             self._run_xtb("sp")
             self._results.g_solv_hb = cast(float, self._results.g_solv_hb)
 
-        return self._results.g_solv_hb
+        if unit == "Eh":
+            return self._results.g_solv_hb
+        elif unit == "kcal/mol":
+            return round(self._results.g_solv_hb * HARTREE_TO_KCAL, 12)
+        elif unit == "kJ/mol":
+            return round(self._results.g_solv_hb * HARTREE_TO_KJ, 12)
+        elif unit == "eV":
+            return round(self._results.g_solv_hb * HARTREE_TO_EV, 12)
+        else:
+            raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
 
     def get_atom_solvation_h_bond_strengths(self) -> dict[int, float]:
         """Returns atomic hydrogen bonding strengths related to solvent.
