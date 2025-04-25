@@ -15,11 +15,13 @@ import shutil
 from dataclasses import dataclass
 import re
 import json
+import os
 
 from morfeus.data import DEBYE_TO_AU, AU_TO_DEBYE
 from morfeus.io import read_geometry, write_xyz, write_xtb_inp
 from morfeus.typing import Array1DFloat, Array2DFloat, ArrayLike2D
 from morfeus.utils import convert_elements, requires_executable
+from morfeus import config
 
 
 @dataclass
@@ -62,7 +64,8 @@ class XTB:
         n_unpaired: Number of unpaired electrons
         solvent: Solvent. Uses the ALPB solvation model
         electronic_temperature: Electronic temperature (K)
-        n_processes: Number of parallel processes in xtb
+        n_processes: Number of parallel processes in xtb.
+            If not provided, runs on 1 thread.
         run_path: Folder path to run xTB calculation. If not provided, runs in a temporary folder
     """
 
@@ -126,8 +129,6 @@ class XTB:
             self._default_xtb_command += f" --uhf {self._n_unpaired}"
         if self._electronic_temperature is not None:
             self._default_xtb_command += f" --etemp {self._electronic_temperature}"
-        if self._n_processes is not None:
-            self._default_xtb_command += f" --parallel {self._n_processes}"
 
         self._results = XTBResults()
         self._corrected: bool | None = None
@@ -679,8 +680,21 @@ class XTB:
             with open(run_folder / "xtb.out", "w") as stdout, open(
                 run_folder / "xtb.err", "w"
             ) as stderr:
+                env = dict(os.environ)
+                if self._n_processes is not None:
+                    env["OMP_NUM_THREADS"] = f"{self._n_processes},1"
+                    env["MKL_NUM_THREADS"] = f"{self._n_processes}"
+                else:
+                    env["OMP_NUM_THREADS"] = f"{config.OMP_NUM_THREADS},1"
+                    env["MKL_NUM_THREADS"] = f"{config.OMP_NUM_THREADS}"
+                env["OMP_STACKSIZE"] = config.OMP_STACKSIZE
+                env["OMP_MAX_ACTIVE_LEVELS"] = str(config.OMP_MAX_ACTIVE_LEVELS)
                 subprocess.run(
-                    command.split(), cwd=run_folder, stdout=stdout, stderr=stderr
+                    command.split(),
+                    cwd=run_folder,
+                    stdout=stdout,
+                    stderr=stderr,
+                    env=env,
                 )
 
             # Return error if xtb fails
