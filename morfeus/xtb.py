@@ -552,26 +552,17 @@ class XTB:
 
         return chem_pot
 
-    def get_hardness(self, corrected: bool = True) -> float:
-        """Returns hardness (eV).
+    def get_hardness(self) -> float:
+        """Returns hardness (eV)."""
 
-        Args:
-            corrected: Whether to apply empirical correction term
-        """
-        if self._results.ip is None or self._corrected != corrected:
-            self._corrected = corrected
-            self._run_xtb("ipea")
-        hardness = self.get_ip(corrected=corrected) - self.get_ea(corrected=corrected)
+        hardness = round(self.get_ip() - self.get_ea(), 4)
 
         return hardness
 
-    def get_softness(self, corrected: bool = True) -> float:
-        """Returns softness (eV).
+    def get_softness(self) -> float:
+        """Returns softness (eV)."""
 
-        Args:
-            corrected: Whether to apply empirical correction term
-        """
-        hardness = self.get_hardness(corrected=corrected)
+        hardness = self.get_hardness()
 
         return round(1 / hardness, 4)
 
@@ -623,7 +614,7 @@ class XTB:
                 self._results.fukui_minus
             )
             chem_pot = self.get_chemical_potential(corrected=corrected)
-            hardness = self.get_hardness(corrected=corrected)
+            hardness = self.get_hardness()
             fukui = (
                 -(chem_pot / hardness) * fukui_radical
                 + 1 / 2 * (chem_pot / hardness) ** 2 * fukui_dual
@@ -887,7 +878,7 @@ class XTB:
         """Parse 'xtb.out' file from xtb ipea calculation."""
 
         with open(out_file, "r") as f:
-            ip = ea = shift = None
+            ip, ea, shift = None, None, None
             for line in f:
                 if "delta SCC IP (eV)" in line:
                     ip = float(line.split()[-1])
