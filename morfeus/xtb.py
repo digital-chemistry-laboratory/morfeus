@@ -58,7 +58,7 @@ class XTBResults:
 
 @requires_executable(["xtb"])
 class XTB:
-    """Calculates electronic properties with the xtb program.
+    """Calculate electronic properties with the xtb program.
 
     Args:
         elements: Elements as atomic symbols or numbers
@@ -141,7 +141,7 @@ class XTB:
         self._corrected: bool | None = None
 
     def get_bond_order(self, i: int, j: int) -> float:
-        """Returns bond order between two atoms.
+        """Return bond order between two atoms.
 
         Args:
             i: Index of atom 1 (1-indexed)
@@ -164,7 +164,7 @@ class XTB:
         return bond_order
 
     def get_bond_orders(self) -> dict[tuple[int, int], float]:
-        """Returns bond orders."""
+        """Return bond orders."""
 
         if self._results.bond_orders is None:
             self._run_xtb("sp")
@@ -176,7 +176,7 @@ class XTB:
         return bond_orders
 
     def get_charges(self) -> dict[int, float]:
-        """Returns atomic charges."""
+        """Return atomic charges."""
 
         if self._results.charges is None:
             self._run_xtb("sp")
@@ -186,7 +186,7 @@ class XTB:
         return charges
 
     def get_homo(self, unit="Eh") -> float:
-        """Returns HOMO energy.
+        """Return HOMO energy.
 
         Args:
             unit: 'Eh', 'eV', 'kcal/mol' or kJ/mol'
@@ -214,7 +214,7 @@ class XTB:
             raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
 
     def get_lumo(self, unit="Eh") -> float:
-        """Returns LUMO energy.
+        """Return LUMO energy.
 
         Args:
             unit: 'Eh', 'eV', 'kcal/mol' or kJ/mol'
@@ -242,7 +242,7 @@ class XTB:
             raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
 
     def get_homo_lumo_gap(self, unit="eV") -> float:
-        """Returns HOMO-LUMO gap.
+        """Return HOMO-LUMO gap.
 
         Args:
             unit: 'Eh', 'eV', 'kcal/mol' or kJ/mol'
@@ -268,7 +268,7 @@ class XTB:
             return round(self._results.gap * EV_TO_HARTREE * HARTREE_TO_KJ, 8)
 
     def get_dipole(self) -> Array1DFloat:
-        """Returns molecular dipole vector (a.u.)."""
+        """Return molecular dipole vector (a.u.)."""
 
         if self._results.dipole_vect is None:
             self._run_xtb("sp")
@@ -276,7 +276,7 @@ class XTB:
         return self._results.dipole_vect
 
     def get_dipole_moment(self, unit="au") -> float:
-        """Returns molecular dipole moment.
+        """Return molecular dipole moment.
 
         Args:
             unit: 'au' or 'debye'
@@ -299,7 +299,7 @@ class XTB:
             raise ValueError("Unit must be either 'au' or 'debye'.")
 
     def get_atom_dipoles(self) -> dict[int, Array1DFloat]:
-        """Returns atomic dipole vectors (a.u.).
+        """Return atomic dipole vectors (a.u.).
 
         Raises:
             ValueError: If the chosen method is GFN1-xTB (does not support atomic dipoles)
@@ -322,7 +322,7 @@ class XTB:
         return atom_dipole_vectors
 
     def get_atom_dipole_moments(self, unit="au") -> dict[int, float]:
-        """Returns atomic dipole moments.
+        """Return atomic dipole moments.
 
         Args:
             unit: 'au' or 'debye'
@@ -348,7 +348,7 @@ class XTB:
         return dipole_moments
 
     def get_atom_polarizabilities(self) -> dict[int, float]:
-        """Returns atomic polarizabilities.
+        """Return atomic polarizabilities.
 
         Raises:
             ValueError: If the chosen method is not GFN2-xTB (necessary for polarizability calculations)
@@ -369,7 +369,7 @@ class XTB:
         return atom_polarizabilities
 
     def get_molecular_polarizability(self) -> float:
-        """Returns molecular polarizability.
+        """Return molecular polarizability.
 
         Raises:
             ValueError: If the chosen method is not GFN2-xTB (necessary for polarizability calculations)
@@ -386,7 +386,7 @@ class XTB:
         return self._results.mol_polarizability
 
     def get_solvation_energy(self, unit="Eh") -> float:
-        """Returns solvation free energy.
+        """Return solvation free energy.
 
         Args:
             unit: 'Eh', 'eV', 'kcal/mol' or kJ/mol'
@@ -418,8 +418,7 @@ class XTB:
             raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
 
     def get_solvation_h_bond_correction(self, unit="Eh") -> float:
-        """
-        Returns hydrogen bonding correction to the solvation free energy.
+        """Return hydrogen bonding correction to the solvation free energy.
         The hydrogen bonding correction is 0.0 for non-polar solvents.
 
         Args:
@@ -454,7 +453,7 @@ class XTB:
             raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
 
     def get_atom_solvation_h_bond_strengths(self) -> dict[int, float]:
-        """Returns atomic hydrogen bonding strengths related to solvent.
+        """Return atomic hydrogen bonding strengths related to solvent.
 
         Raises:
             ValueError: If no solvent is specified (necessary for solvation calculations)
@@ -484,7 +483,7 @@ class XTB:
         return atom_hb_strengths
 
     def get_fod_population(self) -> dict[int, float]:
-        """Returns atomic fractional occupation number weighted density population.
+        """Return atomic fractional occupation number weighted density population.
         The FOD calculation is performed by default with an electronic temperature of 5000 K.
         """
         if self._results.fod_pop is None:
@@ -496,7 +495,7 @@ class XTB:
         return fod_pop
 
     def get_nfod(self) -> float:
-        """Returns NFOD descriptor.
+        """Return NFOD descriptor.
         NFOD is the integration over all space of the fractional occupation number weighted density (FOD).
         The FOD calculation is performed by default with an electronic temperature of 5000 K.
         """
@@ -506,7 +505,7 @@ class XTB:
         return nfod
 
     def get_ip(self, corrected: bool = True) -> float:
-        """Returns ionization potential.
+        """Return ionization potential.
 
         Args:
             corrected: Whether to apply empirical correction term
@@ -522,7 +521,7 @@ class XTB:
         return self._results.ip
 
     def get_ea(self, corrected: bool = True) -> float:
-        """Returns electron affinity.
+        """Return electron affinity.
 
         Args:
             corrected: Whether to apply empirical correction term
@@ -538,7 +537,7 @@ class XTB:
         return self._results.ea
 
     def get_chemical_potential(self, corrected: bool = True) -> float:
-        """Returns chemical potential (eV).
+        """Calculate chemical potential (eV).
 
         Args:
             corrected: Whether to apply empirical correction term
@@ -553,14 +552,14 @@ class XTB:
         return chem_pot
 
     def get_hardness(self) -> float:
-        """Returns hardness (eV)."""
+        """Calculate hardness (eV)."""
 
         hardness = round(self.get_ip() - self.get_ea(), 4)
 
         return hardness
 
     def get_softness(self) -> float:
-        """Returns softness (eV)."""
+        """Calculate softness (eV)."""
 
         hardness = self.get_hardness()
 
