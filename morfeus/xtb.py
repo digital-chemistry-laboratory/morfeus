@@ -36,6 +36,7 @@ class XTBResults:
     """Stores xTB descriptors."""
 
     charges: list[float] | None = None
+    charges_cm5: list[float] | None = None
     bond_orders: list[tuple[int, int, float]] | None = None
     homo: dict[str, float] | None = None  # Stores both Eh and eV units
     lumo: dict[str, float] | None = None  # Stores both Eh and eV units
@@ -148,7 +149,7 @@ class XTB:
             j: Index of atom 2 (1-indexed)
 
         Returns:
-            bond_order: Bond order
+            Bond order between atoms i and j
 
         Raises:
             ValueError: If no bond exists between the given atoms.
@@ -175,15 +176,39 @@ class XTB:
 
         return bond_orders
 
-    def get_charges(self) -> dict[int, float]:
-        """Return atomic charges."""
+    def get_charges(self, model="Mulliken") -> dict[int, float]:
+        """Return atomic charges.
 
-        if self._results.charges is None:
-            self._run_xtb("sp")
-            self._results.charges = cast(list[float], self._results.charges)
-        charges = {i: charge for i, charge in enumerate(self._results.charges, start=1)}
+        Args:
+            model: Charge model to use.
+                - 'Mulliken'
+                - 'CM5': only available with GFN1-xTB
+        Returns:
+            Atomic charges (1-indexed)
 
-        return charges
+        Raises:
+            ValueError: If given charge model is not available with the chosen xtb method.
+        """
+        if model == "CM5":
+            if self._method != "1":
+                raise ValueError("CM5 charge model is only available with GFN1-xTB.")
+            elif self._results.charges_cm5 is None:
+                self._run_xtb("sp")
+                self._results.charges_cm5 = cast(list[float], self._results.charges_cm5)
+            charges = self._results.charges_cm5
+
+        elif model == "Mulliken":
+            if self._results.charges is None:
+                self._run_xtb("sp")
+                self._results.charges = cast(list[float], self._results.charges)
+            charges = self._results.charges
+
+        else:
+            raise ValueError(
+                f"Charge model {model!r} not supported. Choose between 'Mulliken' or 'CM5'."
+            )
+
+        return {i: charge for i, charge in enumerate(charges, start=1)}
 
     def get_homo(self, unit="Eh") -> float:
         """Return HOMO energy.
@@ -818,8 +843,14 @@ class XTB:
 
         with open(out_file, "r") as f:
             lines = f.readlines()
-        homo, lumo, atom_polarizabilities, atom_hb_strengths = {}, {}, [], []
-        in_polarizability_block, in_gbsa_block = False, False
+        homo, lumo, atom_polarizabilities, atom_hb_strengths, cm5_charges = (
+            {},
+            {},
+            [],
+            [],
+            [],
+        )
+        in_polarizability_block, in_gbsa_block, in_cm5_block = False, False, False
         for i, line in enumerate(lines):
             if "(HOMO)" in line:
                 homo["Eh"] = float(line.split()[-3])
@@ -862,6 +893,14 @@ class XTB:
                 else:
                     in_gbsa_block = False
 
+            elif "Mulliken/CM5 charges" in line:
+                in_cm5_block = True
+            elif in_cm5_block:
+                if line.strip():
+                    cm5_charges.append(float(line.split()[2]))
+                else:
+                    in_cm5_block = False
+
         self._results.homo = homo
         self._results.lumo = lumo
         self._results.dipole_moment = dipole_moment
@@ -872,6 +911,8 @@ class XTB:
             self._results.g_solv = g_solv
             self._results.g_solv_hb = g_solv_hb
             self._results.atom_hb_strengths = atom_hb_strengths
+        if self._method == "1":
+            self._results.charges_cm5 = cm5_charges
 
     def _parse_out_ipea(self, out_file: Path | str) -> None:
         """Parse 'xtb.out' file from xtb ipea calculation."""
