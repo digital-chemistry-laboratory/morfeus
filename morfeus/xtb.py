@@ -284,13 +284,15 @@ class XTB:
             self._results.gap = cast(float, self._results.gap)
 
         if unit == "eV":
-            return self._results.gap
+            gap = self._results.gap
         elif unit == "Eh":
-            return round(self._results.gap * EV_TO_HARTREE, 8)
+            gap = round(self._results.gap * EV_TO_HARTREE, 8)
         elif unit == "kcal/mol":
-            return round(self._results.gap * EV_TO_HARTREE * HARTREE_TO_KCAL, 8)
+            gap = round(self._results.gap * EV_TO_HARTREE * HARTREE_TO_KCAL, 8)
         elif unit == "kJ/mol":
-            return round(self._results.gap * EV_TO_HARTREE * HARTREE_TO_KJ, 8)
+            gap = round(self._results.gap * EV_TO_HARTREE * HARTREE_TO_KJ, 8)
+
+        return gap
 
     def get_dipole(self) -> Array1DFloat:
         """Return molecular dipole vector (a.u.)."""
