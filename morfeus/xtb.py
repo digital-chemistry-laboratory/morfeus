@@ -48,7 +48,7 @@ class XTBResults:
     mol_polarizability: float | None = None
     g_solv: float | None = None  # Unit in Eh
     g_solv_hb: float | None = None  # Unit in Eh
-    atom_hb_strengths: list[float] | None = None
+    atom_hb_terms: list[float] | None = None
     fod_pop: list[float] | None = None
     ip: float | None = None
     ea: float | None = None
@@ -479,35 +479,62 @@ class XTB:
         else:
             raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
 
-    def get_atom_solvation_h_bond_strengths(self) -> dict[int, float]:
-        """Return atomic hydrogen bonding strengths related to solvent.
+    def get_atomic_h_bond_corrections(self, unit="Eh") -> dict[int, float]:
+        """Calculate atomic hydrogen bonding corrections to the solvation free energy.
+
+        Caveat: Due to the limited print precision of the H-bond terms outputted by xtb,
+        the atomic energy corrections returned here have an error of max ± (atomic charge)^2 * 0.0005 Eh
+
+        Args:
+            unit: 'Eh', 'eV', 'kcal/mol' or kJ/mol'
+
+        Returns:
+            Atomic hydrogen bonding corrections to the solvation free energy (Eh, eV, kcal/mol or kJ/mol)
 
         Raises:
             ValueError: If no solvent is specified (necessary for solvation calculations)
-            ValueError: If the specified solvent is not polar (necessary for hydrogen bonding contribution)
+            ValueError: If the specified solvent is not polar (necessary for atomic hydrogen bonding contributions)
+            ValueError: If given unit is not supported
         """
         if self._solvent is None:
             raise ValueError(
-                "Atomic hydrogen bonding strengths are only available with (polar) solvent."
+                "Atomic hydrogen bonding corrections are only available with (polar) solvent."
             )
 
-        if self._results.atom_hb_strengths is None:
+        if self._results.atom_hb_terms is None:
             self._run_xtb("sp")
-            self._results.atom_hb_strengths = cast(
-                list[float], self._results.atom_hb_strengths
-            )
+            self._results.atom_hb_terms = cast(list[float], self._results.atom_hb_terms)
 
-        if self._results.atom_hb_strengths == []:
+        if self._results.atom_hb_terms == []:
             raise ValueError(
-                f"No hydrogen bonding contribution calculated with {self._solvent!r}. Provide a polar solvent."
+                f"No hydrogen bonding contributions calculated with {self._solvent!r}. Provide a polar solvent."
             )
 
-        atom_hb_strengths = {
-            i: strength
-            for i, strength in enumerate(self._results.atom_hb_strengths, start=1)
+        if self._method == "2":
+            charges = self._results.charges
+        elif self._method == "1":
+            charges = self._results.charges_cm5
+        charges = cast(list[float], charges)
+
+        if unit == "Eh":
+            conversion = 1.0
+        elif unit == "kcal/mol":
+            conversion = HARTREE_TO_KCAL
+        elif unit == "kJ/mol":
+            conversion = HARTREE_TO_KJ
+        elif unit == "eV":
+            conversion = HARTREE_TO_EV
+        else:
+            raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
+
+        h_bond_corrections = {
+            i: round(hb_term * charge**2 * conversion, 8)
+            for i, (hb_term, charge) in enumerate(
+                zip(self._results.atom_hb_terms, charges), start=1
+            )
         }
 
-        return atom_hb_strengths
+        return h_bond_corrections
 
     def get_fod_population(self) -> dict[int, float]:
         """Return atomic fractional occupation number weighted density population.
@@ -845,7 +872,7 @@ class XTB:
 
         with open(out_file, "r") as f:
             lines = f.readlines()
-        homo, lumo, atom_polarizabilities, atom_hb_strengths, cm5_charges = (
+        homo, lumo, atom_polarizabilities, atom_hb_terms, cm5_charges = (
             {},
             {},
             [],
@@ -891,7 +918,7 @@ class XTB:
                 in_gbsa_block = True
             elif in_gbsa_block:
                 if line.strip():
-                    atom_hb_strengths.append(float(line.split()[-1]))
+                    atom_hb_terms.append(float(line.split()[-1]))
                 else:
                     in_gbsa_block = False
 
@@ -912,7 +939,7 @@ class XTB:
         if self._solvent is not None:
             self._results.g_solv = g_solv
             self._results.g_solv_hb = g_solv_hb
-            self._results.atom_hb_strengths = atom_hb_strengths
+            self._results.atom_hb_terms = atom_hb_terms
         if self._method == "1":
             self._results.charges_cm5 = cm5_charges
 
