@@ -29,6 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Switch to `True` by default for the correction term in the calculations of IP, EA, Fukui local electrophilicity and global descriptors
 - `XTB` attribute `version` renamed into `method` to reflect better the choice between GFN2-xTB, GFN1-xTB, and PTB
 
+### Removed
+- test `test_homo_index` due to dependency to the deprecated xtb-python API
+
 ## [0.7.2] - 2022-08-23
 
 ### Fixed 
