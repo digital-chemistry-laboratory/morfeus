@@ -4,7 +4,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased] - 2025-05-06
+
+### Added
+- Method `XTB.get_dipole_moment` to return the molecular dipole moment (in deybe or a.u.)
+- Method `XTB.get_chemical_potential` to calculate the chemical potential
+- Method `XTB.get_hardness` to calculate the hardness
+- HOMO and LUMO energy can be returned either in Eh of eV depending on the given unit argument
+- Synonyms "minus" and "plus" for respectively "nucleophilicity" and "electrophilicity" in the Fukui coefficients varieties
+- GFNn-xTB parametrisation (1 or 2) can be given either in `int` or `str` in the `XTB` object
+- Method `XTB.get_softness` to calculate the softness
+- Possibility to specifiy the number of parallel processes for the xtb runs
+- Support energy units Eh, eV, kcal/mol or kJ/mol
+- Methods `XTB.get_atom_dipoles()` and `XTB.get_atom_dipole_moments()` to return the atomic dipole vectors and dipole moments
+- Methods `XTB.get_fod_population` and `XTB.get_nfod()` to return the atomic fractional occupation density (FOD) population and the integration over all space of the FOD
+- Methods `XTB.get_atom_polarizabilities` and `XTB.get_molecular_polarizability` to return the atomic and molecular polarizabilities
+- Method `XTB.get_homo_lumo_gap` to return HOMO-LUMO gap
+- Implementation of descriptors calculation with PTB
+- Methods `XTB.get_solvation_energy()`, `XTB.get_solvation_h_bond_correction()` and `XTB.get_atomic_h_bond_corrections()` to get respectively the solvation free energy, the hydrogen bonding correction to the solvation energy, and the atomic hydrogen bonding corrections to the solvation free energy
+- Possibility to return the CM5 atomic charges instead of Mulliken with GFN1-xTB
+
+### Changed
+- Run xtb through the command line instead of the deprecated xtb-python API
+- Switch to `True` by default for the correction term in the calculations of IP, EA, Fukui local electrophilicity and global descriptors
+- `XTB` attribute `version` renamed into `method` to reflect better the choice between GFN2-xTB, GFN1-xTB, and PTB
 
 ## [0.7.2] - 2022-08-23
 
