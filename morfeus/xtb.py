@@ -46,12 +46,12 @@ class XTBResults:
     dipole_moment: float | None = None  # Unit in debye
     atom_polarizabilities: list[float] | None = None
     mol_polarizability: float | None = None
-    total_energy: float | None = None
-    fermi_level: float | None = None
-    s_prop: list[float] | None = None
-    p_prop: list[float] | None = None
-    d_prop: list[float] | None = None
-    covCN: list[float] | None = None
+    total_energy: float | None = None  # Unit in Eh
+    fermi_level: float | None = None  # Unit in eV
+    s_pop: list[float] | None = None
+    p_pop: list[float] | None = None
+    d_pop: list[float] | None = None
+    covcn: list[float] | None = None
     g_solv: float | None = None  # Unit in Eh
     g_solv_hb: float | None = None  # Unit in Eh
     atom_hb_terms: list[float] | None = None
@@ -183,87 +183,89 @@ class XTB:
         return bond_orders
 
     def get_energy(self) -> float:
-        """Return total energy"""
+        """Return total energy (Eh)."""
 
         if self._results.total_energy is None:
             self._run_xtb("sp")
             self._results.total_energy = cast(float, self._results.total_energy)
-            
-        energy = self._results.total_energy
 
-        return energy
-    
+        return self._results.total_energy
+
     def get_fermi_level(self) -> float:
-        """Return Fermi level"""
+        """Return Fermi level (eV)."""
 
         if self._results.fermi_level is None:
             self._run_xtb("sp")
             self._results.fermi_level = cast(float, self._results.fermi_level)
-            
-        fermi_level = self._results.fermi_level
 
-        return fermi_level
+        return self._results.fermi_level
 
-    def get_s_proportion(self) -> dict[int, float]:
-        """Return s proportion for atoms.
+    def get_s_pop(self) -> dict[int, float]:
+        """Return atomic population partitioned to the s shell from Mulliken population analysis.
+
+        Raises:
+            ValueError: If the chosen method is not GFN1-xTB (necessary for population calculations)
         """
 
         if self._method != "1":
-            raise ValueError("s proportions are only available with GFN1-xTB.")
-        elif self._results.s_prop is None:
+            raise ValueError("Shell populations are only available with GFN1-xTB.")
+        elif self._results.s_pop is None:
             self._run_xtb("sp")
-            self._results.s_prop = cast(list[float], self._results.s_prop)
-        s_prop = self._results.s_prop
+            self._results.s_pop = cast(list[float], self._results.s_pop)
+        s_pop = self._results.s_pop
 
-        return {i: val for i, val in enumerate(s_prop, start=1)}
+        return {i: pop for i, pop in enumerate(s_pop, start=1)}
 
-    def get_p_proportion(self) -> dict[int, float]:
-        """Return p proportion for atoms.
+    def get_p_pop(self) -> dict[int, float]:
+        """Return atomic population partitioned to the p shell from Mulliken population analysis.
+
+        Raises:
+            ValueError: If the chosen method is not GFN1-xTB (necessary for population calculations)
         """
 
         if self._method != "1":
-            raise ValueError("p proportions are only available with GFN1-xTB.")
-        elif self._results.p_prop is None:
+            raise ValueError("Shell populations are only available with GFN1-xTB.")
+        elif self._results.p_pop is None:
             self._run_xtb("sp")
-            self._results.p_prop = cast(list[float], self._results.p_prop)
-        p_prop = self._results.p_prop
+            self._results.p_pop = cast(list[float], self._results.p_pop)
+        p_pop = self._results.p_pop
 
-        return {i: val for i, val in enumerate(p_prop, start=1)}
-    
-    def get_d_proportion(self) -> dict[int, float]:
-        """Return d proportion for atoms.
+        return {i: pop for i, pop in enumerate(p_pop, start=1)}
+
+    def get_d_pop(self) -> dict[int, float]:
+        """Return atomic population partitioned to the d shell from Mulliken population analysis.
+
+        Raises:
+            ValueError: If the chosen method is not GFN1-xTB (necessary for population calculations)
         """
 
         if self._method != "1":
-            raise ValueError("d proportions are only available with GFN1-xTB.")
-        elif self._results.d_prop is None:
+            raise ValueError("Shell populations are only available with GFN1-xTB.")
+        elif self._results.d_pop is None:
             self._run_xtb("sp")
-            self._results.d_prop = cast(list[float], self._results.d_prop)
-        d_prop = self._results.d_prop
+            self._results.d_pop = cast(list[float], self._results.d_pop)
+        d_pop = self._results.d_pop
 
-        return {i: val for i, val in enumerate(d_prop, start=1)}
+        return {i: pop for i, pop in enumerate(d_pop, start=1)}
 
-    def get_covCN(self) -> dict[int, float]:
-        """Return covalent coordination numbers (covCN).
+    def get_covcn(self) -> dict[int, float]:
+        """Return atomic covalent coordination numbers.
 
         Raises:
             ValueError: If the chosen method is not GFN2-xTB (necessary for covCN calculations)
         """
         if self._method != "2":
-            raise ValueError("Covalent coordination numbers (covCN) are only available with GFN2-xTB.")
-
-        if self._results.covCN is None:
-            self._run_xtb("sp")
-            self._results.covCN = cast(
-                list[float], self._results.covCN
+            raise ValueError(
+                "Covalent coordination number is only available with GFN2-xTB."
             )
-        covCN = {
-            i: val
-            for i, val in enumerate(self._results.covCN, start=1)
-        }
 
-        return covCN
-    
+        if self._results.covcn is None:
+            self._run_xtb("sp")
+            self._results.covcn = cast(list[float], self._results.covcn)
+        covcns = self._results.covcn
+
+        return {i: covcn for i, covcn in enumerate(covcns, start=1)}
+
     def get_charges(self, model="Mulliken") -> dict[int, float]:
         """Return atomic charges.
 
@@ -900,6 +902,7 @@ class XTB:
                     cwd=run_folder,
                     stdout=stdout,
                     stderr=stderr,
+                    env=env,
                 )
 
             # Return error if xtb fails
@@ -959,7 +962,17 @@ class XTB:
 
         with open(out_file, "r", encoding="utf8") as f:
             lines = f.readlines()
-        homo, lumo, atom_polarizabilities, covCN, atom_hb_terms, cm5_charges, s_prop, p_prop, d_prop = (
+        (
+            homo,
+            lumo,
+            atom_polarizabilities,
+            covcn,
+            atom_hb_terms,
+            cm5_charges,
+            s_pop,
+            p_pop,
+            d_pop,
+        ) = (
             {},
             {},
             [],
@@ -979,7 +992,7 @@ class XTB:
                 lumo["Eh"] = float(line.split()[-3])
                 lumo["eV"] = float(line.split()[-2])
             elif "Fermi-level" in line:
-                fermi_level = float(line.split()[-2]) # in eV
+                fermi_level = float(line.split()[-2])
             elif "dipole" in line:
                 if self._method == "2":
                     dipole_line = lines[i + 3].split()
@@ -999,7 +1012,7 @@ class XTB:
             elif in_polarizability_block:
                 if line.strip():
                     atom_polarizabilities.append(float(line.split()[-1]))
-                    covCN.append(float(line.split()[3]))
+                    covcn.append(float(line.split()[3]))
                 else:
                     in_polarizability_block = False
 
@@ -1020,9 +1033,9 @@ class XTB:
             elif in_cm5_block:
                 if line.strip():
                     cm5_charges.append(float(line.split()[2]))
-                    s_prop.append(round(float(line.split()[-3]), 3))
-                    p_prop.append(round(float(line.split()[-2]), 3))
-                    d_prop.append(round(float(line.split()[-1]), 3))
+                    s_pop.append(float(line.split()[-3]))
+                    p_pop.append(float(line.split()[-2]))
+                    d_pop.append(float(line.split()[-1]))
                 else:
                     in_cm5_block = False
 
@@ -1032,7 +1045,7 @@ class XTB:
         self._results.dipole_moment = dipole_moment
         if self._method == "2":
             self._results.atom_polarizabilities = atom_polarizabilities
-            self._results.covCN = covCN
+            self._results.covcn = covcn
             self._results.mol_polarizability = mol_polarizability
         if self._solvent is not None:
             self._results.g_solv = g_solv
@@ -1040,9 +1053,9 @@ class XTB:
             self._results.atom_hb_terms = atom_hb_terms
         if self._method == "1":
             self._results.charges_cm5 = cm5_charges
-            self._results.s_prop = s_prop
-            self._results.p_prop = p_prop
-            self._results.d_prop = d_prop
+            self._results.s_pop = s_pop
+            self._results.p_pop = p_pop
+            self._results.d_pop = d_pop
 
     def _parse_out_ipea(self, out_file: Path | str) -> None:
         """Parse 'xtb.out' file from xtb ipea calculation."""
