@@ -16,7 +16,8 @@ from typing import Any, cast, Type, TypeVar
 import warnings
 
 import numpy as np
-from pkg_resources import parse_version
+
+from packaging.version import parse
 
 from morfeus.data import (
     HARTREE,
@@ -1704,7 +1705,7 @@ def conformers_from_ob_ga(  # noqa: C901
         conf_search.SetMutability(mutability)
     if score is not None:
         # Scorers don't work with earlier versions of openbabel
-        if not (parse_version(openbabel.__version__) > parse_version("3.1.0")):
+        if not (parse(openbabel.__version__) > parse("3.1.0")):
             warnings.warn(
                 "Scorer only works with openbabel version > 3.1.0. "
                 "Proceeding without scorer.",
@@ -1722,7 +1723,7 @@ def conformers_from_ob_ga(  # noqa: C901
             conf_search.SetScore(scorer)
     if filter_method == "steric":
         # Filters don't work with earlier versions of openbabel
-        if not (parse_version(openbabel.__version__) > parse_version("3.1.0")):
+        if not (parse(openbabel.__version__) > parse("3.1.0")):
             warnings.warn(
                 "Filter only works with openbabel version > 3.1.0. "
                 "Proceeding without filter.",
