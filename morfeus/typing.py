@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from numpy.typing import ArrayLike, NDArray
 from numpy import integer, signedinteger
+from numpy.typing import ArrayLike, NDArray
 
 IntLike = int | integer | signedinteger
 

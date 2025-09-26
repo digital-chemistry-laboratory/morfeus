@@ -16,7 +16,6 @@ from typing import Any, cast, Type, TypeVar
 import warnings
 
 import numpy as np
-
 from packaging.version import parse
 
 from morfeus.data import (

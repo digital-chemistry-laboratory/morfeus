@@ -30,8 +30,8 @@ from morfeus.utils import convert_elements, get_radii, Import, requires_dependen
 if typing.TYPE_CHECKING:
     from matplotlib.colors import hex2color
     import matplotlib.pyplot as plt
-    from pyvista import BackgroundPlotter
     import pyvista as pv
+    from pyvista import BackgroundPlotter
 
 # Quadrant and octant signs taken from
 # https://en.wikipedia.org/wiki/Octant_(solid_geometry)

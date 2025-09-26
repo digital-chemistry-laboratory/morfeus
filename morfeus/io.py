@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence, MutableMapping
+from collections.abc import Iterable, MutableMapping, Sequence
 from os import PathLike
 from pathlib import Path
 import typing

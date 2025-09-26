@@ -3,32 +3,32 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-import functools
-
-from typing import Any, cast
-import numpy as np
-from pathlib import Path
-from tempfile import TemporaryDirectory
 from contextlib import nullcontext
-import subprocess
-import shutil
 from dataclasses import dataclass
-import re
+import functools
 import json
 import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+from tempfile import TemporaryDirectory
+from typing import Any, cast
 
+import numpy as np
+
+from morfeus import config
 from morfeus.data import (
-    DEBYE_TO_AU,
     AU_TO_DEBYE,
+    DEBYE_TO_AU,
+    EV_TO_HARTREE,
+    HARTREE_TO_EV,
     HARTREE_TO_KCAL,
     HARTREE_TO_KJ,
-    HARTREE_TO_EV,
-    EV_TO_HARTREE,
 )
-from morfeus.io import read_geometry, write_xyz, write_xtb_inp
+from morfeus.io import read_geometry, write_xtb_inp, write_xyz
 from morfeus.typing import Array1DFloat, Array2DFloat, ArrayLike2D
 from morfeus.utils import convert_elements, requires_executable
-from morfeus import config
 
 
 @dataclass
@@ -136,7 +136,8 @@ class XTB:
         if self._solvent is not None:
             if self._method == "ptb":
                 raise ValueError(
-                    "Solvation is not available with PTB. Remove solvent or use another xTB method."
+                    "Solvation is not available with PTB. "
+                    "Remove solvent or use another xTB method."
                 )
             self._default_xtb_command += f" --alpb {self._solvent}"
         if self._n_unpaired is not None:
@@ -172,7 +173,6 @@ class XTB:
 
     def get_bond_orders(self) -> dict[tuple[int, int], float]:
         """Return bond orders."""
-
         if self._results.bond_orders is None:
             self._run_xtb("sp")
             self._results.bond_orders = cast(
@@ -184,7 +184,6 @@ class XTB:
 
     def get_energy(self) -> float:
         """Return total energy (Eh)."""
-
         if self._results.total_energy is None:
             self._run_xtb("sp")
             self._results.total_energy = cast(float, self._results.total_energy)
@@ -193,7 +192,6 @@ class XTB:
 
     def get_fermi_level(self) -> float:
         """Return Fermi level (eV)."""
-
         if self._results.fermi_level is None:
             self._run_xtb("sp")
             self._results.fermi_level = cast(float, self._results.fermi_level)
@@ -204,9 +202,12 @@ class XTB:
         """Return atomic population partitioned to the s shell from Mulliken population analysis.
 
         Raises:
-            ValueError: If the chosen method is not GFN1-xTB (necessary for population calculations)
-        """
+            ValueError: If the chosen method is not GFN1-xTB
+                (necessary for population calculations)
 
+        Returns:
+            Atomic s shell populations
+        """
         if self._method != "1":
             raise ValueError("Shell populations are only available with GFN1-xTB.")
         elif self._results.s_pop is None:
@@ -220,9 +221,12 @@ class XTB:
         """Return atomic population partitioned to the p shell from Mulliken population analysis.
 
         Raises:
-            ValueError: If the chosen method is not GFN1-xTB (necessary for population calculations)
-        """
+            ValueError: If the chosen method is not GFN1-xTB
+                (necessary for population calculations)
 
+        Returns:
+            Atomic p shell populations
+        """
         if self._method != "1":
             raise ValueError("Shell populations are only available with GFN1-xTB.")
         elif self._results.p_pop is None:
@@ -236,9 +240,12 @@ class XTB:
         """Return atomic population partitioned to the d shell from Mulliken population analysis.
 
         Raises:
-            ValueError: If the chosen method is not GFN1-xTB (necessary for population calculations)
-        """
+            ValueError: If the chosen method is not GFN1-xTB
+                (necessary for population calculations)
 
+        Returns:
+            Atomic d shell populations
+        """
         if self._method != "1":
             raise ValueError("Shell populations are only available with GFN1-xTB.")
         elif self._results.d_pop is None:
@@ -253,6 +260,9 @@ class XTB:
 
         Raises:
             ValueError: If the chosen method is not GFN2-xTB (necessary for covCN calculations)
+
+        Returns:
+            Atomic covalent coordination numbers
         """
         if self._method != "2":
             raise ValueError(
@@ -266,18 +276,19 @@ class XTB:
 
         return {i: covcn for i, covcn in enumerate(covcns, start=1)}
 
-    def get_charges(self, model="Mulliken") -> dict[int, float]:
+    def get_charges(self, model: str = "Mulliken") -> dict[int, float]:
         """Return atomic charges.
 
         Args:
             model: Charge model to use.
                 - 'Mulliken'
                 - 'CM5': only available with GFN1-xTB
-        Returns:
-            Atomic charges (1-indexed)
 
         Raises:
             ValueError: If given charge model is not available with the chosen xtb method.
+
+        Returns:
+            Atomic charges (1-indexed)
         """
         if model == "CM5":
             if self._method != "1":
@@ -300,7 +311,7 @@ class XTB:
 
         return {i: charge for i, charge in enumerate(charges, start=1)}
 
-    def get_homo(self, unit="Eh") -> float:
+    def get_homo(self, unit: str = "Eh") -> float:
         """Return HOMO energy.
 
         Args:
@@ -312,7 +323,6 @@ class XTB:
         Raises:
             ValueError: If given unit is not supported
         """
-
         if self._results.homo is None:
             self._run_xtb("sp")
             self._results.homo = cast(dict[str, float], self._results.homo)
@@ -328,7 +338,7 @@ class XTB:
         else:
             raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
 
-    def get_lumo(self, unit="Eh") -> float:
+    def get_lumo(self, unit: str = "Eh") -> float:
         """Return LUMO energy.
 
         Args:
@@ -340,7 +350,6 @@ class XTB:
         Raises:
             ValueError: If given unit is not supported
         """
-
         if self._results.lumo is None:
             self._run_xtb("sp")
             self._results.lumo = cast(dict[str, float], self._results.lumo)
@@ -356,7 +365,7 @@ class XTB:
         else:
             raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
 
-    def get_homo_lumo_gap(self, unit="eV") -> float:
+    def get_homo_lumo_gap(self, unit: str = "eV") -> float:
         """Return HOMO-LUMO gap.
 
         Args:
@@ -368,7 +377,6 @@ class XTB:
         Raises:
             ValueError: If given unit is not supported
         """
-
         if self._results.gap is None:
             self._run_xtb("sp")
             self._results.gap = cast(float, self._results.gap)
@@ -381,18 +389,19 @@ class XTB:
             gap = round(self._results.gap * EV_TO_HARTREE * HARTREE_TO_KCAL, 8)
         elif unit == "kJ/mol":
             gap = round(self._results.gap * EV_TO_HARTREE * HARTREE_TO_KJ, 8)
+        else:
+            raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
 
         return gap
 
     def get_dipole(self) -> Array1DFloat:
         """Return molecular dipole vector (a.u.)."""
-
         if self._results.dipole_vect is None:
             self._run_xtb("sp")
 
         return self._results.dipole_vect
 
-    def get_dipole_moment(self, unit="au") -> float:
+    def get_dipole_moment(self, unit: str = "au") -> float:
         """Return molecular dipole moment.
 
         Args:
@@ -420,8 +429,10 @@ class XTB:
 
         Raises:
             ValueError: If the chosen method is GFN1-xTB (does not support atomic dipoles)
-        """
 
+        Returns:
+            Atomic dipole vectors (a.u.)
+        """
         if self._method == "1":
             raise ValueError(
                 "Atomic dipoles are not available with GFN1-xTB. Choose another xtb method."
@@ -438,7 +449,7 @@ class XTB:
 
         return atom_dipole_vectors
 
-    def get_atom_dipole_moments(self, unit="au") -> dict[int, float]:
+    def get_atom_dipole_moments(self, unit: str = "au") -> dict[int, float]:
         """Return atomic dipole moments.
 
         Args:
@@ -468,7 +479,11 @@ class XTB:
         """Return atomic polarizabilities.
 
         Raises:
-            ValueError: If the chosen method is not GFN2-xTB (necessary for polarizability calculations)
+            ValueError: If the chosen method is not GFN2-xTB
+                (necessary for polarizability calculations)
+
+        Returns:
+            Atomic polarizabilities
         """
         if self._method != "2":
             raise ValueError("Polarizability is only available with GFN2-xTB.")
@@ -489,7 +504,11 @@ class XTB:
         """Return molecular polarizability.
 
         Raises:
-            ValueError: If the chosen method is not GFN2-xTB (necessary for polarizability calculations)
+            ValueError: If the chosen method is not GFN2-xTB
+                (necessary for polarizability calculations)
+
+        Returns:
+            Molecular polarizability
         """
         if self._method != "2":
             raise ValueError("Polarizability is only available with GFN2-xTB.")
@@ -502,7 +521,7 @@ class XTB:
 
         return self._results.mol_polarizability
 
-    def get_solvation_energy(self, unit="Eh") -> float:
+    def get_solvation_energy(self, unit: str = "Eh") -> float:
         """Return solvation free energy.
 
         Args:
@@ -533,8 +552,9 @@ class XTB:
         else:
             raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
 
-    def get_solvation_h_bond_correction(self, unit="Eh") -> float:
+    def get_solvation_h_bond_correction(self, unit: str = "Eh") -> float:
         """Return hydrogen bonding correction to the solvation free energy.
+
         The hydrogen bonding correction is 0.0 for non-polar solvents.
 
         Args:
@@ -547,7 +567,6 @@ class XTB:
             ValueError: If no solvent is specified (necessary for solvation calculations)
             ValueError: If given unit is not supported
         """
-
         if self._solvent is None:
             raise ValueError(
                 "Hydrogen bonding correction to solvation is only available with solvent."
@@ -568,21 +587,24 @@ class XTB:
         else:
             raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
 
-    def get_atomic_h_bond_corrections(self, unit="Eh") -> dict[int, float]:
+    def get_atomic_h_bond_corrections(self, unit: str = "Eh") -> dict[int, float]:
         """Calculate atomic hydrogen bonding corrections to the solvation free energy.
 
         Caveat: Due to the limited print precision of the H-bond terms outputted by xtb,
-        the atomic energy corrections returned here have an error of max ± (atomic charge)^2 * 0.0005 Eh
+        the atomic energy corrections returned here have an error
+        of max ± (atomic charge)^2 * 0.0005 Eh
 
         Args:
             unit: 'Eh', 'eV', 'kcal/mol' or kJ/mol'
 
         Returns:
-            Atomic hydrogen bonding corrections to the solvation free energy (Eh, eV, kcal/mol or kJ/mol)
+            Atomic hydrogen bonding corrections to the solvation free energy
+            (Eh, eV, kcal/mol or kJ/mol)
 
         Raises:
             ValueError: If no solvent is specified (necessary for solvation calculations)
-            ValueError: If the specified solvent is not polar (necessary for atomic hydrogen bonding contributions)
+            ValueError: If the specified solvent is not polar
+                (necessary for atomic hydrogen bonding contributions)
             ValueError: If given unit is not supported
         """
         if self._solvent is None:
@@ -596,7 +618,8 @@ class XTB:
 
         if self._results.atom_hb_terms == []:
             raise ValueError(
-                f"No hydrogen bonding contributions calculated with {self._solvent!r}. Provide a polar solvent."
+                f"No hydrogen bonding contributions calculated with "
+                f"{self._solvent!r}. Provide a polar solvent."
             )
 
         if self._method == "2":
@@ -627,7 +650,11 @@ class XTB:
 
     def get_fod_population(self) -> dict[int, float]:
         """Return atomic fractional occupation number weighted density population.
+
         The FOD calculation is performed by default with an electronic temperature of 5000 K.
+
+        Returns:
+            Atomic FOD populations
         """
         if self._results.fod_pop is None:
             self._run_xtb("fod")
@@ -639,8 +666,13 @@ class XTB:
 
     def get_nfod(self) -> float:
         """Return NFOD descriptor.
-        NFOD is the integration over all space of the fractional occupation number weighted density (FOD).
+
+        NFOD is the integration over all space of the fractional occupation number
+        weighted density (FOD).
         The FOD calculation is performed by default with an electronic temperature of 5000 K.
+
+        Returns:
+            NFOD descriptor
         """
         fod_pop = self.get_fod_population()
         nfod = sum(fod_pop.values())
@@ -680,10 +712,13 @@ class XTB:
         return self._results.ea
 
     def get_chemical_potential(self, corrected: bool = True) -> float:
-        """Calculate chemical potential (eV).
+        """Calculate chemical potential.
 
         Args:
             corrected: Whether to apply empirical correction term
+
+        Returns:
+            Chemical potential (eV)
         """
         if self._results.ip is None or self._corrected != corrected:
             self._corrected = corrected
@@ -696,14 +731,12 @@ class XTB:
 
     def get_hardness(self) -> float:
         """Calculate hardness (eV)."""
-
         hardness = round(self.get_ip() - self.get_ea(), 4)
 
         return hardness
 
     def get_softness(self) -> float:
         """Calculate softness (eV)."""
-
         hardness = self.get_hardness()
 
         return round(1 / hardness, 4)
@@ -712,11 +745,13 @@ class XTB:
         """Calculate Fukui coefficients.
 
         Args:
-            variety: Type of Fukui coefficient: 'nucleophilicity' = 'minus', 'electrophilicity' = 'plus',
-                'radical', 'dual', 'local_nucleophilicity' or 'local_electrophilicity'.
-                Note: 'nucleophilicity' and 'electrophilicity' are synonym for respectively 'minus' and 'plus'.
-            corrected: Whether to apply empirical correction term to the inonization potential and electron affinity
-                (only applicable for local electrophilicity calculation)
+            variety: Type of Fukui coefficient:'nucleophilicity' = 'minus',
+                'electrophilicity' = 'plus', 'radical', 'dual',
+                'local_nucleophilicity' or 'local_electrophilicity'.
+                Note: 'nucleophilicity' and 'electrophilicity' are synonym for respectively
+                'minus' and 'plus'.
+            corrected: Whether to apply empirical correction term to the inonization potential
+                and electron affinity (only applicable for local electrophilicity calculation)
 
         Returns:
             fukui: Atomic Fukui coefficients
@@ -764,8 +799,9 @@ class XTB:
         else:
             raise ValueError(
                 f"Variety {variety!r} does not exist. "
-                f"Choose one of {', '.join(varieties)}."
-                f"Note: 'nucleophilicity' and 'electrophilicity' are synonym for respectively 'minus' and 'plus'."
+                f"Choose one of {', '.join(varieties)}. "
+                "Note: 'nucleophilicity' and 'electrophilicity' are synonym for "
+                "respectively 'minus' and 'plus'."
             )
 
         fukui = {i: float(fukui) for i, fukui in enumerate(fukui, start=1)}
@@ -846,8 +882,9 @@ class XTB:
                 command += f" --input {XTB._xtb_input_file}"
         elif self._method == "ptb":
             raise ValueError(
-                "PTB can only be used for calculations of bond orders, charges, dipole, and HOMO/LUMO energies."
-                "\nFor other descriptors, choose another xtb method."
+                "PTB can only be used for calculations of bond orders, charges, dipole, "
+                "and HOMO/LUMO energies.\n"
+                "For other descriptors, choose another xtb method."
             )
         elif runtype == "ipea":
             command = self._default_xtb_command + " --vipea"
@@ -935,7 +972,8 @@ class XTB:
         """Parse 'xtbout.json' file."""
         with open(json_file, "r", encoding="utf8") as f:
 
-            # The code below fixes an error in the json file outputed when running PTB with xtb 6.7.1
+            # The code below fixes an error in the json file outputed
+            # when running PTB with xtb 6.7.1
             # TODO: Remove/update when new xtb version is released
             lines_without_error = [line for line in f if line.strip() != ","]
             json_fixed = "".join(lines_without_error)
@@ -959,7 +997,6 @@ class XTB:
 
     def _parse_out_sp(self, out_file: Path | str) -> None:  # noqa: C901
         """Parse 'xtb.out' file from xtb sp calculation."""
-
         with open(out_file, "r", encoding="utf8") as f:
             lines = f.readlines()
         (
@@ -1059,7 +1096,6 @@ class XTB:
 
     def _parse_out_ipea(self, out_file: Path | str) -> None:
         """Parse 'xtb.out' file from xtb ipea calculation."""
-
         with open(out_file, "r", encoding="utf8") as f:
             ip, ea, shift = None, None, None
             for line in f:
@@ -1084,7 +1120,6 @@ class XTB:
 
     def _parse_out_fukui(self, out_file: Path | str) -> None:
         """Parse 'xtb.out' file from xtb fukui calculation."""
-
         with open(out_file, "r", encoding="utf8") as f:
             fukui_plus, fukui_minus, fukui_radical = [], [], []
             in_fukui_block = False
