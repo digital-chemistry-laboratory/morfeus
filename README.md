@@ -67,11 +67,11 @@ collaboration with the groups of Alán Aspuru-Guzik at the University of
 Toronto, Matthew Sigman at the University of Utah and Tobias Gensch at TU
 Berlin. The package was further developed and maintained in the group of Kjell Jorner at ETH Zurich.
 
-In particular, the following people have contributed significantly to
+In particular, the following people (in alphabetical order) have contributed significantly to
 developing its functionality:
 
+* Gabriel dos Passos Gomes
 * Kjell Jorner
 * Lauriane Jacot-Descombes
-* Gabriel dos Passos Gomes
 * Pascal Friedrich
 * Tobias Gensch
