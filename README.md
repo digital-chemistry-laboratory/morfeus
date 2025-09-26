@@ -71,7 +71,7 @@ In particular, the following people have contributed significantly to
 developing its functionality:
 
 * Kjell Jorner
+* Lauriane Jacot-Descombes
 * Gabriel dos Passos Gomes
 * Pascal Friedrich
 * Tobias Gensch
-* Lauriane Jacot-Descombes
