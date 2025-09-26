@@ -19,6 +19,7 @@ dependencies:
   - pytest-cov
   - python>=3.8
   - rstcheck
+  - setuptools
   - sphinx
   - sphinx-copybutton
   - sphinx-inline-tabs

@@ -15,6 +15,7 @@ pip
 pytest
 pytest-cov
 rstcheck
+setuptools
 sphinx
 sphinx-copybutton
 sphinx-inline-tabs
