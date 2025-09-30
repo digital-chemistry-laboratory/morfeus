@@ -36,3 +36,20 @@ jobs:
       - name: Run `nox -s tests`
         run: python -m nox -s tests-${{ matrix.python_version }}
         shell: bash
+  deptry:
+    name: nox -s deptry
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, macos, windows]
+        python_version: ["3.10"]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        name: Install Python
+        with:
+          python-version: "3.10"
+      - run: pip install nox
+      - name: Run `nox -s deptry`
+        run: nox -s deptry

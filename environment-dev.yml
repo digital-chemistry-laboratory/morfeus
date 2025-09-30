@@ -3,6 +3,7 @@ channels:
 dependencies:
   - black
   - darglint
+  - deptry
   - doc8
   - flake8
   - flake8-annotations
