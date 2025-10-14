@@ -28,5 +28,7 @@ def test_fukui():
     assert_array_almost_equal(f_dual, ref_data["f_dual"], decimal=3)
     f_loc_nuc = list(xtb.get_fukui(variety="local_nucleophilicity").values())
     assert_array_almost_equal(f_loc_nuc, ref_data["f_loc_nuc"], decimal=3)
-    f_loc_elec = list(xtb.get_fukui(variety="local_electrophilicity").values())
+    f_loc_elec = list(
+        xtb.get_fukui(variety="local_electrophilicity", corrected=False).values()
+    )
     assert_array_almost_equal(f_loc_elec, ref_data["f_loc_elec"], decimal=3)
