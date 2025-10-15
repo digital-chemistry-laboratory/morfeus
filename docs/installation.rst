@@ -2,7 +2,7 @@
 Installation
 ============
 
-ᴍᴏʀғᴇᴜs can be installed using pip or conda and works with Python >= 3.8.
+ᴍᴏʀғᴇᴜs can be installed using pip or conda and works with Python >= 3.10.
 
 .. tab:: pip
 

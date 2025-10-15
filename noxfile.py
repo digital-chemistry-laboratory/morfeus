@@ -8,7 +8,7 @@ from nox.sessions import Session
 package = "morfeus"
 nox.options.sessions = "lint", "tests", "mypy", "deptry"  # default session
 locations = "morfeus", "tests", "noxfile.py"  # Linting locations
-pyversions = ["3.8", "3.9", "3.10"]
+pyversions = ["3.10"]
 
 
 # Testing

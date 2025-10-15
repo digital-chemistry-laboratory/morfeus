@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Method `XTB.get_s_pop`, `XTB.get_p_pop` and `XTB.get_d_pop` to return the population partitioned to the s/p/d shells
 
 ### Changed
+- Require Python>=3.10
 - Run xtb through the command line instead of the deprecated xtb-python API
 - Switch to `True` by default for the correction term in the calculations of IP, EA, Fukui local electrophilicity and global descriptors
 - `XTB` attribute `version` renamed into `method` to reflect better the choice between GFN2-xTB, GFN1-xTB, and PTB
