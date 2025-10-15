@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-09-25
+## [Unreleased] - 2025-10-15
 
 ### Added
 - Method `XTB.get_dipole_moment` to return the molecular dipole moment (in deybe or a.u.)
@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - test `test_homo_index` due to dependency to the deprecated xtb-python API
+- Atomic volumes attribute from SASA due to problems in the implementation (see discussion in [issue #76](https://github.com/digital-chemistry-laboratory/morfeus/issues/76))
 
 ### Fixed
 - Update `pkg_resources.parse_version` to `packaging.version.parse` due to deprecation of pkg_resources

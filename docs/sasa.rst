@@ -1,15 +1,15 @@
 ===============================
 Solvent accessible surface area
 ===============================
-Solvent accessible surface area (SASA), atomic SASA and volumes under the
+Solvent accessible surface area (SASA), atomic SASA, and total volume inside the
 SASA can be calculated.
 
 ******
 Module
 ******
 
-The SASA class calculates and stores the total and atomic SASA as well as the
-volume.
+The SASA class calculates and stores the total and atomic SASA as well as the total
+volume of the SASA.
 
 .. code-block:: python
   :caption: Example
