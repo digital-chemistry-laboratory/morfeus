@@ -80,6 +80,7 @@ class XTB:
         electronic_temperature: Electronic temperature (K)
         n_processes: Number of parallel processes in xtb.
             If not provided, runs on 1 thread.
+        env_variables: Optional dictionary of environment variables for xtb to change the ones set in morfeus
         run_path: Folder path to run xTB calculation. If not provided, runs in a temporary folder
     """
 
@@ -92,6 +93,7 @@ class XTB:
     _solvent: str | None
     _method: int | str
     _n_processes: int | None
+    _env_variables: dict[str, str] | None
 
     _xyz_input_file: str = "xtb.xyz"
     _xtb_input_file: str = "xtb.inp"
@@ -106,6 +108,7 @@ class XTB:
         solvent: str | None = None,
         electronic_temperature: int | None = None,
         n_processes: int | None = None,
+        env_variables: dict[str, str] | None = None,
         run_path: Path | str | None = None,
     ) -> None:
         # Converting elements to atomic numbers if the are symbols
@@ -119,6 +122,7 @@ class XTB:
         self._n_unpaired = n_unpaired
         self._electronic_temperature = electronic_temperature
         self._n_processes = n_processes
+        self._env_variables = env_variables
 
         self._run_path = Path(run_path) if run_path else None
 
@@ -925,15 +929,7 @@ class XTB:
             with open(run_folder / "xtb.out", "w") as stdout, open(
                 run_folder / "xtb.err", "w"
             ) as stderr:
-                env = dict(os.environ)
-                if self._n_processes is not None:
-                    env["OMP_NUM_THREADS"] = f"{self._n_processes},1"
-                    env["MKL_NUM_THREADS"] = f"{self._n_processes}"
-                else:
-                    env["OMP_NUM_THREADS"] = f"{config.OMP_NUM_THREADS},1"
-                    env["MKL_NUM_THREADS"] = f"{config.OMP_NUM_THREADS}"
-                env["OMP_STACKSIZE"] = config.OMP_STACKSIZE
-                env["OMP_MAX_ACTIVE_LEVELS"] = str(config.OMP_MAX_ACTIVE_LEVELS)
+                env = self._set_env()
                 subprocess.run(
                     command.split(),
                     cwd=run_folder,
@@ -967,6 +963,25 @@ class XTB:
                 self._parse_out_fukui(run_folder / "xtb.out")
             elif runtype == "fod":
                 self._parse_fod(run_folder / "fod")
+
+    def _set_env(self) -> dict[str, str]:
+        """Set environment variables for xTB execution."""
+        env = dict(os.environ)
+        num_threads = (
+            self._n_processes
+            if self._n_processes is not None
+            else config.OMP_NUM_THREADS
+        )
+        env["OMP_NUM_THREADS"] = f"{num_threads},1"
+        env["MKL_NUM_THREADS"] = f"{num_threads}"
+        env["OMP_STACKSIZE"] = config.OMP_STACKSIZE
+        env["OMP_MAX_ACTIVE_LEVELS"] = str(config.OMP_MAX_ACTIVE_LEVELS)
+
+        # Overwrite with user-defined environment variables if provided
+        if self._env_variables is not None:
+            env.update(self._env_variables)
+
+        return env
 
     def _parse_json(self, json_file: Path | str) -> None:
         """Parse 'xtbout.json' file."""
