@@ -65,6 +65,13 @@ class Pyramidalization:
         method: str = "distance",
         scale_factor: float = 1.2,
     ) -> None:
+        if 0 in {
+            atom_index,
+            *(neighbor_indices or ()),
+            *(excluded_atoms or ()),
+        }:
+            raise IndexError("Atom indices should not be 0 (1-indexed).")
+
         coordinates: Array2DFloat = np.array(coordinates)
         atom_coordinates = coordinates[atom_index - 1]
 

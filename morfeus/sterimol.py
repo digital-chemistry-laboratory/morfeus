@@ -88,6 +88,9 @@ class Sterimol:
         excluded_atoms: Sequence[int] | None = None,
         calculate: bool = True,
     ) -> None:
+        if 0 in {dummy_index, attached_index, *(excluded_atoms or ())}:
+            raise IndexError("Atom indices should not be 0 (1-indexed).")
+
         # Convert elements to atomic numbers if the are symbols
         elements = convert_elements(elements, output="numbers")
         coordinates: Array2DFloat = np.array(coordinates)

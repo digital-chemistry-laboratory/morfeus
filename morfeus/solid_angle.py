@@ -30,7 +30,7 @@ class SolidAngle:
     Args:
         elements: Elements as atomic symbols or numbers
         coordinates: Coordinates (Å)
-        metal_index: Index of central atom (1-inexed)
+        metal_index: Index of central atom (1-indexed)
         radii: vdW radii (Å)
         radii_type: Type of vdW radii: 'alvarez', 'bondi', 'crc' or 'truhlar'
         density: Area per point (Å²) on the sphere surface
@@ -55,6 +55,9 @@ class SolidAngle:
         radii_type: str = "crc",
         density: float = 0.001,
     ) -> None:
+        if metal_index == 0:
+            raise IndexError("Atom indices should not be 0 (1-indexed).")
+
         # Convert elements to atomic numbers if they are symbols
         elements = convert_elements(elements, output="numbers")
         coordinates: Array2DFloat = np.array(coordinates)

@@ -135,6 +135,14 @@ class BuriedVolume:
         z_axis_atoms: Sequence[int] | None = None,
         xz_plane_atoms: Sequence[int] | None = None,
     ) -> None:
+        if 0 in {
+            metal_index,
+            *(excluded_atoms or ()),
+            *(z_axis_atoms or ()),
+            *(xz_plane_atoms or ()),
+        }:
+            raise IndexError("Atom indices should not be 0 (1-indexed).")
+
         # Get center and and reortient coordinate system
         coordinates: Array2DFloat = np.array(coordinates)
         center = coordinates[metal_index - 1]
