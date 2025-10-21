@@ -966,20 +966,19 @@ class XTB:
 
     def _set_env(self) -> dict[str, str]:
         """Set environment variables for xTB execution."""
-        env = dict(os.environ)
-        num_threads = (
-            self._n_processes
-            if self._n_processes is not None
-            else config.OMP_NUM_THREADS
-        )
-        env["OMP_NUM_THREADS"] = f"{num_threads},1"
-        env["MKL_NUM_THREADS"] = f"{num_threads}"
-        env["OMP_STACKSIZE"] = config.OMP_STACKSIZE
-        env["OMP_MAX_ACTIVE_LEVELS"] = str(config.OMP_MAX_ACTIVE_LEVELS)
-
-        # Overwrite with user-defined environment variables if provided
         if self._env_variables is not None:
-            env.update(self._env_variables)
+            env = self._env_variables
+        else:
+            env = dict(os.environ)
+            num_threads = (
+                self._n_processes
+                if self._n_processes is not None
+                else config.OMP_NUM_THREADS
+            )
+            env["OMP_NUM_THREADS"] = f"{num_threads},1"
+            env["MKL_NUM_THREADS"] = f"{num_threads}"
+            env["OMP_STACKSIZE"] = config.OMP_STACKSIZE
+            env["OMP_MAX_ACTIVE_LEVELS"] = str(config.OMP_MAX_ACTIVE_LEVELS)
 
         return env
 
