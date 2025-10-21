@@ -10,3 +10,4 @@ qcengine
 rdkit
 spyrmsd
 vtk
+xtb-python

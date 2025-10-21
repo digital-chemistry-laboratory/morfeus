@@ -263,11 +263,11 @@ Mᴏʀғᴇᴜs has an interface to QCEngine__ that allows calculation of single
 energies and geometry optimizations for conformers. The ``program``, ``model``,
 ``keywords`` and ``local_options`` keyword arguments are all passed on to
 QCEngine and more information can be found in the documentation__. Here is an
-example, optimizing a conformer ensemble with GFN-FF and doing single points
-with GFN2-xTB.
+example, optimizing a conformer ensemble with GFN-FF and doing single-point 
+calculations with GFN2-xTB.
 
 .. code-block:: python
-  :caption: Optimization and ranking
+  :caption: Optimization and ranking using xTB
 
   >>> ce = ConformerEnsemble.from_rdkit("CCCC", optimize="MMFF94")
   >>> ce.prune_rmsd()
@@ -302,9 +302,37 @@ with GFN2-xTB.
       conda install -c conda-forge geometric
 
 .. __: https://github.com/MolSSI/QCEngine
-.. __: http://docs.qcarchive.molssi.org/projects/QCEngine/
+.. __: https://molssi.github.io/QCEngine/
 .. __: https://github.com/jhrmnn/pyberny
 .. __: https://github.com/leeping/geomeTRIC
+
+.. warning::
+
+  Optimization with xTB within QCEngine requires the installation xtb-python__, which can be installed with conda.
+
+  .. code-block:: shell
+
+      conda install -c conda-forge xtb-python
+  
+  The xtb-python package has however been deprecated, and the :doc:`electronic descriptors <xtb>` calculated by Mᴏʀғᴇᴜs with
+  xTB uses now the command-line instead.
+
+.. __: https://github.com/grimme-lab/xtb-python
+
+Alternatively, the optimization can be done with RDKit:
+
+.. code-block:: python
+  :caption: Optimization and ranking using RDKit
+
+  >>> ce = ConformerEnsemble.from_rdkit("CCCC", optimize="MMFF94")
+  >>> ce.prune_rmsd()
+  >>> ce.sort()
+  >>> ce.get_relative_energies()
+  array([0.        , 0.78220907, 0.78220907])
+  # Optimize with MMF94
+  >>> ce.optimize_qc_engine(program="rdkit", model={"method": "MMFF94"},  procedure="geometric")
+  >>> ce.get_relative_energies()
+  array([0.        , 0.18695245, 0.18695245]))
 
 #######################
 Enantiomeric conformers

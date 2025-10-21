@@ -54,6 +54,7 @@ Optional depedencies:
 * spyrmsd_
 * vtk_
 * xtb_
+* xtb-python_
 
 .. _cclib: https://cclib.github.io/
 .. _dftd4: https://github.com/dftd4/dftd4
@@ -73,4 +74,5 @@ Optional depedencies:
 .. _spyrmsd: https://github.com/RMeli/spyrmsd
 .. _vtk:  https://vtk.org
 .. _xtb: https://xtb-docs.readthedocs.io/en/latest/
+.. _xtb-python: https://github.com/grimme-lab/xtb-python
 .. _BLAS implementation: https://conda-forge.org/docs/maintainer/knowledge_base.html#switching-blas-implementation

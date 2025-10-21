@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-10-15
+## [Unreleased] - 2025-10-21
 
 ### Added
 - Method `XTB.get_dipole_moment` to return the molecular dipole moment (in deybe or a.u.)
@@ -30,7 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Require Python>=3.10
-- Run xtb through the command line instead of the deprecated xtb-python API
+- Run xtb for descriptors calculations through the command line instead of the deprecated xtb-python API (xtb-python is still used for the conformers optimmisation via QCEngine)
+- Arguments for number of conformers in all morfeus methods renamed into `n_conformers` for consistency. `num_children` also renamed in `n_children` in `conformers_from_ob_ga` method
 - Switch to `True` by default for the correction term in the calculations of IP, EA, Fukui local electrophilicity and global descriptors
 - `XTB` attribute `version` renamed into `method` to reflect better the choice between GFN2-xTB, GFN1-xTB, and PTB
 

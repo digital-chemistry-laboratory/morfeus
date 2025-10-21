@@ -17,5 +17,6 @@ dependencies:
   - spyrmsd
   - vtk
   - xtb>=6.7.1
+  - xtb-python
   - pip:
       - pyberny
