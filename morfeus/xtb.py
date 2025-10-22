@@ -80,7 +80,7 @@ class XTB:
         electronic_temperature: Electronic temperature (K)
         n_processes: Number of parallel processes in xtb.
             If not provided, runs on 1 thread.
-        env_variables: Optional dictionary of environment variables for xtb to change the ones set in morfeus
+        env_variables: Optional dictionary to set environment variables for xtb execution
         run_path: Folder path to run xTB calculation. If not provided, runs in a temporary folder
     """
 

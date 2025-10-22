@@ -23,6 +23,9 @@ plotted.
   >>> bv.print_report()
   V_bur (%): 29.6
 
+The mandatory atom index argument corresponds to the index of the central atom (1-indexed),
+Ni in the example above.
+
 By default, hydrogen atoms are excluded in the calculation. They can be added
 by giving the keyword argument ``indclude_hs=True``. The metal atom is also
 excluded, while the atoms of other ligands need to be given in the
@@ -31,6 +34,14 @@ with ``radius=<float>``. Default radii type is Bondi which are scaled by a
 factor of 1.17. This can be changed with ``radii_type=<str>`` and
 ``radii_scale=<float>``. Custom radii can be supplied as a list with
 ``radii=<list>``.
+
+Below is illustrated the buried volume of the phosphine ligand as calculated with
+the code above, with the atoms of other ligands excluded in the ``excluded_atoms``
+argument.
+
+.. figure:: images/buried_volume/buried_volume.png
+  :name: buried_volume
+  :width: 50%
 
 For more information, use ``help(BuriedVolume)`` or see the API:
 :py:class:`BuriedVolume <morfeus.buried_volume.BuriedVolume>`
@@ -42,9 +53,9 @@ Quadrants and octants
 The buried volume can be decomposed into contributions from quadrants and
 octants using the
 :py:meth:`octant_analysis <morfeus.buried_volume.BuriedVolume.octant_analysis>`
-method. To get meaningful results, the system should to be oriented in a
+method. To get meaningful results, the system should be oriented in a
 reproducible way. Orientation is acheived by specifiying the
-``z_axis_atoms=<list>``and ``xz_plane_atoms=<list>`` keyword arguments. For
+``z_axis_atoms=<list>`` and ``xz_plane_atoms=<list>`` keyword arguments. For
 more information on the orientation convention, see the original reference
 :footcite:`falivene_sambvca_2016`.
 
@@ -59,7 +70,7 @@ xz-plane orientation
   the geometric mean of the given atoms lies in the xz plane.
 
 The results of the octant analysis is stored in the ``octants`` attribute,
-giving percent buried volume, buried volume (in Å³) and the free volume (in Å³)
+giving the percent buried volume, the buried volume (in Å³) and the free volume (in Å³)
 for each octant.
 
 .. code-block:: python
@@ -159,13 +170,13 @@ The percent of buried volume is a measure of the steric hindrance induced by a
 ligand of a transition metal complex :footcite:`falivene_sambvca_2016`. A web
 tool to calculate buried volumes, SambVca, was made available for scientific
 purposes by Cavallo and co-workers in 2009 :footcite:`poater_sambvca_2009` with
-version 2 in 2016 :footcite:`falivene_sambvca_2016`. .
+version 2 in 2016 :footcite:`falivene_sambvca_2016`.
 
-The approach of ᴍᴏʀғᴇᴜs differs somewhat from that in ref.
+The approach of ᴍᴏʀғᴇᴜs differs somewhat from that in ref
 :footcite:`falivene_sambvca_2016` in that points are generated uniformly in the
 test sphere rather than considering voxels. The numerical results with standard
-settings are the same though as shown by benchmarks on complexes 1-18 from ref.
-:footcite:`falivene_sambvca_2016`. Steric maps also match those in ref.
+settings are the same though as shown by benchmarks on complexes 1-18 from ref
+:footcite:`falivene_sambvca_2016`. Steric maps also match those in ref
 :footcite:`falivene_sambvca_2016`.
 
 .. footbibliography::

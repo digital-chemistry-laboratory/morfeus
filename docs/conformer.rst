@@ -9,7 +9,7 @@ to the RDKit__ and OpenBabel__.
 .. __: https://www.rdkit.org
 .. __: http://openbabel.org/wiki/Main_Page
 
-OpenBabel and RDKit are avaible for install via, *e.g.*, the conda-forge:
+RDKit and OpenBabel are available for install via, *e.g.*, the conda-forge:
 
 .. code-block:: shell
 
@@ -21,24 +21,26 @@ Module
 ******
 
 Below is an example where the RDKit is used to generate conformers for
-*n*-butane.
+*n*-pentane.
 
 .. code-block:: python
   :caption: Example
 
-  >>> ce = ConformerEnsemble.from_rdkit("CCCC", optimize="MMFF94")
+  >>> from morfeus.conformer import ConformerEnsemble
+  >>> ce = ConformerEnsemble.from_rdkit("CCCCC", optimize="MMFF94")
   >>> ce
-  ConformerEnsemble(50 conformers)
+  ConformerEnsemble(13 conformers)
   >>> ce.prune_rmsd()
-  ConformerEnsemble(3 conformers)
+  ConformerEnsemble(8 conformers)
   >>> ce.sort()
   >>> ce.get_relative_energies()
-  array([0.        , 0.78220907, 0.78220907])
+  array([0.        , 0.82991425, 0.82991425, 0.82991425, 0.82991425,
+       1.42317077, 1.42317077, 3.70003054])
   >>> ce.write_xyz("conformers.xyz")
 
 Here, conformers are first generated with the RDKit and optimized with the
 MMFF94 force field. Then a pruning based on RMSD brings the number of
-conformers down to 3, which are are sorted based on energy. For full
+conformers down to 8, which are sorted based on energy. For full
 information, use ``help(ConformerEnsemble)`` or consult the API:
 :py:class:`ConformerEnsemble <morfeus.conformer.ConformerEnsemble>`.
 
@@ -60,21 +62,21 @@ available arguments are listed for the standalone functions.
     - :py:func:`ConformerEnsemble.from_rdkit <morfeus.conformer.ConformerEnsemble.from_rdkit>`
   * - Openbabel FF
     - :py:func:`conformers_from_ob_ff <morfeus.conformer.conformers_from_ob_ff>`
-    - :py:func:`conformers_from_ob_ff <morfeus.conformer.conformers_from_ob_ff>`
+    - :py:func:`ConformerEnsemble.from_ob_ff <morfeus.conformer.ConformerEnsemble.from_ob_ff>`
   * - Openbabel GA
     - :py:func:`conformers_from_ob_ga <morfeus.conformer.conformers_from_ob_ga>`
-    - :py:func:`conformers_from_ob_ga <morfeus.conformer.conformers_from_ob_ga>`
+    - :py:func:`ConformerEnsemble.from_ob_ga <morfeus.conformer.ConformerEnsemble.from_ob_ga>`
 
 The conformers from OpenBabel are generally pruned with respect to RSMD while
-those from RDKit require post-generation pruning. Here is an example of using
+those from RDKit require post-generation pruning. Here is an example using
 OpenBabel.
 
 .. code-block:: python
   :caption: Conformers from OpenBabel
 
-  >>> ce = ConformerEnsemble.from_ob_ga("CCCC")
+  >>> ce = ConformerEnsemble.from_ob_ga("CCCCC")
   >>> ce
-  ConformerEnsemble(3 conformers)
+  ConformerEnsemble(7 conformers)
 
 #####
 CREST
@@ -168,16 +170,16 @@ the ``ConformerEnsemble`` object:
   >>> ... sasa = SASA(ce.elements, conformer.coordinates)
   >>> ... conformer.properties["sasa"] = sasa.area
   >>> ce.get_properties()
-  {'sasa': array([221.26889622, 217.38905484, 216.53891818])}
+  {'sasa': array([221.39889987, 217.43905842, 216.55891433])}
   >>> ce.boltzmann_weights()
   array([0.56040173, 0.28260296, 0.15699531])
   >>> ce.boltzmann_statistic("sasa")
-  219.4298571958332
+  219.51998192070963
 
 The default of the function
 :py:meth:`ConformerEnsemble.boltzmann_statistic <morfeus.conformer.ConformerEnsemble.boltzmann_statistic>`
 is to calculate the Boltzmann average at 298.15 K, but this can be changed with
-``temperature=<float>`` and ``statistic=<str>``, where "var" or "std" are
+``temperature=<float>`` and ``statistic=<str>``, where "avg", "var" or "std" are
 available. The temperature derivative of the Boltzmann average can also be
 calculated with the method
 :py:meth:`ConformerEnsemble.boltzmann_average_dT <morfeus.conformer.ConformerEnsemble.boltzmann_average_dT>`
@@ -186,14 +188,14 @@ calculated with the method
 RMSD pruning
 ############
 
-Conformers are usually pruned on root mean square deviation in terms of (heavy)
+Conformers are usually pruned on root mean square deviation (RMSD) in terms of (heavy)
 atom coordinates to remove redundant structures which correspond to essentially
 the same conformation. In Mᴏʀғᴇᴜs, this is achieved with the
 :py:meth:`ConformerEnsemble.prune_rmsd <morfeus.conformer.ConformerEnsemble.prune_rmsd>`
 method. By default, the ``AllChem.AlignMolConformers`` function from RDKit is
 used to calculate the RMSD, but this can be changed with the keyword argument
 ``method=<str>``. The following options are available. spyrmsd__ needs to be
-installed for that option to work.
+installed for the corresponding option to work.
 
 .. list-table::
   :header-rows: 1
@@ -219,7 +221,7 @@ installed for that option to work.
 
 The distinguishing factors are whether symmetry and non-heavy atoms are
 considered when calculating the RMSD. For the ``method="openbabel"`` and
-``method="spyrmsd"``, the keyword arguments ``symmetry=<bool>``and
+``method="spyrmsd"``, the keyword arguments ``symmetry=<bool>`` and
 ``include_hs=<bool>`` are used to control the behavior. For the rest of the
 methods, these arguments will be ignored. Pruning out conformers that are the
 same by symmetry can lower the computational cost, but might also lead to
@@ -333,13 +335,13 @@ Alternatively, the optimization can be done with RDKit:
   >>> ce.optimize_qc_engine(program="rdkit", model={"method": "MMFF94"},  procedure="geometric")
   >>> ce.get_relative_energies()
   array([0.        , 0.18695245, 0.18695245]))
-
+  
 #######################
 Enantiomeric conformers
 #######################
 
 Mᴏʀғᴇᴜs can handle degeneracy stemming from enatiomeric conformations to some
-extent. This can be exemplified fro diethyl ether, which has three types of
+extent. This can be exemplified with diethyl ether, which has three types of
 conformers *tt* (1), *tg* (4) and *gg* (2), where *t* stands for *trans*, *g*
 for *gauche* and the number in parenthesis is the total degeneracy of that
 type. :footcite:`merrill_solvent_2020`
@@ -349,7 +351,7 @@ type. :footcite:`merrill_solvent_2020`
 
   >>> ce = ConformerEnsemble.from_rdkit("CCOCC", optimize="MMFF94")
   >>> ce
-  ConformerEnsemble(50 conformers)
+  ConformerEnsemble(12 conformers)
   >>> ce.prune_rmsd()
   ConformerEnsemble(7 conformers)
   >>> ce.add_inverted()  # Invert conformers to add potentially missing enantiomers
@@ -399,11 +401,9 @@ is an example for alanine.
   >>> ce.get_cip_labels()
   [('', 'R', '', '', '', '', '', '', '', '', '', '', ''),
    ('', 'S', '', '', '', '', '', '', '', '', '', '', ''),
-   ('', 'S', '', '', '', '', '', '', '', '', '', '', ''),
    ('', 'R', '', '', '', '', '', '', '', '', '', '', ''),
    ('', 'S', '', '', '', '', '', '', '', '', '', '', ''),
    ('', 'R', '', '', '', '', '', '', '', '', '', '', ''),
-   ('', 'S', '', '', '', '', '', '', '', '', '', '', ''),
    ('', 'R', '', '', '', '', '', '', '', '', '', '', '')]
   >>> ce.prune_enantiomers()
   >>> ce.get_cip_labels()
