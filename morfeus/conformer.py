@@ -45,15 +45,13 @@ from morfeus.utils import (
     requires_executable,
 )
 
-from rdkit.Chem import rdDistGeom
-
 if typing.TYPE_CHECKING:
     import openbabel
     import openbabel.openbabel as ob
     import openbabel.pybel as pybel
     import rdkit
     from rdkit import Chem
-    from rdkit.Chem import AllChem, Descriptors
+    from rdkit.Chem import AllChem, Descriptors, rdDistGeom
     import spyrmsd
 
 
@@ -1750,7 +1748,11 @@ def conformers_from_ob_ga(  # noqa: C901
 
 
 @requires_dependency(
-    [Import(module="rdkit", item="Chem"), Import(module="rdkit.Chem", item="AllChem")],
+    [
+        Import(module="rdkit", item="Chem"),
+        Import(module="rdkit.Chem", item="AllChem"),
+        Import(module="rdkit.Chem", item="rdDistGeom"),
+    ],
     globals(),
 )
 def conformers_from_rdkit(  # noqa: C901
