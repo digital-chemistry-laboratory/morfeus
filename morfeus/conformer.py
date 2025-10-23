@@ -1300,6 +1300,7 @@ class ConformerEnsemble:
         """
         with tempfile.NamedTemporaryFile(suffix=".xyz") as ref_file:
             p_ref = Path(ref_file.name)
+            p_ref.unlink()
             self.write_xyz(p_ref, unit="hartree", relative=False)
             process = subprocess.run(
                 f"obrms {p_ref.as_posix()} --cross " "--minimize".split(" "),
@@ -1334,7 +1335,9 @@ class ConformerEnsemble:
                 suffix=".xyz"
             ) as ref_file, tempfile.NamedTemporaryFile(suffix=".xyz") as test_file:
                 p_ref = Path(ref_file.name)
+                p_ref.unlink()
                 p_test = Path(test_file.name)
+                p_test.unlink()
                 self.write_xyz(p_ref, ids=j_s)
                 self.write_xyz(p_test, ids=[i])
                 process = subprocess.run(
