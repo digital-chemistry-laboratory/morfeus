@@ -35,14 +35,14 @@ workflows. Here is an example for calculating the exact ligand cone angle.
 >>> elements, coordinates = read_xyz("PdPMe3.xyz")
 >>> cone_angle = ConeAngle(elements, coordinates, 1)
 >>> print(cone_angle.cone_angle)
-117.11012922937584 
+117.11012922937587
 ```
 
 It can also be used from the command line.
 
 ```console
 $ morfeus cone_angle PdPMe3.xyz - 1 - cone_angle
-117.11012922937584   
+117.11012922937587
 ```
 For further information, see the separate [documentation](https://digital-chemistry-laboratory.github.io/morfeus/).
 
