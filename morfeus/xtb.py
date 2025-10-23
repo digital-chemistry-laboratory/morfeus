@@ -497,6 +497,19 @@ class XTB:
 
         return chem_pot
 
+    def get_electronegativity(self, corrected: bool = True) -> float:
+        """Calculate electronegativity.
+
+        Args:
+            corrected: Whether to apply empirical correction term
+
+        Returns:
+            Electronegativity (eV)
+        """
+        chem_pot = self.get_chemical_potential(corrected=corrected)
+
+        return -chem_pot
+
     def get_hardness(self) -> float:
         """Calculate hardness (eV)."""
         hardness = round(self.get_ip() - self.get_ea(), 4)
