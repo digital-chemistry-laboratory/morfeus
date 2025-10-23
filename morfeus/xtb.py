@@ -186,100 +186,6 @@ class XTB:
 
         return bond_orders
 
-    def get_energy(self) -> float:
-        """Return total energy (Eh)."""
-        if self._results.total_energy is None:
-            self._run_xtb("sp")
-            self._results.total_energy = cast(float, self._results.total_energy)
-
-        return self._results.total_energy
-
-    def get_fermi_level(self) -> float:
-        """Return Fermi level (eV)."""
-        if self._results.fermi_level is None:
-            self._run_xtb("sp")
-            self._results.fermi_level = cast(float, self._results.fermi_level)
-
-        return self._results.fermi_level
-
-    def get_s_pop(self) -> dict[int, float]:
-        """Return atomic population partitioned to the s shell from Mulliken population analysis.
-
-        Raises:
-            ValueError: If the chosen method is not GFN1-xTB
-                (necessary for population calculations)
-
-        Returns:
-            Atomic s shell populations
-        """
-        if self._method != "1":
-            raise ValueError("Shell populations are only available with GFN1-xTB.")
-        elif self._results.s_pop is None:
-            self._run_xtb("sp")
-            self._results.s_pop = cast(list[float], self._results.s_pop)
-        s_pop = self._results.s_pop
-
-        return {i: pop for i, pop in enumerate(s_pop, start=1)}
-
-    def get_p_pop(self) -> dict[int, float]:
-        """Return atomic population partitioned to the p shell from Mulliken population analysis.
-
-        Raises:
-            ValueError: If the chosen method is not GFN1-xTB
-                (necessary for population calculations)
-
-        Returns:
-            Atomic p shell populations
-        """
-        if self._method != "1":
-            raise ValueError("Shell populations are only available with GFN1-xTB.")
-        elif self._results.p_pop is None:
-            self._run_xtb("sp")
-            self._results.p_pop = cast(list[float], self._results.p_pop)
-        p_pop = self._results.p_pop
-
-        return {i: pop for i, pop in enumerate(p_pop, start=1)}
-
-    def get_d_pop(self) -> dict[int, float]:
-        """Return atomic population partitioned to the d shell from Mulliken population analysis.
-
-        Raises:
-            ValueError: If the chosen method is not GFN1-xTB
-                (necessary for population calculations)
-
-        Returns:
-            Atomic d shell populations
-        """
-        if self._method != "1":
-            raise ValueError("Shell populations are only available with GFN1-xTB.")
-        elif self._results.d_pop is None:
-            self._run_xtb("sp")
-            self._results.d_pop = cast(list[float], self._results.d_pop)
-        d_pop = self._results.d_pop
-
-        return {i: pop for i, pop in enumerate(d_pop, start=1)}
-
-    def get_covcn(self) -> dict[int, float]:
-        """Return atomic covalent coordination numbers.
-
-        Raises:
-            ValueError: If the chosen method is not GFN2-xTB (necessary for covCN calculations)
-
-        Returns:
-            Atomic covalent coordination numbers
-        """
-        if self._method != "2":
-            raise ValueError(
-                "Covalent coordination number is only available with GFN2-xTB."
-            )
-
-        if self._results.covcn is None:
-            self._run_xtb("sp")
-            self._results.covcn = cast(list[float], self._results.covcn)
-        covcns = self._results.covcn
-
-        return {i: covcn for i, covcn in enumerate(covcns, start=1)}
-
     def get_charges(self, model: str = "Mulliken") -> dict[int, float]:
         """Return atomic charges.
 
@@ -314,6 +220,14 @@ class XTB:
             )
 
         return {i: charge for i, charge in enumerate(charges, start=1)}
+
+    def get_energy(self) -> float:
+        """Return total energy (Eh)."""
+        if self._results.total_energy is None:
+            self._run_xtb("sp")
+            self._results.total_energy = cast(float, self._results.total_energy)
+
+        return self._results.total_energy
 
     def get_homo(self, unit: str = "Eh") -> float:
         """Return HOMO energy.
@@ -397,6 +311,14 @@ class XTB:
             raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
 
         return gap
+
+    def get_fermi_level(self) -> float:
+        """Return Fermi level (eV)."""
+        if self._results.fermi_level is None:
+            self._run_xtb("sp")
+            self._results.fermi_level = cast(float, self._results.fermi_level)
+
+        return self._results.fermi_level
 
     def get_dipole(self) -> Array1DFloat:
         """Return molecular dipole vector (a.u.)."""
@@ -524,164 +446,6 @@ class XTB:
             )
 
         return self._results.mol_polarizability
-
-    def get_solvation_energy(self, unit: str = "Eh") -> float:
-        """Return solvation free energy.
-
-        Args:
-            unit: 'Eh', 'eV', 'kcal/mol' or kJ/mol'
-
-        Returns:
-            Solvation free energy (Eh, eV, kcal/mol or kJ/mol)
-
-        Raises:
-            ValueError: If no solvent is specified (necessary for solvation calculations)
-            ValueError: If given unit is not supported
-        """
-        if self._solvent is None:
-            raise ValueError("Solvation energy is only available with solvent.")
-
-        if self._results.g_solv is None:
-            self._run_xtb("sp")
-            self._results.g_solv = cast(float, self._results.g_solv)
-
-        if unit == "Eh":
-            return self._results.g_solv
-        elif unit == "kcal/mol":
-            return round(self._results.g_solv * HARTREE_TO_KCAL, 12)
-        elif unit == "kJ/mol":
-            return round(self._results.g_solv * HARTREE_TO_KJ, 12)
-        elif unit == "eV":
-            return round(self._results.g_solv * HARTREE_TO_EV, 12)
-        else:
-            raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
-
-    def get_solvation_h_bond_correction(self, unit: str = "Eh") -> float:
-        """Return hydrogen bonding correction to the solvation free energy.
-
-        The hydrogen bonding correction is 0.0 for non-polar solvents.
-
-        Args:
-            unit: 'Eh', 'eV', 'kcal/mol' or kJ/mol'
-
-        Returns:
-            Hydrogen bonding correction to the solvation free energy (Eh, eV, kcal/mol or kJ/mol)
-
-        Raises:
-            ValueError: If no solvent is specified (necessary for solvation calculations)
-            ValueError: If given unit is not supported
-        """
-        if self._solvent is None:
-            raise ValueError(
-                "Hydrogen bonding correction to solvation is only available with solvent."
-            )
-
-        if self._results.g_solv_hb is None:
-            self._run_xtb("sp")
-            self._results.g_solv_hb = cast(float, self._results.g_solv_hb)
-
-        if unit == "Eh":
-            return self._results.g_solv_hb
-        elif unit == "kcal/mol":
-            return round(self._results.g_solv_hb * HARTREE_TO_KCAL, 12)
-        elif unit == "kJ/mol":
-            return round(self._results.g_solv_hb * HARTREE_TO_KJ, 12)
-        elif unit == "eV":
-            return round(self._results.g_solv_hb * HARTREE_TO_EV, 12)
-        else:
-            raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
-
-    def get_atomic_h_bond_corrections(self, unit: str = "Eh") -> dict[int, float]:
-        """Calculate atomic hydrogen bonding corrections to the solvation free energy.
-
-        Caveat: Due to the limited print precision of the H-bond terms outputted by xtb,
-        the atomic energy corrections returned here have an error
-        of max ± (atomic charge)^2 * 0.0005 Eh
-
-        Args:
-            unit: 'Eh', 'eV', 'kcal/mol' or kJ/mol'
-
-        Returns:
-            Atomic hydrogen bonding corrections to the solvation free energy
-            (Eh, eV, kcal/mol or kJ/mol)
-
-        Raises:
-            ValueError: If no solvent is specified (necessary for solvation calculations)
-            ValueError: If the specified solvent is not polar
-                (necessary for atomic hydrogen bonding contributions)
-            ValueError: If given unit is not supported
-        """
-        if self._solvent is None:
-            raise ValueError(
-                "Atomic hydrogen bonding corrections are only available with (polar) solvent."
-            )
-
-        if self._results.atom_hb_terms is None:
-            self._run_xtb("sp")
-            self._results.atom_hb_terms = cast(list[float], self._results.atom_hb_terms)
-
-        if self._results.atom_hb_terms == []:
-            raise ValueError(
-                f"No hydrogen bonding contributions calculated with "
-                f"{self._solvent!r}. Provide a polar solvent."
-            )
-
-        if self._method == "2":
-            charges = self._results.charges
-        elif self._method == "1":
-            charges = self._results.charges_cm5
-        charges = cast(list[float], charges)
-
-        if unit == "Eh":
-            conversion = 1.0
-        elif unit == "kcal/mol":
-            conversion = HARTREE_TO_KCAL
-        elif unit == "kJ/mol":
-            conversion = HARTREE_TO_KJ
-        elif unit == "eV":
-            conversion = HARTREE_TO_EV
-        else:
-            raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
-
-        h_bond_corrections = {
-            i: round(hb_term * charge**2 * conversion, 8)
-            for i, (hb_term, charge) in enumerate(
-                zip(self._results.atom_hb_terms, charges), start=1
-            )
-        }
-
-        return h_bond_corrections
-
-    def get_fod_population(self) -> dict[int, float]:
-        """Return atomic fractional occupation number weighted density population.
-
-        The FOD calculation is performed by default with an electronic temperature of 5000 K.
-
-        Returns:
-            Atomic FOD populations
-        """
-        if self._results.fod_pop is None:
-            self._run_xtb("fod")
-            self._results.fod_pop = cast(list[float], self._results.fod_pop)
-
-        fod_pop = {i: pop for i, pop in enumerate(self._results.fod_pop, start=1)}
-
-        return fod_pop
-
-    def get_nfod(self) -> float:
-        """Return NFOD descriptor.
-
-        NFOD is the integration over all space of the fractional occupation number
-        weighted density (FOD).
-        The FOD calculation is performed by default with an electronic temperature of 5000 K.
-
-        Returns:
-            NFOD descriptor
-        """
-        fod_pop = self.get_fod_population()
-        nfod = sum(fod_pop.values())
-
-        return nfod
 
     def get_ip(self, corrected: bool = True) -> float:
         """Return ionization potential.
@@ -862,6 +626,242 @@ class XTB:
             )
 
         return descriptor
+
+    def get_s_pop(self) -> dict[int, float]:
+        """Return atomic population partitioned to the s shell from Mulliken population analysis.
+
+        Raises:
+            ValueError: If the chosen method is not GFN1-xTB
+                (necessary for population calculations)
+
+        Returns:
+            Atomic s shell populations
+        """
+        if self._method != "1":
+            raise ValueError("Shell populations are only available with GFN1-xTB.")
+        elif self._results.s_pop is None:
+            self._run_xtb("sp")
+            self._results.s_pop = cast(list[float], self._results.s_pop)
+        s_pop = self._results.s_pop
+
+        return {i: pop for i, pop in enumerate(s_pop, start=1)}
+
+    def get_p_pop(self) -> dict[int, float]:
+        """Return atomic population partitioned to the p shell from Mulliken population analysis.
+
+        Raises:
+            ValueError: If the chosen method is not GFN1-xTB
+                (necessary for population calculations)
+
+        Returns:
+            Atomic p shell populations
+        """
+        if self._method != "1":
+            raise ValueError("Shell populations are only available with GFN1-xTB.")
+        elif self._results.p_pop is None:
+            self._run_xtb("sp")
+            self._results.p_pop = cast(list[float], self._results.p_pop)
+        p_pop = self._results.p_pop
+
+        return {i: pop for i, pop in enumerate(p_pop, start=1)}
+
+    def get_d_pop(self) -> dict[int, float]:
+        """Return atomic population partitioned to the d shell from Mulliken population analysis.
+
+        Raises:
+            ValueError: If the chosen method is not GFN1-xTB
+                (necessary for population calculations)
+
+        Returns:
+            Atomic d shell populations
+        """
+        if self._method != "1":
+            raise ValueError("Shell populations are only available with GFN1-xTB.")
+        elif self._results.d_pop is None:
+            self._run_xtb("sp")
+            self._results.d_pop = cast(list[float], self._results.d_pop)
+        d_pop = self._results.d_pop
+
+        return {i: pop for i, pop in enumerate(d_pop, start=1)}
+
+    def get_covcn(self) -> dict[int, float]:
+        """Return atomic covalent coordination numbers.
+
+        Raises:
+            ValueError: If the chosen method is not GFN2-xTB (necessary for covCN calculations)
+
+        Returns:
+            Atomic covalent coordination numbers
+        """
+        if self._method != "2":
+            raise ValueError(
+                "Covalent coordination number is only available with GFN2-xTB."
+            )
+
+        if self._results.covcn is None:
+            self._run_xtb("sp")
+            self._results.covcn = cast(list[float], self._results.covcn)
+        covcns = self._results.covcn
+
+        return {i: covcn for i, covcn in enumerate(covcns, start=1)}
+
+    def get_fod_population(self) -> dict[int, float]:
+        """Return atomic fractional occupation number weighted density population.
+
+        The FOD calculation is performed by default with an electronic temperature of 5000 K.
+
+        Returns:
+            Atomic FOD populations
+        """
+        if self._results.fod_pop is None:
+            self._run_xtb("fod")
+            self._results.fod_pop = cast(list[float], self._results.fod_pop)
+
+        fod_pop = {i: pop for i, pop in enumerate(self._results.fod_pop, start=1)}
+
+        return fod_pop
+
+    def get_nfod(self) -> float:
+        """Return NFOD descriptor.
+
+        NFOD is the integration over all space of the fractional occupation number
+        weighted density (FOD).
+        The FOD calculation is performed by default with an electronic temperature of 5000 K.
+
+        Returns:
+            NFOD descriptor
+        """
+        fod_pop = self.get_fod_population()
+        nfod = sum(fod_pop.values())
+
+        return nfod
+
+    def get_solvation_energy(self, unit: str = "Eh") -> float:
+        """Return solvation free energy.
+
+        Args:
+            unit: 'Eh', 'eV', 'kcal/mol' or kJ/mol'
+
+        Returns:
+            Solvation free energy (Eh, eV, kcal/mol or kJ/mol)
+
+        Raises:
+            ValueError: If no solvent is specified (necessary for solvation calculations)
+            ValueError: If given unit is not supported
+        """
+        if self._solvent is None:
+            raise ValueError("Solvation energy is only available with solvent.")
+
+        if self._results.g_solv is None:
+            self._run_xtb("sp")
+            self._results.g_solv = cast(float, self._results.g_solv)
+
+        if unit == "Eh":
+            return self._results.g_solv
+        elif unit == "kcal/mol":
+            return round(self._results.g_solv * HARTREE_TO_KCAL, 12)
+        elif unit == "kJ/mol":
+            return round(self._results.g_solv * HARTREE_TO_KJ, 12)
+        elif unit == "eV":
+            return round(self._results.g_solv * HARTREE_TO_EV, 12)
+        else:
+            raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
+
+    def get_solvation_h_bond_correction(self, unit: str = "Eh") -> float:
+        """Return hydrogen bonding correction to the solvation free energy.
+
+        The hydrogen bonding correction is 0.0 for non-polar solvents.
+
+        Args:
+            unit: 'Eh', 'eV', 'kcal/mol' or kJ/mol'
+
+        Returns:
+            Hydrogen bonding correction to the solvation free energy (Eh, eV, kcal/mol or kJ/mol)
+
+        Raises:
+            ValueError: If no solvent is specified (necessary for solvation calculations)
+            ValueError: If given unit is not supported
+        """
+        if self._solvent is None:
+            raise ValueError(
+                "Hydrogen bonding correction to solvation is only available with solvent."
+            )
+
+        if self._results.g_solv_hb is None:
+            self._run_xtb("sp")
+            self._results.g_solv_hb = cast(float, self._results.g_solv_hb)
+
+        if unit == "Eh":
+            return self._results.g_solv_hb
+        elif unit == "kcal/mol":
+            return round(self._results.g_solv_hb * HARTREE_TO_KCAL, 12)
+        elif unit == "kJ/mol":
+            return round(self._results.g_solv_hb * HARTREE_TO_KJ, 12)
+        elif unit == "eV":
+            return round(self._results.g_solv_hb * HARTREE_TO_EV, 12)
+        else:
+            raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
+
+    def get_atomic_h_bond_corrections(self, unit: str = "Eh") -> dict[int, float]:
+        """Calculate atomic hydrogen bonding corrections to the solvation free energy.
+
+        Caveat: Due to the limited print precision of the H-bond terms outputted by xtb,
+        the atomic energy corrections returned here have an error
+        of max ± (atomic charge)^2 * 0.0005 Eh
+
+        Args:
+            unit: 'Eh', 'eV', 'kcal/mol' or kJ/mol'
+
+        Returns:
+            Atomic hydrogen bonding corrections to the solvation free energy
+            (Eh, eV, kcal/mol or kJ/mol)
+
+        Raises:
+            ValueError: If no solvent is specified (necessary for solvation calculations)
+            ValueError: If the specified solvent is not polar
+                (necessary for atomic hydrogen bonding contributions)
+            ValueError: If given unit is not supported
+        """
+        if self._solvent is None:
+            raise ValueError(
+                "Atomic hydrogen bonding corrections are only available with (polar) solvent."
+            )
+
+        if self._results.atom_hb_terms is None:
+            self._run_xtb("sp")
+            self._results.atom_hb_terms = cast(list[float], self._results.atom_hb_terms)
+
+        if self._results.atom_hb_terms == []:
+            raise ValueError(
+                f"No hydrogen bonding contributions calculated with "
+                f"{self._solvent!r}. Provide a polar solvent."
+            )
+
+        if self._method == "2":
+            charges = self._results.charges
+        elif self._method == "1":
+            charges = self._results.charges_cm5
+        charges = cast(list[float], charges)
+
+        if unit == "Eh":
+            conversion = 1.0
+        elif unit == "kcal/mol":
+            conversion = HARTREE_TO_KCAL
+        elif unit == "kJ/mol":
+            conversion = HARTREE_TO_KJ
+        elif unit == "eV":
+            conversion = HARTREE_TO_EV
+        else:
+            raise ValueError("Unit must be either 'Eh', 'eV', 'kcal/mol' or kJ/mol'.")
+
+        h_bond_corrections = {
+            i: round(hb_term * charge**2 * conversion, 8)
+            for i, (hb_term, charge) in enumerate(
+                zip(self._results.atom_hb_terms, charges), start=1
+            )
+        }
+
+        return h_bond_corrections
 
     def _run_xtb(self, runtype: str) -> None:  # noqa: C901
         """Run xTB calculation and parse results.
