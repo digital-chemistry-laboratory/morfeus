@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Method `XTB.get_dipole_moment` to return the molecular dipole moment (in deybe or a.u.)
 - Method `XTB.get_chemical_potential` to calculate the chemical potential
+- Method `XTB.get_electronegativity` to calculate the electronegativity
 - Method `XTB.get_hardness` to calculate the hardness
 - HOMO and LUMO energy can be returned either in Eh of eV depending on the given unit argument
 - Synonyms "minus" and "plus" for respectively "nucleophilicity" and "electrophilicity" in the Fukui coefficients varieties
