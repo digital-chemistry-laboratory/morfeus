@@ -1,5 +1,5 @@
-![Logo Light](docs/_static/logo-light.svg#gh-light-mode-only)
-![Logo Dark](docs/_static/logo-dark.svg#gh-dark-mode-only)
+![Logo Light](docs/_static/logo-text-light.svg#gh-light-mode-only)
+![Logo Dark](docs/_static/logo-text-dark.svg#gh-dark-mode-only)
 
 ![PyPI - License](https://img.shields.io/pypi/l/morfeus-ml)
 [![PyPI](https://img.shields.io/pypi/v/morfeus-ml)](https://pypi.org/project/morfeus-ml/)

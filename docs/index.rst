@@ -1,10 +1,16 @@
-.. image:: _static/logo-dark.svg
-   :align: center
-   :class: only-dark
+.. raw:: html
 
-.. image:: _static/logo-light.svg
-   :align: center
-   :class: only-light
+  <div style="margin-top: 2rem;"></div>
+
+.. image:: _static/logo-text-dark.svg
+  :align: center
+  :class: only-dark
+  :width: 500px
+
+.. image:: _static/logo-text-light.svg
+  :align: center
+  :class: only-light
+  :width: 500px
 
 ᴍᴏʀғᴇᴜs calculates molecular features from 3D structures with a focus on steric
 descriptors. It can be used as a Python library or through command line
