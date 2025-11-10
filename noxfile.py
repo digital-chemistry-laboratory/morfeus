@@ -6,9 +6,9 @@ import nox
 from nox.sessions import Session
 
 package = "morfeus"
-nox.options.sessions = "lint", "tests", "mypy"  # default session
+nox.options.sessions = "lint", "tests", "mypy", "deptry"  # default session
 locations = "morfeus", "tests", "noxfile.py"  # Linting locations
-pyversions = ["3.8", "3.9", "3.10"]
+pyversions = ["3.10"]
 
 
 # Testing
@@ -19,6 +19,15 @@ def tests(session: Session) -> None:
     session.install("pytest", "pytest-cov")
     session.install(".")
     session.run("pytest", *args)
+
+
+# Dependency checking
+@nox.session(python=pyversions)
+def deptry(session: Session) -> None:
+    """Check for missing or unused dependencies."""
+    session.install("deptry")
+    session.install(".")
+    session.run("deptry", "morfeus", "tests")
 
 
 # Linting

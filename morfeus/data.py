@@ -1035,7 +1035,11 @@ AFU: float = scipy.constants.physical_constants["atomic unit of force"][0]
 ANGSTROM_TO_BOHR: float = ANGSTROM / BOHR
 BOHR_TO_ANGSTROM: float = BOHR / ANGSTROM
 HARTREE_TO_KCAL: float = HARTREE / KCAL * MOL
-HARTREE_TO_KJ: float = HARTREE / MOL
+HARTREE_TO_KJ: float = HARTREE / 1000 * MOL
 HARTREE_TO_EV: float = HARTREE / EV
+EV_TO_HARTREE: float = EV / HARTREE
 KCAL_TO_HARTREE: float = KCAL / MOL / HARTREE
 KJ_TO_HARTREE: float = MOL / HARTREE
+
+DEBYE_TO_AU: float = 0.3934303
+AU_TO_DEBYE: float = 1 / DEBYE_TO_AU

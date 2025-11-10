@@ -36,13 +36,11 @@ class SASA:
     Attributes:
         area: Area of the solvent accessible surface.
         atom_areas: Atom areas (starting from 1)
-        atom_volumes: Atom volumes (starting from 1)
         volume: Volume of the solvent accessible surface
     """
 
     area: float
     atom_areas: dict[int, float]
-    atom_volumes: dict[int, float]
     volume: float
     _atoms: list[Atom]
     _density: float
@@ -126,7 +124,6 @@ class SASA:
 
         # Set up attributes
         self.atom_areas = {atom.index: atom.area for atom in self._atoms}
-        self.atom_volumes = {atom.index: atom.volume for atom in self._atoms}
         self.area = sum([atom.area for atom in self._atoms])
         self.volume = sum([atom.volume for atom in self._atoms])
 

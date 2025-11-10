@@ -4,8 +4,8 @@ Sterimol
 
 The Sterimol parameters L, B\ :sub:`1` and B\ :sub:`5` as described by Verloop
 :footcite:`verloop_development_1976,verloop_sterimol_1983` are implemented.
-Note that Sterimol parameters should be calculated with H as the dummy atom, to
-be consistent with values in the literature (see `Background`_)
+Note that Sterimol parameters should be calculated with hydrogen as the dummy atom, to
+be consistent with values in the literature (see `Background`_).
 
 ******
 Module
@@ -29,6 +29,9 @@ The Sterimol class calculates and stores Sterimol parameters.
   L         B_1       B_5
   4.21      2.87      3.27
 
+The first given atom index argument corresponds to the index of the dummy H atom (1-indexed),
+while the second one corresponds to the atom bound to the dummy H.
+
 Radii can be changed with the argument ``radii_type=<str>`` and custom radii
 can be supplied as a list with ``radii=<list>``.
 
@@ -46,8 +49,15 @@ historical addition of 0.40 Å) can also be obtained.
   L         B_1       B_5       L_uncorr  d(a1-a2)
   4.21      2.87      3.27      3.81      1.10
 
+Below is illustrated the Sterimol parameters of the *tert*-Butyl ligand as calculated with
+the code above.
+
+.. figure:: images/sterimol/tBu_sterimol.png
+  :name: buried_volume
+  :width: 35%
+
 More information can be found with `help(Sterimol)` or in the API:
-:py:class:`Sterimol <morfeus.morfeus.Sterimol>`.
+:py:class:`Sterimol <morfeus.sterimol.Sterimol>`.
 
 ###############
 Buried Sterimol
@@ -150,7 +160,7 @@ perpendicular to the L vector, respectively.
 
 ᴍᴏʀғᴇᴜs has been benchmarked against Paton's Sterimol__ package. Using exactly
 the same radii (Paton's modified Bondi), almost identical results are obtained.
-(Note that ᴍᴏʀғᴇᴜs normally uses 1.20 Å as the Bondi vdW radius for H).ᴍᴏʀғᴇᴜs
+(Note that ᴍᴏʀғᴇᴜs normally uses 1.20 Å as the Bondi vdW radius for H). ᴍᴏʀғᴇᴜs
 calculates the B\ :sub:`1` and B\ :sub:`5` parameters by a different approach
 from the original code. First, atomic spheres are created with a certain
 density of points. B\ :sub:`1` and B\ :sub:`5` are then obtained by projection

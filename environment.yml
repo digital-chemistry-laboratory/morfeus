@@ -3,5 +3,6 @@ channels:
 dependencies:
   - fire
   - numpy
-  - python>=3.8
+  - packaging
+  - python>=3.10
   - scipy

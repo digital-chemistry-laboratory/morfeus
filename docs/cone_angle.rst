@@ -24,7 +24,10 @@ The ConeAngle class is provided to calculate and store the cone angles.
   >>> cone_angle.print_report()
   Cone angle: 117.1
   No. tangent atoms: 3
-  >>> cone_angle.plot_3D()
+  >>> cone_angle.draw_3D()
+
+The given atom index argument corresponds to the index of the central atom (1-indexed),
+Pd in the example above.
 
 The Bondi vdW radii are used in reference :footcite:`bilbrey_exact_2013`, but
 radii from the CRC Handbook is the default here. It can be changed with
@@ -33,7 +36,11 @@ with ``radii=<list>``.
 
 The default setting is ``method="libconeangle"``, which uses the fast
 libconeangle__ package as a backend. If it is not installed, an internal
-algorithm will be used (``method="internal"``), printing a warning method.
+algorithm will be used (``method="internal"``), printing a warning.
+
+.. figure:: images/cone_angle/PdPMe3_cone_angle.png
+  :name: buried_volume
+  :width: 30%
 
 For more detailed information, use ``help(ConeAngle)`` or see the API:
 :py:class:`ConeAngle <morfeus.cone_angle.ConeAngle>`.
@@ -59,7 +66,7 @@ terminal.
 Background
 **********
 
-Cone angles is a method invented by Tolman for assessing the steric size of
+Cone angle is a method invented by Tolman for assessing the steric size of
 ligands :footcite:`tolman_steric_1977`. The original Tolman cone angles for
 phosphines have problems with asymmetric ligands and are not implemented in
 this package. Instead, the exact cone angles :footcite:`bilbrey_exact_2013` are

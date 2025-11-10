@@ -1,15 +1,15 @@
 ===============================
 Solvent accessible surface area
 ===============================
-Solvent accessible surface area (SASA), atomic SASA and volumes under the
+Solvent accessible surface area (SASA), atomic SASA, and total volume inside the
 SASA can be calculated.
 
 ******
 Module
 ******
 
-The SASA class calculates and stores the total and atomic SASA as well as the
-volume.
+The SASA class calculates and stores the total and atomic SASA as well as the total
+volume of the SASA.
 
 .. code-block:: python
   :caption: Example
@@ -24,13 +24,13 @@ volume.
   >>> print(sasa.volume)
   475.5699458352845
 
-The ``atom_areas`` dictionary contains the atomic SASAs indexed from 1. Type of
+The ``atom_areas`` dictionary contains the atomic SASAs indexed from 1. The type of
 radii can be changed with the keyword argument ``radii=<str>``  and custom
 radii can be supplied with ``radii=<list>``. The probe radius is changed with
 ``probe_radius=<float>``.
 
-For more information, use ``help(SASA)`` or consult the API:
-:py:class:`SASA <morfeus.morfeus.SASA>`
+For more detailed information, use ``help(SASA)`` or see the API:
+:py:class:`SASA <morfeus.sasa.SASA>`.
 
 *******************
 Command line script
@@ -69,7 +69,7 @@ The command-line script outputs total SASA and volume as well as SASA per atom.
 Background
 **********
 
-Solvent accessible surface area is a measure of how much of the area of a
+The solvent accessible surface area (SASA) is a measure of how much of the area of a
 molecule is available to the solvent. The atomic SASA can be used as a measure
 of the steric availability of an atom. ᴍᴏʀғᴇᴜs uses a modified version of the
 method of Shrake and Rupley :footcite:`shrake_environment_1973` where a

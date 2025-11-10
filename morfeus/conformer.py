@@ -16,7 +16,7 @@ from typing import Any, cast, Type, TypeVar
 import warnings
 
 import numpy as np
-from pkg_resources import parse_version
+from packaging.version import parse
 
 from morfeus.data import (
     HARTREE,
@@ -51,7 +51,7 @@ if typing.TYPE_CHECKING:
     import openbabel.pybel as pybel
     import rdkit
     from rdkit import Chem
-    from rdkit.Chem import AllChem, Descriptors
+    from rdkit.Chem import AllChem, Descriptors, rdDistGeom
     import spyrmsd
 
 
@@ -784,11 +784,13 @@ class ConformerEnsemble:
         Raises:
             ValueError: If method not supported.
         """
+        i_s_: np.ndarray
         if i_s is None:
             i_s_ = np.arange(1, len(self.conformers) + 1)
         else:
             i_s_ = np.array(i_s)
         i_s = i_s_
+        j_s_: np.ndarray
         if j_s is None:
             j_s_ = np.arange(1, len(self.conformers) + 1)
         else:
@@ -1040,7 +1042,7 @@ class ConformerEnsemble:
             self: Self
 
         Raises:
-            ValueError: When Number of conformer coordinates is different from number of
+            ValueError: When number of conformer coordinates is different from number of
                 conformers
         """
         conformer_coordinates: Array3DFloat = np.array(conformer_coordinates)
@@ -1223,6 +1225,7 @@ class ConformerEnsemble:
         Raises:
             TypeError: When separate=True and file is not str
         """
+        ids_: np.ndarray
         if ids is None:
             ids_ = np.arange(len(self.conformers))
         else:
@@ -1256,12 +1259,14 @@ class ConformerEnsemble:
         conformer_coordinates: Array3DFloat = np.array(conformer_coordinates)
         n_conformers = len(conformer_coordinates)
 
+        energies_: np.ndarray
         if energies is None:
             energies_ = np.full(n_conformers, np.nan)
         else:
             energies_ = np.array(energies)
         energies = energies_
 
+        degeneracies_: np.ndarray
         if degeneracies is None:
             degeneracies_ = np.ones(n_conformers)
         else:
@@ -1295,6 +1300,7 @@ class ConformerEnsemble:
         """
         with tempfile.NamedTemporaryFile(suffix=".xyz") as ref_file:
             p_ref = Path(ref_file.name)
+            p_ref.unlink()
             self.write_xyz(p_ref, unit="hartree", relative=False)
             process = subprocess.run(
                 f"obrms {p_ref.as_posix()} --cross " "--minimize".split(" "),
@@ -1329,7 +1335,9 @@ class ConformerEnsemble:
                 suffix=".xyz"
             ) as ref_file, tempfile.NamedTemporaryFile(suffix=".xyz") as test_file:
                 p_ref = Path(ref_file.name)
+                p_ref.unlink()
                 p_test = Path(test_file.name)
+                p_test.unlink()
                 self.write_xyz(p_ref, ids=j_s)
                 self.write_xyz(p_test, ids=[i])
                 process = subprocess.run(
@@ -1567,7 +1575,7 @@ class ConformerEnsemble:
 )
 def conformers_from_ob_ff(
     mol: str | ob.OBMol,
-    num_conformers: int = 30,
+    n_conformers: int = 30,
     ff: str = "MMFF94",
     method: str = "systematic",
     rings: bool = False,
@@ -1581,7 +1589,7 @@ def conformers_from_ob_ff(
 
     Args:
         mol: Molecule either as SMILES string or OBMol object.
-        num_conformers: Maximum number of conformers
+        n_conformers: Maximum number of conformers
         ff: Force field supported by OpenBabel
         method: 'fast', random', 'systematic' or 'weighted'
         rings: Sample ring torsions.
@@ -1615,9 +1623,9 @@ def conformers_from_ob_ff(
     elif method == "fast":
         ff.FastRotorSearch(True)
     elif method == "random":
-        ff.RandomRotorSearch(num_conformers, 10, rings)
+        ff.RandomRotorSearch(n_conformers, 10, rings)
     elif method == "weighted":
-        ff.WeightedRotorSearch(num_conformers, 10, rings)
+        ff.WeightedRotorSearch(n_conformers, 10, rings)
     ff.GetConformers(ob_mol)
 
     # Extract information
@@ -1641,8 +1649,8 @@ def conformers_from_ob_ff(
 )
 def conformers_from_ob_ga(  # noqa: C901
     mol: str | ob.OBMol,
-    num_conformers: int | None = None,
-    num_children: int | None = None,
+    n_conformers: int | None = None,
+    n_children: int | None = None,
     mutability: float | None = None,
     convergence: int | None = None,
     score: str = "rmsd",
@@ -1660,8 +1668,8 @@ def conformers_from_ob_ga(  # noqa: C901
 
     Args:
         mol: Molecule either as SMILES string or OBMol object
-        num_conformers: Maximum number of conformers
-        num_children: Number of children to generate for each parent
+        n_conformers: Maximum number of conformers
+        n_children: Number of children to generate for each parent
         mutability: Mutation frequency
         convergence: Number of identical generations before convergence is reached
         score: Scoring function: 'rmsd', 'min_rmsd', 'energy', 'min_energy'
@@ -1689,17 +1697,17 @@ def conformers_from_ob_ga(  # noqa: C901
     # Create search object and set parameters
     conf_search = ob.OBConformerSearch()
     conf_search.Setup(ob_mol)
-    if num_conformers is not None:
-        conf_search.SetNumConformers(num_conformers)
-    if num_children is not None:
-        conf_search.SetNumChildren(num_children)
+    if n_conformers is not None:
+        conf_search.SetNumConformers(n_conformers)
+    if n_children is not None:
+        conf_search.SetNumChildren(n_children)
     if convergence is not None:
         conf_search.SetConvergence(convergence)
     if mutability is not None:
         conf_search.SetMutability(mutability)
     if score is not None:
         # Scorers don't work with earlier versions of openbabel
-        if not (parse_version(openbabel.__version__) > parse_version("3.1.0")):
+        if not (parse(openbabel.__version__) > parse("3.1.0")):
             warnings.warn(
                 "Scorer only works with openbabel version > 3.1.0. "
                 "Proceeding without scorer.",
@@ -1717,7 +1725,7 @@ def conformers_from_ob_ga(  # noqa: C901
             conf_search.SetScore(scorer)
     if filter_method == "steric":
         # Filters don't work with earlier versions of openbabel
-        if not (parse_version(openbabel.__version__) > parse_version("3.1.0")):
+        if not (parse(openbabel.__version__) > parse("3.1.0")):
             warnings.warn(
                 "Filter only works with openbabel version > 3.1.0. "
                 "Proceeding without filter.",
@@ -1743,12 +1751,16 @@ def conformers_from_ob_ga(  # noqa: C901
 
 
 @requires_dependency(
-    [Import(module="rdkit", item="Chem"), Import(module="rdkit.Chem", item="AllChem")],
+    [
+        Import(module="rdkit", item="Chem"),
+        Import(module="rdkit.Chem", item="AllChem"),
+        Import(module="rdkit.Chem", item="rdDistGeom"),
+    ],
     globals(),
 )
 def conformers_from_rdkit(  # noqa: C901
     mol: str | Chem.Mol,
-    n_confs: int | None = None,
+    n_conformers: int | None = None,
     optimize: str | None = "MMFF94",
     version: int = 2,
     small_rings: bool = True,
@@ -1766,13 +1778,15 @@ def conformers_from_rdkit(  # noqa: C901
 
     Args:
         mol: Molecule either as SMILES string or RDKit Mol object.
-        n_confs: Number of conformers to generate. If None, a reasonable number will be
-            set depending on the number of rotatable bonds.
+        n_conformers: Number of conformers to generate. The actual number
+            of conformers returned may be lower due to RMSD pruning. If None,
+            a reasonable number will be set depending on the number of
+            rotatable bonds.
         optimize: Force field used for conformer optimization: 'MMFF94', 'MMFF94s' or
             'UFF'. If None, conformers are not optimized.
         version: Version of the experimental torsion-angle preferences
         small_rings: Whether to impose small ring torsion angle preferences
-        macrocycles: Whether to mpose macrocycle torsion angle preferences
+        macrocycles: Whether to impose macrocycle torsion angle preferences
         random_seed: Random seed for conformer generation
         rmsd_thres: Pruning RMSD threshold (Å)
         rmsd_symmetry: Whether to use symmetry for RMSD pruning
@@ -1800,17 +1814,17 @@ def conformers_from_rdkit(  # noqa: C901
         pass
     mol: Chem.Mol = Chem.AddHs(mol)
 
-    # If n_confs is not set, set number of conformers based on number of
+    # If n_conformers is not set, set number of conformers based on number of
     # rotatable bonds
-    if not n_confs:
+    if not n_conformers:
         n_rot_bonds = AllChem.CalcNumRotatableBonds(mol)
 
         if n_rot_bonds <= 7:
-            n_confs = 50
+            n_conformers = 50
         elif n_rot_bonds >= 8 and n_rot_bonds <= 12:
-            n_confs = 200
+            n_conformers = 200
         else:
-            n_confs = 300
+            n_conformers = 300
 
     # Generate conformers
     if rmsd_thres is not None:
@@ -1830,7 +1844,7 @@ def conformers_from_rdkit(  # noqa: C901
     params.ETversion = version
     params.pruneRmsThresh = rdkit_prune_rmsd
     params.numThreads = n_threads
-    AllChem.EmbedMultipleConfs(mol, n_confs, params)
+    rdDistGeom.EmbedMultipleConfs(mol, n_conformers, params)
 
     # Optimize with force fields
     results = None
@@ -1968,6 +1982,8 @@ def _get_ob_mol(
         mol: OpenBabel OBMol object
     """
     elements = convert_elements(elements, output="numbers")
+
+    charges_: np.ndarray
     if charges is None:
         charges_ = np.zeros(len(elements))
     else:
@@ -2013,6 +2029,7 @@ def _get_rdkit_mol(
     }
     elements = convert_elements(elements, output="symbols")
 
+    charges_: np.ndarray
     if charges is None:
         charges_ = np.zeros(len(elements))
     else:

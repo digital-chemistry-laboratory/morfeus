@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, MutableMapping, Sequence
 from os import PathLike
 from pathlib import Path
 import typing
@@ -541,3 +541,23 @@ def write_xyz(
         for coord, comment in zip(coordinates, comments):
             xyz_string = get_xyz_string(symbols, coord, comment=comment)
             f.write(xyz_string)
+
+
+def write_xtb_inp(
+    file: str | PathLike,
+    instruction_blocks: MutableMapping[str, list[str]],
+) -> None:
+    """Write input instructions to xtb input file.
+
+    Args:
+        file: path to the xtb input file to create
+        instruction_blocks: xtb input instructions to write in the file
+    """
+    string = ""
+    for flag, content in instruction_blocks.items():
+        string += f"${flag}\n"
+        for line in content:
+            string += f"   {line}\n"
+    string += "$end\n"
+    with open(file, "w") as f:
+        f.write(string)

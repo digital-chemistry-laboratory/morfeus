@@ -40,9 +40,16 @@ plugins = "numpy.typing.mypy_plugin"
 module = ["pyvista", "pyvistaqt"]
 follow_imports = "skip"
 
+[tool.deptry]
+known_first_party = ["morfeus"]
+
+# TODO: Remove once libconangle is updated to python>=3.10
+[tool.deptry.per_rule_ignores]
+DEP001 = ["libconeangle"]
+
 [tool.pytest.ini_options]
 addopts = "-m 'not (benchmark or xtb)'"
 markers = [
     "benchmark: mark a test as method benchmark",
-    "xtb: mark a test as requiring the xtb-python dependency",
+    "xtb: mark a test as requiring the xtb dependency",
 ]
