@@ -35,6 +35,7 @@ html_theme_options = {
 }
 html_title = "ᴍᴏʀғᴇᴜs"
 html_static_path = ["_static"]
+html_favicon = "_static/logo-icon-dark.svg"
 
 # Extension configuration
 
