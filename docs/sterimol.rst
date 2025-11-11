@@ -56,7 +56,7 @@ the code above.
   :name: buried_volume
   :width: 35%
 
-More information can be found with `help(Sterimol)` or in the API:
+More information can be found with ``help(Sterimol)`` or in the API:
 :py:class:`Sterimol <morfeus.sterimol.Sterimol>`.
 
 ###############
