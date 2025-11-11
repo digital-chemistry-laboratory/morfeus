@@ -71,7 +71,8 @@ is applied for the calculation of the ionization potential and electron affinity
 affects some of the global and local descriptors. It can be disabled with ``corrected=False``. 
 
 For more information and a list of all available electronic properties, 
-use ``help(XTB)`` or consult the API: :py:class:`XTB <morfeus.xtb.XTB>`.
+use ``help(XTB)`` or consult the API:
+:py:class:`XTB <morfeus.xtb.XTB>`.
 
 *******************
 Command line script

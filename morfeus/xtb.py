@@ -31,39 +31,6 @@ from morfeus.typing import Array1DFloat, Array2DFloat, ArrayLike2D
 from morfeus.utils import convert_elements, requires_executable
 
 
-@dataclass
-class XTBResults:
-    """Stores xTB descriptors."""
-
-    charges: list[float] | None = None
-    charges_cm5: list[float] | None = None
-    bond_orders: list[tuple[int, int, float]] | None = None
-    homo: dict[str, float] | None = None  # Stores both Eh and eV units
-    lumo: dict[str, float] | None = None  # Stores both Eh and eV units
-    gap: float | None = None  # Unit in eV
-    atom_dipole_vect: Array2DFloat | None = None  # Unit in a.u.
-    dipole_vect: Array1DFloat | None = None  # Unit in a.u.
-    dipole_moment: float | None = None  # Unit in debye
-    atom_polarizabilities: list[float] | None = None
-    mol_polarizability: float | None = None
-    total_energy: float | None = None  # Unit in Eh
-    fermi_level: float | None = None  # Unit in eV
-    s_pop: list[float] | None = None
-    p_pop: list[float] | None = None
-    d_pop: list[float] | None = None
-    covcn: list[float] | None = None
-    g_solv: float | None = None  # Unit in Eh
-    g_solv_hb: float | None = None  # Unit in Eh
-    atom_hb_terms: list[float] | None = None
-    fod_pop: list[float] | None = None
-    ip: float | None = None
-    ea: float | None = None
-    fukui_plus: list[float] | None = None
-    fukui_minus: list[float] | None = None
-    fukui_radical: list[float] | None = None
-
-
-@requires_executable(["xtb"])
 class XTB:
     """Calculate electronic properties with the xtb program.
 
@@ -876,6 +843,7 @@ class XTB:
 
         return h_bond_corrections
 
+    @requires_executable(["xtb"])
     def _run_xtb(self, runtype: str) -> None:  # noqa: C901
         """Run xTB calculation and parse results.
 
@@ -1176,6 +1144,38 @@ class XTB:
             lines = f.readlines()
         fod = [float(line.strip()) for line in lines]
         self._results.fod_pop = fod
+
+
+@dataclass
+class XTBResults:
+    """Stores xTB descriptors."""
+
+    charges: list[float] | None = None
+    charges_cm5: list[float] | None = None
+    bond_orders: list[tuple[int, int, float]] | None = None
+    homo: dict[str, float] | None = None  # Stores both Eh and eV units
+    lumo: dict[str, float] | None = None  # Stores both Eh and eV units
+    gap: float | None = None  # Unit in eV
+    atom_dipole_vect: Array2DFloat | None = None  # Unit in a.u.
+    dipole_vect: Array1DFloat | None = None  # Unit in a.u.
+    dipole_moment: float | None = None  # Unit in debye
+    atom_polarizabilities: list[float] | None = None
+    mol_polarizability: float | None = None
+    total_energy: float | None = None  # Unit in Eh
+    fermi_level: float | None = None  # Unit in eV
+    s_pop: list[float] | None = None
+    p_pop: list[float] | None = None
+    d_pop: list[float] | None = None
+    covcn: list[float] | None = None
+    g_solv: float | None = None  # Unit in Eh
+    g_solv_hb: float | None = None  # Unit in Eh
+    atom_hb_terms: list[float] | None = None
+    fod_pop: list[float] | None = None
+    ip: float | None = None
+    ea: float | None = None
+    fukui_plus: list[float] | None = None
+    fukui_minus: list[float] | None = None
+    fukui_radical: list[float] | None = None
 
 
 def cli(file: str) -> Any:
