@@ -1,0 +1,6 @@
+morfeus.dispersion module
+=========================
+
+.. automodule:: morfeus.dispersion
+   :members:
+   :show-inheritance:

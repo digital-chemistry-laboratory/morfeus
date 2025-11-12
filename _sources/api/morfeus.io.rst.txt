@@ -1,0 +1,6 @@
+morfeus.io module
+=================
+
+.. automodule:: morfeus.io
+   :members:
+   :show-inheritance:

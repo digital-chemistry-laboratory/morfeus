@@ -1,0 +1,6 @@
+morfeus.d3\_data module
+=======================
+
+.. automodule:: morfeus.d3_data
+   :members:
+   :show-inheritance:
