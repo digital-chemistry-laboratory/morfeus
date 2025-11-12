@@ -7,6 +7,8 @@ import math
 
 import numpy as np
 from scipy.spatial.transform import Rotation
+import scipy.special
+import scipy.stats
 
 from morfeus.data import ANGSTROM_TO_BOHR
 from morfeus.typing import (
@@ -209,8 +211,8 @@ class Sphere:
         density: Area per point (Å²) for empty sphere
             and volume per point (Å³) for filled sphere.
         filled: Whether a sphere with internal points should be constructed (works only
-            with method='projection')
-        method: Method for generating points: 'fibonacci', 'polar' or 'projection'
+            with method='projection' and method='sobol', which only works with filled)
+        method: Method for generating points: 'fibonacci', 'polar', 'projection' or 'sobol'
         radius: Radius (Å)
 
     Attributes:
@@ -252,6 +254,8 @@ class Sphere:
             self.points = self._get_points_projected(density=density, filled=filled)
         elif method == "fibonacci":
             self.points = self._get_points_fibonacci(density=density)
+        elif method == "sobol" and filled:
+            self.points = self._get_points_sobol(density=density)
 
     @staticmethod
     def _get_cartesian_coordinates(
@@ -373,6 +377,39 @@ class Sphere:
         # Project points onto sphere surface if sphere is empty
         if not filled:
             points = points / np.linalg.norm(points, axis=1).reshape(-1, 1) * r
+
+        # Adjust with sphere center
+        points = points + self.center
+
+        return points
+
+    def _get_points_sobol(
+        self,
+        density: float,
+    ) -> Array2DFloat:
+        """Construct points on sphere surface by pseudorandom sampling.
+
+        Args:
+            density: Area per point (Å²) for empty sphere and volume
+                per point (Å³) for filled sphere
+
+        Returns:
+            points: Array of surface points (Å)
+        """
+        # Calculate number of points from density of filled sphere and round to a power of 2.
+        n = self.volume / density * 6 / math.pi
+        m = int(round(math.log2(n)))
+
+        # Sample using a Sobol pseudorandom sequence
+        x = scipy.stats.norm.ppf(
+            scipy.stats.qmc.Sobol(d=3, scramble=True).random_base2(m)
+        )
+        ssq = np.sum(x**2, axis=1)
+
+        # Generate points based on gammainc distribution
+        r = self.radius
+        fr = r * scipy.special.gammainc(3 / 2, ssq / 2) ** (1 / 3) / np.sqrt(ssq)
+        points: Array2DFloat = np.multiply(x, np.tile(fr.reshape(2**m, 1), (1, 3)))
 
         # Adjust with sphere center
         points = points + self.center
