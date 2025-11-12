@@ -84,6 +84,8 @@ Berlin. In particular, the following people have contributed significantly to
 developing its functionality:
 
 * Gabriel dos Passos Gomes
+* Kjell Jorner
+* Lauriane Jacot-Descombes
 * Pascal Friedrich
 * Tobias Gensch
 
