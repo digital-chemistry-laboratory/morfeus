@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GFNn-xTB parametrisation (1 or 2) can be given either in `int` or `str` in the `XTB` object
 - Method `XTB.get_softness` to calculate the softness
 - Possibility to specifiy the number of parallel processes for the xtb runs
+- Possibility to set up environment variables for xtb runs
 - Support energy units Eh, eV, kcal/mol or kJ/mol
 - Methods `XTB.get_atom_dipoles` and `XTB.get_atom_dipole_moments` to return the atomic dipole vectors and dipole moments
 - Methods `XTB.get_fod_population` and `XTB.get_nfod` to return the atomic fractional occupation density (FOD) population and the integration over all space of the FOD
