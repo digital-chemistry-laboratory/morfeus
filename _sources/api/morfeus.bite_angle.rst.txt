@@ -1,0 +1,6 @@
+morfeus.bite\_angle module
+==========================
+
+.. automodule:: morfeus.bite_angle
+   :members:
+   :show-inheritance:

@@ -1,0 +1,845 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="morfeus.local_force module" href="morfeus.local_force.html"><link rel="prev" title="morfeus.geometry module" href="morfeus.geometry.html">
+        <link rel="prefetch" href="../_static/logo-text-light.svg" as="image">
+        <link rel="prefetch" href="../_static/logo-text-dark.svg" as="image">
+
+    <link rel="shortcut icon" href="../_static/logo-icon-dark.svg"><!-- Generated with Sphinx 8.1.3 and Furo 2025.09.25 -->
+        <title>morfeus.io module - ᴍᴏʀғᴇᴜs</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">ᴍᴏʀғᴇᴜs</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo only-light" src="../_static/logo-text-light.svg" alt="Light Logo"/>
+    <img class="sidebar-logo only-dark" src="../_static/logo-text-dark.svg" alt="Dark Logo"/>
+  </div>
+  
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../notes.html">Notes on usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command line interface</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../bite_angle.html">Bite angle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../buried_volume.html">Buried volume</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cone_angle.html">Cone angle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../conformer.html">Conformer tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dispersion.html">Dispersion descriptor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../local_force.html">Local force constants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pyramidalization.html">Pyramidalization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sasa.html">Solvent accessible surface area</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../solid_angle.html">Solid angle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../sterimol.html">Sterimol</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xtb.html">XTB</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current has-children"><a class="reference internal" href="morfeus.html">morfeus package</a><input aria-label="Toggle navigation of morfeus package" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="morfeus.bite_angle.html">morfeus.bite_angle module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.buried_volume.html">morfeus.buried_volume module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.calculators.html">morfeus.calculators module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.cone_angle.html">morfeus.cone_angle module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.config.html">morfeus.config module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.conformer.html">morfeus.conformer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.d3_data.html">morfeus.d3_data module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.data.html">morfeus.data module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.dispersion.html">morfeus.dispersion module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.geometry.html">morfeus.geometry module</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">morfeus.io module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.local_force.html">morfeus.local_force module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.plotting.html">morfeus.plotting module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.pyramidalization.html">morfeus.pyramidalization module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.qc.html">morfeus.qc module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.sasa.html">morfeus.sasa module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.solid_angle.html">morfeus.solid_angle module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.sterimol.html">morfeus.sterimol module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.typing.html">morfeus.typing module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.utils.html">morfeus.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.visible_volume.html">morfeus.visible_volume module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="morfeus.xtb.html">morfeus.xtb module</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Source</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/digital-chemistry-laboratory/morfeus">GitHub</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/api/morfeus.io.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="module-morfeus.io">
+<span id="morfeus-io-module"></span><h1>morfeus.io module<a class="headerlink" href="#module-morfeus.io" title="Link to this heading">¶</a></h1>
+<p>Input and output.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="morfeus.io.CrestParser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">morfeus.io.</span></span><span class="sig-name descname"><span class="pre">CrestParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/morfeus/io.html#CrestParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#morfeus.io.CrestParser" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Parses folder with CREST output files for conformer information.</p>
+<p>Reads the files: cre_members, crest.energies, crest_conformers.xyz</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>str</em><em> | </em><em>PathLike</em>) – Path to CREST folder</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.CrestParser.conformer_coordinates">
+<span class="sig-name descname"><span class="pre">conformer_coordinates</span></span><a class="headerlink" href="#morfeus.io.CrestParser.conformer_coordinates" title="Link to this definition">¶</a></dt>
+<dd><p>Conformer coordinates (Å)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.CrestParser.degeneracies">
+<span class="sig-name descname"><span class="pre">degeneracies</span></span><a class="headerlink" href="#morfeus.io.CrestParser.degeneracies" title="Link to this definition">¶</a></dt>
+<dd><p>Degeneracies</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.CrestParser.elements">
+<span class="sig-name descname"><span class="pre">elements</span></span><a class="headerlink" href="#morfeus.io.CrestParser.elements" title="Link to this definition">¶</a></dt>
+<dd><p>Elements</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.CrestParser.energies">
+<span class="sig-name descname"><span class="pre">energies</span></span><a class="headerlink" href="#morfeus.io.CrestParser.energies" title="Link to this definition">¶</a></dt>
+<dd><p>Energies (a.u.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="morfeus.io.CubeParser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">morfeus.io.</span></span><span class="sig-name descname"><span class="pre">CubeParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/morfeus/io.html#CubeParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#morfeus.io.CubeParser" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Parses Gaussian cube file of electron density.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file</strong> (<em>str</em><em> | </em><em>PathLike</em>) – Cube file</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.CubeParser.min_x">
+<span class="sig-name descname"><span class="pre">min_x</span></span><a class="headerlink" href="#morfeus.io.CubeParser.min_x" title="Link to this definition">¶</a></dt>
+<dd><p>Minimum x value (Å)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.CubeParser.min_y">
+<span class="sig-name descname"><span class="pre">min_y</span></span><a class="headerlink" href="#morfeus.io.CubeParser.min_y" title="Link to this definition">¶</a></dt>
+<dd><p>Minimum y value (Å)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.CubeParser.min_z">
+<span class="sig-name descname"><span class="pre">min_z</span></span><a class="headerlink" href="#morfeus.io.CubeParser.min_z" title="Link to this definition">¶</a></dt>
+<dd><p>Minimum z value (Å)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.CubeParser.step_x">
+<span class="sig-name descname"><span class="pre">step_x</span></span><a class="headerlink" href="#morfeus.io.CubeParser.step_x" title="Link to this definition">¶</a></dt>
+<dd><p>Step size in x direction (Å)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.CubeParser.step_y">
+<span class="sig-name descname"><span class="pre">step_y</span></span><a class="headerlink" href="#morfeus.io.CubeParser.step_y" title="Link to this definition">¶</a></dt>
+<dd><p>Step size in y direction (Å)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.CubeParser.step_z">
+<span class="sig-name descname"><span class="pre">step_z</span></span><a class="headerlink" href="#morfeus.io.CubeParser.step_z" title="Link to this definition">¶</a></dt>
+<dd><p>Step size in z direction (Å)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.CubeParser.X">
+<span class="sig-name descname"><span class="pre">X</span></span><a class="headerlink" href="#morfeus.io.CubeParser.X" title="Link to this definition">¶</a></dt>
+<dd><p>3D array of x values (Å)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.CubeParser.Y">
+<span class="sig-name descname"><span class="pre">Y</span></span><a class="headerlink" href="#morfeus.io.CubeParser.Y" title="Link to this definition">¶</a></dt>
+<dd><p>3D array of y values (Å)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.CubeParser.Z">
+<span class="sig-name descname"><span class="pre">Z</span></span><a class="headerlink" href="#morfeus.io.CubeParser.Z" title="Link to this definition">¶</a></dt>
+<dd><p>3D array of z values (Å)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.CubeParser.S">
+<span class="sig-name descname"><span class="pre">S</span></span><a class="headerlink" href="#morfeus.io.CubeParser.S" title="Link to this definition">¶</a></dt>
+<dd><p>3D array of electron density scalars (electorns / Bohr^3)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.CubeParser.n_points_x">
+<span class="sig-name descname"><span class="pre">n_points_x</span></span><a class="headerlink" href="#morfeus.io.CubeParser.n_points_x" title="Link to this definition">¶</a></dt>
+<dd><p>Number of points in the x direction</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.CubeParser.n_points_y">
+<span class="sig-name descname"><span class="pre">n_points_y</span></span><a class="headerlink" href="#morfeus.io.CubeParser.n_points_y" title="Link to this definition">¶</a></dt>
+<dd><p>Number of points in the y direction</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.CubeParser.n_points_z">
+<span class="sig-name descname"><span class="pre">n_points_z</span></span><a class="headerlink" href="#morfeus.io.CubeParser.n_points_z" title="Link to this definition">¶</a></dt>
+<dd><p>Number of points in the &lt; direction</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="morfeus.io.D3Parser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">morfeus.io.</span></span><span class="sig-name descname"><span class="pre">D3Parser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/morfeus/io.html#D3Parser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#morfeus.io.D3Parser" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Parses the output of Grimme’s D3 program.</p>
+<p>Extracts the C₆ᴬᴬ and C₈ᴬᴬ coefficients</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file</strong> (<em>str</em><em> | </em><em>PathLike</em>) – File containing output from the D3 program.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.D3Parser.c6_coefficients">
+<span class="sig-name descname"><span class="pre">c6_coefficients</span></span><a class="headerlink" href="#morfeus.io.D3Parser.c6_coefficients" title="Link to this definition">¶</a></dt>
+<dd><p>C₆ᴬᴬ coefficients (a.u.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.D3Parser.c8_coefficients">
+<span class="sig-name descname"><span class="pre">c8_coefficients</span></span><a class="headerlink" href="#morfeus.io.D3Parser.c8_coefficients" title="Link to this definition">¶</a></dt>
+<dd><p>C₈ᴬᴬ coefficients (a.u.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="morfeus.io.D4Parser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">morfeus.io.</span></span><span class="sig-name descname"><span class="pre">D4Parser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/morfeus/io.html#D4Parser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#morfeus.io.D4Parser" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Parses the output of Grimme’s D4 program.</p>
+<p>Extracts the C₆ᴬᴬ and C₈ᴬᴬ coefficients</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file</strong> (<em>str</em><em> | </em><em>PathLike</em>) – File containing output from the D4 program.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.D4Parser.c6_coefficients">
+<span class="sig-name descname"><span class="pre">c6_coefficients</span></span><a class="headerlink" href="#morfeus.io.D4Parser.c6_coefficients" title="Link to this definition">¶</a></dt>
+<dd><p>C₆ᴬᴬ coefficients (a.u.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.D4Parser.c8_coefficients">
+<span class="sig-name descname"><span class="pre">c8_coefficients</span></span><a class="headerlink" href="#morfeus.io.D4Parser.c8_coefficients" title="Link to this definition">¶</a></dt>
+<dd><p>C₈ᴬᴬ coefficients (a.u.)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="morfeus.io.VertexParser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">morfeus.io.</span></span><span class="sig-name descname"><span class="pre">VertexParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/morfeus/io.html#VertexParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#morfeus.io.VertexParser" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Parses the contents of a Multiwfn vtx.pdb file.</p>
+<p>Extracts the vertices and faces of the surface.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file</strong> (<em>str</em><em> | </em><em>PathLike</em>) – Name of file containing the vertices.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.VertexParser.faces">
+<span class="sig-name descname"><span class="pre">faces</span></span><a class="headerlink" href="#morfeus.io.VertexParser.faces" title="Link to this definition">¶</a></dt>
+<dd><p>Faces of surface</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any | None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="morfeus.io.VertexParser.vertices">
+<span class="sig-name descname"><span class="pre">vertices</span></span><a class="headerlink" href="#morfeus.io.VertexParser.vertices" title="Link to this definition">¶</a></dt>
+<dd><p>Vertices of surface</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="morfeus.io.get_xyz_string">
+<span class="sig-prename descclassname"><span class="pre">morfeus.io.</span></span><span class="sig-name descname"><span class="pre">get_xyz_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">symbols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comment</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/morfeus/io.html#get_xyz_string"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#morfeus.io.get_xyz_string" title="Link to this definition">¶</a></dt>
+<dd><p>Return xyz string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>symbols</strong> (<em>Sequence</em><em>[</em><em>str</em><em>]</em>) – Atomic symbols</p></li>
+<li><p><strong>coordinates</strong> (<em>Sequence</em><em>[</em><em>Sequence</em><em>[</em><em>float</em><em>]</em><em>]</em>) – Atomic coordinates (Å)</p></li>
+<li><p><strong>comment</strong> (<em>str</em>) – Comment</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>XYZ string</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="morfeus.io.read_geometry">
+<span class="sig-prename descclassname"><span class="pre">morfeus.io.</span></span><span class="sig-name descname"><span class="pre">read_geometry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/morfeus/io.html#read_geometry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#morfeus.io.read_geometry" title="Link to this definition">¶</a></dt>
+<dd><p>Read geometry file and guess parser based on suffix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file</strong> (<em>str</em><em> | </em><em>PathLike</em>) – Filename or Path object</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Elements as atomic symbols or numbers
+coordinates: Coordinates (Å)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>elements</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – When suffix is not supported</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="morfeus.io.read_gjf">
+<span class="sig-prename descclassname"><span class="pre">morfeus.io.</span></span><span class="sig-name descname"><span class="pre">read_gjf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/morfeus/io.html#read_gjf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#morfeus.io.read_gjf" title="Link to this definition">¶</a></dt>
+<dd><p>Reads Gaussian gjf/com file and returns elements and coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file</strong> (<em>str</em><em> | </em><em>PathLike</em>) – gjf/com file object.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Elements as atomic symbols or numbers
+coordinates: Coordinates (Å)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>elements</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="morfeus.io.read_xyz">
+<span class="sig-prename descclassname"><span class="pre">morfeus.io.</span></span><span class="sig-name descname"><span class="pre">read_xyz</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/morfeus/io.html#read_xyz"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#morfeus.io.read_xyz" title="Link to this definition">¶</a></dt>
+<dd><p>Reads xyz file.</p>
+<p>Returns elements as written (atomic numbers or symbols) and coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file</strong> (<em>str</em><em> | </em><em>PathLike</em>) – Filename or Path object</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Elements as atomic symbols or numbers
+coordinates: Coordinates (Å)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>elements</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="morfeus.io.write_xtb_inp">
+<span class="sig-prename descclassname"><span class="pre">morfeus.io.</span></span><span class="sig-name descname"><span class="pre">write_xtb_inp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instruction_blocks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/morfeus/io.html#write_xtb_inp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#morfeus.io.write_xtb_inp" title="Link to this definition">¶</a></dt>
+<dd><p>Write input instructions to xtb input file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file</strong> (<em>str</em><em> | </em><em>PathLike</em>) – path to the xtb input file to create</p></li>
+<li><p><strong>instruction_blocks</strong> (<em>MutableMapping</em><em>[</em><em>str</em><em>, </em><em>list</em><em>[</em><em>str</em><em>]</em><em>]</em>) – xtb input instructions to write in the file</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="morfeus.io.write_xyz">
+<span class="sig-prename descclassname"><span class="pre">morfeus.io.</span></span><span class="sig-name descname"><span class="pre">write_xyz</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/morfeus/io.html#write_xyz"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#morfeus.io.write_xyz" title="Link to this definition">¶</a></dt>
+<dd><p>Writes xyz file from elements and coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file</strong> (<em>str</em><em> | </em><em>PathLike</em>) – xyz file or path object</p></li>
+<li><p><strong>elements</strong> (<em>Iterable</em><em>[</em><em>int</em><em>] </em><em>| </em><em>Iterable</em><em>[</em><em>str</em><em>]</em>) – Elements as atomic symbols or numbers</p></li>
+<li><p><strong>coordinates</strong> (<em>_Buffer</em><em> | </em><em>_SupportsArray</em><em>[</em><em>dtype</em><em>[</em><em>Any</em><em>]</em><em>] </em><em>| </em><em>_NestedSequence</em><em>[</em><em>_SupportsArray</em><em>[</em><em>dtype</em><em>[</em><em>Any</em><em>]</em><em>]</em><em>] </em><em>| </em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em><em> | </em><em>str</em><em> | </em><em>bytes</em><em> | </em><em>_NestedSequence</em><em>[</em><em>bool</em><em> | </em><em>int</em><em> | </em><em>float</em><em> | </em><em>complex</em><em> | </em><em>str</em><em> | </em><em>bytes</em><em>]</em>) – Coordinates (Å)</p></li>
+<li><p><strong>comments</strong> (<em>Sequence</em><em>[</em><em>str</em><em>] </em><em>| </em><em>None</em>) – Comments</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="morfeus.local_force.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">morfeus.local_force module</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="morfeus.geometry.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">morfeus.geometry module</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2021, Kjell Jorner
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">morfeus.io module</a><ul>
+<li><a class="reference internal" href="#morfeus.io.CrestParser"><code class="docutils literal notranslate"><span class="pre">CrestParser</span></code></a><ul>
+<li><a class="reference internal" href="#morfeus.io.CrestParser.conformer_coordinates"><code class="docutils literal notranslate"><span class="pre">CrestParser.conformer_coordinates</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.CrestParser.degeneracies"><code class="docutils literal notranslate"><span class="pre">CrestParser.degeneracies</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.CrestParser.elements"><code class="docutils literal notranslate"><span class="pre">CrestParser.elements</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.CrestParser.energies"><code class="docutils literal notranslate"><span class="pre">CrestParser.energies</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#morfeus.io.CubeParser"><code class="docutils literal notranslate"><span class="pre">CubeParser</span></code></a><ul>
+<li><a class="reference internal" href="#morfeus.io.CubeParser.min_x"><code class="docutils literal notranslate"><span class="pre">CubeParser.min_x</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.CubeParser.min_y"><code class="docutils literal notranslate"><span class="pre">CubeParser.min_y</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.CubeParser.min_z"><code class="docutils literal notranslate"><span class="pre">CubeParser.min_z</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.CubeParser.step_x"><code class="docutils literal notranslate"><span class="pre">CubeParser.step_x</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.CubeParser.step_y"><code class="docutils literal notranslate"><span class="pre">CubeParser.step_y</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.CubeParser.step_z"><code class="docutils literal notranslate"><span class="pre">CubeParser.step_z</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.CubeParser.X"><code class="docutils literal notranslate"><span class="pre">CubeParser.X</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.CubeParser.Y"><code class="docutils literal notranslate"><span class="pre">CubeParser.Y</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.CubeParser.Z"><code class="docutils literal notranslate"><span class="pre">CubeParser.Z</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.CubeParser.S"><code class="docutils literal notranslate"><span class="pre">CubeParser.S</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.CubeParser.n_points_x"><code class="docutils literal notranslate"><span class="pre">CubeParser.n_points_x</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.CubeParser.n_points_y"><code class="docutils literal notranslate"><span class="pre">CubeParser.n_points_y</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.CubeParser.n_points_z"><code class="docutils literal notranslate"><span class="pre">CubeParser.n_points_z</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#morfeus.io.D3Parser"><code class="docutils literal notranslate"><span class="pre">D3Parser</span></code></a><ul>
+<li><a class="reference internal" href="#morfeus.io.D3Parser.c6_coefficients"><code class="docutils literal notranslate"><span class="pre">D3Parser.c6_coefficients</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.D3Parser.c8_coefficients"><code class="docutils literal notranslate"><span class="pre">D3Parser.c8_coefficients</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#morfeus.io.D4Parser"><code class="docutils literal notranslate"><span class="pre">D4Parser</span></code></a><ul>
+<li><a class="reference internal" href="#morfeus.io.D4Parser.c6_coefficients"><code class="docutils literal notranslate"><span class="pre">D4Parser.c6_coefficients</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.D4Parser.c8_coefficients"><code class="docutils literal notranslate"><span class="pre">D4Parser.c8_coefficients</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#morfeus.io.VertexParser"><code class="docutils literal notranslate"><span class="pre">VertexParser</span></code></a><ul>
+<li><a class="reference internal" href="#morfeus.io.VertexParser.faces"><code class="docutils literal notranslate"><span class="pre">VertexParser.faces</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.VertexParser.vertices"><code class="docutils literal notranslate"><span class="pre">VertexParser.vertices</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#morfeus.io.get_xyz_string"><code class="docutils literal notranslate"><span class="pre">get_xyz_string()</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.read_geometry"><code class="docutils literal notranslate"><span class="pre">read_geometry()</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.read_gjf"><code class="docutils literal notranslate"><span class="pre">read_gjf()</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.read_xyz"><code class="docutils literal notranslate"><span class="pre">read_xyz()</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.write_xtb_inp"><code class="docutils literal notranslate"><span class="pre">write_xtb_inp()</span></code></a></li>
+<li><a class="reference internal" href="#morfeus.io.write_xyz"><code class="docutils literal notranslate"><span class="pre">write_xyz()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=486e5634"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/tabs.js?v=3ee01567"></script>
+    </body>
+</html>
