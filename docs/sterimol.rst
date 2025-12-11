@@ -54,7 +54,7 @@ the code above.
 
 .. figure:: images/sterimol/tBu_sterimol.png
   :name: buried_volume
-  :width: 35%
+  :width: 70%
 
 More information can be found with ``help(Sterimol)`` or in the API:
 :py:class:`Sterimol <morfeus.sterimol.Sterimol>`.

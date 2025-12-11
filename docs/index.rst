@@ -80,7 +80,7 @@ About
 ᴍᴏʀғᴇᴜs was started by Kjell Jorner as a post doc at AstraZeneca UK in
 collaboration with the groups of Alán Aspuru-Guzik at the University of
 Toronto, Matthew Sigman at the University of Utah and Tobias Gensch at TU
-Berlin. In particular, the following people have contributed significantly to
+Berlin. In particular, the following people (in alphabetical order) have contributed significantly to
 developing its functionality:
 
 * Gabriel dos Passos Gomes
