@@ -1,0 +1,549 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="XTB" href="xtb.html"><link rel="prev" title="Solid angle" href="solid_angle.html">
+        <link rel="prefetch" href="_static/logo-text-light.svg" as="image">
+        <link rel="prefetch" href="_static/logo-text-dark.svg" as="image">
+
+    <link rel="shortcut icon" href="_static/logo-icon-dark.svg"><!-- Generated with Sphinx 8.1.3 and Furo 2025.09.25 -->
+        <title>Sterimol - ᴍᴏʀғᴇᴜs</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">ᴍᴏʀғᴇᴜs</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo only-light" src="_static/logo-text-light.svg" alt="Light Logo"/>
+    <img class="sidebar-logo only-dark" src="_static/logo-text-dark.svg" alt="Dark Logo"/>
+  </div>
+  
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notes.html">Notes on usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command line interface</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="bite_angle.html">Bite angle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="buried_volume.html">Buried volume</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cone_angle.html">Cone angle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conformer.html">Conformer tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dispersion.html">Dispersion descriptor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="local_force.html">Local force constants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyramidalization.html">Pyramidalization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sasa.html">Solvent accessible surface area</a></li>
+<li class="toctree-l1"><a class="reference internal" href="solid_angle.html">Solid angle</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Sterimol</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xtb.html">XTB</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="api/morfeus.html">morfeus package</a><input aria-label="Toggle navigation of morfeus package" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.bite_angle.html">morfeus.bite_angle module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.buried_volume.html">morfeus.buried_volume module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.calculators.html">morfeus.calculators module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.cone_angle.html">morfeus.cone_angle module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.config.html">morfeus.config module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.conformer.html">morfeus.conformer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.d3_data.html">morfeus.d3_data module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.data.html">morfeus.data module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.dispersion.html">morfeus.dispersion module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.geometry.html">morfeus.geometry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.io.html">morfeus.io module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.local_force.html">morfeus.local_force module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.plotting.html">morfeus.plotting module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.pyramidalization.html">morfeus.pyramidalization module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.qc.html">morfeus.qc module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.sasa.html">morfeus.sasa module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.solid_angle.html">morfeus.solid_angle module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.sterimol.html">morfeus.sterimol module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.typing.html">morfeus.typing module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.utils.html">morfeus.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.visible_volume.html">morfeus.visible_volume module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/morfeus.xtb.html">morfeus.xtb module</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Source</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/digital-chemistry-laboratory/morfeus">GitHub</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/sterimol.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="sterimol">
+<h1>Sterimol<a class="headerlink" href="#sterimol" title="Link to this heading">¶</a></h1>
+<p>The Sterimol parameters L, B<sub>1</sub> and B<sub>5</sub> as described by Verloop
+<a class="footnote-reference brackets" href="#footcite-verloop-development-1976" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a><a class="footnote-reference brackets" href="#footcite-verloop-sterimol-1983" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a> are implemented.
+Note that Sterimol parameters should be calculated with hydrogen as the dummy atom, to
+be consistent with values in the literature (see <a class="reference internal" href="#background">Background</a>).</p>
+<section id="module">
+<h2>Module<a class="headerlink" href="#module" title="Link to this heading">¶</a></h2>
+<p>The Sterimol class calculates and stores Sterimol parameters.</p>
+<div class="literal-block-wrapper docutils container" id="id6">
+<div class="code-block-caption"><span class="caption-text">Example</span><a class="headerlink" href="#id6" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">morfeus</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sterimol</span><span class="p">,</span> <span class="n">read_xyz</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">elements</span><span class="p">,</span> <span class="n">coordinates</span> <span class="o">=</span> <span class="n">read_xyz</span><span class="p">(</span><span class="s2">&quot;tBu.xyz&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span> <span class="o">=</span> <span class="n">Sterimol</span><span class="p">(</span><span class="n">elements</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span><span class="o">.</span><span class="n">L_value</span>
+<span class="go">4.209831193078874</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span><span class="o">.</span><span class="n">B_1_value</span>
+<span class="go">2.8650676183152837</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span><span class="o">.</span><span class="n">B_5_value</span>
+<span class="go">3.26903261263369</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span><span class="o">.</span><span class="n">print_report</span><span class="p">()</span>
+<span class="go">L         B_1       B_5</span>
+<span class="go">4.21      2.87      3.27</span>
+</pre></div>
+</div>
+</div>
+<p>The first given atom index argument corresponds to the index of the dummy H atom (1-indexed),
+while the second one corresponds to the atom bound to the dummy H.</p>
+<p>Radii can be changed with the argument <code class="docutils literal notranslate"><span class="pre">radii_type=&lt;str&gt;</span></code> and custom radii
+can be supplied as a list with <code class="docutils literal notranslate"><span class="pre">radii=&lt;list&gt;</span></code>.</p>
+<p>The bond length between atoms 1 and 2 and the uncorrected L values (without the
+historical addition of 0.40 Å) can also be obtained.</p>
+<div class="literal-block-wrapper docutils container" id="id7">
+<div class="code-block-caption"><span class="caption-text">Uncorrected L values</span><a class="headerlink" href="#id7" title="Link to this code">¶</a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span><span class="o">.</span><span class="n">L_value_uncorrected</span>
+<span class="go">3.8098311930788737</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span><span class="o">.</span><span class="n">bond_length</span>
+<span class="go">1.1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span><span class="o">.</span><span class="n">print_report</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">L         B_1       B_5       L_uncorr  d(a1-a2)</span>
+<span class="go">4.21      2.87      3.27      3.81      1.10</span>
+</pre></div>
+</div>
+</div>
+<p>Below is illustrated the Sterimol parameters of the <em>tert</em>-Butyl ligand as calculated with
+the code above.</p>
+<figure class="align-default" id="buried-volume">
+<a class="reference internal image-reference" href="_images/tBu_sterimol.png"><img alt="_images/tBu_sterimol.png" src="_images/tBu_sterimol.png" style="width: 70%;" />
+</a>
+</figure>
+<p>More information can be found with <code class="docutils literal notranslate"><span class="pre">help(Sterimol)</span></code> or in the API:
+<a class="reference internal" href="api/morfeus.sterimol.html#morfeus.sterimol.Sterimol" title="morfeus.sterimol.Sterimol"><code class="xref py py-class docutils literal notranslate"><span class="pre">Sterimol</span></code></a>.</p>
+<section id="buried-sterimol">
+<h3>Buried Sterimol<a class="headerlink" href="#buried-sterimol" title="Link to this heading">¶</a></h3>
+<p>The Sterimol vectors can be “buried”:</p>
+<div class="tab-set docutils container">
+<input checked="True" class="tab-input" id="tab-set--0-input--1" name="tab-set--0" type="radio"><label class="tab-label" for="tab-set--0-input--1">Delete</label><div class="tab-content docutils container">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">elements</span><span class="p">,</span> <span class="n">coordinates</span> <span class="o">=</span> <span class="n">read_xyz</span><span class="p">(</span><span class="s2">&quot;P_p-Tol_3.xyz&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span> <span class="o">=</span> <span class="n">Sterimol</span><span class="p">(</span><span class="n">elements</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span><span class="o">.</span><span class="n">print_report</span><span class="p">()</span>
+<span class="go">L         B_1       B_5</span>
+<span class="go">7.44      4.94      7.44</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span><span class="o">.</span><span class="n">bury</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;delete&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span><span class="o">.</span><span class="n">print_report</span><span class="p">()</span>
+<span class="go">L         B_1       B_5</span>
+<span class="go">6.92      4.27      6.04</span>
+</pre></div>
+</div>
+</div>
+<input class="tab-input" id="tab-set--0-input--2" name="tab-set--0" type="radio"><label class="tab-label" for="tab-set--0-input--2">Truncate</label><div class="tab-content docutils container">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">elements</span><span class="p">,</span> <span class="n">coordinates</span> <span class="o">=</span> <span class="n">read_xyz</span><span class="p">(</span><span class="s2">&quot;P_p-Tol_3.xyz&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span> <span class="o">=</span> <span class="n">Sterimol</span><span class="p">(</span><span class="n">elements</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span><span class="o">.</span><span class="n">print_report</span><span class="p">()</span>
+<span class="go">L         B_1       B_5</span>
+<span class="go">7.44      4.94      7.44</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span><span class="o">.</span><span class="n">bury</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;truncate&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span><span class="o">.</span><span class="n">print_report</span><span class="p">()</span>
+<span class="go">L         B_1       B_5</span>
+<span class="go">5.90      4.27      5.01</span>
+</pre></div>
+</div>
+</div>
+<input class="tab-input" id="tab-set--0-input--3" name="tab-set--0" type="radio"><label class="tab-label" for="tab-set--0-input--3">Slice</label><div class="tab-content docutils container">
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">elements</span><span class="p">,</span> <span class="n">coordinates</span> <span class="o">=</span> <span class="n">read_xyz</span><span class="p">(</span><span class="s2">&quot;P_p-Tol_3.xyz&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span> <span class="o">=</span> <span class="n">Sterimol</span><span class="p">(</span><span class="n">elements</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span><span class="o">.</span><span class="n">print_report</span><span class="p">()</span>
+<span class="go">L         B_1       B_5</span>
+<span class="go">7.44      4.94      7.44</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span><span class="o">.</span><span class="n">bury</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;slice&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sterimol</span><span class="o">.</span><span class="n">print_report</span><span class="p">()</span>
+<span class="go">L         B_1       B_5</span>
+<span class="go">5.82      3.77      5.24</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>There are three different methods for doing this:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">delete</span></code></dt><dd><p>Atoms outside the sphere + 0.5 vdW radius are deleted and the Sterimol
+vectors are calculated. This is the default.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">truncate</span></code></dt><dd><p>Sterimol vectors are calculated as usual, but truncated in length by the
+sphere.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">slice</span></code></dt><dd><p>A point vdW surface is constructed from the atoms and all points outside the
+sphere are removed. Then the Sterimol vectors are computed based on the
+remaining points.</p>
+</dd>
+</dl>
+<p>A standard sphere radius of 5.5 Å is used that can be changed with
+<code class="docutils literal notranslate"><span class="pre">sphere_radius=&lt;float&gt;</span></code>. For the <code class="docutils literal notranslate"><span class="pre">delete</span></code> method, the scaling factor for
+the atom cutoff can be changed with <code class="docutils literal notranslate"><span class="pre">radii_scale=&lt;float&gt;</span></code>. For more
+information, see the API:
+<a class="reference internal" href="api/morfeus.sterimol.html#morfeus.sterimol.Sterimol.bury" title="morfeus.sterimol.Sterimol.bury"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Sterimol.bury</span></code></a></p>
+</section>
+</section>
+<section id="command-line-script">
+<h2>Command line script<a class="headerlink" href="#command-line-script" title="Link to this heading">¶</a></h2>
+<p>The command line script gives access to the basic functionality from the
+terminal.</p>
+<div class="literal-block-wrapper docutils container" id="id8">
+<div class="code-block-caption"><span class="caption-text">Example</span><a class="headerlink" href="#id8" title="Link to this code">¶</a></div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>morfeus<span class="w"> </span>sterimol<span class="w"> </span>tBu.xyz<span class="w"> </span>-<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">2</span><span class="w"> </span>-<span class="w"> </span>print_report
+L<span class="w">         </span>B_1<span class="w">       </span>B_5
+<span class="m">4</span>.21<span class="w">      </span><span class="m">2</span>.86<span class="w">      </span><span class="m">3</span>.27
+</pre></div>
+</div>
+</div>
+</section>
+<section id="background">
+<h2>Background<a class="headerlink" href="#background" title="Link to this heading">¶</a></h2>
+<p>The Sterimol parameters were developed by Verloop to describe the steric size
+of substituents. The atom attached to the substituent in the calculation (by
+definition H) is called atom 1 and the first atom in the substituent is called
+atom 2. L can be described as the depth of the substituent. It is defined as
+the length of the vector going from atom 1, through atom 2 and ending on the
+tangent of the vdW surface. For historical reasons, L is corrected by adding
+0.40 Å to this length. This  was due to a shift from using C(sp<sup>2</sup>) to H
+as dummy atom.</p>
+<p>B<sub>1</sub> and B<sub>5</sub> can be described as the minimum and maximum
+rotational size of the substituent. They are defined as the shortest and
+longest vectors from atom 2 to a tangent plane of the vdW surface which are
+perpendicular to the L vector, respectively.</p>
+<p>ᴍᴏʀғᴇᴜs has been benchmarked against Paton’s <a class="reference external" href="https://github.com/bobbypaton/Sterimol">Sterimol</a> package. Using exactly
+the same radii (Paton’s modified Bondi), almost identical results are obtained.
+(Note that ᴍᴏʀғᴇᴜs normally uses 1.20 Å as the Bondi vdW radius for H). ᴍᴏʀғᴇᴜs
+calculates the B<sub>1</sub> and B<sub>5</sub> parameters by a different approach
+from the original code. First, atomic spheres are created with a certain
+density of points. B<sub>1</sub> and B<sub>5</sub> are then obtained by projection
+of atoms onto vectors spanning the whole 360 degrees in the plane perpendicular
+to L. B<sub>5</sub> is obtained from the largest projection, while B<sub>1</sub> is
+obtained from the smallest maximum projection for the set of vectors.</p>
+<p>Buried Sterimol was developed by Tobias Gensch while working in the group of
+Matthew Sigman at the University of Utah <a class="footnote-reference brackets" href="#footcite-gensch-kraken-2022" id="id3" role="doc-noteref"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></a>. It is
+intended to limit the Sterimol vectors to a volume of interest in the
+philosophy of the buried volume. The original implementation uses the
+<code class="docutils literal notranslate"><span class="pre">delete</span></code> algorithm. ᴍᴏʀғᴇᴜs uses the CRC handbook radii by default instead of
+the modified Bondi radii in the original article, so results with the defualt
+settings might be slighly different.</p>
+<div class="docutils container" id="id5">
+<p class="rubric">References</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="footcite-verloop-development-1976" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<p>A. Verloop, W. Hoogenstraaten, and J. Tipker. Development and application of new steric substituent parameters in drug design. In Everhardus Jacobus Ariëns, editor, <em>Drug Design</em>, pages 165–207. Elsevier, 1976. <a class="reference external" href="https://doi.org/10.1016/B978-0-12-060307-7.50010-9">doi:10.1016/B978-0-12-060307-7.50010-9</a>.</p>
+</aside>
+<aside class="footnote brackets" id="footcite-verloop-sterimol-1983" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">2</a><span class="fn-bracket">]</span></span>
+<p>A Verloop. The Sterimol approach: further development of the method and new applications. In P. Doyle and T. Fujita, editors, <em>Pesticide chemistry: Human welfare and environment: Synthesis and structure-activity relationships</em>, pages 339–344. Pergamon, 1983. <a class="reference external" href="https://doi.org/https://doi.org/10.1016/B978-0-08-029222-9.50051-2">doi:https://doi.org/10.1016/B978-0-08-029222-9.50051-2</a>.</p>
+</aside>
+<aside class="footnote brackets" id="footcite-gensch-kraken-2022" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">3</a><span class="fn-bracket">]</span></span>
+<p>Tobias Gensch, Gabriel dos Passos Gomes, Pascal Friederich, Ellyn Peters, Théophile Gaudin, Robert Pollice, Kjell Jorner, AkshatKumar Nigam, Michael Lindner-D’Addario, Matthew S. Sigman, and Alán Aspuru-Guzik. A comprehensive discovery platform for organophosphorus ligands for catalysis. <em>Journal of the American Chemical Society</em>, 144(3):1205–1217, January 2022. <a class="reference external" href="https://doi.org/10.1021/jacs.1c09718">doi:10.1021/jacs.1c09718</a>.</p>
+</aside>
+</aside>
+</div>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="xtb.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">XTB</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="solid_angle.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Solid angle</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2021, Kjell Jorner
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Sterimol</a><ul>
+<li><a class="reference internal" href="#module">Module</a><ul>
+<li><a class="reference internal" href="#buried-sterimol">Buried Sterimol</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#command-line-script">Command line script</a></li>
+<li><a class="reference internal" href="#background">Background</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=486e5634"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/tabs.js?v=3ee01567"></script>
+    </body>
+</html>

@@ -1,0 +1,1325 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html">
+        <link rel="prefetch" href="../../_static/logo-text-light.svg" as="image">
+        <link rel="prefetch" href="../../_static/logo-text-dark.svg" as="image">
+
+    <link rel="shortcut icon" href="../../_static/logo-icon-dark.svg"><!-- Generated with Sphinx 8.1.3 and Furo 2025.09.25 -->
+        <title>morfeus.geometry - ᴍᴏʀғᴇᴜs</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../index.html"><div class="brand">ᴍᴏʀғᴇᴜs</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo only-light" src="../../_static/logo-text-light.svg" alt="Light Logo"/>
+    <img class="sidebar-logo only-dark" src="../../_static/logo-text-dark.svg" alt="Dark Logo"/>
+  </div>
+  
+  
+</a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../notes.html">Notes on usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli.html">Command line interface</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Methods</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../bite_angle.html">Bite angle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../buried_volume.html">Buried volume</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cone_angle.html">Cone angle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../conformer.html">Conformer tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dispersion.html">Dispersion descriptor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../local_force.html">Local force constants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pyramidalization.html">Pyramidalization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sasa.html">Solvent accessible surface area</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../solid_angle.html">Solid angle</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sterimol.html">Sterimol</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../xtb.html">XTB</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../api/morfeus.html">morfeus package</a><input aria-label="Toggle navigation of morfeus package" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.bite_angle.html">morfeus.bite_angle module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.buried_volume.html">morfeus.buried_volume module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.calculators.html">morfeus.calculators module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.cone_angle.html">morfeus.cone_angle module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.config.html">morfeus.config module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.conformer.html">morfeus.conformer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.d3_data.html">morfeus.d3_data module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.data.html">morfeus.data module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.dispersion.html">morfeus.dispersion module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.geometry.html">morfeus.geometry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.io.html">morfeus.io module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.local_force.html">morfeus.local_force module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.plotting.html">morfeus.plotting module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.pyramidalization.html">morfeus.pyramidalization module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.qc.html">morfeus.qc module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.sasa.html">morfeus.sasa module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.solid_angle.html">morfeus.solid_angle module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.sterimol.html">morfeus.sterimol module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.typing.html">morfeus.typing module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.utils.html">morfeus.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.visible_volume.html">morfeus.visible_volume module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/morfeus.xtb.html">morfeus.xtb module</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Source</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/digital-chemistry-laboratory/morfeus">GitHub</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <h1>Source code for morfeus.geometry</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Help classes and functions related to geometry.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.spatial.transform</span><span class="w"> </span><span class="kn">import</span> <span class="n">Rotation</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">morfeus.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ANGSTROM_TO_BOHR</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">morfeus.typing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Array1DBool</span><span class="p">,</span>
+    <span class="n">Array1DFloat</span><span class="p">,</span>
+    <span class="n">Array2DFloat</span><span class="p">,</span>
+    <span class="n">ArrayLike1D</span><span class="p">,</span>
+    <span class="n">ArrayLike2D</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">morfeus.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_connectivity_matrix</span>
+
+
+<div class="viewcode-block" id="Atom">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.Atom">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Atom</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Atom common for morfeus calculations.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        element: Atomic number (starting from 1)</span>
+<span class="sd">        coordinates: Coordinates (Å)</span>
+<span class="sd">        radius: vdW radius (Å)</span>
+<span class="sd">        index: Atom index (starting from 1)</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        accessible_mask: Boolean mask for accessible points</span>
+<span class="sd">        accessible_points: Points accessible to solvent (Å)</span>
+<span class="sd">        area: Solvent-accessible surface area (Å²)</span>
+<span class="sd">        cone: Cone tangent to atom</span>
+<span class="sd">        coordinates: Coordinates (Å)</span>
+<span class="sd">        coordination_number: Coordination number</span>
+<span class="sd">        element: Atomic number (1-indexed)</span>
+<span class="sd">        index: Atom index (1-indexed)</span>
+<span class="sd">        invisible_mask: Boolean mask for invisible points</span>
+<span class="sd">        occluded_mask: Boolean mask for occluded points</span>
+<span class="sd">        occluded_points: Points occluded by other atoms (Å)</span>
+<span class="sd">        p_values: P values</span>
+<span class="sd">        point_areas: Point areas (Å²)</span>
+<span class="sd">        point_volumes: Point volumes (Å³)</span>
+<span class="sd">        point: Points (Å)</span>
+<span class="sd">        proximal_mask: Boolean mask for proximal points</span>
+<span class="sd">        radius: vdW radius (Å)</span>
+<span class="sd">        volume: Volume inside solvent-accessible surface area (Å³)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">accessible_mask</span><span class="p">:</span> <span class="n">Array1DBool</span>
+    <span class="n">accessible_points</span><span class="p">:</span> <span class="n">Array2DFloat</span>
+    <span class="n">area</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">cone</span><span class="p">:</span> <span class="s2">&quot;Cone&quot;</span>
+    <span class="n">coordinates</span><span class="p">:</span> <span class="n">Array2DFloat</span>
+    <span class="n">coordination_number</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">element</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">index</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">invisible_mask</span><span class="p">:</span> <span class="n">Array1DBool</span>
+    <span class="n">occluded_mask</span><span class="p">:</span> <span class="n">Array1DBool</span>
+    <span class="n">occluded_points</span><span class="p">:</span> <span class="n">Array2DFloat</span>
+    <span class="n">p_values</span><span class="p">:</span> <span class="n">Array1DFloat</span>
+    <span class="n">point_areas</span><span class="p">:</span> <span class="n">Array1DFloat</span>
+    <span class="n">point_volumes</span><span class="p">:</span> <span class="n">Array1DFloat</span>
+    <span class="n">points</span><span class="p">:</span> <span class="n">Array2DFloat</span>
+    <span class="n">proximal_mask</span><span class="p">:</span> <span class="n">Array1DBool</span>
+    <span class="n">radius</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">volume</span><span class="p">:</span> <span class="nb">float</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">element</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">:</span> <span class="n">ArrayLike1D</span><span class="p">,</span> <span class="n">radius</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Set up initial attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">element</span> <span class="o">=</span> <span class="n">element</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="n">radius</span>
+
+<div class="viewcode-block" id="Atom.get_cone">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.Atom.get_cone">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_cone</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct cone for atom.&quot;&quot;&quot;</span>
+        <span class="n">vector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinates</span>
+        <span class="n">normal</span> <span class="o">=</span> <span class="n">vector</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span>
+        <span class="n">sin_alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">asin</span><span class="p">(</span><span class="n">sin_alpha</span><span class="p">)</span>
+        <span class="n">cone</span> <span class="o">=</span> <span class="n">Cone</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="p">],</span> <span class="n">normal</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cone</span> <span class="o">=</span> <span class="n">cone</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="si">!r}</span><span class="s2">)&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="Cone">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.Cone">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Cone</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cone used in cone angle calculations.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        angle: Cone angle (rad)</span>
+<span class="sd">        atoms: Atoms that are tangent to cone (1-indexed)</span>
+<span class="sd">        normal: Normal vector of cone</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        angle: Cone angle (rad)</span>
+<span class="sd">        atoms: Atoms that are tangent to cone (1-indexed)</span>
+<span class="sd">        normal: Normal vector of cone</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">atoms</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Atom</span><span class="p">]</span>
+    <span class="n">normal</span><span class="p">:</span> <span class="n">Array1DFloat</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">atoms</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Atom</span><span class="p">],</span> <span class="n">normal</span><span class="p">:</span> <span class="n">ArrayLike1D</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">angle</span> <span class="o">=</span> <span class="n">angle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">normal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">normal</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Cone.is_inside">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.Cone.is_inside">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_inside</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atom</span><span class="p">:</span> <span class="n">Atom</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Tests if atom lies inside the cone.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            atom: Atom to test.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            True if inside, False if outside.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get vertex angle of atom</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">cone</span><span class="o">.</span><span class="n">angle</span>
+
+        <span class="c1"># Calculate angle between cone normal vector and unit vector to atom</span>
+        <span class="n">cos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">cone</span><span class="o">.</span><span class="n">normal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal</span><span class="p">)</span>
+
+        <span class="c1"># Take into account numerical problems that sometimes gives a value</span>
+        <span class="c1"># somewhat above 1</span>
+        <span class="k">if</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">cos</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">cos</span> <span class="o">&lt;</span> <span class="mf">1e-5</span><span class="p">:</span>
+            <span class="n">cos</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">angle</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">acos</span><span class="p">(</span><span class="n">cos</span><span class="p">)</span>
+
+        <span class="c1"># Check if atom lies inside cone, within numerical reason</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">angle</span> <span class="o">-</span> <span class="p">(</span><span class="n">beta</span> <span class="o">+</span> <span class="n">angle</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">diff</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mf">1e-5</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="Cone.is_inside_points">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.Cone.is_inside_points">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_inside_points</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span> <span class="n">ArrayLike2D</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cross&quot;</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array1DBool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test if points are inside cone of atom.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            points: Points to check (Å)</span>
+<span class="sd">            method: Method for testing: &#39;angle&#39;, &#39;cross&#39; or &#39;dot&#39;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            is_inside: Boolean array with points marked as inside</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: When method not supported</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">points</span><span class="p">:</span> <span class="n">Array2DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;cross&quot;</span><span class="p">,</span> <span class="s2">&quot;dot&quot;</span><span class="p">]:</span>
+            <span class="c1"># Calculate radius of cone at distance of each point</span>
+            <span class="n">cone_distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal</span><span class="p">)</span>
+            <span class="n">cone_radii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">angle</span><span class="p">)</span> <span class="o">*</span> <span class="n">cone_distances</span>
+
+            <span class="c1"># Calculate orthogonal distance of points to cone normal vector</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;cross&quot;</span><span class="p">:</span>
+                <span class="n">orth_distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="o">-</span><span class="n">points</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;dot&quot;</span><span class="p">:</span>
+                <span class="n">orth_distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span>
+                    <span class="o">-</span><span class="n">points</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal</span><span class="p">,</span>
+                    <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Determine if distance is smaller than cone radius.</span>
+            <span class="n">is_inside</span> <span class="o">=</span> <span class="n">orth_distances</span> <span class="o">&lt;</span> <span class="n">cone_radii</span>
+        <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;angle&quot;</span><span class="p">:</span>
+            <span class="n">norm_points</span> <span class="o">=</span> <span class="n">points</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+            <span class="c1"># Calculate angle between cone normal vector and unit vector to</span>
+            <span class="c1"># atom</span>
+            <span class="n">cos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">norm_points</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">normal</span><span class="p">)</span>
+
+            <span class="c1"># Take into account numerical problems that sometimes gives a value</span>
+            <span class="c1"># somewhat above 1</span>
+            <span class="n">cos</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">cos</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">cos</span> <span class="o">&lt;</span> <span class="mf">1e-5</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">cos</span><span class="p">)</span>
+
+            <span class="c1"># Check if atom lies inside cone, within numerical reason</span>
+            <span class="n">diff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">angle</span> <span class="o">-</span> <span class="n">angle</span>
+
+            <span class="n">is_inside</span> <span class="o">=</span> <span class="n">diff</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mf">1e-5</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;method=</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2"> not supported.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">is_inside</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">atoms</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span><span class="p">])</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(Tangent atoms: </span><span class="si">{</span><span class="n">atoms</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="Sphere">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.Sphere">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Sphere</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sphere class for creating and holding points on vdW surface.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        center: Coordinates for center (Å)</span>
+<span class="sd">        density: Area per point (Å²) for empty sphere</span>
+<span class="sd">            and volume per point (Å³) for filled sphere.</span>
+<span class="sd">        filled: Whether a sphere with internal points should be constructed (works only</span>
+<span class="sd">            with method=&#39;projection&#39;)</span>
+<span class="sd">        method: Method for generating points: &#39;fibonacci&#39;, &#39;polar&#39; or &#39;projection&#39;</span>
+<span class="sd">        radius: Radius (Å)</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        area: Area (Å²)</span>
+<span class="sd">        center: Coordinates for sphere center (Å)</span>
+<span class="sd">        circumference: Circumference (Å)</span>
+<span class="sd">        density: Density of points (Å² or Å³)</span>
+<span class="sd">        points: Points in/on sphere (Å)</span>
+<span class="sd">        radius: Radius (Å)</span>
+<span class="sd">        volume: Volume (Å³)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">area</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">center</span><span class="p">:</span> <span class="n">Array1DFloat</span>
+    <span class="n">circumference</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">density</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">points</span><span class="p">:</span> <span class="n">Array2DFloat</span>
+    <span class="n">radius</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">volume</span><span class="p">:</span> <span class="nb">float</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">center</span><span class="p">:</span> <span class="n">ArrayLike1D</span><span class="p">,</span>
+        <span class="n">radius</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">density</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.005</span><span class="p">,</span>
+        <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;fibonacci&quot;</span><span class="p">,</span>
+        <span class="n">filled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">center</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">radius</span> <span class="o">=</span> <span class="n">radius</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">circumference</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">radius</span> <span class="o">*</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">area</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">radius</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">volume</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">radius</span><span class="o">**</span><span class="mi">3</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">density</span> <span class="o">=</span> <span class="n">density</span>
+
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;polar&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_points_polar</span><span class="p">(</span><span class="n">density</span><span class="o">=</span><span class="n">density</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;projection&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_points_projected</span><span class="p">(</span><span class="n">density</span><span class="o">=</span><span class="n">density</span><span class="p">,</span> <span class="n">filled</span><span class="o">=</span><span class="n">filled</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;fibonacci&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_points_fibonacci</span><span class="p">(</span><span class="n">density</span><span class="o">=</span><span class="n">density</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_cartesian_coordinates</span><span class="p">(</span>
+        <span class="n">r</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">theta</span><span class="p">:</span> <span class="n">ArrayLike1D</span><span class="p">,</span> <span class="n">phi</span><span class="p">:</span> <span class="n">ArrayLike1D</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array2DFloat</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts polar to Cartesian coordinates.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            phi: Phi angles (radians)</span>
+<span class="sd">            r: Radius (Å)</span>
+<span class="sd">            theta: Theta angles (radians)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            points: Cartesian points (Å)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Calculate x, y and z coordinates</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+
+        <span class="c1"># Stack coordinates as columns</span>
+        <span class="n">points</span><span class="p">:</span> <span class="n">Array2DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">points</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_points_fibonacci</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">density</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array2DFloat</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct points on sphere surface by the Fibonacci golden spiral method.</span>
+
+<span class="sd">        Method vectorized from</span>
+<span class="sd">        https://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            density: Area per point (Å²)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            points: Surface points (Å)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Generate points on unit sphere</span>
+        <span class="n">rnd</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">area</span> <span class="o">/</span> <span class="n">density</span><span class="p">)))</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="n">n</span>
+        <span class="n">increment</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="mf">3.0</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">5.0</span><span class="p">))</span>
+
+        <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="p">((</span><span class="n">i</span> <span class="o">*</span> <span class="n">offset</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">offset</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">y</span><span class="p">))</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">((</span><span class="n">i</span> <span class="o">+</span> <span class="n">rnd</span><span class="p">),</span> <span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">increment</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">*</span> <span class="n">r</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">*</span> <span class="n">r</span>
+
+        <span class="c1"># Generate points and adjust with radius and center</span>
+        <span class="n">points</span><span class="p">:</span> <span class="n">Array2DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">points</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">points</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span>
+
+        <span class="k">return</span> <span class="n">points</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_points_polar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">density</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array2DFloat</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct points on sphere by polar coordinate method.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            density: Area per point (Å²)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            points: Points on sphere (Å)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Calculate number of points</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">area</span> <span class="o">/</span> <span class="n">density</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)))</span>
+
+        <span class="c1"># Set up points along theta and phi</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span>
+
+        <span class="c1"># Combine together all the possible combinations of theta and phi</span>
+        <span class="n">combined_theta_phi</span><span class="p">:</span> <span class="n">Array2DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dstack</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">phi</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span>
+        <span class="p">)</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">combined_theta_phi</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">combined_theta_phi</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># Get the Cartesian coordinates</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_cartesian_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">phi</span><span class="p">)</span>
+
+        <span class="c1"># Adjust to sphere center</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">points</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span>
+
+        <span class="k">return</span> <span class="n">points</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_points_projected</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">density</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">filled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array2DFloat</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct points on sphere surface by projection.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            density: Area per point (Å²) for empty sphere and volume</span>
+<span class="sd">                per point (Å³) for filled sphere</span>
+<span class="sd">            filled: Whether to generate internal points</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            points: Array of surface points (Å)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Calculate number of points from density of empty or filled sphere.</span>
+        <span class="k">if</span> <span class="n">filled</span><span class="p">:</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">volume</span> <span class="o">/</span> <span class="n">density</span> <span class="o">*</span> <span class="mi">6</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">area</span> <span class="o">/</span> <span class="n">density</span> <span class="o">*</span> <span class="mi">6</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)))</span>
+
+        <span class="c1"># Generate points in box</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">radius</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="n">r</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="n">r</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="n">r</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+        <span class="n">points</span><span class="p">:</span> <span class="n">Array2DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+        <span class="c1"># Remove points outside of sphere</span>
+        <span class="n">lengths</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="n">lengths</span> <span class="o">&lt;=</span> <span class="n">r</span><span class="p">]</span>
+
+        <span class="c1"># Project points onto sphere surface if sphere is empty</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">filled</span><span class="p">:</span>
+            <span class="n">points</span> <span class="o">=</span> <span class="n">points</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">r</span>
+
+        <span class="c1"># Adjust with sphere center</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">points</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span>
+
+        <span class="k">return</span> <span class="n">points</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(center: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;radius: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">radius</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Bond">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.Bond">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Bond</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Bond internal coordinate.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        atom_1: Index of atom 1 (1-indexed)</span>
+<span class="sd">        atom_2: Index of atom 2 (1-indexed)</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        i: Index of atom 1 (1-indexed)</span>
+<span class="sd">        j: Index of atom 2 (1-indexed)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">i</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">j</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">atoms</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atom_1</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">atom_2</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">=</span> <span class="n">atom_1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">j</span> <span class="o">=</span> <span class="n">atom_2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span> <span class="o">=</span> <span class="p">[</span><span class="n">atom_1</span><span class="p">,</span> <span class="n">atom_2</span><span class="p">]</span>
+
+<div class="viewcode-block" id="Bond.get_b_vector">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.Bond.get_b_vector">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_b_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">:</span> <span class="n">ArrayLike2D</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array1DFloat</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate vector of B matrix for internal coordinate.</span>
+
+<span class="sd">        Code adapted from pyberny: https://github.com/jhrmnn/pyberny.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            coordinates: Coordinates (Å)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            b_vector: Vector of B matrix (a.u.)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">coordinates</span><span class="p">:</span> <span class="n">Array2DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span>
+        <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="o">*</span> <span class="n">ANGSTROM_TO_BOHR</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="n">grad</span><span class="p">:</span> <span class="n">Array1DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">v</span> <span class="o">/</span> <span class="n">r</span><span class="p">,</span> <span class="o">-</span><span class="n">v</span> <span class="o">/</span> <span class="n">r</span><span class="p">])</span>
+
+        <span class="n">b_vector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">coordinates</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">b_vector</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="mi">3</span> <span class="p">:</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">grad</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">b_vector</span><span class="p">[</span><span class="n">j</span> <span class="o">*</span> <span class="mi">3</span> <span class="p">:</span> <span class="n">j</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">grad</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">b_vector</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">i</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">j</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">j</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">i</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">j</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">j</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">atoms</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atoms</span><span class="p">))</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">atoms</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="Angle">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.Angle">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Angle</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Bond internal coordinate.</span>
+
+<span class="sd">    Code adapted from pyberny: https://github.com/jhrmnn/pyberny.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        atom_1: Index of atom 1 (1-indexed)</span>
+<span class="sd">        atom_2: Index of atom 2 (1-indexed)</span>
+<span class="sd">        atom_3: Index of atom 3 (1-indexed)</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        i: Index of atom 1 (1-indexed)</span>
+<span class="sd">        j: Index of atom 2 (1-indexed)</span>
+<span class="sd">        k: Index of atom 3 (1-indexed)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">i</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">j</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">k</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">atoms</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atom_1</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">atom_2</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">atom_3</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">=</span> <span class="n">atom_1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">j</span> <span class="o">=</span> <span class="n">atom_2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="n">atom_3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span> <span class="o">=</span> <span class="p">[</span><span class="n">atom_1</span><span class="p">,</span> <span class="n">atom_2</span><span class="p">,</span> <span class="n">atom_3</span><span class="p">]</span>
+
+<div class="viewcode-block" id="Angle.get_b_vector">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.Angle.get_b_vector">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_b_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">:</span> <span class="n">ArrayLike2D</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array1DFloat</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate vector of B matrix for internal coordinate.</span>
+
+<span class="sd">        Code adapted from pyberny: https://github.com/jhrmnn/pyberny.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            coordinates: Coordinates (Å)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            b_vector: Vector of B matrix (a.u.)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">coordinates</span><span class="p">:</span> <span class="n">Array2DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span>
+        <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">v_1</span> <span class="o">=</span> <span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="o">*</span> <span class="n">ANGSTROM_TO_BOHR</span>
+        <span class="n">v_2</span> <span class="o">=</span> <span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">-</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="o">*</span> <span class="n">ANGSTROM_TO_BOHR</span>
+        <span class="n">dot_product</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v_1</span><span class="p">,</span> <span class="n">v_2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v_1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v_2</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">dot_product</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">dot_product</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">dot_product</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">dot_product</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">dot_product</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="mf">1e-6</span><span class="p">:</span>
+            <span class="n">grad</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="n">phi</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v_1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">v_1</span><span class="p">,</span>
+                <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v_1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v_2</span><span class="p">))</span>
+                <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="n">phi</span><span class="p">)</span>
+                <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v_1</span><span class="p">))</span>
+                <span class="o">*</span> <span class="n">v_1</span><span class="p">,</span>
+                <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="n">phi</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v_2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">v_2</span><span class="p">,</span>
+            <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">grad</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">*</span> <span class="n">v_1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v_1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+                <span class="o">-</span> <span class="n">v_2</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v_1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v_2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)),</span>
+                <span class="p">(</span><span class="n">v_1</span> <span class="o">+</span> <span class="n">v_2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v_1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v_2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">))</span>
+                <span class="o">-</span> <span class="mi">1</span>
+                <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+                <span class="o">*</span> <span class="p">(</span><span class="n">v_1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v_1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">v_2</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v_2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">),</span>
+                <span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">*</span> <span class="n">v_2</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v_2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+                <span class="o">-</span> <span class="n">v_1</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v_1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v_2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)),</span>
+            <span class="p">]</span>
+
+        <span class="n">b_vector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">coordinates</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">b_vector</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="mi">3</span> <span class="p">:</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">grad</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">b_vector</span><span class="p">[</span><span class="n">j</span> <span class="o">*</span> <span class="mi">3</span> <span class="p">:</span> <span class="n">j</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">grad</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">b_vector</span><span class="p">[</span><span class="n">k</span> <span class="o">*</span> <span class="mi">3</span> <span class="p">:</span> <span class="n">k</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">grad</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">b_vector</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">i</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">i</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">k</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">j</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">j</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">atoms</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atoms</span><span class="p">))</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">atoms</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="Dihedral">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.Dihedral">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Dihedral</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Bond internal coordinate.</span>
+
+<span class="sd">    Code adapted from pyberny: https://github.com/jhrmnn/pyberny.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        atom_1: Index of atom 1 (1-indexed)</span>
+<span class="sd">        atom_2: Index of atom 2 (1-indexed)</span>
+<span class="sd">        atom_3: Index of atom 3 (1-indexed)</span>
+<span class="sd">        atom_4: Index of atom 4 (1-indexed)</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        i: Index of atom 1 (1-indexed)</span>
+<span class="sd">        j: Index of atom 2 (1-indexed)</span>
+<span class="sd">        k: Index of atom 3 (1-indexed)</span>
+<span class="sd">        l: Index of atom 4 (1-indexed)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">i</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">j</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">k</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">l</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">atoms</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atom_1</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">atom_2</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">atom_3</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">atom_4</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">=</span> <span class="n">atom_1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">j</span> <span class="o">=</span> <span class="n">atom_2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="n">atom_3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">l</span> <span class="o">=</span> <span class="n">atom_4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span> <span class="o">=</span> <span class="p">[</span><span class="n">atom_1</span><span class="p">,</span> <span class="n">atom_2</span><span class="p">,</span> <span class="n">atom_3</span><span class="p">,</span> <span class="n">atom_4</span><span class="p">]</span>
+
+<div class="viewcode-block" id="Dihedral.get_b_vector">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.Dihedral.get_b_vector">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_b_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">:</span> <span class="n">ArrayLike2D</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array1DFloat</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate vector of B matrix for internal coordinate.</span>
+
+<span class="sd">        Code adapted from pyberny: https://github.com/jhrmnn/pyberny.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            coordinates: Coordinates (Å)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            b_vector: Vector of B matrix (a.u.)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">coordinates</span><span class="p">:</span> <span class="n">Array2DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span>
+        <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">l</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">l</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">v_1</span> <span class="o">=</span> <span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="o">*</span> <span class="n">ANGSTROM_TO_BOHR</span>
+        <span class="n">v_2</span> <span class="o">=</span> <span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="n">l</span><span class="p">]</span> <span class="o">-</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">*</span> <span class="n">ANGSTROM_TO_BOHR</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">-</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="o">*</span> <span class="n">ANGSTROM_TO_BOHR</span>
+        <span class="n">ew</span> <span class="o">=</span> <span class="n">w</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+        <span class="n">a_1</span> <span class="o">=</span> <span class="n">v_1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v_1</span><span class="p">,</span> <span class="n">ew</span><span class="p">)</span> <span class="o">*</span> <span class="n">ew</span>
+        <span class="n">a_2</span> <span class="o">=</span> <span class="n">v_2</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v_2</span><span class="p">,</span> <span class="n">ew</span><span class="p">)</span> <span class="o">*</span> <span class="n">ew</span>
+        <span class="n">sgn</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">v_2</span><span class="p">,</span> <span class="n">v_1</span><span class="p">,</span> <span class="n">w</span><span class="p">])))</span>
+        <span class="n">sgn</span> <span class="o">=</span> <span class="n">sgn</span> <span class="ow">or</span> <span class="mi">1</span>
+        <span class="n">dot_product</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">a_1</span><span class="p">,</span> <span class="n">a_2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_2</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">dot_product</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">dot_product</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">dot_product</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">dot_product</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">dot_product</span><span class="p">)</span> <span class="o">*</span> <span class="n">sgn</span>
+        <span class="n">g</span><span class="p">:</span> <span class="n">Array1DFloat</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="mf">1e-6</span><span class="p">:</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">a_1</span><span class="p">)</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="n">g</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v_1</span><span class="p">,</span> <span class="n">ew</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+            <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v_2</span><span class="p">,</span> <span class="n">ew</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+            <span class="n">grad</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">g</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_1</span><span class="p">)),</span>
+                <span class="o">-</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">A</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_1</span><span class="p">)</span> <span class="o">-</span> <span class="n">B</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_2</span><span class="p">))</span> <span class="o">*</span> <span class="n">g</span><span class="p">,</span>
+                <span class="o">-</span><span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="n">B</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_2</span><span class="p">)</span> <span class="o">+</span> <span class="n">A</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_1</span><span class="p">))</span> <span class="o">*</span> <span class="n">g</span><span class="p">,</span>
+                <span class="n">g</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_2</span><span class="p">)),</span>
+            <span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">abs</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">:</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">a_1</span><span class="p">)</span>
+            <span class="n">g</span> <span class="o">=</span> <span class="n">g</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v_1</span><span class="p">,</span> <span class="n">ew</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+            <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v_2</span><span class="p">,</span> <span class="n">ew</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+            <span class="n">grad</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">g</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_1</span><span class="p">)),</span>
+                <span class="o">-</span><span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">A</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_1</span><span class="p">)</span> <span class="o">+</span> <span class="n">B</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_2</span><span class="p">))</span> <span class="o">*</span> <span class="n">g</span><span class="p">,</span>
+                <span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="n">B</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_2</span><span class="p">)</span> <span class="o">-</span> <span class="n">A</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_1</span><span class="p">))</span> <span class="o">*</span> <span class="n">g</span><span class="p">,</span>
+                <span class="o">-</span><span class="n">g</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_2</span><span class="p">)),</span>
+            <span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v_1</span><span class="p">,</span> <span class="n">ew</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+            <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v_2</span><span class="p">,</span> <span class="n">ew</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+            <span class="n">grad</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">*</span> <span class="n">a_1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+                <span class="o">-</span> <span class="n">a_2</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)),</span>
+                <span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">A</span><span class="p">)</span> <span class="o">*</span> <span class="n">a_2</span> <span class="o">-</span> <span class="n">B</span> <span class="o">*</span> <span class="n">a_1</span><span class="p">)</span>
+                <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">))</span>
+                <span class="o">-</span> <span class="mi">1</span>
+                <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+                <span class="o">*</span> <span class="p">(</span>
+                    <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">A</span><span class="p">)</span> <span class="o">*</span> <span class="n">a_1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+                    <span class="o">-</span> <span class="n">B</span> <span class="o">*</span> <span class="n">a_2</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+                <span class="p">),</span>
+                <span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="n">B</span><span class="p">)</span> <span class="o">*</span> <span class="n">a_1</span> <span class="o">+</span> <span class="n">A</span> <span class="o">*</span> <span class="n">a_2</span><span class="p">)</span>
+                <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">))</span>
+                <span class="o">-</span> <span class="mi">1</span>
+                <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+                <span class="o">*</span> <span class="p">(</span>
+                    <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">B</span><span class="p">)</span> <span class="o">*</span> <span class="n">a_2</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+                    <span class="o">+</span> <span class="n">A</span> <span class="o">*</span> <span class="n">a_1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+                <span class="p">),</span>
+                <span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span> <span class="o">*</span> <span class="n">a_2</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+                <span class="o">-</span> <span class="n">a_1</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">a_2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phi</span><span class="p">)),</span>
+            <span class="p">]</span>
+        <span class="n">b_vector</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">coordinates</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="n">b_vector</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="mi">3</span> <span class="p">:</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">grad</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">b_vector</span><span class="p">[</span><span class="n">j</span> <span class="o">*</span> <span class="mi">3</span> <span class="p">:</span> <span class="n">j</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">grad</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">b_vector</span><span class="p">[</span><span class="n">k</span> <span class="o">*</span> <span class="mi">3</span> <span class="p">:</span> <span class="n">k</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">grad</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">b_vector</span><span class="p">[</span><span class="n">l</span> <span class="o">*</span> <span class="mi">3</span> <span class="p">:</span> <span class="n">l</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">grad</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">b_vector</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">all</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">i</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">j</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">j</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">k</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">l</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">l</span><span class="p">,</span>
+                <span class="p">]</span>
+            <span class="p">)</span> <span class="ow">or</span> <span class="nb">all</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">l</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">j</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">k</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">j</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">l</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">i</span><span class="p">,</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">j</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">l</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">atoms</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atoms</span><span class="p">))</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">atoms</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="InternalCoordinates">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.InternalCoordinates">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">InternalCoordinates</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Internal coordinates.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        internal_coordinates: Internal coordinates</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">internal_coordinates</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Bond</span> <span class="o">|</span> <span class="n">Angle</span> <span class="o">|</span> <span class="n">Dihedral</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">internal_coordinates</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="InternalCoordinates.add_bond">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.InternalCoordinates.add_bond">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_bond</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atom_1</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">atom_2</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add bonds to internal coordinates.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            atom_1: Index of atom 1 (1-indexed)</span>
+<span class="sd">            atom_2: Index of atom 2 (1-indexed)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">bond</span> <span class="o">=</span> <span class="n">Bond</span><span class="p">(</span><span class="n">atom_1</span><span class="p">,</span> <span class="n">atom_2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">bond</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_coordinates</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">internal_coordinates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bond</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InternalCoordinates.add_angle">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.InternalCoordinates.add_angle">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_angle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atom_1</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">atom_2</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">atom_3</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add angle to internal coordinates.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            atom_1: Index of atom 1 (1-indexed)</span>
+<span class="sd">            atom_2: Index of atom 2 (1-indexed)</span>
+<span class="sd">            atom_3: Index of atom 3 (1-indexed)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">angle</span> <span class="o">=</span> <span class="n">Angle</span><span class="p">(</span><span class="n">atom_1</span><span class="p">,</span> <span class="n">atom_2</span><span class="p">,</span> <span class="n">atom_3</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">angle</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_coordinates</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">internal_coordinates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InternalCoordinates.add_dihedral">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.InternalCoordinates.add_dihedral">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_dihedral</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atom_1</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">atom_2</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">atom_3</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">atom_4</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add dihedral angle to internal coordinates.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            atom_1: Index of atom 1 (1-indexed)</span>
+<span class="sd">            atom_2: Index of atom 2 (1-indexed)</span>
+<span class="sd">            atom_3: Index of atom 3 (1-indexed)</span>
+<span class="sd">            atom_4: Index of atom 4 (1-indexed)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dihedral</span> <span class="o">=</span> <span class="n">Dihedral</span><span class="p">(</span><span class="n">atom_1</span><span class="p">,</span> <span class="n">atom_2</span><span class="p">,</span> <span class="n">atom_3</span><span class="p">,</span> <span class="n">atom_4</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dihedral</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_coordinates</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">internal_coordinates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dihedral</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InternalCoordinates.add_internal_coordinate">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.InternalCoordinates.add_internal_coordinate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_internal_coordinate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add internal coordinate automatically depending on number of atoms.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            atoms: Sequence of atom indices (1-index).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_bond</span><span class="p">(</span><span class="o">*</span><span class="n">atoms</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_angle</span><span class="p">(</span><span class="o">*</span><span class="n">atoms</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_dihedral</span><span class="p">(</span><span class="o">*</span><span class="n">atoms</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InternalCoordinates.detect_bonds">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.InternalCoordinates.detect_bonds">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">detect_bonds</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">coordinates</span><span class="p">:</span> <span class="n">ArrayLike2D</span><span class="p">,</span>
+        <span class="n">elements</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">radii</span><span class="p">:</span> <span class="n">ArrayLike1D</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">radii_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pyykko&quot;</span><span class="p">,</span>
+        <span class="n">scale_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.2</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Detect bonds based on covalent radii cutoffs.&quot;&quot;&quot;</span>
+        <span class="c1"># Detect bonds based on covalent radii</span>
+        <span class="n">connectivity_matrix</span> <span class="o">=</span> <span class="n">get_connectivity_matrix</span><span class="p">(</span>
+            <span class="n">coordinates</span><span class="p">,</span>
+            <span class="n">elements</span><span class="o">=</span><span class="n">elements</span><span class="p">,</span>
+            <span class="n">radii</span><span class="o">=</span><span class="n">radii</span><span class="p">,</span>
+            <span class="n">radii_type</span><span class="o">=</span><span class="n">radii_type</span><span class="p">,</span>
+            <span class="n">scale_factor</span><span class="o">=</span><span class="n">scale_factor</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">connectivity_matrix</span><span class="p">)</span>
+
+        <span class="n">bonds</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">indices</span><span class="p">):</span>
+            <span class="n">bond</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">([</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">bonds</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">bond</span><span class="p">)</span>
+
+        <span class="c1"># Add each bond as an internal coordinate</span>
+        <span class="k">for</span> <span class="n">bond</span> <span class="ow">in</span> <span class="n">bonds</span><span class="p">:</span>
+            <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">bond</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_bond</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InternalCoordinates.get_B_matrix">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.InternalCoordinates.get_B_matrix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_B_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">:</span> <span class="n">ArrayLike2D</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array2DFloat</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate B matrix for coordinates.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            coordinates: Coordinates (Å)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            B_matrix: B matrix</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">coordinates</span><span class="p">:</span> <span class="n">Array2DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span>
+        <span class="n">b_vectors</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">internal_coordinate</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">internal_coordinates</span><span class="p">:</span>
+            <span class="n">b_vectors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">internal_coordinate</span><span class="o">.</span><span class="n">get_b_vector</span><span class="p">(</span><span class="n">coordinates</span><span class="p">))</span>
+        <span class="n">B_matrix</span><span class="p">:</span> <span class="n">Array2DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">b_vectors</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">B_matrix</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">internal_coordinates</span><span class="p">)</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="s2">&quot;coordinates)&quot;</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="rotate_coordinates">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.rotate_coordinates">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">rotate_coordinates</span><span class="p">(</span>
+    <span class="n">coordinates</span><span class="p">:</span> <span class="n">ArrayLike2D</span><span class="p">,</span>
+    <span class="n">vector</span><span class="p">:</span> <span class="n">ArrayLike1D</span><span class="p">,</span>
+    <span class="n">axis</span><span class="p">:</span> <span class="n">ArrayLike1D</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array2DFloat</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Rotates coordinates by the rotation that aligns vector with axis.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        axis: Reference vector to align input vector with</span>
+<span class="sd">        coordinates: Coordinates to rotate</span>
+<span class="sd">        vector: Vector to align</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        rotated_coordinates: Rotated coordinates.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">coordinates</span><span class="p">:</span> <span class="n">Array2DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span>
+    <span class="n">vector</span><span class="p">:</span> <span class="n">Array1DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span>
+    <span class="n">axis</span><span class="p">:</span> <span class="n">Array1DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">axis</span><span class="p">)</span>
+
+    <span class="c1"># Get real part of quaternion</span>
+    <span class="n">real</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="c1"># Get imaginary dimensions and handle case of antiparallel vectors</span>
+    <span class="k">if</span> <span class="n">real</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">:</span>
+        <span class="n">w</span><span class="p">:</span> <span class="n">Array1DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">:</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+
+    <span class="c1"># Form quaternion and normalize</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">w</span><span class="p">,</span> <span class="n">real</span><span class="p">))</span>
+    <span class="n">q</span> <span class="o">=</span> <span class="n">q</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+
+    <span class="c1"># Rotate atomic coordinates</span>
+    <span class="n">rotation</span> <span class="o">=</span> <span class="n">Rotation</span><span class="o">.</span><span class="n">from_quat</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+    <span class="n">rotated_coordinates</span> <span class="o">=</span> <span class="n">rotation</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">rotated_coordinates</span></div>
+
+
+
+<div class="viewcode-block" id="kabsch_rotation_matrix">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.kabsch_rotation_matrix">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">kabsch_rotation_matrix</span><span class="p">(</span>
+    <span class="n">P</span><span class="p">:</span> <span class="n">ArrayLike2D</span><span class="p">,</span> <span class="n">Q</span><span class="p">:</span> <span class="n">ArrayLike2D</span><span class="p">,</span> <span class="n">center</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array2DFloat</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Construct Kabsch rotation matrix.</span>
+
+<span class="sd">    Constructs the rotation matrix that overlays the points in P with the points in Q</span>
+<span class="sd">    with minimum RMSD. https://en.wikipedia.org/wiki/Kabsch_algorithm</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        P: Coordinates to be rotated</span>
+<span class="sd">        Q: Reference coordinates</span>
+<span class="sd">        center: Whether to center P and Q at origin.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        R: Rotation matrix</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">P</span><span class="p">:</span> <span class="n">Array2DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">P</span><span class="p">)</span>
+    <span class="n">Q</span><span class="p">:</span> <span class="n">Array2DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Q</span><span class="p">)</span>
+
+    <span class="c1"># Calculate centroids and center coordinates</span>
+    <span class="k">if</span> <span class="n">center</span><span class="p">:</span>
+        <span class="n">centroid_P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">P</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">centroid_Q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">P</span> <span class="o">-=</span> <span class="n">centroid_P</span>
+        <span class="n">Q</span> <span class="o">-=</span> <span class="n">centroid_Q</span>
+
+    <span class="c1"># Calculate cross-covariance matrix</span>
+    <span class="n">H</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">Q</span>
+
+    <span class="c1"># Perform SVD</span>
+    <span class="n">U</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">V_T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">svd</span><span class="p">(</span><span class="n">H</span><span class="p">)</span>
+
+    <span class="c1"># Determine correction for right-hand coordinate system</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">V_T</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">U</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+
+    <span class="c1"># Obtain rotation matrix</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="n">V_T</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">d</span><span class="p">]])</span> <span class="o">@</span> <span class="n">U</span><span class="o">.</span><span class="n">T</span>
+
+    <span class="k">return</span> <span class="n">R</span></div>
+
+
+
+<div class="viewcode-block" id="sphere_line_intersection">
+<a class="viewcode-back" href="../../api/morfeus.geometry.html#morfeus.geometry.sphere_line_intersection">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sphere_line_intersection</span><span class="p">(</span>
+    <span class="n">vector</span><span class="p">:</span> <span class="n">ArrayLike1D</span><span class="p">,</span> <span class="n">center</span><span class="p">:</span> <span class="n">ArrayLike1D</span><span class="p">,</span> <span class="n">radius</span><span class="p">:</span> <span class="nb">float</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Array2DFloat</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get points of intersection between line and sphere.</span>
+
+<span class="sd">    Follows the procedure outlined here: http://paulbourke.net/geometry/circlesphere/.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        vector: Vector giving direction of line</span>
+<span class="sd">        center: Center of sphere</span>
+<span class="sd">        radius: Radius of sphere</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        intersection_points: Intersection points</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">vector</span><span class="p">:</span> <span class="n">Array1DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span>
+    <span class="n">center</span><span class="p">:</span> <span class="n">Array1DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">center</span><span class="p">)</span>
+
+    <span class="c1"># Set up points</span>
+    <span class="n">p_1</span> <span class="o">=</span> <span class="n">vector</span>
+    <span class="n">p_2</span> <span class="o">=</span> <span class="n">vector</span> <span class="o">*</span> <span class="mi">2</span>
+
+    <span class="c1"># Set up terms for quadratic equation</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">p_2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">p_1</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">p_2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">p_1</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">p_2</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">p_1</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span>
+        <span class="p">(</span><span class="n">p_2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">p_1</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="n">p_1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="o">+</span> <span class="p">(</span><span class="n">p_2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">p_1</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="n">p_1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="o">+</span> <span class="p">(</span><span class="n">p_2</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">p_1</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="n">p_1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">center</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    <span class="p">)</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="o">+</span> <span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="o">+</span> <span class="n">center</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="o">+</span> <span class="n">p_1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="o">+</span> <span class="n">p_1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="o">+</span> <span class="n">p_1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">p_1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">p_1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">center</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">p_1</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="o">-</span> <span class="n">radius</span><span class="o">**</span><span class="mi">2</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Determine value within the square root and select cases</span>
+    <span class="n">within_sqrt</span> <span class="o">=</span> <span class="n">b</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">a</span> <span class="o">*</span> <span class="n">c</span>
+    <span class="k">if</span> <span class="n">within_sqrt</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">us</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">elif</span> <span class="n">within_sqrt</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">us</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="n">b</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">a</span><span class="p">)]</span>
+    <span class="k">elif</span> <span class="n">within_sqrt</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">us</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="o">-</span><span class="n">b</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">within_sqrt</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">a</span><span class="p">),</span>
+            <span class="p">(</span><span class="o">-</span><span class="n">b</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">within_sqrt</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">a</span><span class="p">),</span>
+        <span class="p">]</span>
+
+    <span class="c1"># Calculate intersection points.</span>
+    <span class="n">intersection_points</span><span class="p">:</span> <span class="n">Array2DFloat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">p_1</span> <span class="o">+</span> <span class="n">u</span> <span class="o">*</span> <span class="p">(</span><span class="n">p_2</span> <span class="o">-</span> <span class="n">p_1</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">us</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">intersection_points</span></div>
+
+</pre></div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2021, Kjell Jorner
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="../../_static/documentation_options.js?v=486e5634"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/tabs.js?v=3ee01567"></script>
+    </body>
+</html>

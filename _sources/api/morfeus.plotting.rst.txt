@@ -1,0 +1,6 @@
+morfeus.plotting module
+=======================
+
+.. automodule:: morfeus.plotting
+   :members:
+   :show-inheritance:

@@ -1,0 +1,6 @@
+morfeus.conformer module
+========================
+
+.. automodule:: morfeus.conformer
+   :members:
+   :show-inheritance:

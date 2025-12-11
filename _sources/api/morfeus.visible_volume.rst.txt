@@ -1,0 +1,6 @@
+morfeus.visible\_volume module
+==============================
+
+.. automodule:: morfeus.visible_volume
+   :members:
+   :show-inheritance:

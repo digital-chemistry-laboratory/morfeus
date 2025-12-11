@@ -1,0 +1,6 @@
+morfeus.local\_force module
+===========================
+
+.. automodule:: morfeus.local_force
+   :members:
+   :show-inheritance:

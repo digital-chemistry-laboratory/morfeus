@@ -1,0 +1,6 @@
+morfeus.solid\_angle module
+===========================
+
+.. automodule:: morfeus.solid_angle
+   :members:
+   :show-inheritance:
