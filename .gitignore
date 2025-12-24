@@ -5,6 +5,7 @@ __pycache__/
 .coverage
 .mypy_cache
 .pytest_cache
+*.ipynb
 
 # Distribution/packaging
 build/
@@ -13,3 +14,5 @@ dist/
 _build
 /docs/api
 bibtex.json
+tau4-test.xyz
+tau5-test.xyz
