@@ -31,6 +31,27 @@ jobs:
       - name: Run `nox -s tests`
         run: python -m nox -s tests-${{ matrix.python_version }}
         shell: bash
+  test_xtb:
+    name: ubuntu / xtb / 3.10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup conda env
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: xtb-ci
+          auto-activate-base: false
+          channel-priority: strict
+          channels: conda-forge
+          python-version: "3.10"
+      - name: Install xtb and nox
+        run: |
+          conda install -y 'xtb>=6.7.1' nox
+          xtb --version
+        shell: bash -el {0}
+      - name: Run xtb tests
+        run: python -m nox -s tests-3.10 -- -m xtb
+        shell: bash -el {0}
   deptry:
     name: nox -s deptry
     runs-on: ${{ matrix.os }}-latest
