@@ -4,31 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-02-19
+## [Unreleased] - 2026-02-23
 
 ### Added
-- Added new `Multiwfn` module for wavefunction analysis with the external Multiwfn program
-- Added new `PexpectSession` utility to robustly interface with the Multiwfn program
-- Methods `Multiwfn.list_options` to access available options for the methods below
-- Method `Multiwfn.get_charges` to return atomic charges
-- Method `Multiwfn.get_bond_order` to return bond orders
-- Method `Multiwfn.get_surface` to compute surface analyses with atomic and global properties
-- Methods `Multiwfn.get_descriptor` and `Multiwfn.get_vector` to compute scalar and vector fuzzy-space descriptors
-- Method `Multiwfn.get_grid` to generate cube grids for descriptors  
-- Method `Multiwfn.grid_to_descriptors` to integrate descriptor values per atom from cube/grid files
-- Methods `Multiwfn.get_fukui` and `Multiwfn.get_superdelocalizabilities` for conceptual DFT analyses on closed-shell systems
-- Methods `Multiwfn.get_electric_moments`, `Multiwfn.get_gaps`/`Multiwfn.get_gap`, and `Multiwfn.get_localization` for orbital/electric-moment/localization analyses
-- Method `Multiwfn.run_commands` with command scripting support and progress-aware waiting for robust control of Multiwfn interactive runs
-- Method `Multiwfn.get_citations`, to return relevant citations
-- Method `Multiwfn.load_settingini` for loading a custom settings file for Multiwfn
-- Added helper `molden2aim` utility wrapper for normalization of .molden files prior to analysis
-- Added dedicated `multiwfn` GitHub Actions testing job (including Multiwfn binary installation)
-- Added Multiwfn documentation page
-- Added dedicated `xtb` GitHub Actions testing job (including xtb installation)
-- Methods `XTB.gen_molden_file`, `XTB.gen_density_file`, and `XTB.gen_spin_density_file` to return grid and molden files.
-
-### Changed
-- Modified `XTB` generation of `xtb.inp`file for enhanced readability.
+- New `Multiwfn` module for wavefunction analysis with the external Multiwfn program
+- `PexpectSession` utility to robustly interface with the Multiwfn program
+- Methods `XTB.gen_molden_file`, `XTB.gen_density_file`, and `XTB.gen_spin_density_file` to return grid and molden files
+- Helper `molden2aim` utility wrapper for normalization of .molden files prior to analysis
+- Dedicated `multiwfn` and `xtb` GitHub Actions testing job (including Multiwfn binary and xtb installation)
 
 ### Fixed
 - Compatibility issue with Python 3.14 where command-line interface failed due to `fire` library's requirement for `__name__` attribute on `functools.partial` objects

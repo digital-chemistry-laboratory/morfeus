@@ -85,6 +85,7 @@ Berlin. In particular, the following people (in alphabetical order) have contrib
 developing its functionality:
 
 * Gabriel dos Passos Gomes
+* Henrik Seng
 * Kjell Jorner
 * Lauriane Jacot-Descombes
 * Pascal Friedrich
