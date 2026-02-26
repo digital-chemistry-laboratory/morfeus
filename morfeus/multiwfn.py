@@ -1725,7 +1725,7 @@ class Multiwfn:
         Returns:
             Dictionary mapping key names to {atom_idx: value}
         """
-        lines = stdout.split("\n")
+        lines = stdout.replace("\r", "\n").splitlines()
         result: dict[str, dict[int, float]] = {key: {} for key in keys}
         row_pattern = re.compile(
             (
@@ -1739,12 +1739,12 @@ class Multiwfn:
                 # Found the header line
                 for j in range(i + 1, len(lines)):
                     data_line = lines[j]
-                    if not data_line.strip():
-                        break
                     if stop_keyword and stop_keyword in data_line:
                         break
+                    if not data_line.strip():
+                        continue
                     # Parse format: "     1(C        val1        val2        val3        val4"
-                    match = row_pattern.match(data_line)
+                    match = row_pattern.search(data_line)
                     if match:
                         atom_idx = int(match.group(1))
                         for k, key in enumerate(keys, start=2):
@@ -1793,7 +1793,7 @@ class Multiwfn:
             "d_n_0": {},
             "d_e_0": {},
         }
-        lines = stdout.splitlines()
+        lines = stdout.replace("\r", "\n").splitlines()
 
         atom_header_re = re.compile(r"\bAtom(?:\s+index)?\b", flags=re.IGNORECASE)
         dn_header_re = re.compile(r"\bD[_\s]?N\b", flags=re.IGNORECASE)
@@ -1807,12 +1807,12 @@ class Multiwfn:
                 and de_header_re.search(line)
             ):
                 for data_line in lines[i + 1 :]:
-                    if not data_line.strip():
-                        break
                     if "sum of" in data_line.lower():
                         break
+                    if not data_line.strip():
+                        continue
 
-                    row_match = row_re.match(data_line)
+                    row_match = row_re.search(data_line)
                     if row_match is None:
                         continue
 
@@ -2015,7 +2015,7 @@ class Multiwfn:
 
     def _parse_atomic_values(self, stdout: str) -> dict[int, float]:
         """Parse fuzzy atomic space integration values from stdout."""
-        lines = stdout.split("\n")
+        lines = stdout.replace("\r", "\n").splitlines()
         atomic_values: dict[int, float] = {}
         value_pattern = NUMBER_PATTERN
 
@@ -2023,10 +2023,12 @@ class Multiwfn:
             if "Atomic space" in line and "Value" in line:
                 for j in range(i + 1, len(lines)):
                     data_line = lines[j]
-                    if "Summing up" in data_line or not data_line.strip():
+                    if "Summing up" in data_line:
                         break
+                    if not data_line.strip():
+                        continue
                     # Parse format: "    1(C )            0.00607663"
-                    match = re.match(
+                    match = re.search(
                         rf"\s*(\d+)\([A-Z][a-z]?\s*\)\s+({value_pattern})",
                         data_line,
                     )
@@ -2189,7 +2191,7 @@ class Multiwfn:
         self, stdout: str
     ) -> dict[int, dict[str, float]]:
         """Parse atomic surface properties from stdout."""
-        lines = stdout.split("\n")
+        lines = stdout.replace("\r", "\n").splitlines()
         atomic_props: dict[int, dict[str, float]] = {}
 
         for i, line in enumerate(lines):
@@ -2230,7 +2232,7 @@ class Multiwfn:
 
     def _parse_global_surface_properties(self, stdout: str) -> dict[str, float]:
         """Parse global surface properties from stdout."""
-        lines = stdout.split("\n")
+        lines = stdout.replace("\r", "\n").splitlines()
         props: dict[str, float] = {}
         in_summary = False
         for line in lines:
