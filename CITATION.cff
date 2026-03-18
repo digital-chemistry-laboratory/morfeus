@@ -10,7 +10,8 @@ type: software
 authors:
   - given-names: Lauriane
     family-names: Jacot-Descombes
-  - given-names: Lucas
+    orcid: "https://orcid.org/0009-0000-5385-6054"
+  - given-names: Lukas
     family-names: Turcani
     orcid: "https://orcid.org/0000-0001-8731-9839"
   - given-names: Kjell
