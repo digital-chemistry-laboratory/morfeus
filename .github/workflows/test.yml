@@ -54,7 +54,7 @@ jobs:
       - name: Run xtb tests
         run: python -m nox -s tests-3.10 -- -m xtb
         shell: bash -el {0}
-  test_multiwfn_2026_2_2:
+  test_multiwfn_2026_3_27:
     name: ubuntu / multiwfn / 3.10
     runs-on: ubuntu-latest
     steps:
@@ -72,7 +72,7 @@ jobs:
       - name: Install Multiwfn binary
         run: |
           set -euxo pipefail
-          ZIP_URL="http://sobereva.com/multiwfn/misc/Multiwfn_2026.2.2_bin_Linux_noGUI.zip"
+          ZIP_URL="http://sobereva.com/multiwfn/misc/Multiwfn_2026.3.27_bin_Linux_noGUI.zip"
           ZIP_PATH="$RUNNER_TEMP/multiwfn.zip"
           INSTALL_DIR="$RUNNER_TEMP/multiwfn-bin"
 

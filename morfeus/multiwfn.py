@@ -876,7 +876,9 @@ class Multiwfn:
         commands.extend(
             [
                 CommandStep("15", expect="15 Fuzzy atomic space analysis"),
-                CommandStep("-1", expect="1 Perform integration in fuzzy atomic spaces"),
+                CommandStep(
+                    "-1", expect="1 Perform integration in fuzzy atomic spaces"
+                ),
                 CommandStep(
                     partition_cmd, expect="Select atomic space partition method"
                 ),
@@ -1584,7 +1586,9 @@ class Multiwfn:
             prefix_commands=commands,
             partitioning=partitioning,
         )
-        subdir = descriptor if partitioning == "becke" else f"{descriptor}_{partitioning}"
+        subdir = (
+            descriptor if partitioning == "becke" else f"{descriptor}_{partitioning}"
+        )
         result = self.run_commands(command_sequence, subdir=subdir)
         descriptor_result = self._parse_atomic_values(result.stdout)
         return descriptor_result
