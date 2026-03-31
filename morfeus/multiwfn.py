@@ -276,6 +276,13 @@ GRID_QUALITIES: dict[str, str] = {
     "high": "3 High quality grid",
 }
 
+FUZZY_PARTITIONING_SCHEMES: dict[str, str] = {
+    "becke": "1 Becke",
+    "hirshfeld": "3 Hirshfeld",
+    "hirshfeld_i": "4 Hirshfeld-I",
+    "mbis": "5 MBIS",
+}
+
 
 @dataclass
 class CommandStep:
@@ -860,12 +867,19 @@ class Multiwfn:
         menu_cmd: str,
         menu_pattern: str,
         prefix_commands: list[CommandStep] | None = None,
+        partitioning: str = "becke",
     ) -> list[CommandStep | WaitProgress]:
         """Build command sequence for fuzzy atomic space integration."""
+        partition_pattern = FUZZY_PARTITIONING_SCHEMES[partitioning]
+        partition_cmd = partition_pattern.split(" ")[0]
         commands: list[CommandStep | WaitProgress] = list(prefix_commands or [])
         commands.extend(
             [
                 CommandStep("15", expect="15 Fuzzy atomic space analysis"),
+                CommandStep("-1", expect="1 Perform integration in fuzzy atomic spaces"),
+                CommandStep(
+                    partition_cmd, expect="Select atomic space partition method"
+                ),
                 CommandStep("1", expect="1 Perform integration in fuzzy atomic spaces"),
                 CommandStep(menu_cmd, expect=menu_pattern),
                 WaitProgress(self._max_wait),
@@ -1504,33 +1518,54 @@ class Multiwfn:
 
         return menu_cmd, menu_pattern, commands
 
-    def get_descriptor(self, descriptor: str) -> dict[int, float]:
+    def get_descriptor(
+        self, descriptor: str, partitioning: str = "becke"
+    ) -> dict[int, float]:
         """Calculate atomic densities from integration in fuzzy atomic spaces.
 
         Args:
             descriptor: Descriptor name.
+            partitioning: Atomic space partitioning scheme to use. Supported values
+                are 'becke', 'hirshfeld', 'hirshfeld_i', and 'mbis'.
 
         Returns:
             Dictionary mapping atom index (1-based) to integrated density value.
 
         Raises:
             ValueError: If the descriptor is unsupported, vector-valued, requires grid
-                data, or is incompatible with the current spin state.
+                data, is incompatible with the current spin state, or the
+                partitioning scheme is unsupported.
         """
+        normalized_partitioning = self._normalize_option(partitioning)
+        if normalized_partitioning not in FUZZY_PARTITIONING_SCHEMES:
+            choices = ", ".join(FUZZY_PARTITIONING_SCHEMES.keys())
+            raise ValueError(
+                f"Partitioning scheme {partitioning!r} not supported. "
+                f"Choose between {choices}."
+            )
+        cache_key = (
+            descriptor
+            if normalized_partitioning == "becke"
+            else f"{descriptor}:{normalized_partitioning}"
+        )
         if (
             self._results.atomic_descriptors is not None
-            and descriptor in self._results.atomic_descriptors
+            and cache_key in self._results.atomic_descriptors
         ):
-            return self._results.atomic_descriptors[descriptor]
+            return self._results.atomic_descriptors[cache_key]
 
         try:
             menu_cmd, menu_pattern, commands = self._get_descriptor_function(descriptor)
             descriptor_result = self._run_fuzzy_integration(
-                menu_cmd, menu_pattern, commands, descriptor
+                menu_cmd,
+                menu_pattern,
+                commands,
+                descriptor,
+                normalized_partitioning,
             )
             if self._results.atomic_descriptors is None:
                 self._results.atomic_descriptors = {}
-            self._results.atomic_descriptors[descriptor] = descriptor_result
+            self._results.atomic_descriptors[cache_key] = descriptor_result
             return descriptor_result
         except ValueError as e:
             raise e
@@ -1541,13 +1576,16 @@ class Multiwfn:
         menu_pattern: str,
         commands: list[CommandStep],
         descriptor: str,
+        partitioning: str = "becke",
     ) -> dict[int, float]:
         command_sequence = self._build_fuzzy_integration_commands(
             menu_cmd,
             menu_pattern,
             prefix_commands=commands,
+            partitioning=partitioning,
         )
-        result = self.run_commands(command_sequence, subdir=descriptor)
+        subdir = descriptor if partitioning == "becke" else f"{descriptor}_{partitioning}"
+        result = self.run_commands(command_sequence, subdir=subdir)
         descriptor_result = self._parse_atomic_values(result.stdout)
         return descriptor_result
 
