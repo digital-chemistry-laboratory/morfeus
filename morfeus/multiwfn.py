@@ -355,6 +355,7 @@ class _PexpectSession:
         workdir: Path,
         debug: bool,
         env: dict[str, str] | None = None,
+        expect_timeout: float = 3.0,
     ) -> None:
         self._child = pexpect.spawn(
             base_command,
@@ -363,7 +364,7 @@ class _PexpectSession:
             env=env,
         )
         self._timeout = 10
-        self._expect_timeout = 3
+        self._expect_timeout = expect_timeout
         self._debug = debug
         self._transcript: list[str] = []
         self._last_command_pos = 0
@@ -730,6 +731,7 @@ class Multiwfn:
         has_spin: Spin state. If None, detect from file for wavefunction inputs
             (True=open-shell, False=closed-shell). For .cub/.grd inputs, spin
             state is left undefined.
+        expect_timeout: Time to wait for expect patterns in seconds.
     """
 
     def __init__(
@@ -741,6 +743,7 @@ class Multiwfn:
         env_variables: dict[str, str] | None = None,
         max_wait: int = 30,
         has_spin: bool | None = None,
+        expect_timeout: float = 3.0,
     ) -> None:
         self._file_path = Path(file_path).resolve()
         if not self._file_path.exists():
@@ -758,6 +761,7 @@ class Multiwfn:
         self._results = MultiwfnResults()
         self._settings_ini_path: Path | None = None
         self._max_wait = max_wait
+        self._expect_timeout = expect_timeout
 
         self._results.citations = {
             # Both following papers ***MUST BE CITED IN MAIN TEXT*** if Multiwfn is used:
@@ -964,7 +968,13 @@ class Multiwfn:
         workdir = self._setup_workdir(subdir)
 
         env = self._set_env()
-        session = _PexpectSession("Multiwfn", workdir, self._debug, env=env)
+        session = _PexpectSession(
+            "Multiwfn",
+            workdir,
+            self._debug,
+            env=env,
+            expect_timeout=self._expect_timeout,
+        )
         session.send(str(self._file_path))
         session.read_available()
 
