@@ -35,8 +35,21 @@ def test_reference(bv_data):
     percent_buried_volume_ref = float(data["buried_volume"])
     excluded_atoms = [int(i) for i in data["excluded_atoms"].split()]
     elements, coordinates = read_xyz(DATA_DIR / "xyz" / f"{idx}.xyz")
-    bv = BuriedVolume(elements, coordinates, 1, excluded_atoms=excluded_atoms)
+    bv_projection = BuriedVolume(
+        elements, coordinates, 1, excluded_atoms=excluded_atoms, method="projection"
+    )
+    bv_sobol = BuriedVolume(
+        elements, coordinates, 1, excluded_atoms=excluded_atoms, method="sobol"
+    )
 
     assert_almost_equal(
-        bv.fraction_buried_volume * 100, percent_buried_volume_ref, decimal=0
+        bv_projection.fraction_buried_volume * 100,
+        bv_sobol.fraction_buried_volume * 100,
+        decimal=0,
+    )
+    assert_almost_equal(
+        bv_projection.fraction_buried_volume * 100, percent_buried_volume_ref, decimal=0
+    )
+    assert_almost_equal(
+        bv_sobol.fraction_buried_volume * 100, percent_buried_volume_ref, decimal=0
     )
