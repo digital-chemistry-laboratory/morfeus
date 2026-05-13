@@ -1,10 +1,16 @@
-.. image:: _static/logo-dark.svg
-   :align: center
-   :class: only-dark
+.. raw:: html
 
-.. image:: _static/logo-light.svg
-   :align: center
-   :class: only-light
+  <div style="margin-top: 2rem;"></div>
+
+.. image:: _static/logo-text-dark.svg
+  :align: center
+  :class: only-dark
+  :width: 500px
+
+.. image:: _static/logo-text-light.svg
+  :align: center
+  :class: only-light
+  :width: 500px
 
 ᴍᴏʀғᴇᴜs calculates molecular features from 3D structures with a focus on steric
 descriptors. It can be used as a Python library or through command line
@@ -74,10 +80,12 @@ About
 ᴍᴏʀғᴇᴜs was started by Kjell Jorner as a post doc at AstraZeneca UK in
 collaboration with the groups of Alán Aspuru-Guzik at the University of
 Toronto, Matthew Sigman at the University of Utah and Tobias Gensch at TU
-Berlin. In particular, the following people have contributed significantly to
+Berlin. In particular, the following people (in alphabetical order) have contributed significantly to
 developing its functionality:
 
 * Gabriel dos Passos Gomes
+* Kjell Jorner
+* Lauriane Jacot-Descombes
 * Pascal Friedrich
 * Tobias Gensch
 

@@ -45,6 +45,14 @@ class BiteAngle:
         ref_atoms: Iterable[int] | None = None,
         ref_vector: ArrayLike1D | None = None,
     ) -> None:
+        if 0 in {
+            metal_index,
+            ligand_index_1,
+            ligand_index_2,
+            *(ref_atoms or ()),
+        }:
+            raise IndexError("Atom indices should not be 0 (1-indexed).")
+
         # Check keywords
         if ref_atoms is not None and ref_vector is not None:
             raise ValueError("ref_atoms and ref_vector cannot be set at the same time.")

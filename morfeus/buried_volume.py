@@ -30,8 +30,8 @@ from morfeus.utils import convert_elements, get_radii, Import, requires_dependen
 if typing.TYPE_CHECKING:
     from matplotlib.colors import hex2color
     import matplotlib.pyplot as plt
-    from pyvista import BackgroundPlotter
     import pyvista as pv
+    from pyvista import BackgroundPlotter
 
 # Quadrant and octant signs taken from
 # https://en.wikipedia.org/wiki/Octant_(solid_geometry)
@@ -137,6 +137,14 @@ class BuriedVolume:
         xz_plane_atoms: Sequence[int] | None = None,
         method: str = "projection",
     ) -> None:
+        if 0 in {
+            metal_index,
+            *(excluded_atoms or ()),
+            *(z_axis_atoms or ()),
+            *(xz_plane_atoms or ()),
+        }:
+            raise IndexError("Atom indices should not be 0 (1-indexed).")
+
         # Get center and and reortient coordinate system
         coordinates: Array2DFloat = np.array(coordinates)
         center = coordinates[metal_index - 1]

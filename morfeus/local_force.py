@@ -844,6 +844,7 @@ class LocalForce:
                     self._internal_coordinates.add_internal_coordinate(list(indices))
 
         # Construct the B matrix from atoms and vectors
+        B: np.ndarray
         if B_vectors:
             n_cartesian = n_atoms * 3
             B = np.zeros((n_internals, n_cartesian))

@@ -29,12 +29,13 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "furo"
 html_theme_options = {
-    "light_logo": "logo-light.svg",
-    "dark_logo": "logo-dark.svg",
+    "light_logo": "logo-text-light.svg",
+    "dark_logo": "logo-text-dark.svg",
     "sidebar_hide_name": True,
 }
 html_title = "ᴍᴏʀғᴇᴜs"
 html_static_path = ["_static"]
+html_favicon = "_static/logo-icon-dark.svg"
 
 # Extension configuration
 

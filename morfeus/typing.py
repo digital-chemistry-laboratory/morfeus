@@ -2,12 +2,15 @@
 
 Borrowed from gpaw/typing.py
 """
+
 from __future__ import annotations
 
 from typing import Any
 
-# import numpy as np
+from numpy import integer, signedinteger
 from numpy.typing import ArrayLike, NDArray
+
+IntLike = int | integer | signedinteger
 
 ArrayLike1D = ArrayLike
 ArrayLike2D = ArrayLike

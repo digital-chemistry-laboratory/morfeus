@@ -9,13 +9,14 @@ dependencies:
   - openbabel
   - pip
   - pymeshfix
-  - python >= 3.8
+  - python>=3.10
   - pyvista
   - pyvistaqt
   - qcengine
   - rdkit
   - spyrmsd
   - vtk
+  - xtb>=6.7.1
   - xtb-python
   - pip:
       - pyberny

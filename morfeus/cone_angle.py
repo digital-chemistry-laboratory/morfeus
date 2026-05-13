@@ -39,7 +39,7 @@ class ConeAngle:
     Args:
         elements: Elements as atomic symbols or numbers
         coordinates: Coordinates (Å)
-        atom_1: Index of central atom (1-inexed)
+        atom_1: Index of central atom (1-indexed)
         radii: vdW radii (Å)
         radii_type: Type of vdW radii: 'alvarez', 'bondi', 'crc' or 'truhlar'
         method: Method of calculation: 'internal' or 'libconeangle' (default)
@@ -68,6 +68,9 @@ class ConeAngle:
         radii_type: str = "crc",
         method: str = "libconeangle",
     ) -> None:
+        if atom_1 == 0:
+            raise IndexError("Atom indices should not be 0 (1-indexed).")
+
         # Convert elements to atomic numbers if they are symbols
         elements = convert_elements(elements, output="numbers")
         coordinates: Array2DFloat = np.array(coordinates)

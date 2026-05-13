@@ -1,5 +1,5 @@
-![Logo Light](docs/_static/logo-light.svg#gh-light-mode-only)
-![Logo Dark](docs/_static/logo-dark.svg#gh-dark-mode-only)
+![Logo Light](docs/_static/logo-text-light.svg#gh-light-mode-only)
+![Logo Dark](docs/_static/logo-text-dark.svg#gh-dark-mode-only)
 
 ![PyPI - License](https://img.shields.io/pypi/l/morfeus-ml)
 [![PyPI](https://img.shields.io/pypi/v/morfeus-ml)](https://pypi.org/project/morfeus-ml/)
@@ -35,14 +35,14 @@ workflows. Here is an example for calculating the exact ligand cone angle.
 >>> elements, coordinates = read_xyz("PdPMe3.xyz")
 >>> cone_angle = ConeAngle(elements, coordinates, 1)
 >>> print(cone_angle.cone_angle)
-117.11012922937584 
+117.11012922937587
 ```
 
 It can also be used from the command line.
 
 ```console
 $ morfeus cone_angle PdPMe3.xyz - 1 - cone_angle
-117.11012922937584   
+117.11012922937587
 ```
 For further information, see the separate [documentation](https://digital-chemistry-laboratory.github.io/morfeus/).
 
@@ -65,9 +65,13 @@ For further information, see the separate [documentation](https://digital-chemis
 ᴍᴏʀғᴇᴜs was started by Kjell Jorner as a post doc at AstraZeneca UK in
 collaboration with the groups of Alán Aspuru-Guzik at the University of
 Toronto, Matthew Sigman at the University of Utah and Tobias Gensch at TU
-Berlin. In particular, the following people have contributed significantly to
+Berlin. The package was further developed and maintained in the group of Kjell Jorner at ETH Zurich.
+
+In particular, the following people (in alphabetical order) have contributed significantly to
 developing its functionality:
 
 * Gabriel dos Passos Gomes
+* Kjell Jorner
+* Lauriane Jacot-Descombes
 * Pascal Friedrich
 * Tobias Gensch

@@ -47,9 +47,9 @@ lists and used with zero-indexing if needed:
 Geometry files
 **************
 
-Many features of ᴍᴏʀғᴇᴜs makes use of atomic numbers/symbols and coordinates.
+Many features of ᴍᴏʀғᴇᴜs make use of atomic numbers/symbols and coordinates.
 These can be read from geometry files, and currently the files formats ``gjf``
-(Gaussian input file) and ``xyz`` (XMOL )are supported. These files can be
+(Gaussian input file) and ``xyz`` (XMOL) are supported. These files can be
 read with two different functions. There is also the
 :py:func:`read_geometry <morfeus.io.read_geometry>`
 function that will try to guess the file type based on its suffix. If the
@@ -70,7 +70,7 @@ Radii
 *****
 
 ᴍᴏʀғᴇᴜs makes extensive use of atomic radii in calculating the different
-descriptors. There are mainly two types of radii: vdW and covalent.
+descriptors. There are mainly two types of radii: van der Waals (vdW) and covalent.
 
 #######
 Options

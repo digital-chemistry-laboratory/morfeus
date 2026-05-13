@@ -28,10 +28,13 @@ The SolidAngle class is provided to calculate and store the solid angles.
   Cone angle (°): 112.536
   G: 22.235
 
+The given atom index argument corresponds to the index of the central atom (1-indexed),
+Pd in the example above.
+
 The Bondi vdW radii are used in reference :footcite:`bilbrey_solid_2013`, but
 radii from the CRC Handbook is the default here. It can be changed with
-``radii_type=<str>``. Custom radii can passed with ``radii=<list>``. The units
-for the solid cone angle are in degrees, steradians for the solid angle and the
+``radii_type=<str>``. Custom radii can be passed with ``radii=<list>``. The units
+for the solid cone angle are in degrees, the solid angle is in steradians, and the
 G parameter is in percent.
 
 For more detailed information, use ``help(SolidAngle)`` or see the API:
@@ -56,7 +59,7 @@ terminal.
 Background
 **********
 
-The ligand solid angle, Ω is the solid angle of the complete shadow cast by a
+The ligand solid angle, Ω, is the solid angle of the complete shadow cast by a
 ligand when hypothetically illuminated from the metal center.
 :footcite:`bilbrey_solid_2013` From Ω, a solid "cone" angle Θ can also be
 calculated, which is analogous to Tolman's cone angle. The G parameter is a

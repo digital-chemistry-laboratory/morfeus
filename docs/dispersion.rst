@@ -4,7 +4,7 @@ Dispersion descriptor
 
 The universal quantitative dispersion descriptor
 :footcite:`pollice_universal_2019` can be calculated either approximately based
-on tabulated vdW radii, or more accurately based on computed electron density
+on tabulated van der Waals (vdW) radii, or more accurately based on computed electron density
 isosurfaces. Dispersion is modelled with the D3
 :footcite:`grimme_consistent_2010` or D4 :footcite:`caldeweyher_extension_2017`
 methods (the latter requires an external program).
@@ -42,6 +42,7 @@ descriptors.
 .. code-block:: python
   :caption: Example
 
+  >>> from morfeus import Dispersion, read_geometry
   >>> elements, coordinates = read_geometry("corannulene.xyz")
   >>> disp = Dispersion(elements, coordinates)
   >>> disp.print_report()
@@ -82,7 +83,7 @@ or
 
 To exclude atoms from the calculation, the atom indices (starting at 1) should
 be provided with ``excluded_atoms=<list>``. This can for example be used to
-calculate substitutent P_int values.
+calculate substitutent P\ :sub:`int` values.
 
 Grimme's `dftd4 program`_ can be used to calculate the dispersion coefficients
 with the D4 method. The accompanying dftd4 python package must also be
@@ -100,9 +101,9 @@ installed in the same Python environment as Morfeus. An example is given below:
   Surface volume (Å³): 157.8
   P_int (kcal¹ᐟ² mol⁻¹ᐟ²): 20.1
 
-The D4 model is available with 'gd4' and the internal D3 code with 'id3'. The
+The D4 model is available with "gd4" and the internal D3 code with "id3". The
 maximum order of the dispersion coefficients can be set with the keyword
-argument 'order', but should be left by the non-expert user at the default
+argument "order", but should be left by the non-expert user at the default
 setting of 8 (*i.e.* C\ :sub:`6` and C\ :sub:`8`)
 
 For more detailed information, use ``help(Dispersion)`` or see the API:
@@ -137,7 +138,7 @@ a quantitative descriptor for dispersion interactions
 :footcite:`pollice_universal_2019`. ᴍᴏʀғᴇᴜs can calculate P\ :sub:`int` based
 on an electron density isosurface, as in the original article. In addition, we
 have found that a very fast method based on surfaces constructed from vdW radii
-correlate well with P\ :sub:`int` from electron densities, at a fraction of the
+correlates well with P\ :sub:`int` from electron densities, at a fraction of the
 cost.
 
 .. todo::

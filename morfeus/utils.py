@@ -32,6 +32,7 @@ from morfeus.typing import (
     Array2DInt,
     ArrayLike1D,
     ArrayLike2D,
+    IntLike,
 )
 
 
@@ -39,7 +40,7 @@ def get_excluded_from_connectivity(
     connectivity_matrix: ArrayLike2D,
     center_atoms: ArrayLike1D,
     connected_atoms: ArrayLike1D,
-) -> list[int]:
+) -> Sequence[IntLike]:
     """Get atom indices to exclude bassed on connectivity and fragmentation.
 
     Convenience function that determines atoms to exclude from a calculation of a larger
@@ -99,7 +100,7 @@ def check_distances(
     excluded_atoms: Sequence[int] | None = None,
     epsilon: float = 0,
     radii_type: str = "crc",
-) -> list[int]:
+) -> Sequence[IntLike]:
     """Check which atoms are within clashing vdW radii distances.
 
     Args:
@@ -147,7 +148,7 @@ def check_distances(
     within_distance = list(np.argwhere(distances < 0).reshape(-1))
 
     # Remove check atom and atoms in the exclude list
-    within_distance.remove(check_atom - 1)
+    within_distance.remove(np.int64(check_atom - 1))
     within_distance = [i + 1 for i in within_distance if i + 1 not in excluded_atoms]
 
     return within_distance
@@ -257,15 +258,13 @@ def requires_dependency(  # noqa: C901
 @overload
 def convert_elements(
     elements: Iterable[int] | Iterable[str], output: Literal["numbers"]
-) -> list[int]:
-    ...
+) -> list[int]: ...
 
 
 @overload
 def convert_elements(
     elements: Iterable[int] | Iterable[str], output: Literal["symbols"]
-) -> list[str]:
-    ...
+) -> list[str]: ...
 
 
 def convert_elements(

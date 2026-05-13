@@ -15,6 +15,7 @@ from morfeus.typing import (
     Array2DFloat,
     Array3DFloat,
     ArrayLike2D,
+    IntLike,
 )
 from morfeus.utils import convert_elements, Import, requires_dependency
 
@@ -212,7 +213,7 @@ def _generate_qcel_molecule(
         molecule: QCElemental molecule object.
     """
     # Generate bond order list from connectivity matrix
-    bos: list[tuple[int, int, int]] | None
+    bos: list[tuple[IntLike, IntLike, IntLike]] | None
     if connectivity_matrix is not None:
         connectivity_matrix = np.array(connectivity_matrix)
         bos = []

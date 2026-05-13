@@ -41,6 +41,9 @@ by the ``method=<str>`` keyword argument:
   that ``radii`` or ``elements`` are given. The Pyykko covalent radii are used
   by default.
 
+For more detailed information, use ``help(Pyramidalization)`` or see the API:
+:py:class:`Pyramidalization <morfeus.pyramidalization.Pyramidalization>`.
+
 *******************
 Command line script
 *******************
@@ -77,10 +80,10 @@ third substituent atom C, and the normal vector **u** to the plane defined by
 **a** and **b**. An important alteration to the original recipe is made for
 extreme cases of pyramidalization, as suggested by Tobias Gensch. When the
 angle between vector **c** and the sum of vectors **a** and **b** is acute, the
-*α* angle is taken as negative. If *ɑ* is negative, the final pyramidalization
+*α* angle is taken as negative. If *α* is negative, the final pyramidalization
 value *P* is taken as 2 − *P* and can therefore be larger than unity. There are
-three possible values of *ɑ* that can be obtained by choosing **a** and **b**
-differently. The sign of *ɑ* is taken from the average of these three angles.
+three possible values of *α* that can be obtained by choosing **a** and **b**
+differently. The sign of *α* is taken from the average of these three angles.
 
 .. figure:: images/pyramidalization/pyramidalization.svg
   :name: fig_pyramidalization
