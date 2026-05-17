@@ -11,7 +11,6 @@ import numpy as np
 from morfeus.data import ANGSTROM_TO_BOHR, BOHR_TO_ANGSTROM
 from morfeus.typing import (
     Array1DFloat,
-    Array1DStr,
     Array2DFloat,
     Array3DFloat,
     ArrayLike2D,
@@ -99,9 +98,9 @@ def optimize_qc_engine(
         raise Exception(opt.error.error_message)
 
     # Take out results
-    energies: Array1DFloat = np.array(opt.energies)
+    energies = np.array(opt.energies)
     if return_trajectory:
-        opt_coordinates: Array2DFloat = np.array(
+        opt_coordinates = np.array(
             [result.molecule.geometry for result in opt.trajectory]
         )
     else:
@@ -227,7 +226,7 @@ def _generate_qcel_molecule(
         bos = None
 
     # Create molecule object
-    elements: Array1DStr = np.array(convert_elements(elements, output="symbols"))
+    elements = np.array(convert_elements(elements, output="symbols"))
     coordinates = np.array(coordinates) * ANGSTROM_TO_BOHR
     molecule = qcel.models.Molecule(
         symbols=elements,

@@ -13,7 +13,7 @@ import scipy.spatial
 from morfeus.data import atomic_symbols, jmol_colors
 from morfeus.geometry import Atom, Sphere
 from morfeus.io import read_geometry
-from morfeus.typing import Array1DFloat, Array2DFloat, ArrayLike1D, ArrayLike2D
+from morfeus.typing import Array2DFloat, ArrayLike1D, ArrayLike2D
 from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
@@ -57,14 +57,14 @@ class SASA:
     ) -> None:
         # Converting elements to atomic numbers if the are symbols
         elements = convert_elements(elements, output="numbers")
-        coordinates: Array2DFloat = np.array(coordinates)
+        coordinates = np.array(coordinates)
 
         # Getting radii if they are not supplied
         if radii is None:
             radii = get_radii(elements, radii_type=radii_type)
 
         # Increment the radii with the probe radius
-        radii: Array1DFloat = np.array(radii)
+        radii = np.array(radii)
         radii = radii + probe_radius
 
         # Construct list of atoms
@@ -150,7 +150,7 @@ class SASA:
             # Select coordinates and radii for other atoms
             test_coordinates = [test_atom.coordinates for test_atom in test_atoms]
             test_radii = [test_atom.radius for test_atom in test_atoms]
-            test_radii: Array1DFloat = np.array(test_radii).reshape(-1, 1)
+            test_radii = np.array(test_radii).reshape(-1, 1)
 
             # Get distances to other atoms and subtract radii
             if test_coordinates:

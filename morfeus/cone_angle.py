@@ -16,7 +16,7 @@ from morfeus.data import atomic_symbols, jmol_colors
 from morfeus.geometry import Atom, Cone
 from morfeus.io import read_geometry
 from morfeus.plotting import get_drawing_cone
-from morfeus.typing import Array1DFloat, Array2DFloat, ArrayLike1D, ArrayLike2D
+from morfeus.typing import Array2DFloat, ArrayLike1D, ArrayLike2D
 from morfeus.utils import (
     check_distances,
     convert_elements,
@@ -73,12 +73,12 @@ class ConeAngle:
 
         # Convert elements to atomic numbers if they are symbols
         elements = convert_elements(elements, output="numbers")
-        coordinates: Array2DFloat = np.array(coordinates)
+        coordinates = np.array(coordinates)
 
         # Get radii if they are not supplied
         if radii is None:
             radii = get_radii(elements, radii_type=radii_type)
-        radii: Array1DFloat = np.array(radii)
+        radii = np.array(radii)
 
         # Check so that no atom is within vdW distance of atom 1
         within = check_distances(elements, coordinates, atom_1, radii=radii)
@@ -184,7 +184,7 @@ class ConeAngle:
             upper_bound: Upper bound to apex angle (radians)
         """
         # Calculate unit vector to centroid
-        coordinates: Array2DFloat = np.array([atom.coordinates for atom in self._atoms])
+        coordinates = np.array([atom.coordinates for atom in self._atoms])
         centroid_vector = np.mean(coordinates, axis=0)
         centroid_unit_vector = centroid_vector / np.linalg.norm(centroid_vector)
 
@@ -335,8 +335,8 @@ class ConeAngle:
 
         # Determine direction and extension of cone
         angle = math.degrees(self._cone.angle)
-        coordinates: Array2DFloat = np.array([atom.coordinates for atom in self._atoms])
-        radii: Array1DFloat = np.array([atom.radius for atom in self._atoms])
+        coordinates = np.array([atom.coordinates for atom in self._atoms])
+        radii = np.array([atom.radius for atom in self._atoms])
         if angle > 180:
             normal = -self._cone.normal
         else:
@@ -421,11 +421,9 @@ def _get_three_atom_cones(atom_i: Atom, atom_j: Atom, atom_k: Atom) -> list[Cone
     m_k = atom_k.cone.normal
 
     # Setup matrices
-    u: Array1DFloat = np.array([math.cos(beta_i), math.cos(beta_j), math.cos(beta_k)])
-    v: Array1DFloat = np.array([math.sin(beta_i), math.sin(beta_j), math.sin(beta_k)])
-    N: Array2DFloat = np.array(
-        [np.cross(m_j, m_k), np.cross(m_k, m_i), np.cross(m_i, m_j)]
-    ).T
+    u = np.array([math.cos(beta_i), math.cos(beta_j), math.cos(beta_k)])
+    v = np.array([math.sin(beta_i), math.sin(beta_j), math.sin(beta_k)])
+    N = np.array([np.cross(m_j, m_k), np.cross(m_k, m_i), np.cross(m_i, m_j)]).T
     P: Array2DFloat = N.T @ N
     gamma = np.dot(m_i, np.cross(m_j, m_k))
 

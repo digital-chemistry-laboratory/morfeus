@@ -14,8 +14,6 @@ from morfeus.io import read_geometry
 from morfeus.typing import (
     Array1DBool,
     Array1DFloat,
-    Array1DInt,
-    Array2DFloat,
     ArrayLike1D,
     ArrayLike2D,
 )
@@ -72,7 +70,7 @@ class Pyramidalization:
         }:
             raise IndexError("Atom indices should not be 0 (1-indexed).")
 
-        coordinates: Array2DFloat = np.array(coordinates)
+        coordinates = np.array(coordinates)
         atom_coordinates = coordinates[atom_index - 1]
 
         if neighbor_indices is None:
@@ -82,13 +80,13 @@ class Pyramidalization:
 
         if excluded_atoms is None:
             excluded_atoms = []
-        excluded_atoms: Array1DBool = np.array(excluded_atoms, dtype=bool)
+        excluded_atoms = np.array(excluded_atoms, dtype=bool)
 
         # Get 3 closest neighbors
         if len(neighbor_indices) > 0:
             if len(neighbor_indices) != 3:
                 raise Exception(f"Only {len(neighbor_indices)} neighbors.")
-            neighbors: Array1DInt = np.array(neighbor_indices) - 1
+            neighbors = np.array(neighbor_indices) - 1
         elif method == "distance":
             # Generate mask for excluded atoms
             mask: Array1DBool = np.zeros(len(coordinates), dtype=bool)
