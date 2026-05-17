@@ -191,7 +191,7 @@ class LocalForce:
                 k_s.append(k)
             else:
                 k_s.append(0.0)
-        k_s: Array1DFloat = np.array(k_s)
+        k_s = np.array(k_s)
 
         # Scale force constants due to projection of imaginary normal modes
         if project_imag and self.n_imag > 0:
@@ -489,7 +489,7 @@ class LocalForce:
         n_imag: int
         atomic_numbers: list[int] = []
         masses: list[float] = []
-        coordinates: list[float] = []
+        coordinates = []
 
         # Parse fchk file
         for line in lines:
@@ -569,15 +569,15 @@ class LocalForce:
             elif "Current cartesian coordinates " in line:
                 read_coordinates = True
         # Take out normal mode force constants
-        force_constants: Array1DFloat = np.array(vib_e2[n_modes * 2 : n_modes * 3])
+        force_constants = np.array(vib_e2[n_modes * 2 : n_modes * 3])
 
         # Construct force constant matrix from lower triangular matrix
         fc_matrix: Array2DFloat = np.zeros((n_atoms * 3, n_atoms * 3), dtype=float)
         fc_matrix[np.tril_indices_from(fc_matrix)] = hessian
-        fc_matrix: Array2DFloat = np.triu(fc_matrix.T, 1) + fc_matrix
+        fc_matrix = np.triu(fc_matrix.T, 1) + fc_matrix
 
         # Take out the internal coordinates
-        internal_coordinates: Array1DInt = np.array(internal_coordinates)
+        internal_coordinates = np.array(internal_coordinates)
         coordinate: Array1DInt
         for _, coordinate in enumerate(np.split(internal_coordinates, n_redundant)):
             if all(coordinate >= 0):  # Sort out linear bends
@@ -585,9 +585,7 @@ class LocalForce:
                 self.add_internal_coordinate(atoms)
 
         # Convert coordinates to right Ångström
-        coordinates: Array2DFloat = (
-            np.array(coordinates).reshape(-1, 3) * BOHR_TO_ANGSTROM
-        )
+        coordinates = np.array(coordinates).reshape(-1, 3) * BOHR_TO_ANGSTROM
 
         # Set up attributes
         self._fc_matrix = fc_matrix
@@ -624,8 +622,8 @@ class LocalForce:
         masses: list[float] = []
         fc_matrix: Array2DFloat = np.empty([])
         ifc_matrix: Array2DFloat = np.empty([])
-        input_coordinates: list[float] = []
-        standard_coordinates: list[float] = []
+        input_coordinates = []
+        standard_coordinates = []
         n_imag: int = 0
         n_atoms: int = 0
         internal_indices: dict[frozenset[int], int] = {}
@@ -866,10 +864,8 @@ class LocalForce:
 
         # Detect whether the input coordinates have been rotated. If so, rotate
         # B matrix and its inverse.
-        input_coordinates: Array2DFloat = np.array(input_coordinates).reshape(-1, 3)
-        standard_coordinates: Array2DFloat = np.array(standard_coordinates).reshape(
-            -1, 3
-        )
+        input_coordinates = np.array(input_coordinates).reshape(-1, 3)
+        standard_coordinates = np.array(standard_coordinates).reshape(-1, 3)
 
         if (
             not np.array_equal(input_coordinates, standard_coordinates)
@@ -988,7 +984,7 @@ class LocalForce:
 
         # Convert data to right format
         coordinates = np.array(coordinates).reshape(-1, 3) * BOHR_TO_ANGSTROM
-        hessian: Array2DFloat = np.array(hessian).reshape(n_atoms * 3, n_atoms * 3)
+        hessian = np.array(hessian).reshape(n_atoms * 3, n_atoms * 3)
         normal_modes = np.array(normal_modes).reshape(-1, n_atoms * 3)[:n_modes]
         elements = convert_elements(atomic_numbers, output="numbers")
 
@@ -1071,15 +1067,15 @@ class LocalForce:
 
         # Convert quantities to right format
         n_atoms = len(masses)
-        coordinates: Array2DFloat = np.array(coordinates).reshape(-1, 3)
-        normal_modes: Array2DFloat = np.array(normal_modes).reshape(-1, n_atoms * 3)
+        coordinates = np.array(coordinates).reshape(-1, 3)
+        normal_modes = np.array(normal_modes).reshape(-1, n_atoms * 3)
         elements = convert_elements(atomic_numbers, output="numbers")
-        force_constants: Array1DFloat = np.array(force_constants)
-        frequencies: Array1DFloat = np.array(frequencies)
-        masses: Array1DFloat = np.array(masses)
+        force_constants = np.array(force_constants)
+        frequencies = np.array(frequencies)
+        masses = np.array(masses)
 
         # Detect imaginary modes
-        self.n_imag = np.sum(frequencies < 0)
+        self.n_imag = int(np.sum(frequencies < 0))
 
         # Set up attributes
         self._elements = elements
@@ -1165,10 +1161,8 @@ class LocalForce:
                 read_hessian = True
 
         # Convert data to right format
-        coordinates: Array2DFloat = (
-            np.array(coordinates).reshape(-1, 3) * BOHR_TO_ANGSTROM
-        )
-        hessian: Array2DFloat = np.array(hessian).reshape(n_atoms * 3, n_atoms * 3)
+        coordinates = np.array(coordinates).reshape(-1, 3) * BOHR_TO_ANGSTROM
+        hessian = np.array(hessian).reshape(n_atoms * 3, n_atoms * 3)
         elements = convert_elements(atomic_numbers, output="numbers")
 
         # Set up attributes

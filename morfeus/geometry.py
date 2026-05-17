@@ -158,7 +158,7 @@ class Cone:
         Raises:
             ValueError: When method not supported
         """
-        points: Array2DFloat = np.array(points)
+        points = np.array(points)
         if method in ["cross", "dot"]:
             # Calculate radius of cone at distance of each point
             cone_distances = np.dot(points, self.normal)
@@ -418,11 +418,11 @@ class Bond:
         Returns:
             b_vector: Vector of B matrix (a.u.)
         """
-        coordinates: Array2DFloat = np.array(coordinates)
+        coordinates = np.array(coordinates)
         i, j = self.i - 1, self.j - 1
         v = (coordinates[i] - coordinates[j]) * ANGSTROM_TO_BOHR
         r = np.linalg.norm(v)
-        grad: Array1DFloat = np.array([v / r, -v / r])
+        grad = np.array([v / r, -v / r])
 
         b_vector = np.zeros(coordinates.size)
         b_vector[i * 3 : i * 3 + 3] = grad[0]
@@ -484,7 +484,7 @@ class Angle:
         Returns:
             b_vector: Vector of B matrix (a.u.)
         """
-        coordinates: Array2DFloat = np.array(coordinates)
+        coordinates = np.array(coordinates)
         i, j, k = self.i - 1, self.j - 1, self.k - 1
         v_1 = (coordinates[i] - coordinates[j]) * ANGSTROM_TO_BOHR
         v_2 = (coordinates[k] - coordinates[j]) * ANGSTROM_TO_BOHR
@@ -582,7 +582,7 @@ class Dihedral:
         Returns:
             b_vector: Vector of B matrix (a.u.)
         """
-        coordinates: Array2DFloat = np.array(coordinates)
+        coordinates = np.array(coordinates)
         i, j, k, l = self.i - 1, self.j - 1, self.k - 1, self.l - 1
         v_1 = (coordinates[i] - coordinates[j]) * ANGSTROM_TO_BOHR
         v_2 = (coordinates[l] - coordinates[k]) * ANGSTROM_TO_BOHR
@@ -781,7 +781,7 @@ class InternalCoordinates:
         Returns:
             B_matrix: B matrix
         """
-        coordinates: Array2DFloat = np.array(coordinates)
+        coordinates = np.array(coordinates)
         b_vectors = []
         for internal_coordinate in self.internal_coordinates:
             b_vectors.append(internal_coordinate.get_b_vector(coordinates))
@@ -811,9 +811,9 @@ def rotate_coordinates(
     Returns:
         rotated_coordinates: Rotated coordinates.
     """
-    coordinates: Array2DFloat = np.array(coordinates)
-    vector: Array1DFloat = np.array(vector)
-    axis: Array1DFloat = np.array(axis)
+    coordinates = np.array(coordinates)
+    vector = np.array(vector)
+    axis = np.array(axis)
 
     # Get real part of quaternion
     real = np.dot(vector, axis).reshape(1) + 1
@@ -853,8 +853,8 @@ def kabsch_rotation_matrix(
     Returns:
         R: Rotation matrix
     """
-    P: Array2DFloat = np.array(P)
-    Q: Array2DFloat = np.array(Q)
+    P = np.array(P)
+    Q = np.array(Q)
 
     # Calculate centroids and center coordinates
     if center:
@@ -893,8 +893,8 @@ def sphere_line_intersection(
     Returns:
         intersection_points: Intersection points
     """
-    vector: Array1DFloat = np.array(vector)
-    center: Array1DFloat = np.array(center)
+    vector = np.array(vector)
+    center = np.array(center)
 
     # Set up points
     p_1 = vector

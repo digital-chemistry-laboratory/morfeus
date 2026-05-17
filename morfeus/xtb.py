@@ -534,8 +534,8 @@ class XTB:
                 3,
             )
         elif variety == "local_electrophilicity":
-            fukui_radical: Array1DFloat = np.array(self._results.fukui_radical)
-            fukui_dual: Array1DFloat = np.array(self._results.fukui_plus) - np.array(
+            fukui_radical = np.array(self._results.fukui_radical)
+            fukui_dual = np.array(self._results.fukui_plus) - np.array(
                 self._results.fukui_minus
             )
             chem_pot = self.get_chemical_potential(corrected=corrected)
@@ -552,9 +552,9 @@ class XTB:
                 "respectively 'minus' and 'plus'."
             )
 
-        fukui = {i: float(fukui) for i, fukui in enumerate(fukui, start=1)}
+        fukui = {i: float(f) for i, f in enumerate(fukui, start=1)}
 
-        return fukui
+        return cast("dict[int, float]", fukui)
 
     def get_global_descriptor(self, variety: str, corrected: bool = True) -> float:
         """Calculate global reactivity descriptors.

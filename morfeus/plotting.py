@@ -7,7 +7,6 @@ import typing
 
 import numpy as np
 
-from morfeus.typing import Array1DFloat
 from morfeus.utils import Import, requires_dependency
 
 if typing.TYPE_CHECKING:
@@ -46,7 +45,7 @@ def get_drawing_arrow(
         start = [0, 0, 0]
     if direction is None:
         direction = [1, 0, 0]
-    start: Array1DFloat = np.array(start)
+    start = np.array(start)
     direction = np.array(direction) / np.linalg.norm(direction)
 
     # Create cylinder

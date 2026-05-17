@@ -11,7 +11,7 @@ from scipy.spatial.distance import cdist
 from morfeus.d3_data import c6_reference_data, r2_r4
 from morfeus.data import ANGSTROM_TO_BOHR
 from morfeus.geometry import Atom
-from morfeus.typing import Array1DFloat, Array1DInt, Array2DFloat, ArrayLike2D
+from morfeus.typing import Array1DFloat, ArrayLike2D
 from morfeus.utils import convert_elements, get_radii, Import, requires_dependency
 
 if typing.TYPE_CHECKING:
@@ -53,7 +53,7 @@ class D4Grimme:
         order: int = 8,
     ) -> None:
         # Convert elements to atomic numbers
-        elements: Array1DInt = np.array(convert_elements(elements, output="numbers"))
+        elements = np.array(convert_elements(elements, output="numbers"))
         coordinates = np.array(coordinates) * ANGSTROM_TO_BOHR
 
         # Do calculation
@@ -113,7 +113,7 @@ class D3Calculator:
     ) -> None:
         # Convert elements to atomic numbers
         elements = convert_elements(elements, output="numbers")
-        coordinates: Array2DFloat = np.array(coordinates)
+        coordinates = np.array(coordinates)
 
         # Load the covalent radii
         radii = get_radii(elements, radii_type="pyykko")
@@ -133,10 +133,10 @@ class D3Calculator:
         k_3 = 4
         for cn_atom in atoms:
             # Get coordinates and radii of all other atoms
-            other_coordinates: Array2DFloat = np.array(
+            other_coordinates = np.array(
                 [atom.coordinates for atom in atoms if atom is not cn_atom]
             )
-            other_radii: Array1DFloat = np.array(
+            other_radii = np.array(
                 [atom.radius for atom in atoms if atom is not cn_atom]
             )
 
@@ -199,15 +199,13 @@ class D3Calculator:
                 c_n_coefficients[key].append(value)
 
         # Set up attributes
-        coordination_numbers: Array1DFloat = np.array(
+        coordination_numbers = np.array(
             [atom.coordination_number for atom in self._atoms]
         )
-        c_n_coefficients: Array1DFloat = {
+        self._atoms = atoms
+        self.c_n_coefficients = {
             key: np.array(value) for key, value in c_n_coefficients.items()
         }
-
-        self._atoms = atoms
-        self.c_n_coefficients = c_n_coefficients
         self.coordination_numbers = coordination_numbers
 
     def __repr__(self) -> str:

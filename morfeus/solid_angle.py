@@ -60,12 +60,12 @@ class SolidAngle:
 
         # Convert elements to atomic numbers if they are symbols
         elements = convert_elements(elements, output="numbers")
-        coordinates: Array2DFloat = np.array(coordinates)
+        coordinates = np.array(coordinates)
 
         # Get radii if they are not supplied
         if radii is None:
             radii = get_radii(elements, radii_type=radii_type)
-        radii: Array1DFloat = np.asarray(radii)
+        radii = np.asarray(radii)
         coordinates_metal = coordinates[metal_index - 1, :]
         coordinates -= coordinates_metal
 

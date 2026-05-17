@@ -20,7 +20,6 @@ from morfeus.typing import (
     Array1DFloat,
     Array1DInt,
     Array2DFloat,
-    Array2DInt,
     ArrayLike1D,
     ArrayLike2D,
 )
@@ -106,7 +105,7 @@ class Dispersion:
 
         # Converting elements to atomic numbers if the are symbols
         elements = convert_elements(elements, output="numbers")
-        coordinates: Array2DFloat = np.array(coordinates)
+        coordinates = np.array(coordinates)
 
         # Set excluded atoms
         all_atoms = set(range(1, len(elements) + 1))
@@ -128,7 +127,7 @@ class Dispersion:
         # Getting radii if they are not supplied
         if radii is None:
             radii = get_radii(elements, radii_type=radii_type)
-        radii: Array1DFloat = np.array(radii)
+        radii = np.array(radii)
 
         self._radii = radii
 
@@ -250,9 +249,9 @@ class Dispersion:
         """
         # Read the vertices and faces from the Multiwfn output file
         parser = VertexParser(file)
-        vertices: Array2DFloat = np.array(parser.vertices)
-        faces: Array2DInt = np.array(parser.faces)
-        faces: Array2DInt = np.insert(faces, 0, values=3, axis=1)
+        vertices = np.array(parser.vertices)
+        faces = np.array(parser.faces)
+        faces = np.insert(faces, 0, values=3, axis=1)
 
         # Construct surface and fix it with pymeshfix
         surface = pv.PolyData(vertices, faces)
@@ -274,15 +273,15 @@ class Dispersion:
         self.volume = self._surface.volume
 
         # Assign face centers to atoms according to Voronoi partitioning
-        coordinates: Array2DFloat = np.array([atom.coordinates for atom in self._atoms])
-        points: Array2DFloat = np.array(self._surface.cell_centers().points)
+        coordinates = np.array([atom.coordinates for atom in self._atoms])
+        points = np.array(self._surface.cell_centers().points)
         kd_tree = scipy.spatial.cKDTree(coordinates)
         _, point_regions = kd_tree.query(points, k=1)
         point_regions = point_regions + 1
 
         # Compute faces areas
         area_data = self._surface.compute_cell_sizes()
-        areas: Array1DFloat = np.array(area_data.cell_data["Area"])
+        areas = np.array(area_data.cell_data["Area"])
 
         # Assign face centers and areas to atoms
         atom_areas = {}
@@ -343,14 +342,14 @@ class Dispersion:
             self: Self
         """
         # Set up atoms and coefficients that are part of the calculation
-        atom_indices: Array1DInt = np.array(
+        atom_indices = np.array(
             [
                 atom.index - 1
                 for atom in self._atoms
                 if atom.index not in self._excluded_atoms
             ]
         )
-        coordinates: Array2DFloat = np.array([atom.coordinates for atom in self._atoms])
+        coordinates = np.array([atom.coordinates for atom in self._atoms])
         coordinates = coordinates[atom_indices]
         c_n_coefficients = dict(self._c_n_coefficients)
         for key, value in c_n_coefficients.items():
@@ -454,7 +453,7 @@ class Dispersion:
         """
         # Set up atoms and coordinates
         elements = [atom.element for atom in self._atoms]
-        coordinates: Array2DFloat = np.array([atom.coordinates for atom in self._atoms])
+        coordinates = np.array([atom.coordinates for atom in self._atoms])
 
         calculators = {
             "id3": D3Calculator,
