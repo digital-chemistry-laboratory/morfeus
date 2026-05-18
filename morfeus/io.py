@@ -59,7 +59,7 @@ class CrestParser:
             strip_line = line.strip().split()
             if len(strip_line) != 1:
                 degeneracies.append(int(strip_line[0]))
-        degeneracies: Array1DInt = np.array(degeneracies)
+        degeneracies = np.array(degeneracies)
 
         with open(path / "crest.energies") as f:
             lines = f.readlines()
@@ -157,7 +157,7 @@ class CubeParser:
             data.extend(line_data)
 
         # Create array
-        S: Array2DFloat = np.array(data).reshape(X.shape)
+        S = np.array(data).reshape(X.shape)
 
         # Set up attributes
         self.X = X
@@ -264,8 +264,8 @@ class D4Parser:
                 c6_coefficients.append(c6)
             if "C6AA" in line:
                 read = True
-        c6_coefficients: Array1DFloat = np.array(c6_coefficients)
-        c8_coefficients: Array1DFloat = np.array(
+        c6_coefficients = np.array(c6_coefficients)
+        c8_coefficients = np.array(
             [
                 3 * c6 * r2_r4[element] ** 2
                 for c6, element in zip(c6_coefficients, elements)
@@ -390,10 +390,8 @@ def read_gjf(file: str | PathLike) -> tuple[Array1DAny, Array1DFloat]:
             elements.append(element)
         atom_coordinates = [float(i) for i in split_line[1:]]
         coordinates.append(atom_coordinates)
-    elements: Array1DInt | Array1DStr = np.array(elements)
-    coordinates: Array2DFloat = np.array(coordinates)
 
-    return elements, coordinates
+    return np.array(elements), np.array(coordinates)
 
 
 def read_geometry(
@@ -446,8 +444,8 @@ def read_xyz(
         lines = f.readlines()
 
     # Loop over lines and store elements and coordinates
-    elements: list[int | str] = []
-    coordinates: list[list[float]] = []
+    elements = []
+    coordinates = []
     n_atoms = int(lines[0].strip())
     line_chunks = zip(*[iter(lines)] * (n_atoms + 2))
     for line_chunk in line_chunks:
@@ -461,9 +459,7 @@ def read_xyz(
                 [float(strip_line[1]), float(strip_line[2]), float(strip_line[3])]
             )
     elements = np.array(elements)[:n_atoms]
-    coordinates: Array2DFloat | Array3DFloat = np.array(coordinates).reshape(
-        -1, n_atoms, 3
-    )
+    coordinates = np.array(coordinates).reshape(-1, n_atoms, 3)
     if coordinates.shape[0] == 1:
         coordinates = coordinates[0]
 
@@ -530,16 +526,14 @@ def write_xyz(
     """
     # Convert elements to symbols
     symbols = convert_elements(elements, output="symbols")
-    coordinates: Array2DFloat | Array3DFloat = np.array(coordinates).reshape(
-        -1, len(symbols), 3
-    )
+    coordinates = np.array(coordinates).reshape(-1, len(symbols), 3)
     if comments is None:
         comments = [""] * len(coordinates)
 
     # Write the xyz file
     with open(file, "w") as f:
         for coord, comment in zip(coordinates, comments):
-            xyz_string = get_xyz_string(symbols, coord, comment=comment)
+            xyz_string = get_xyz_string(symbols, coord.tolist(), comment=comment)
             f.write(xyz_string)
 
 

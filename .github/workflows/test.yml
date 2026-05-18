@@ -46,10 +46,8 @@ jobs:
           python-version: "3.10"
       - name: Install xtb and nox
         run: |
-          conda install -y xtb
+          conda install -y 'xtb>=6.7.1' nox
           xtb --version
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade nox
         shell: bash -el {0}
       - name: Run xtb tests
         run: python -m nox -s tests-3.10 -- -m xtb

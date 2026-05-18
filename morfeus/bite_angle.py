@@ -9,7 +9,7 @@ from typing import Any, cast
 import numpy as np
 
 from morfeus.io import read_geometry
-from morfeus.typing import Array1DFloat, Array2DFloat, ArrayLike1D, ArrayLike2D
+from morfeus.typing import Array1DFloat, ArrayLike1D, ArrayLike2D
 
 
 class BiteAngle:
@@ -57,7 +57,7 @@ class BiteAngle:
         if ref_atoms is not None and ref_vector is not None:
             raise ValueError("ref_atoms and ref_vector cannot be set at the same time.")
 
-        coordinates: Array2DFloat = np.asarray(coordinates)
+        coordinates = np.asarray(coordinates)
 
         # Construct vectors
         v_1 = coordinates[ligand_index_1 - 1] - coordinates[metal_index - 1]

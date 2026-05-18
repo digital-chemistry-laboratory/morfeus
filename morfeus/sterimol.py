@@ -18,9 +18,7 @@ from morfeus.plotting import get_drawing_arrow
 from morfeus.sasa import SASA
 from morfeus.typing import (
     Array1DFloat,
-    Array1DInt,
     Array2DFloat,
-    Array2DInt,
     ArrayLike1D,
     ArrayLike2D,
 )
@@ -93,16 +91,16 @@ class Sterimol:
 
         # Convert elements to atomic numbers if the are symbols
         elements = convert_elements(elements, output="numbers")
-        coordinates: Array2DFloat = np.array(coordinates)
+        coordinates = np.array(coordinates)
 
         if excluded_atoms is None:
             excluded_atoms = []
-        excluded_atoms: Array2DInt = np.array(excluded_atoms)
+        excluded_atoms = np.array(excluded_atoms)
 
         # Get radii if they are not supplied
         if radii is None:
             radii = get_radii(elements, radii_type=radii_type)
-        radii: Array1DFloat = np.array(radii)
+        radii = np.array(radii)
 
         # Add dummy atom if multiple attached indices are given
         if isinstance(attached_index, Iterable):
@@ -130,7 +128,7 @@ class Sterimol:
         vector_2_to_1 = vector_2_to_1 / np.linalg.norm(vector_2_to_1)
 
         # Get rotation quaternion that overlays vector with x-axis
-        x_axis: Array1DFloat = np.array([[1.0, 0.0, 0.0]])
+        x_axis = np.array([[1.0, 0.0, 0.0]])
         R = kabsch_rotation_matrix(vector_2_to_1.reshape(1, -1), x_axis, center=False)
         all_coordinates = (R @ all_coordinates.T).T
         self._rotation_matrix = R
@@ -174,7 +172,7 @@ class Sterimol:
         Returns:
             self: Self
         """
-        points: Array2DFloat = np.array(points)
+        points = np.array(points)
         if shift is True:
             points -= self._origin
 
@@ -209,7 +207,7 @@ class Sterimol:
             coordinates: Array2DFloat = np.vstack(
                 [atom.coordinates for atom in self._atoms]
             )
-            radii: Array1DFloat = np.array([atom.radius for atom in self._atoms])
+            radii = np.array([atom.radius for atom in self._atoms])
             distances = scipy.spatial.distance.cdist(
                 self._dummy_atom.coordinates.reshape(1, -1), coordinates
             ).reshape(-1)
@@ -302,8 +300,8 @@ class Sterimol:
                 elements.append(atom.element)
                 coordinates.append(atom.coordinates)
                 radii.append(atom.radius)
-        elements: Array1DInt = np.array(elements)
-        coordinates: Array2DFloat = np.vstack(coordinates)
+        elements = np.array(elements)
+        coordinates = np.vstack(coordinates)
         radii = radii
         sasa = SASA(elements, coordinates, radii=radii, density=density, probe_radius=0)
 
@@ -333,8 +331,8 @@ class Sterimol:
                 ):
                     coordinates.append(atom.coordinates)
                     radii.append(atom.radius)
-            coordinates: Array2DFloat = np.vstack(coordinates)
-            radii: Array1DFloat = np.vstack(radii).reshape(-1)
+            coordinates = np.vstack(coordinates)
+            radii = np.vstack(radii).reshape(-1)
 
         # Project coordinates onto vector between atoms 1 and 2
         vector = self._attached_atom.coordinates - self._dummy_atom.coordinates

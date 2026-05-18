@@ -144,7 +144,7 @@ class BuriedVolume:
             raise IndexError("Atom indices should not be 0 (1-indexed).")
 
         # Get center and and reortient coordinate system
-        coordinates: Array2DFloat = np.array(coordinates)
+        coordinates = np.array(coordinates)
         center = coordinates[metal_index - 1]
         coordinates -= center
 
@@ -192,7 +192,7 @@ class BuriedVolume:
         # Getting radii if they are not supplied
         if radii is None:
             radii = get_radii(elements, radii_type=radii_type, scale=radii_scale)
-        radii: Array1DFloat = np.array(radii)
+        radii = np.array(radii)
 
         # Get list of atoms as Atom objects
         atoms = []
@@ -307,7 +307,7 @@ class BuriedVolume:
         self, center: ArrayLike1D, radius: float, density: float
     ) -> None:
         """Compute buried volume."""
-        center: Array1DFloat = np.array(center)
+        center = np.array(center)
         # Construct sphere at metal center
         sphere = Sphere(
             center, radius, method="projection", density=density, filled=True
@@ -464,9 +464,9 @@ class BuriedVolume:
             raise ValueError("Must give z-axis atoms when instantiating BuriedVolume.")
         # Set up coordinates
         atoms = self._atoms
-        center: Array1DFloat = np.array(self._sphere.center)
+        center = np.array(self._sphere.center)
         all_coordinates: Array2DFloat = self._all_coordinates
-        coordinates: Array2DFloat = np.array([atom.coordinates for atom in atoms])
+        coordinates = np.array([atom.coordinates for atom in atoms])
 
         # Translate coordinates
         all_coordinates -= center
@@ -523,7 +523,7 @@ class BuriedVolume:
             z.append(z_max)
 
         # Create interaction surface
-        z: Array2DFloat = np.array(z).reshape(len(x_), len(y_))
+        z = np.array(z).reshape(len(x_), len(y_))
 
         # Plot surface
         fig, ax = plt.subplots()

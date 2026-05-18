@@ -68,8 +68,8 @@ def boltzmann_average_dT(
     Returns:
         derivative: Derivative of Boltzmann average.
     """
-    energies: Array1DFloat = np.array(energies)
-    properties: Array1DFloat = np.array(properties)
+    energies = np.array(energies)
+    properties = np.array(properties)
 
     # Calculate Boltzmann averaged properties
     avg_prop_en = boltzmann_statistic(
@@ -111,7 +111,7 @@ def boltzmann_statistic(
     Raises:
         ValueError: When statistic not specified correctly
     """
-    properties: Array1DFloat = np.array(properties)
+    properties = np.array(properties)
 
     # Get conformer weights
     weights = boltzmann_weights(energies, temperature)
@@ -151,7 +151,7 @@ def boltzmann_weights(
     Returns:
         weights: Conformer weights (normalized to unity)
     """
-    energies: Array1DFloat = np.array(energies)
+    energies = np.array(energies)
     energies -= energies.min()
     terms = np.exp(-energies / (K_B / HARTREE * temperature))
     weights: Array1DFloat = terms / np.sum(terms)
@@ -262,7 +262,7 @@ class ConformerEnsemble:
         formal_charges: ArrayLike1D | None = None,
         ref_cip_label: tuple[str, ...] | None = None,
     ) -> None:
-        elements: Array1DInt = np.array(convert_elements(elements, output="numbers"))
+        elements = np.array(convert_elements(elements, output="numbers"))
         self.elements = elements
 
         if conformer_coordinates is None:
@@ -683,7 +683,7 @@ class ConformerEnsemble:
         Returns:
             conformer_coordinates: Conformer coordinates (Å)
         """
-        conformer_coordinates: Array3DFloat = np.array(
+        conformer_coordinates = np.array(
             [conformer.coordinates for conformer in self.conformers]
         )
 
@@ -695,9 +695,7 @@ class ConformerEnsemble:
         Returns:
             degeneriacies: Degeneracies
         """
-        degeneracies: Array1DInt = np.array(
-            [conformer.degeneracy for conformer in self.conformers]
-        )
+        degeneracies = np.array([conformer.degeneracy for conformer in self.conformers])
 
         return degeneracies
 
@@ -707,9 +705,7 @@ class ConformerEnsemble:
         Returns:
             energies: Energy (a.u.)
         """
-        energies: Array1DFloat = np.array(
-            [conformer.energy for conformer in self.conformers]
-        )
+        energies = np.array([conformer.energy for conformer in self.conformers])
         return energies
 
     def get_properties(self) -> dict[str, Array1DFloat]:
@@ -722,11 +718,8 @@ class ConformerEnsemble:
         for conformer in self.conformers:
             for key, value in conformer.properties.items():
                 properties.setdefault(key, []).append(value)
-        properties: dict[str, Array1DFloat] = {
-            key: np.array(value) for key, value in properties.items()
-        }
 
-        return properties
+        return {key: np.array(value) for key, value in properties.items()}
 
     def get_relative_energies(
         self, unit: str = "kcal/mol", relative: bool = True
@@ -1045,7 +1038,7 @@ class ConformerEnsemble:
             ValueError: When number of conformer coordinates is different from number of
                 conformers
         """
-        conformer_coordinates: Array3DFloat = np.array(conformer_coordinates)
+        conformer_coordinates = np.array(conformer_coordinates)
         if len(conformer_coordinates) != self.n_conformers:
             msg = (
                 f"Number of coordinates ({len(conformer_coordinates)}) "
@@ -1070,7 +1063,7 @@ class ConformerEnsemble:
             ValueError: When number of degeneracies is different from number of
                 conformers
         """
-        degeneracies: Array1DInt = np.array(degeneracies)
+        degeneracies = np.array(degeneracies)
         if len(degeneracies) != self.n_conformers:
             msg = (
                 f"Number of degeneracies ({len(degeneracies)}) "
@@ -1095,7 +1088,7 @@ class ConformerEnsemble:
             ValueError: When number of energies is different from number of
                 conformers
         """
-        energies: Array1DFloat = np.array(energies)
+        energies = np.array(energies)
         if len(energies) != self.n_conformers:
             msg = (
                 f"Number of energies ({len(energies)}) != number of "
@@ -1256,7 +1249,7 @@ class ConformerEnsemble:
         degeneracies: ArrayLike1D | None = None,
         properties: Mapping[str, ArrayLike1D] | None = None,
     ) -> None:
-        conformer_coordinates: Array3DFloat = np.array(conformer_coordinates)
+        conformer_coordinates = np.array(conformer_coordinates)
         n_conformers = len(conformer_coordinates)
 
         energies_: np.ndarray
@@ -1312,7 +1305,7 @@ class ConformerEnsemble:
             result = result.reshape(1, -1)
         rmsds = result[:, 1:]
 
-        rmsds: Array2DFloat = rmsds[i_s - 1, :][:, j_s - 1]
+        rmsds = rmsds[i_s - 1, :][:, j_s - 1]
 
         return rmsds
 
@@ -1347,7 +1340,7 @@ class ConformerEnsemble:
                 )
             row_rmsds = np.genfromtxt(process.stdout.splitlines(), usecols=(-1))  # type: ignore
             rmsds.append(row_rmsds)
-        rmsds: Array2DFloat = np.vstack(rmsds)
+        rmsds = np.vstack(rmsds)
 
         return rmsds
 
@@ -1385,7 +1378,7 @@ class ConformerEnsemble:
                 rmsd = align.GetRMSD()
                 rmsds_row.append(rmsd)
             rmsds.append(rmsds_row)
-        rmsds: Array2DFloat = np.array(rmsds)
+        rmsds = np.array(rmsds)
 
         return rmsds
 
@@ -1436,7 +1429,7 @@ class ConformerEnsemble:
             rmsds_row: list[float] = []
             AllChem.AlignMolConformers(ref_mol, atomIds=atom_ids, RMSlist=rmsds_row)
             rmsds.append(rmsds_row)
-        rmsds: Array2DFloat = np.array(rmsds)
+        rmsds = np.array(rmsds)
 
         return rmsds
 
@@ -1493,9 +1486,8 @@ class ConformerEnsemble:
                     )
                     row_rmsds.append(rmsd)
             rmsds.append(np.array(row_rmsds))
-        rmsds: Array2DFloat = np.vstack(rmsds)
 
-        return rmsds
+        return np.vstack(rmsds)
 
     def update_mol(self) -> ConformerEnsemble:
         """Update Mol object with conformers."""
@@ -1812,7 +1804,7 @@ def conformers_from_rdkit(  # noqa: C901
         mol = Chem.MolFromSmiles(mol)
     except TypeError:
         pass
-    mol: Chem.Mol = Chem.AddHs(mol)
+    mol = Chem.AddHs(mol)
 
     # If n_conformers is not set, set number of conformers based on number of
     # rotatable bonds
@@ -1895,7 +1887,7 @@ def _add_conformers_to_mol(mol: Chem.Mol, conformer_coordinates: ArrayLike3D) ->
         mol: RDKit mol object
         conformer_coordinates: Conformer coordinates (Å)
     """
-    conformer_coordinates: Array3DFloat = np.array(conformer_coordinates)
+    conformer_coordinates = np.array(conformer_coordinates)
     if len(conformer_coordinates.shape) == 2:
         conformer_coordinates.reshape(-1, conformer_coordinates.shape[0], 3)
 
@@ -1914,13 +1906,13 @@ def _extract_from_mol(
     """Extract information from RDKit Mol object with conformers."""
     # Take out elements, coordinates and connectivity matrix
     elements: list[str] = [atom.GetSymbol() for atom in mol.GetAtoms()]
-    charges: Array1DInt = np.array([atom.GetFormalCharge() for atom in mol.GetAtoms()])
+    charges = np.array([atom.GetFormalCharge() for atom in mol.GetAtoms()])
 
     conformer_coordinates = []
     for conformer in mol.GetConformers():
         coordinates = conformer.GetPositions()
         conformer_coordinates.append(coordinates)
-    conformer_coordinates: Array3DFloat = np.array(conformer_coordinates)
+    conformer_coordinates = np.array(conformer_coordinates)
 
     connectivity_matrix: Array2DFloat = Chem.GetAdjacencyMatrix(mol, useBO=True)
 
@@ -1940,8 +1932,8 @@ def _extract_from_ob_mol(
 ) -> tuple[Array1DInt, Array3DFloat, Array2DInt, Array1DInt]:
     """Extract information from Openbabel OBMol object with conformers."""
     py_mol = pybel.Molecule(ob_mol)
-    elements: Array1DInt = np.array([atom.atomicnum for atom in py_mol.atoms])
-    charges: Array1DInt = np.array([atom.formalcharge for atom in py_mol.atoms])
+    elements = np.array([atom.atomicnum for atom in py_mol.atoms])
+    charges = np.array([atom.formalcharge for atom in py_mol.atoms])
 
     n_atoms = len(py_mol.atoms)
     connectivity_matrix: Array2DInt = np.zeros((n_atoms, n_atoms), dtype=int)
@@ -1956,9 +1948,9 @@ def _extract_from_ob_mol(
     conformer_coordinates = []
     for i in range(ob_mol.NumConformers()):
         ob_mol.SetConformer(i)
-        coordinates: Array2DFloat = np.array([atom.coords for atom in py_mol.atoms])
+        coordinates = np.array([atom.coords for atom in py_mol.atoms])
         conformer_coordinates.append(coordinates)
-    conformer_coordinates: Array3DFloat = np.array(conformer_coordinates)
+    conformer_coordinates = np.array(conformer_coordinates)
 
     return elements, conformer_coordinates, connectivity_matrix, charges
 
@@ -1990,8 +1982,8 @@ def _get_ob_mol(
         charges_ = np.array(charges)
     charges = charges_
 
-    connectivity_matrix: Array2DInt = np.array(connectivity_matrix)
-    coordinates: Array2DFloat = np.array(coordinates)
+    connectivity_matrix = np.array(connectivity_matrix)
+    coordinates = np.array(coordinates)
 
     mol = ob.OBMol()
 
@@ -2035,8 +2027,8 @@ def _get_rdkit_mol(
     else:
         charges_ = np.array(charges)
     charges = charges_
-    conformer_coordinates: Array3DFloat = np.array(conformer_coordinates)
-    connectivity_matrix: Array2DInt = np.array(connectivity_matrix)
+    conformer_coordinates = np.array(conformer_coordinates)
+    connectivity_matrix = np.array(connectivity_matrix)
 
     mol = Chem.RWMol()
 
