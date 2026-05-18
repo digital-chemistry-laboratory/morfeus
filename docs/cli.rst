@@ -49,6 +49,9 @@ command in the terminal gives a help page with all the possible subcommands.
        local_force
          CLI for local force.
 
+       multiwfn
+         CLI for Multiwfn.
+
        pyramidalization
          CLI for pyramidalization.
 

@@ -10,6 +10,7 @@ import morfeus.cone_angle
 import morfeus.conformer
 import morfeus.dispersion
 import morfeus.local_force
+import morfeus.multiwfn
 import morfeus.pyramidalization
 import morfeus.sasa
 import morfeus.solid_angle
@@ -50,6 +51,7 @@ def main() -> None:
             "dispersion": _wrap_cli(morfeus.dispersion.cli),
             "local_force": _wrap_cli(morfeus.local_force.cli),
             "pyramidalization": _wrap_cli(morfeus.pyramidalization.cli),
+            "multiwfn": _wrap_cli(morfeus.multiwfn.cli),
             "sasa": _wrap_cli(morfeus.sasa.cli),
             "solid_angle": _wrap_cli(morfeus.solid_angle.cli),
             "sterimol": _wrap_cli(morfeus.sterimol.cli),
