@@ -7,12 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - 2026-05-18
 
 ### Added
-- GitHub Actions job that runs xtb-marked tests on every PR, including a new test comparing `XTB.get_charges` output against reference xtb values
+- GitHub Actions job that runs xtb-marked tests on every PR (including xtb binary installation)
+- New test comparing `XTB.get_charges` output against reference xtb values
 
 ### Fixed
 - Compatibility issue with Python 3.14 where command-line interface failed due to `fire` library's requirement for `__name__` attribute on `functools.partial` objects
 - Update type annotations which were throwing errors with newer versions of mypy
-
 
 ## [0.8.0] - 2025-11-11
 
