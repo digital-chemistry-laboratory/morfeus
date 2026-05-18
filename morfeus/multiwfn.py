@@ -543,12 +543,9 @@ class _PexpectSession:
     def _execute_command(self, cmd: str, expect: str | None, use_robust: bool) -> None:
         """Execute command with optional expect."""
         if use_robust and expect:
-            pattern = expect
-            matched = self.expect(pattern)
+            matched = self.expect(expect)
             if not matched:
-                # Some Multiwfn builds emit the single-determinant warning and then
-                # change prompts abruptly. Surface this domain error instead of a
-                # generic prompt-mismatch RuntimeError.
+                # Some Multiwfn builds emit the single-determinant warning
                 transcript = self.stdout
                 buffered = self.get_output_since_last_command()
                 if SINGLE_DETERMINANT_WFN_ERROR_RE.search(buffered) or (
@@ -556,7 +553,7 @@ class _PexpectSession:
                 ):
                     raise RuntimeError(SINGLE_DETERMINANT_WFN_ERROR_TEXT)
                 raise RuntimeError(
-                    f"Expected pattern not found before command {cmd!r}: {pattern!r}"
+                    f"Expected pattern not found before command {cmd!r}: {expect!r}"
                 )
         self.send(cmd)
         if not use_robust:
@@ -866,6 +863,27 @@ class Multiwfn:
             ),
         ]
 
+    def _parse_custom_commands(self, commands : list):
+        custom_commands = []
+        for step in commands:
+            if not isinstance(step, CommandStep):
+                cmd = None
+                expect = None
+                optional = False
+                if isinstance(step, str):
+                    cmd = step
+                elif isinstance(step, tuple) and len(step) in (2, 3):
+                    cmd = step[0]
+                    expect = step[1]
+                    if len(step) == 3:
+                        optional = step[2] 
+                else:
+                    raise ValueError(f"Invalid custom command: {step}")
+                step = CommandStep(cmd, expect, optional)
+            custom_commands.append(step)
+
+        return custom_commands
+
     def _build_fuzzy_integration_commands(
         self,
         menu_cmd: str,
@@ -1035,6 +1053,7 @@ class Multiwfn:
                     else " 1 Output Mulliken population and atomic"
                 ),
             ),
+            WaitProgress(self._max_wait),
             CommandStep("y", expect="y/n"),
         ]
         if normalized_model == "mulliken":
@@ -1253,18 +1272,18 @@ class Multiwfn:
             self._results.grid_descriptors = {}
         self._results.grid_descriptors[grid_key] = grid_descriptors
         return grid_descriptors
-
+    
     def get_grid(
         self,
         descriptor: str,
-        grid_quality: str,
+        grid_quality: list | str,
         grid_file_name: str | None = None,
     ) -> Path:
         """Generate a grid (.cub) file for a real space function.
 
         Args:
             descriptor: Descriptor to calculate on grid.
-            grid_quality: Grid quality, one of 'low', 'medium', 'high'.
+            grid_quality: Grid quality, one of 'low', 'medium', 'high' or custom commands.
             grid_file_name: Optional name for output cube file.
 
         Returns:
@@ -1276,14 +1295,20 @@ class Multiwfn:
         """
         menu_cmd, menu_pattern, commands = self._get_descriptor_function(descriptor)
 
-        normalized_grid_quality = self._normalize_option(grid_quality)
-        if normalized_grid_quality not in GRID_QUALITIES:
+        
+        if isinstance(grid_quality, str) and self._normalize_option(grid_quality) in GRID_QUALITIES:
+            normalized_grid_quality = self._normalize_option(grid_quality)
+            grid_pattern = GRID_QUALITIES[normalized_grid_quality]
+            grid_cmd = grid_pattern.split(" ")[0]
+            grid_quality_commands = [CommandStep(grid_cmd, expect=grid_pattern)]    
+        elif isinstance(grid_quality, list):
+            grid_quality_commands = self._parse_custom_commands(grid_quality)
+        else:
             choices = ", ".join(GRID_QUALITIES.keys())
             raise ValueError(
                 f"Grid quality {grid_quality!r} not supported. Choose between {choices}."
             )
-        grid_pattern = GRID_QUALITIES[normalized_grid_quality]
-        grid_cmd = grid_pattern.split(" ")[0]
+        
         existing_cub_files: set[Path] = set()
         grid_workdir = self._run_path / descriptor
         if grid_workdir.exists():
@@ -1296,7 +1321,7 @@ class Multiwfn:
                 expect="5 Output and plot specific property within a spatial region",
             ),
             CommandStep(menu_cmd, expect=menu_pattern),
-            CommandStep(grid_cmd, expect=grid_pattern),
+            *grid_quality_commands,
             WaitProgress(self._max_wait),
             CommandStep("2", expect="2 Export data to a Gaussian-type cube file"),
             CommandStep("0", expect="0 Return to main menu"),

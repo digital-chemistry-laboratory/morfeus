@@ -8,7 +8,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 import pytest
 
-from morfeus.multiwfn import Multiwfn
+from morfeus.multiwfn import CommandStep, Multiwfn
 
 MULTIWFN_DATA_DIR = Path(__file__).parent / "data" / "multiwfn"
 EXAMPLE_MOLDEN_DIR = MULTIWFN_DATA_DIR / "example_molden"
@@ -37,6 +37,40 @@ SINGLET_TRIPLET_EQUIVALENT_FILES = (
     ),
 )
 MULTIPOLE_KEYS = ("quadrupole_spherical_magnitude", "quadrupole_traceless_magnitude")
+
+
+def test_parse_custom_commands_accepts_supported_step_forms() -> None:
+    """Convert custom command shorthand to CommandStep objects."""
+    mwfn = object.__new__(Multiwfn)
+    existing_step = CommandStep("4", expect="ready", optional=True)
+
+    steps = mwfn._parse_custom_commands(
+        ["1", ("2", "prompt"), ("3", "optional prompt", True), existing_step]
+    )
+
+    assert steps == [
+        CommandStep("1"),
+        CommandStep("2", expect="prompt"),
+        CommandStep("3", expect="optional prompt", optional=True),
+        existing_step,
+    ]
+
+
+@pytest.mark.parametrize(
+    "step",
+    [
+        (),
+        ("1",),
+        ("1", "prompt", False, "extra"),
+        object(),
+    ],
+)
+def test_parse_custom_commands_rejects_invalid_step_forms(step: object) -> None:
+    """Reject custom command shorthands with unsupported shape."""
+    mwfn = object.__new__(Multiwfn)
+
+    with pytest.raises(ValueError, match="Invalid custom command"):
+        mwfn._parse_custom_commands([step])
 
 
 @pytest.mark.multiwfn
