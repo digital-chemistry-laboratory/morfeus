@@ -17,6 +17,7 @@ Modules:
     sasa: Solvent accessible surface area code
     solid_angle: Solid angle code
     sterimol: Sterimol code
+    tblite: Native tblite interface code
     typing: Typing code for arrays
     utils: Helper functions.
     visible_volume: Visible volume code
@@ -38,6 +39,7 @@ from morfeus.pyramidalization import Pyramidalization
 from morfeus.sasa import SASA
 from morfeus.solid_angle import SolidAngle
 from morfeus.sterimol import Sterimol
+from morfeus.tblite import TBLite
 from morfeus.visible_volume import VisibleVolume
 from morfeus.xtb import XTB
 
@@ -55,6 +57,7 @@ __all__ = [
     "SASA",
     "SolidAngle",
     "Sterimol",
+    "TBLite",
     "VisibleVolume",
     "XTB",
 ]
