@@ -1,0 +1,6 @@
+morfeus.cone\_angle module
+==========================
+
+.. automodule:: morfeus.cone_angle
+   :members:
+   :show-inheritance:

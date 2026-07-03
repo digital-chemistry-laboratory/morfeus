@@ -1,0 +1,6 @@
+morfeus.qc module
+=================
+
+.. automodule:: morfeus.qc
+   :members:
+   :show-inheritance:

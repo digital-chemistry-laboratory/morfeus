@@ -1,0 +1,6 @@
+morfeus.geometry module
+=======================
+
+.. automodule:: morfeus.geometry
+   :members:
+   :show-inheritance:

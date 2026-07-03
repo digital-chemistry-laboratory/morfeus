@@ -1,0 +1,6 @@
+morfeus.config module
+=====================
+
+.. automodule:: morfeus.config
+   :members:
+   :show-inheritance:

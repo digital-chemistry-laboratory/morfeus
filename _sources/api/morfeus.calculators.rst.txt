@@ -1,0 +1,6 @@
+morfeus.calculators module
+==========================
+
+.. automodule:: morfeus.calculators
+   :members:
+   :show-inheritance:
