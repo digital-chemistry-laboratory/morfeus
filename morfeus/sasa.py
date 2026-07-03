@@ -37,11 +37,13 @@ class SASA:
         area: Area of the solvent accessible surface.
         atom_areas: Atom areas (starting from 1)
         volume: Volume of the solvent accessible surface
+        atom_volumes: Atom volumes (starting from 1)
     """
 
     area: float
     atom_areas: dict[int, float]
     volume: float
+    atom_volumes: dict[int, float]
     _atoms: list[Atom]
     _density: float
     _probe_radius: float
@@ -124,6 +126,7 @@ class SASA:
 
         # Set up attributes
         self.atom_areas = {atom.index: atom.area for atom in self._atoms}
+        self.atom_volumes = {atom.index: atom.volume for atom in self._atoms}
         self.area = sum([atom.area for atom in self._atoms])
         self.volume = sum([atom.volume for atom in self._atoms])
 
@@ -178,10 +181,14 @@ class SASA:
         print(f"Solvent accessible surface area (Å²): {self.area:.1f}")
         print("Volume inside solvent accessible surface (Å³): " f"{self.volume:.1f}")
         if verbose:
-            print(f"{'Symbol':<10s}{'Index':<10s}{'Area (Å²)':<10s}")
-            for atom, (i, area) in zip(self._atoms, self.atom_areas.items()):
+            print(
+                f"{'Symbol':<10s}{'Index':<10s}{'Area (Å²)':<12s}{'Volume (Å³)':<12s}"
+            )
+            for atom in self._atoms:
                 symbol = atomic_symbols[atom.element]
-                print(f"{symbol:<10s}{i:<10d}{area:<10.1f}")
+                print(
+                    f"{symbol:<10s}{atom.index:<10d}{atom.area:<12.1f}{atom.volume:<12.1f}"
+                )
 
     @requires_dependency(
         [
