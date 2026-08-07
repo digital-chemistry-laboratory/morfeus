@@ -1,0 +1,6 @@
+morfeus.data module
+===================
+
+.. automodule:: morfeus.data
+   :members:
+   :show-inheritance:

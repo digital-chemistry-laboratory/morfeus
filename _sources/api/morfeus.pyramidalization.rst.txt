@@ -1,0 +1,6 @@
+morfeus.pyramidalization module
+===============================
+
+.. automodule:: morfeus.pyramidalization
+   :members:
+   :show-inheritance:
