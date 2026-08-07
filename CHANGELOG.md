@@ -4,11 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-05-18
+## [Unreleased] - 2026-08-06
 
 ### Added
 - GitHub Actions job that runs xtb-marked tests on every PR (including xtb binary installation)
 - New test comparing `XTB.get_charges` output against reference xtb values
+
+### Changed
+- Pinned `xtb` to conda-forge build `6.7.1=*_4` in `environment-opt.yml` and CI `test.yml` because with newer conda-forge builds, `xtb` is installed next to a new `multicharge` build it was not compiled against, which makes PTB calculations with `xtb` segfault
+
+    TODO: once conda-forge ships a rebuilt xtb which fixes the issue, remove the patch added in PR #89.
 
 ### Fixed
 - Compatibility issue with Python 3.14 where command-line interface failed due to `fire` library's requirement for `__name__` attribute on `functools.partial` objects
