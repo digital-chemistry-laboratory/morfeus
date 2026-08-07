@@ -48,8 +48,9 @@ known_first_party = ["morfeus"]
 DEP001 = ["libconeangle"]
 
 [tool.pytest.ini_options]
-addopts = "-m 'not (benchmark or xtb)'"
+addopts = "-m 'not (benchmark or xtb or tblite)'"
 markers = [
     "benchmark: mark a test as method benchmark",
+    "tblite: mark a test as requiring the tblite dependency",
     "xtb: mark a test as requiring the xtb dependency",
 ]

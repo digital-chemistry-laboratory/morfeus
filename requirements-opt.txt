@@ -9,5 +9,6 @@ pyvistaqt
 qcengine
 rdkit
 spyrmsd
+tblite<0.5
 vtk
 xtb-python
