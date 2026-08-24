@@ -867,9 +867,13 @@ class LocalForce:
         input_coordinates = np.array(input_coordinates).reshape(-1, 3)
         standard_coordinates = np.array(standard_coordinates).reshape(-1, 3)
 
+        if input_coordinates.size == 0:
+            input_coordinates = standard_coordinates
+
         if (
             not np.array_equal(input_coordinates, standard_coordinates)
             and standard_coordinates.size > 0
+            and input_coordinates.size > 0
         ):
             rotation_i_to_s = kabsch_rotation_matrix(
                 input_coordinates, standard_coordinates
