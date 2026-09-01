@@ -45,7 +45,6 @@ def test_reference(cone_angle_data):
         assert_almost_equal(ca.cone_angle, cone_angle_ref, decimal=1)
 
 
-@pytest.mark.benchmark
 def test_reference_internal(cone_angle_data):
     """Test the internal algorithm against cone angle reference data.
 

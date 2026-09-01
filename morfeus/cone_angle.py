@@ -266,12 +266,8 @@ class ConeAngle:
         instead of with ``np.roots``. The mathematics and the selected cone
         are identical to the looped implementation.
 
-        Numerically degenerate candidates -- a root of the tangency
-        equation that stays complex or falls outside [-1, 1] beyond
-        precision, or a triple with two tangent atoms on the same axis from
-        atom 1 -- are not physical cones and are discarded, where the looped
-        implementation used to raise from math.acos or the division by
-        sin(beta_ij).
+        Numerically degenerate candidate cones are not physical and are
+        discarded instead of raising from math.acos or a division by zero.
 
         Returns:
             min_3_cone: Smallest cone tangent to three atoms
@@ -283,8 +279,8 @@ class ConeAngle:
         atoms = self._loop_atoms
         m = np.array([atom.cone.normal for atom in atoms])
         beta = np.array([atom.cone.angle for atom in atoms])
-        triples = np.fromiter(
-            itertools.combinations(range(len(atoms)), 3), dtype=np.dtype((int, 3))
+        triples = np.array(
+            list(itertools.combinations(range(len(atoms)), 3)), dtype=int
         ).reshape(-1, 3)
         i, j, k = triples.T
         m_i, m_j, m_k = m[i], m[j], m[k]
