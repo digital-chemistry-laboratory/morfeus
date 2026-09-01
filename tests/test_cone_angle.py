@@ -51,6 +51,9 @@ def test_reference_internal(cone_angle_data):
 
     The default method's tests only cover the internal algorithm when
     libconeangle is not installed, so it is exercised explicitly here.
+
+    Args:
+        cone_angle_data: Reference data record from the csv files
     """
     for metal in ("pd", "pt", "ni"):
         label, data = cone_angle_data
