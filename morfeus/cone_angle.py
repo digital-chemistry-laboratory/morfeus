@@ -320,6 +320,13 @@ class ConeAngle:
         cos_2_alpha = roots.real.copy()
         cos_2_alpha[np.isclose(cos_2_alpha, 1, rtol=1e-9, atol=0.0)] = 1
         cos_2_alpha[np.isclose(cos_2_alpha, -1, rtol=1e-9, atol=0.0)] = -1
+        # A root marginally outside [-1, 1] is a boundary cone displaced by
+        # solver noise (near a double root the error grows with the square
+        # root of the coefficient error), e.g. a 180-degree cone. Clamp it to
+        # the domain so it stays a candidate; roots further outside are not
+        # physical cones and are excluded through `valid` below.
+        outside = (np.abs(cos_2_alpha) > 1) & (np.abs(cos_2_alpha) <= 1 + 1e-7)
+        cos_2_alpha[outside] = np.sign(cos_2_alpha[outside])
         valid = (
             (np.abs(roots.imag) < 1e10 * np.finfo(float).eps)
             & (np.abs(cos_2_alpha) <= 1)
@@ -561,6 +568,10 @@ def _get_three_atom_cones(atom_i: Atom, atom_j: Atom, atom_k: Atom) -> list[Cone
     roots = np.real_if_close(roots, tol=1e10)
     roots[np.isclose(roots, 1, rtol=1e-9, atol=0.0)] = 1
     roots[np.isclose(roots, -1, rtol=1e-9, atol=0.0)] = -1
+    # Clamp real roots marginally outside [-1, 1] to the domain boundary;
+    # see the corresponding comment in ConeAngle._search_three_cones.
+    outside = np.isreal(roots) & (np.abs(roots) > 1) & (np.abs(roots) <= 1 + 1e-7)
+    roots[outside] = np.sign(roots[outside].real)
 
     cos_roots = [
         math.acos(roots[0]),
