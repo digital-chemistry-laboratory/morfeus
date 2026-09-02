@@ -6,17 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2026-08-06
 
-### Changed
-- Vectorized the internal cone angle algorithm's search over atom triples, ~100x faster on large ligands with unchanged results
-
 ### Added
 - GitHub Actions job that runs xtb-marked tests on every PR (including xtb binary installation)
 - New test comparing `XTB.get_charges` output against reference xtb values
 
 ### Changed
+- Vectorized the internal cone angle algorithm's search over atom triples, ~100x faster on large ligands than with previous implementation
 - Pinned `xtb` to conda-forge build `6.7.1=*_4` in `environment-opt.yml` and CI `test.yml` because with newer conda-forge builds, `xtb` is installed next to a new `multicharge` build it was not compiled against, which makes PTB calculations with `xtb` segfault
 
-    TODO: once conda-forge ships a rebuilt xtb which fixes the issue, remove the patch added in PR #89.
+    TODO: once conda-forge ships a rebuilt xtb which fixes the issue, remove the patch added in PR #89
 
 ### Fixed
 - Internal cone angle algorithm no longer raises `math domain error` on numerically degenerate tangency roots; unphysical candidate cones are discarded and the search completes
