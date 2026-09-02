@@ -1,0 +1,6 @@
+morfeus.typing module
+=====================
+
+.. automodule:: morfeus.typing
+   :members:
+   :show-inheritance:

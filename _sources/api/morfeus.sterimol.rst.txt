@@ -1,0 +1,6 @@
+morfeus.sterimol module
+=======================
+
+.. automodule:: morfeus.sterimol
+   :members:
+   :show-inheritance:

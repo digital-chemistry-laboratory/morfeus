@@ -1,0 +1,6 @@
+morfeus.xtb module
+==================
+
+.. automodule:: morfeus.xtb
+   :members:
+   :show-inheritance:
