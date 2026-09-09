@@ -11,6 +11,7 @@ Modules:
     geometry: Help classes and functions related to geometry
     io: Input and output
     local_force: Local force constant code
+    multiwfn: Multiwfn interface code
     plotting: Plotting functions
     pyramidalization: Pyramidalization code
     qc: Interface to quantum-chemical programs
@@ -34,6 +35,7 @@ from morfeus.cone_angle import ConeAngle
 from morfeus.dispersion import Dispersion
 from morfeus.io import read_geometry, read_gjf, read_xyz, write_xyz
 from morfeus.local_force import LocalForce
+from morfeus.multiwfn import Multiwfn
 from morfeus.pyramidalization import Pyramidalization
 from morfeus.sasa import SASA
 from morfeus.solid_angle import SolidAngle
@@ -51,6 +53,7 @@ __all__ = [
     "ConeAngle",
     "Dispersion",
     "LocalForce",
+    "Multiwfn",
     "Pyramidalization",
     "SASA",
     "SolidAngle",

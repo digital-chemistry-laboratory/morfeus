@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - GitHub Actions job that runs xtb-marked tests on every PR (including xtb binary installation)
 - New test comparing `XTB.get_charges` output against reference xtb values
+- New `Multiwfn` module for wavefunction analysis with the external Multiwfn program
+- `PexpectSession` utility to robustly interface with the Multiwfn program
+- Methods `XTB.gen_molden_file`, `XTB.gen_density_file`, and `XTB.gen_spin_density_file` to return grid and molden files
+- Helper `molden2aim` utility wrapper for normalization of .molden files prior to analysis
+- `multiwfn` GitHub Actions testing job (including Multiwfn binary installation)
 
 ### Changed
 - Vectorized the internal cone angle algorithm's search over atom triples, ~100x faster on large ligands than with previous implementation
@@ -116,4 +121,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 - `BuriedVolume.percent_buried_volume`. Use `BuriedVolume.fraction_buried_volume` instead.`percent_buried_volume` will be reintroduced later with the proper meaning.
-
