@@ -260,42 +260,168 @@ class ConeAngle:
     def _search_three_cones(self) -> Cone:
         """Search over cones tangent to three atoms.
 
+        Constructs the same cones as ``_get_three_atom_cones``, for every
+        triple of atoms at once with array operations instead of a Python
+        loop per triple, and solves the tangency quadratic in closed form
+        instead of with ``np.roots``. The mathematics and the selected cone
+        are identical to the looped implementation.
+
+        Numerically degenerate candidate cones are not physical and are
+        discarded instead of raising from math.acos or a division by zero.
+
         Returns:
             min_3_cone: Smallest cone tangent to three atoms
-        """
-        # Create three-atom cones
-        loop_atoms = self._loop_atoms
-        cones = []
-        for atom_i, atom_j, atom_k in itertools.combinations(loop_atoms, r=3):
-            three_cones = _get_three_atom_cones(atom_i, atom_j, atom_k)
-            cones.extend(three_cones)
 
-        # Get upper and lower bound to apex angle
+        Raises:
+            RuntimeError: If no cone encompassing all atoms is found.
+        """
+        # Set up vertex angles and normal vectors of all atoms and triples
+        atoms = self._loop_atoms
+        m = np.array([atom.cone.normal for atom in atoms])
+        beta = np.array([atom.cone.angle for atom in atoms])
+        triples = np.array(
+            list(itertools.combinations(range(len(atoms)), 3)), dtype=int
+        ).reshape(-1, 3)
+        i, j, k = triples.T
+        m_i, m_j, m_k = m[i], m[j], m[k]
+        beta_i, beta_j, beta_k = beta[i], beta[j], beta[k]
+
+        # Set up angles between atom vectors
+        beta_ij = np.arccos(np.clip(np.einsum("ta,ta->t", m_i, m_j), -1, 1))
+
+        # Set up matrices
+        u = np.stack([np.cos(beta_i), np.cos(beta_j), np.cos(beta_k)], axis=1)
+        v = np.stack([np.sin(beta_i), np.sin(beta_j), np.sin(beta_k)], axis=1)
+        N = np.stack(
+            [np.cross(m_j, m_k), np.cross(m_k, m_i), np.cross(m_i, m_j)], axis=2
+        )
+        P = np.einsum("tab,tac->tbc", N, N)
+        gamma = np.einsum("ta,ta->t", m_i, np.cross(m_j, m_k))
+
+        # Set up coefficients of quadratic equation
+        A = np.einsum("ta,tab,tb->t", u, P, u)
+        B = np.einsum("ta,tab,tb->t", v, P, v)
+        C = np.einsum("ta,tab,tb->t", u, P, v)
+        D = gamma**2
+
+        # Solve quadratic equation in cos(2 * alpha) in closed form
+        p2 = (A - B) ** 2 + 4 * C**2
+        p1 = 2 * (A - B) * (A + B - 2 * D)
+        p0 = (A + B - 2 * D) ** 2 - 4 * C**2
+        with np.errstate(divide="ignore", invalid="ignore"):
+            sqrt_discriminant = np.sqrt((p1**2 - 4 * p2 * p0).astype(complex))
+            roots = np.stack(
+                [
+                    (-p1 + sqrt_discriminant) / (2 * p2),
+                    (-p1 - sqrt_discriminant) / (2 * p2),
+                ],
+                axis=1,
+            )
+        cos_2_alpha = roots.real.copy()
+        cos_2_alpha[np.isclose(cos_2_alpha, 1, rtol=1e-9, atol=0.0)] = 1
+        cos_2_alpha[np.isclose(cos_2_alpha, -1, rtol=1e-9, atol=0.0)] = -1
+        # A root marginally outside [-1, 1] is a boundary cone displaced by
+        # solver noise (near a double root the error grows with the square
+        # root of the coefficient error), e.g. a 180-degree cone. Clamp it to
+        # the domain so it stays a candidate; roots further outside are not
+        # physical cones and are excluded through `valid` below.
+        outside = (np.abs(cos_2_alpha) > 1) & (np.abs(cos_2_alpha) <= 1 + 1e-7)
+        cos_2_alpha[outside] = np.sign(cos_2_alpha[outside])
+        valid = (
+            (np.abs(roots.imag) < 1e10 * np.finfo(float).eps)
+            & (np.abs(cos_2_alpha) <= 1)
+            & np.isfinite(cos_2_alpha)
+        )
+        cos_2_alpha = np.clip(cos_2_alpha, -1, 1)
+
+        # Four apex angle candidates per triple: acos(x) / 2 and
+        # (2 * pi - acos(x)) / 2 for each root x
+        acos_roots = np.arccos(cos_2_alpha)
+        angles = (
+            np.stack(
+                [
+                    acos_roots[:, 0],
+                    2 * np.pi - acos_roots[:, 0],
+                    acos_roots[:, 1],
+                    2 * np.pi - acos_roots[:, 1],
+                ],
+                axis=1,
+            )
+            / 2
+        )
+
+        # Test roots and keep only the two most physical per triple
+        cos_angles = np.cos(angles)
+        sin_angles = np.sin(angles)
+        D_tests = np.abs(
+            A[:, None] * cos_angles**2
+            + B[:, None] * sin_angles**2
+            + 2 * C[:, None] * sin_angles * cos_angles
+            - D[:, None]
+        )
+        D_tests[~np.repeat(valid, 2, axis=1)] = np.inf
+        physical = np.argsort(D_tests, axis=1, kind="stable")[:, :2]
+        t_idx = np.repeat(np.arange(len(triples)), 2)
+        keep_valid = np.repeat(valid, 2, axis=1)[t_idx, physical.ravel()]
+        alpha = angles[t_idx, physical.ravel()][keep_valid]
+        t_idx = t_idx[keep_valid]
+
+        # Calculate normal vectors of the cones for the physical angles
+        m_i, m_j = m_i[t_idx], m_j[t_idx]
+        beta_i, beta_j, beta_ij = beta_i[t_idx], beta_j[t_idx], beta_ij[t_idx]
+        cross_ij = N[:, :, 2][t_idx]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            sin_beta_ij_sq = np.sin(beta_ij) ** 2
+            a_ij = (
+                np.cos(alpha - beta_i) - np.cos(alpha - beta_j) * np.cos(beta_ij)
+            ) / sin_beta_ij_sq
+            b_ij = (
+                np.cos(alpha - beta_j) - np.cos(alpha - beta_i) * np.cos(beta_ij)
+            ) / sin_beta_ij_sq
+            # Set c_ij squared to 0 if negative due to numerical precision
+            c_ij_sq = 1 - a_ij**2 - b_ij**2 - 2 * a_ij * b_ij * np.cos(beta_ij)
+            c_ij = np.sqrt(np.clip(c_ij_sq, 0, None))
+            p = np.einsum(
+                "tab,tb->ta",
+                N[t_idx],
+                u[t_idx] * np.cos(alpha)[:, None] + v[t_idx] * np.sin(alpha)[:, None],
+            )
+            sign = np.sign(gamma[t_idx]) * np.sign(np.einsum("ta,ta->t", p, cross_ij))
+            c_ij = np.where(np.sign(c_ij) != sign, -c_ij, c_ij)
+            normals = (
+                a_ij[:, None] * m_i
+                + b_ij[:, None] * m_j
+                + (c_ij / np.sin(beta_ij))[:, None] * cross_ij
+            )
+
+        # Get upper and lower bound to apex angle and remove cones outside
         upper_bound = self._get_upper_bound()
         lower_bound = self._max_2_cone.angle
+        in_bounds = (alpha - lower_bound >= -1e-5) & (upper_bound - alpha >= -1e-5)
+        alpha = alpha[in_bounds]
+        normals = normals[in_bounds]
+        t_idx = t_idx[in_bounds]
 
-        # Remove cones from consideration which are outside the bounds
-        remove_cones = []
-        for cone in cones:
-            if cone.angle - lower_bound < -1e-5 or upper_bound - cone.angle < -1e-5:
-                remove_cones.append(cone)
-
-        for cone in reversed(remove_cones):
-            cones.remove(cone)
-
-        # Keep only cones that encompass all atoms
-        keep_cones: list[Cone] = []
-        for cone in cones:
-            in_atoms = []
-            for atom in loop_atoms:
-                in_atoms.append(cone.is_inside(atom))
-            if all(in_atoms):
-                keep_cones.append(cone)
+        # Keep only cones that encompass all atoms (Cone.is_inside, vectorized)
+        cos_angle = normals @ m.T
+        cos_angle = np.where(
+            (1 - cos_angle > 0) & (1 - cos_angle < 1e-5), 1.0, cos_angle
+        )
+        contains_all = (
+            alpha[:, None] - (beta[None, :] + np.arccos(np.clip(cos_angle, -1, 1)))
+            > -1e-5
+        ).all(axis=1)
 
         # Take the smallest cone that encompasses all atoms
-        angles = [cone.angle for cone in keep_cones]
-        idx = int(np.argmin(angles))
-        min_3_cone = keep_cones[idx]
+        keep = np.flatnonzero(contains_all)
+        if keep.size == 0:
+            raise RuntimeError("Cone not found")
+        idx = keep[int(np.argmin(alpha[keep]))]
+        min_3_cone = Cone(
+            float(alpha[idx]),
+            [atoms[t] for t in triples[t_idx[idx]]],
+            normals[idx],
+        )
 
         return min_3_cone
 
@@ -442,6 +568,10 @@ def _get_three_atom_cones(atom_i: Atom, atom_j: Atom, atom_k: Atom) -> list[Cone
     roots = np.real_if_close(roots, tol=1e10)
     roots[np.isclose(roots, 1, rtol=1e-9, atol=0.0)] = 1
     roots[np.isclose(roots, -1, rtol=1e-9, atol=0.0)] = -1
+    # Clamp real roots marginally outside [-1, 1] to the domain boundary;
+    # see the corresponding comment in ConeAngle._search_three_cones.
+    outside = np.isreal(roots) & (np.abs(roots) > 1) & (np.abs(roots) <= 1 + 1e-7)
+    roots[outside] = np.sign(roots[outside].real)
 
     cos_roots = [
         math.acos(roots[0]),

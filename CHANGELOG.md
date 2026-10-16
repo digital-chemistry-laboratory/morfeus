@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-05-18
+## [Unreleased] - 2026-08-06
 
 ### Added
 - GitHub Actions job that runs xtb-marked tests on every PR (including xtb binary installation)
@@ -15,7 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Helper `molden2aim` utility wrapper for normalization of .molden files prior to analysis
 - `multiwfn` GitHub Actions testing job (including Multiwfn binary installation)
 
+### Changed
+- Vectorized the internal cone angle algorithm's search over atom triples, ~100x faster on large ligands than with previous implementation
+- Pinned `xtb` to conda-forge build `6.7.1=*_4` in `environment-opt.yml` and CI `test.yml` because with newer conda-forge builds, `xtb` is installed next to a new `multicharge` build it was not compiled against, which makes PTB calculations with `xtb` segfault
+
+    TODO: once conda-forge ships a rebuilt xtb which fixes the issue, remove the patch added in PR #89
+
 ### Fixed
+- Internal cone angle algorithm no longer raises `math domain error` on numerically degenerate tangency roots; unphysical candidate cones are discarded and the search completes
 - Compatibility issue with Python 3.14 where command-line interface failed due to `fire` library's requirement for `__name__` attribute on `functools.partial` objects
 - Update type annotations which were throwing errors with newer versions of mypy
 
