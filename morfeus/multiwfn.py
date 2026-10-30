@@ -1542,9 +1542,6 @@ class Multiwfn:
             menu_pattern = REAL_SPACE_FUNCTIONS[descriptor]
             menu_cmd = menu_pattern.split(" ")[0]
 
-            if menu_cmd in {"13"}:
-                raise ValueError(f"Descriptor {descriptor!r} requires grid data!")
-
         else:
             function_setting = USER_REAL_FUNCTIONS[descriptor]
             func, citation = self._parse_user_function(function_setting)
@@ -1576,6 +1573,8 @@ class Multiwfn:
                 data, is incompatible with the current spin state, or the
                 partitioning scheme is unsupported.
         """
+        if descriptor == "rdg":
+            raise ValueError(f"Descriptor {descriptor!r} requires grid data!")
         normalized_partitioning = self._normalize_option(partitioning)
         if normalized_partitioning not in FUZZY_PARTITIONING_SCHEMES:
             choices = ", ".join(FUZZY_PARTITIONING_SCHEMES.keys())

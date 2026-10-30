@@ -358,3 +358,24 @@ def test_loading_settings_invalidates_cached_results(tmp_path):
     expected = type(mwfn._results)(citations=set(citations))
     assert mwfn._results == expected
     assert mwfn.get_citations() == citations
+
+
+def test_rdg_is_available_for_grids_only(tmp_path, monkeypatch):
+    """Allow RDG cube export while rejecting direct atomic integration."""
+    grid = tmp_path / "input.cub"
+    grid.touch()
+    mwfn = Multiwfn(grid, run_path=tmp_path)
+    sent = []
+
+    def run(commands, subdir=None):
+        sent.extend(commands)
+        workdir = tmp_path / subdir
+        workdir.mkdir()
+        (workdir / "RDG.cub").write_text("generated grid")
+        return MultiwfnRunResult("", workdir)
+
+    monkeypatch.setattr(mwfn, "run_commands", run)
+    assert mwfn.get_grid("rdg", "low").name == "RDG.cub"
+    assert CommandStep("13", expect="13 Reduced density gradient") in sent
+    with pytest.raises(ValueError, match="requires grid data"):
+        mwfn.get_descriptor("rdg")
