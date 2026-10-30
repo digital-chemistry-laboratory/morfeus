@@ -863,7 +863,7 @@ class Multiwfn:
             ),
         ]
 
-    def _parse_custom_commands(self, commands : list):
+    def _parse_custom_commands(self, commands: list) -> list[CommandStep]:
         custom_commands = []
         for step in commands:
             if not isinstance(step, CommandStep):
@@ -876,7 +876,7 @@ class Multiwfn:
                     cmd = step[0]
                     expect = step[1]
                     if len(step) == 3:
-                        optional = step[2] 
+                        optional = step[2]
                 else:
                     raise ValueError(f"Invalid custom command: {step}")
                 step = CommandStep(cmd, expect, optional)
@@ -1272,7 +1272,7 @@ class Multiwfn:
             self._results.grid_descriptors = {}
         self._results.grid_descriptors[grid_key] = grid_descriptors
         return grid_descriptors
-    
+
     def get_grid(
         self,
         descriptor: str,
@@ -1295,12 +1295,14 @@ class Multiwfn:
         """
         menu_cmd, menu_pattern, commands = self._get_descriptor_function(descriptor)
 
-        
-        if isinstance(grid_quality, str) and self._normalize_option(grid_quality) in GRID_QUALITIES:
+        if (
+            isinstance(grid_quality, str)
+            and self._normalize_option(grid_quality) in GRID_QUALITIES
+        ):
             normalized_grid_quality = self._normalize_option(grid_quality)
             grid_pattern = GRID_QUALITIES[normalized_grid_quality]
             grid_cmd = grid_pattern.split(" ")[0]
-            grid_quality_commands = [CommandStep(grid_cmd, expect=grid_pattern)]    
+            grid_quality_commands = [CommandStep(grid_cmd, expect=grid_pattern)]
         elif isinstance(grid_quality, list):
             grid_quality_commands = self._parse_custom_commands(grid_quality)
         else:
@@ -1308,7 +1310,7 @@ class Multiwfn:
             raise ValueError(
                 f"Grid quality {grid_quality!r} not supported. Choose between {choices}."
             )
-        
+
         existing_cub_files: set[Path] = set()
         grid_workdir = self._run_path / descriptor
         if grid_workdir.exists():

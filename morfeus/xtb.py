@@ -558,7 +558,7 @@ class XTB:
 
         fukui = {i: float(f) for i, f in enumerate(fukui, start=1)}
 
-        return cast("dict[int, float]", fukui)
+        return fukui
 
     def get_global_descriptor(self, variety: str, corrected: bool = True) -> float:
         """Calculate global reactivity descriptors.
@@ -716,7 +716,7 @@ class XTB:
             NFOD descriptor
         """
         fod_pop = self.get_fod_population()
-        nfod = float(f"{sum(fod_pop.values()):.3g}")
+        nfod = sum(fod_pop.values())
 
         return nfod
 
