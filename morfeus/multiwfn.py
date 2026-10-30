@@ -803,6 +803,7 @@ class Multiwfn:
             raise FileNotFoundError(f"Settings file not found: {settings_path}")
         self._settings_ini_path = settings_path
         self._copy_settings_ini(self._run_path)
+        self._results = MultiwfnResults(citations=set(self._results.citations))
 
     def load_settingsini(self, file_path: str | Path) -> None:
         """Backward-compatible alias for load_settingini()."""

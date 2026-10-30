@@ -342,3 +342,19 @@ def test_grid_cache_distinguishes_user_functions(tmp_path, monkeypatch):
     assert mwfn.grid_to_descriptors(None, userfunction=1) == {1: 1.0}
     assert mwfn.grid_to_descriptors(grid, userfunction=2) == {1: 2.0}
     assert len(calls) == 2
+
+
+def test_loading_settings_invalidates_cached_results(tmp_path):
+    """New settings invalidate computed values without losing collected citations."""
+    grid = tmp_path / "density.cub"
+    grid.touch()
+    settings = tmp_path / "settings.ini"
+    settings.write_text("iuserfunc=1\n")
+    mwfn = Multiwfn(grid, run_path=tmp_path / "run")
+    mwfn._results.charges = {"hirshfeld": {1: 0.1}}
+    mwfn._results.grid_descriptors = {(str(grid), 1): {1: 2.0}}
+    citations = mwfn.get_citations()
+    mwfn.load_settingini(settings)
+    expected = type(mwfn._results)(citations=set(citations))
+    assert mwfn._results == expected
+    assert mwfn.get_citations() == citations
