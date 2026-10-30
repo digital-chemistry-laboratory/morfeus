@@ -1021,6 +1021,7 @@ class Multiwfn:
 
         Raises:
             ValueError: If given charge model is not available.
+            RuntimeError: If the charge output file is missing or cannot be parsed.
 
         Returns:
             Atomic charges indexed by atom number (1-indexed)
@@ -1072,9 +1073,10 @@ class Multiwfn:
 
         chg_files = sorted(result.workdir.glob("*.chg"))
         if not chg_files:
-            charges = {}
-        else:
-            charges = self._parse_chg_file(chg_files[0])
+            raise RuntimeError(f"Multiwfn produced no charge file in {result.workdir}.")
+        charges = self._parse_chg_file(chg_files[0])
+        if not charges:
+            raise RuntimeError(f"Could not parse atomic charges from {chg_files[0]}.")
 
         if self._results.charges is None:
             self._results.charges = {}
@@ -2117,6 +2119,8 @@ class Multiwfn:
                         atomic_values[atom_idx] = value
                 break
 
+        if not atomic_values:
+            raise RuntimeError("Could not parse the Multiwfn atomic integration table.")
         return atomic_values
 
     def _parse_localization_values(self, stdout: str) -> dict[int, float]:
