@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 import pytest
 
+import morfeus.multiwfn as multiwfn
 from morfeus.multiwfn import CommandStep, Multiwfn, MultiwfnRunResult
 
 MULTIWFN_DATA_DIR = Path(__file__).parent / "data" / "multiwfn"
@@ -379,3 +382,71 @@ def test_rdg_is_available_for_grids_only(tmp_path, monkeypatch):
     assert CommandStep("13", expect="13 Reduced density gradient") in sent
     with pytest.raises(ValueError, match="requires grid data"):
         mwfn.get_descriptor("rdg")
+
+
+@pytest.mark.multiwfn
+def test_command_failure_closes_child(tmp_path, monkeypatch):
+    """A failed menu match releases the live process before propagating the error."""
+    import morfeus.multiwfn as module
+
+    sessions = []
+    original = module._PexpectSession
+
+    def session(*args, **kwargs):
+        child = original(*args, **kwargs)
+        sessions.append(child)
+        return child
+
+    monkeypatch.setattr(module, "_PexpectSession", session)
+    mwfn = Multiwfn(
+        EXAMPLE_MOLDEN_DIR / "xtb_singlet.molden",
+        run_path=tmp_path,
+        has_spin=False,
+        expect_timeout=0.2,
+    )
+    with pytest.raises(RuntimeError, match="Expected pattern"):
+        mwfn.run_commands([CommandStep("q", expect="THIS_PROMPT_DOES_NOT_EXIST")])
+    assert len(sessions) == 1
+    assert not sessions[0]._child.isalive()
+    assert sessions[0]._child.closed
+
+
+@pytest.mark.multiwfn
+@pytest.mark.parametrize(
+    "events,expected",
+    [
+        (
+            [(0, "Progress: [#-] 50 %"), (1, "Progress: [##] 100 %")],
+            "Progress: [#-] 50 %Progress: [##] 100 %",
+        ),
+        ([(0, "Progress: [#-] 50 %"), (1, "0 Return")], "Progress: [#-] 50 %0 Return"),
+        ([(2, "TIMEOUT")], ""),
+        (
+            [(0, "Progress: [#-] 50 %"), (1, "TIMEOUT"), (31, "TIMEOUT")],
+            "Progress: [#-] 50 %",
+        ),
+        ([(0, "EOF")], ""),
+    ],
+)
+def test_progress_wait_stops_and_preserves_output(monkeypatch, events, expected):
+    """Keep menu output and distinguish initial wait, idle timeout and completion."""
+    pexpect = pytest.importorskip("pexpect")
+    clock = [0.0]
+    pending = iter(events)
+
+    def read(**kwargs):
+        clock[0], value = next(pending)
+        if value == "TIMEOUT":
+            raise pexpect.TIMEOUT("idle")
+        if value == "EOF":
+            raise pexpect.EOF("exited")
+        return value
+
+    monkeypatch.setattr(multiwfn, "time", SimpleNamespace(monotonic=lambda: clock[0]))
+    session = object.__new__(multiwfn._PexpectSession)
+    session._child = Mock(read_nonblocking=Mock(side_effect=read))
+    session._debug = False
+    session._transcript = []
+    session.wait_for_progress(max_wait=30)
+    assert session.stdout == expected
+    assert session._child.read_nonblocking.call_count == len(events)

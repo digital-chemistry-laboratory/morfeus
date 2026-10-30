@@ -14,7 +14,7 @@ import tempfile
 import time
 from types import TracebackType
 import typing
-from typing import Any, cast, Iterable
+from typing import Any, Iterable
 
 if typing.TYPE_CHECKING:
     import pexpect
@@ -308,16 +308,6 @@ class WaitProgress:
 
 
 @dataclass
-class ProgressState:
-    """Track progress bar waiting state."""
-
-    last_activity: float
-    saw_progress: bool
-    saw_please_wait: bool
-    idle_timeout: float
-
-
-@dataclass
 class MultiwfnRunResult:
     """Result from a single Multiwfn run."""
 
@@ -372,11 +362,7 @@ class _PexpectSession:
     @staticmethod
     def _coerce_output_chunk(chunk: Any) -> str:
         """Normalize pexpect output chunks to text for transcript storage."""
-        if chunk is None:
-            return ""
-        if isinstance(chunk, str):
-            return chunk
-        return str(chunk)
+        return "" if chunk is None else str(chunk)
 
     def _append_transcript(self, chunk: Any) -> None:
         """Append normalized output chunk to transcript."""
@@ -392,22 +378,31 @@ class _PexpectSession:
             pass
 
     def wait_for_progress(self, max_wait: float = 30.0) -> None:
-        """Wait for a progress bar to appear and complete."""
-        state = self._init_progress_state(max_wait)
-        if self._debug:
-            print("[DEBUG] Waiting for progress bar " f"(max_idle_wait={max_wait}s)")
+        """Read progress output until completion, EOF, or the idle timeout."""
+        last_activity = time.monotonic()
+        saw_progress = False
         while True:
-            chunk = self._read_progress_chunk()
-            if chunk is None:
-                if self._should_stop_on_timeout(state):
+            try:
+                chunk = self._child.read_nonblocking(size=8192, timeout=0.5)
+            except pexpect.EOF:
+                return
+            except pexpect.TIMEOUT:
+                timeout = max_wait if saw_progress else min(1.0, max_wait)
+                if time.monotonic() - last_activity >= timeout:
                     return
                 continue
-            if chunk == "EOF":
-                return
-            if chunk == "":
+            if not chunk:
                 continue
-            if self._handle_progress_chunk(state, chunk):
+            self._append_transcript(chunk)
+            last_activity = time.monotonic()
+            has_progress, percentage = self._has_progress_bar(chunk)
+            if self._debug:
+                print(f"[DEBUG] Progress output: {chunk!r}")
+            if (percentage is not None and percentage >= 100) or (
+                saw_progress and not has_progress
+            ):
                 return
+            saw_progress = saw_progress or has_progress
 
     def send(self, cmd: str) -> None:
         """Send command to process.
@@ -476,8 +471,6 @@ class _PexpectSession:
     def try_expect(self, pattern: str, timeout: float = 1.0) -> bool:
         """Try to match a pattern with short timeout. Silent on timeout.
 
-        Does not extend timeout for progress bars (use expect() for that).
-
         Args:
             pattern: Regular expression to match.
             timeout: Timeout in seconds.
@@ -508,6 +501,10 @@ class _PexpectSession:
                 print("[DEBUG] EOF while checking optional pattern")
             return re.search(pattern, f"{before}{after}") is not None
 
+    def close(self) -> None:
+        """Release the child process and its terminal, including after failures."""
+        self._child.close(force=True)
+
     def wait_for_exit(self) -> None:
         """Wait for process to exit."""
         try:
@@ -519,21 +516,9 @@ class _PexpectSession:
         if self._child.isalive():
             self._child.close()
 
-    def get_recent_output(self, n_chunks: int = 3, max_chars: int = 1000) -> str:
-        """Get recent output for debugging."""
-        recent = (
-            self._transcript[-n_chunks:]
-            if len(self._transcript) >= n_chunks
-            else self._transcript
-        )
-        output = "".join(recent)
-        return output[-max_chars:] if len(output) > max_chars else output
-
     def get_output_since_last_command(self) -> str:
         """Get output since last command."""
-        if self._last_command_pos < len(self._transcript):
-            return "".join(self._transcript[self._last_command_pos :])
-        return ""
+        return "".join(self._transcript[self._last_command_pos :])
 
     @property
     def stdout(self) -> str:
@@ -617,99 +602,6 @@ class _PexpectSession:
 
         if item.cmd is not None:
             self._execute_command(item.cmd, command_expect, use_robust)
-
-    def _init_progress_state(self, max_wait: float) -> ProgressState:
-        """Initialize progress waiting state.
-
-        Args:
-            max_wait: Maximum idle time in seconds before timing out.
-
-        Returns:
-            Initialized progress waiting state.
-        """
-        now = time.monotonic()
-        return ProgressState(
-            last_activity=now,
-            saw_progress=False,
-            saw_please_wait=False,
-            idle_timeout=max_wait,
-        )
-
-    def _read_progress_chunk(self) -> str | None:
-        """Read output chunk while waiting for progress.
-
-        Returns:
-            Chunk string, "EOF" on end-of-file, or None on timeout.
-        """
-        try:
-            chunk = self._child.read_nonblocking(size=8192, timeout=0.5)
-            return cast(str, chunk)
-        except pexpect.TIMEOUT:
-            if self._debug:
-                print("[DEBUG] No new output while waiting for progress")
-            return None
-        except pexpect.EOF:
-            if self._debug:
-                print("[DEBUG] EOF reached while waiting for progress")
-            return "EOF"
-
-    def _should_stop_on_timeout(self, state: ProgressState) -> bool:
-        """Check if progress waiting should stop due to inactivity.
-
-        Args:
-            state: Current progress waiting state.
-
-        Returns:
-            True if waiting should stop.
-        """
-        timeout = (
-            state.idle_timeout if state.saw_progress else min(1.0, state.idle_timeout)
-        )
-        if (time.monotonic() - state.last_activity) >= timeout:
-            if self._debug:
-                if state.saw_progress:
-                    print("[DEBUG] No progress updates within idle timeout; done")
-                else:
-                    print("[DEBUG] No progress observed within timeout; done")
-            return True
-        return False
-
-    def _handle_progress_chunk(self, state: ProgressState, chunk: str) -> bool:
-        """Handle a progress chunk and return True when waiting is done.
-
-        Args:
-            state: Current progress waiting state.
-            chunk: Output chunk from the process.
-
-        Returns:
-            True when waiting should stop.
-        """
-        self._append_transcript(chunk)
-        if self._debug:
-            print(f"[DEBUG] Read chunk while waiting: {chunk!r}")
-        state.last_activity = time.monotonic()
-        if "please wait" in chunk.lower():
-            state.saw_please_wait = True
-            if self._debug:
-                print("[DEBUG] 'Please wait' seen while waiting")
-        has_progress, current_progress = self._has_progress_bar(chunk)
-        if not has_progress:
-            if state.saw_progress:
-                if self._debug:
-                    print("[DEBUG] Progress bar no longer detected; done")
-                return True
-            return False
-        state.saw_progress = True
-        if self._debug:
-            progress_info = (
-                f" ({current_progress}%)" if current_progress is not None else ""
-            )
-            print(f"[DEBUG] Progress bar detected{progress_info}")
-        if current_progress is not None and current_progress >= 100.0:
-            if self._debug:
-                print("[DEBUG] Progress bar completed (>=100%)")
-            return True
-        return False
 
 
 class Multiwfn:
@@ -914,15 +806,6 @@ class Multiwfn:
         )
         return commands
 
-    @staticmethod
-    def _parse_user_function(
-        function_setting: RealFunctionSetting,
-    ) -> tuple[int, str | None]:
-        """Parse a user-defined scalar function setting."""
-        if isinstance(function_setting, tuple):
-            return function_setting
-        return function_setting, None
-
     def _parse_vector_functions(self, descriptor: str) -> tuple[int, int, int]:
         """Parse vector function settings and cache citation if present."""
         vector_setting = VECTORS[descriptor]
@@ -994,18 +877,17 @@ class Multiwfn:
             env=env,
             expect_timeout=self._expect_timeout,
         )
-        session.send(str(self._file_path))
-        session.read_available()
+        try:
+            session.send(str(self._file_path))
+            session.read_available()
 
-        for item in commands:
-            session._process_command(item, self._robust_mode)
+            for item in commands:
+                session._process_command(item, self._robust_mode)
 
-        session.wait_for_exit()
-
-        return MultiwfnRunResult(
-            stdout=session.stdout,
-            workdir=workdir,
-        )
+            session.wait_for_exit()
+            return MultiwfnRunResult(stdout=session.stdout, workdir=workdir)
+        finally:
+            session.close()
 
     def get_charges(self, model: str = "adch") -> dict[int, float]:
         """Calculate atomic charges.
@@ -1546,7 +1428,11 @@ class Multiwfn:
 
         else:
             function_setting = USER_REAL_FUNCTIONS[descriptor]
-            func, citation = self._parse_user_function(function_setting)
+            func, citation = (
+                function_setting
+                if isinstance(function_setting, tuple)
+                else (function_setting, None)
+            )
             if citation is not None:
                 self._results.citations.add(citation)
             menu_cmd = "100"
@@ -1595,21 +1481,18 @@ class Multiwfn:
         ):
             return self._results.atomic_descriptors[cache_key]
 
-        try:
-            menu_cmd, menu_pattern, commands = self._get_descriptor_function(descriptor)
-            descriptor_result = self._run_fuzzy_integration(
-                menu_cmd,
-                menu_pattern,
-                commands,
-                descriptor,
-                normalized_partitioning,
-            )
-            if self._results.atomic_descriptors is None:
-                self._results.atomic_descriptors = {}
-            self._results.atomic_descriptors[cache_key] = descriptor_result
-            return descriptor_result
-        except ValueError as e:
-            raise e
+        menu_cmd, menu_pattern, commands = self._get_descriptor_function(descriptor)
+        descriptor_result = self._run_fuzzy_integration(
+            menu_cmd,
+            menu_pattern,
+            commands,
+            descriptor,
+            normalized_partitioning,
+        )
+        if self._results.atomic_descriptors is None:
+            self._results.atomic_descriptors = {}
+        self._results.atomic_descriptors[cache_key] = descriptor_result
+        return descriptor_result
 
     def _run_fuzzy_integration(
         self,
@@ -1646,9 +1529,7 @@ class Multiwfn:
         result = self.run_commands(commands, subdir="electric_moments")
         moments = self._parse_electric_moments(result.stdout)
 
-        if self._results.electric_moments is None:
-            self._results.electric_moments = {}
-        self._results.electric_moments.update(moments)
+        self._results.electric_moments = moments
 
         return moments
 
