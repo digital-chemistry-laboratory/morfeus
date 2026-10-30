@@ -55,9 +55,9 @@ jobs:
       - name: Run xtb tests
         run: python -m nox -s tests-3.10 -- -m xtb
         shell: bash -el {0}
-  test_multiwfn_2026_3_27:
-    name: ubuntu / multiwfn / 3.10
-    runs-on: ubuntu-latest
+  test_multiwfn:
+    name: ubuntu / multiwfn 2026.10.18 / 3.10
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - name: Install Python 3.10
@@ -73,11 +73,16 @@ jobs:
       - name: Install Multiwfn binary
         run: |
           set -euxo pipefail
-          ZIP_URL="http://sobereva.com/multiwfn/misc/Multiwfn_2026.3.27_bin_Linux_noGUI.zip"
+          MULTIWFN_VERSION="2026.10.18"
+          MULTIWFN_SHA256="241ce1dd5d08d56c2cbe6c30c1e0645e634b802666a23287aa5d6e9e35087c72"
+          ZIP_URL="http://sobereva.com/multiwfn/misc/Multiwfn_${MULTIWFN_VERSION}_bin_Linux_noGUI.zip"
           ZIP_PATH="$RUNNER_TEMP/multiwfn.zip"
           INSTALL_DIR="$RUNNER_TEMP/multiwfn-bin"
 
-          curl -L "$ZIP_URL" -o "$ZIP_PATH"
+          curl --fail --location --retry 3 --retry-all-errors \
+            --connect-timeout 30 "$ZIP_URL" --output "$ZIP_PATH"
+          echo "$MULTIWFN_SHA256  $ZIP_PATH" | sha256sum --check
+          unzip -tq "$ZIP_PATH"
           unzip -q "$ZIP_PATH" -d "$INSTALL_DIR"
 
           BIN_PATH="$(find "$INSTALL_DIR" -type f -name 'Multiwfn_noGUI' | head -n 1)"
