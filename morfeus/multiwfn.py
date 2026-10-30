@@ -332,7 +332,7 @@ class MultiwfnResults:
     charges: dict[str, dict[int, float]] | None = None
     surfaces: dict[str, dict[str, Any]] | None = None
     atomic_descriptors: dict[str, dict[int, float]] | None = None
-    grid_descriptors: dict[str, dict[int, float]] | None = None
+    grid_descriptors: dict[tuple[str, int], dict[int, float]] | None = None
     electric_moments: dict[str, float] | None = None
     gap: dict[str, dict[str, Any]] | None = None
     bond_orders: dict[str, dict[tuple[int, int], float]] | None = None
@@ -1245,7 +1245,7 @@ class Multiwfn:
                 )
             active_grid = self._file_path
 
-        grid_key = str(active_grid)
+        grid_key = (str(active_grid), userfunction)
         if (
             self._results.grid_descriptors is not None
             and grid_key in self._results.grid_descriptors

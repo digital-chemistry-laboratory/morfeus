@@ -8,7 +8,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 import pytest
 
-from morfeus.multiwfn import CommandStep, Multiwfn
+from morfeus.multiwfn import CommandStep, Multiwfn, MultiwfnRunResult
 
 MULTIWFN_DATA_DIR = Path(__file__).parent / "data" / "multiwfn"
 EXAMPLE_MOLDEN_DIR = MULTIWFN_DATA_DIR / "example_molden"
@@ -320,3 +320,25 @@ def _get_bond_order(
         return bond_orders[(atom_j, atom_i)]
 
     raise AssertionError(f"Bond order for atoms {atom_i}-{atom_j} was not reported.")
+
+
+def test_grid_cache_distinguishes_user_functions(tmp_path, monkeypatch):
+    """Cache repeated requests while keeping different user functions independent."""
+    grid = tmp_path / "density.cub"
+    grid.touch()
+    mwfn = Multiwfn(grid, run_path=tmp_path)
+    calls = []
+
+    def run(commands, subdir=None):
+        calls.append(commands)
+        value = len(calls)
+        return MultiwfnRunResult(
+            f"Atomic space Value\n 1(C ) {value}.0\nSumming up", tmp_path
+        )
+
+    monkeypatch.setattr(mwfn, "run_commands", run)
+    assert mwfn.grid_to_descriptors(None, userfunction=1) == {1: 1.0}
+    assert mwfn.grid_to_descriptors(grid, userfunction=2) == {1: 2.0}
+    assert mwfn.grid_to_descriptors(None, userfunction=1) == {1: 1.0}
+    assert mwfn.grid_to_descriptors(grid, userfunction=2) == {1: 2.0}
+    assert len(calls) == 2
