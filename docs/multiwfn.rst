@@ -20,8 +20,6 @@ For Multiwfn menu-level details, see the `Multiwfn manual`_.
     This module has only been tested with molden files derived from xTB, PySCF and ORCA.
     The `molden2aim`_ utility is recommended to standardize wavefunction files.
 
-.. __:
-
 ******
 Module
 ******
@@ -170,6 +168,51 @@ cube exporter can produce an incorrectly normalized density, also noted in the
 Check electron and spin integrals before using exported cubes quantitatively.
 
 
+#################################
+Orbital records and frontier gaps
+#################################
+
+``get_orbitals()`` returns a list of dictionaries with ``index``, ``spin``,
+``occupation``, and ``energy_ev`` keys. Indices and
+ordering are preserved from Multiwfn. Energies are read directly from its eV
+column. Spin labels are ``restricted`` (A+B), ``alpha`` (A) and ``beta`` (B).
+
+``get_frontier_gaps()`` reports one ``restricted`` result for occupations near
+0/2, or independent ``alpha`` and ``beta`` results for occupations near 0/1.
+
+.. code-block:: python
+
+   orbitals = mwfn.get_orbitals()
+   frontiers = mwfn.get_frontier_gaps()
+   gap = frontiers["restricted"]["gap_ev"]
+
+Each result contains ``homo_energy_ev``, ``lumo_energy_ev``, ``gap_ev``,
+``homo_indices`` and ``lumo_indices``. Frontier energies are the maximum occupied
+and minimum unoccupied energies within the same channel.
+The reported gap is the signed difference :math:`\varepsilon_\mathrm{LUMO} -
+\varepsilon_\mathrm{HOMO}` and can be negative for non-Aufbau occupations.
+These orbital-energy differences are not excitation energies.
+
+
+####################
+Persistent execution
+####################
+
+By default, each calculation starts a fresh process. To opt into process reuse:
+
+.. code-block:: python
+
+   with Multiwfn("molden.input", persistent=True) as mwfn:
+       charges = mwfn.get_charges("hirshfeld")
+       moments = mwfn.get_electric_moments()
+
+The wavefunction is loaded once and reused across descriptor calls.
+Input and settings files should remain unchanged. Each analysis has a separate 
+transcript and output directory. Custom ``run_commands()`` sequences must return 
+to the main menu, without quitting. Use a context manager or call ``close()`` 
+to release the process.
+
+
 **********
 Background
 **********
@@ -187,8 +230,8 @@ The molecular ESP at position :math:`\mathbf{r}` is defined as
   - \int \frac{\rho(\mathbf{r}')}{|\mathbf{r} - \mathbf{r}'|} d\mathbf{r}'
 
 where :math:`Z_A` and :math:`\mathbf{R}_A` are nuclear charges/positions and
-:math:`\rho(\mathbf{r}')` is the electron density. 
-Mapping :math:`V(\mathbf{r})` onto a molecular surface is commonly used to 
+:math:`\rho(\mathbf{r}')` is the electron density.
+Mapping :math:`V(\mathbf{r})` onto a molecular surface is commonly used to
 identify electron-rich (:math:`V < 0`) and electron-poor (:math:`V > 0`) regions.
 :footcite:`murray_politzer_2011`
 
@@ -202,43 +245,3 @@ ESP-derived functions provide fuzzy-space atomic integrals.
 .. _Multiwfn manual: http://sobereva.com/multiwfn/Multiwfn_manual.html
 .. _Pexpect: https://pexpect.readthedocs.io/en/stable/
 .. _molden2aim: https://github.com/zorkzou/Molden2AIM
-
-
-Orbital records and frontier gaps
-----------------------------------
-
-``get_orbitals()`` returns a list of dictionaries with ``index``, ``spin``,
-``occupation``, and ``energy_ev`` keys. Indices and
-ordering are preserved from Multiwfn. Energies are read directly from its eV
-column. Spin labels are ``restricted`` (A+B),``alpha`` (A) and ``beta`` (B). 
-
-``get_frontier_gaps()`` reports one ``restricted`` result for occupations near
-0/2, or independent ``alpha`` and ``beta`` results for occupations near 0/1.
-
-.. code-block:: python
-
-   orbitals = mwfn.get_orbitals()
-   frontiers = mwfn.get_frontier_gaps()
-   gap = frontiers["restricted"]["gap_ev"]
-
-Each result contains ``homo_energy_ev``, ``lumo_energy_ev``, ``gap_ev``,
-``homo_indices`` and ``lumo_indices``. Frontier energies are the maximum occupied
-and minimum unoccupied energies within the same channel.
-
-
-Persistent execution
----------------------------------
-
-By default, each calculation starts a fresh process. To opt into process reuse:
-
-.. code-block:: python
-
-   with Multiwfn("molden.input", persistent=True) as mwfn:
-       charges = mwfn.get_charges("hirshfeld")
-       moments = mwfn.get_electric_moments()
-
-The wavefunction is loaded once and reused across descriptor calls.
-Input and settings files should remain unchanged. Each analysis has a separate 
-transcript and output directory. Custom ``run_commands()`` sequences must return 
-to the main menu, without quitting. Use a context manager or call ``close()`` 
-to release the process.

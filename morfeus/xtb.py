@@ -556,9 +556,7 @@ class XTB:
                 "respectively 'minus' and 'plus'."
             )
 
-        fukui = {i: float(f) for i, f in enumerate(fukui, start=1)}
-
-        return fukui
+        return {i: float(f) for i, f in enumerate(fukui, start=1)}
 
     def get_global_descriptor(self, variety: str, corrected: bool = True) -> float:
         """Calculate global reactivity descriptors.

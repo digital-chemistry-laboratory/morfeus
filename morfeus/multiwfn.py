@@ -265,9 +265,9 @@ WFN_UNSUPPORTED_CHARGE_MODELS: set[str] = {"mulliken"}
 WFN_UNSUPPORTED_BOND_ORDER_MODELS: set[str] = {"mayer", "wiberg", "mulliken"}
 
 GRID_QUALITIES: dict[str, str] = {
-    "low": "1 Low quality grid",
-    "medium": "2 Medium quality grid",
-    "high": "3 High quality grid",
+    "low": "1 Low[- ]quality grid",
+    "medium": "2 Medium[- ]quality grid",
+    "high": "3 High[- ]quality grid",
 }
 
 FUZZY_PARTITIONING_SCHEMES: dict[str, str] = {
@@ -927,7 +927,7 @@ class Multiwfn:
             CommandStep(
                 "1",
                 expect=(
-                    "1 Use build-in sphericalized atomic"
+                    "1 Use buil[dt]-in sphericalized atomic"
                     if normalized_model != "mulliken"
                     else " 1 Output Mulliken population and atomic"
                 ),
