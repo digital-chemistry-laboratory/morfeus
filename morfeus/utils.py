@@ -6,6 +6,7 @@ from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from importlib import import_module
 from numbers import Integral
+import os
 import shutil
 from typing import Any, cast, Literal, overload
 
@@ -14,6 +15,7 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
 import scipy.spatial
 
+from morfeus import config
 from morfeus.data import (
     atomic_numbers,
     atomic_symbols,
@@ -31,6 +33,44 @@ from morfeus.typing import (
     ArrayLike2D,
     IntLike,
 )
+
+
+def build_execution_env(
+    env_variables: dict[str, str] | None = None,
+    n_processes: int | None = None,
+) -> dict[str, str]:
+    """Build environment variables for external executables.
+
+    Args:
+        env_variables: Explicit environment overrides. If provided, applied on top of
+            the current process environment.
+        n_processes: Number of threads to use for OMP/MKL settings.
+
+    Returns:
+        Environment variables for a subprocess.
+    """
+    if env_variables is not None:
+        env = dict(os.environ)
+        env.update(env_variables)
+        return env
+
+    env = dict(os.environ)
+    config_num_threads = getattr(config, "OMP_NUM_THREADS", 1)
+    if not isinstance(config_num_threads, Integral):
+        config_num_threads = 1
+
+    config_stacksize = getattr(config, "OMP_STACKSIZE", "1G")
+    config_max_active_levels = getattr(config, "OMP_MAX_ACTIVE_LEVELS", 1)
+    if not isinstance(config_max_active_levels, Integral):
+        config_max_active_levels = 1
+
+    num_threads = n_processes if n_processes is not None else int(config_num_threads)
+    env["OMP_NUM_THREADS"] = f"{num_threads},1"
+    env["MKL_NUM_THREADS"] = f"{num_threads}"
+    env["OMP_STACKSIZE"] = str(config_stacksize)
+    env["OMP_MAX_ACTIVE_LEVELS"] = str(int(config_max_active_levels))
+
+    return env
 
 
 def get_excluded_from_connectivity(

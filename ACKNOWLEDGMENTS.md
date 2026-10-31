@@ -5,6 +5,7 @@ The following people are acknowledged for assisting in the development of ᴍᴏ
 - Cyrille Lavigne ([@clavigne](https://github.com/clavigne))
 - Ellyn Peters ([@ellynpeters](https://github.com/ellynpeters))
 - Gabriel dos Passos Gomes ([@gabegomes](https://github.com/gabegomes))
+- Henrik Seng ([@hesengg](https://github.com/hesengg))
 - Juanvi Alegre-Requena ([@jvalegre](https://github.com/jvalegre))
 - Kjell Jorner ([@kjelljorner](https://github.com/kjelljorner))
 - Lauriane Jacot-Descombes ([@LaurianeJD](https://github.com/LaurianeJD))
