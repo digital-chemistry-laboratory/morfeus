@@ -627,8 +627,9 @@ class Multiwfn:
 
     Args:
         file_path: Path to molden/wfn file from xtb or other QM program.
-        run_path: Directory for output files. Defaults to temporary directory
-            that is cleaned up when the instance is closed or garbage-collected.
+        run_path: Optional archive directory. Each instance creates a unique
+            subdirectory whose results are retained. Otherwise all intermediate
+            files are temporary and removed when the instance closes.
         robust_mode: If True, wait for expect patterns between commands (slower but
             safer).
             If False, send commands without waiting (faster but may desync).
@@ -664,8 +665,10 @@ class Multiwfn:
         if not self._file_path.exists():
             raise FileNotFoundError(f"File not found: {self._file_path}")
 
-        if run_path:
-            self._run_path = Path(run_path).resolve()
+        if run_path is not None:
+            archive = Path(run_path).resolve()
+            archive.mkdir(parents=True, exist_ok=True)
+            self._run_path = Path(tempfile.mkdtemp(prefix="morfeus_", dir=archive))
             self._temp_dir: tempfile.TemporaryDirectory[str] | None = None
         else:
             self._temp_dir = tempfile.TemporaryDirectory(prefix="morfeus_multiwfn_")
@@ -721,7 +724,6 @@ class Multiwfn:
         if not settings_path.exists() or settings_path.name != "settings.ini":
             raise FileNotFoundError(f"Settings file not found: {settings_path}")
         self._settings_ini_path = settings_path
-        self._copy_settings_ini(self._run_path)
         self._close_session()
         self._results = MultiwfnResults(citations=set(self._results.citations))
 
@@ -860,13 +862,13 @@ class Multiwfn:
         return vector_setting
 
     def _setup_workdir(self, subdir: str | None) -> Path:
-        """Get or create working directory."""
-        workdir = self._run_path / subdir if subdir else self._run_path
-        workdir.mkdir(parents=True, exist_ok=True)
-
-        # Copy a custom settings.ini file from run_path
-        self._copy_settings_ini(workdir)
-        return workdir
+        """Create a fresh result directory for an uncached calculation."""
+        label = Path(subdir) if subdir else Path("analysis")
+        if label.is_absolute() or ".." in label.parts:
+            raise ValueError("subdir must be relative to the run directory.")
+        parent = self._run_path / label
+        parent.mkdir(parents=True, exist_ok=True)
+        return Path(tempfile.mkdtemp(prefix="run-", dir=parent))
 
     def _set_env(self) -> dict[str, str]:
         """Set environment variables for Multiwfn execution."""
@@ -943,7 +945,7 @@ class Multiwfn:
                         prefix=".multiwfn-session-", dir=self._run_path
                     )
                     session_path = Path(self._session_dir.name)
-                    self._copy_settings_ini(session_path)
+                self._copy_settings_ini(session_path)
                 self._session = _PexpectSession(
                     "Multiwfn",
                     session_path,
@@ -1256,14 +1258,15 @@ class Multiwfn:
         self,
         descriptor: str,
         grid_quality: list | str,
-        grid_file_name: str | None = None,
+        output_path: str | Path,
     ) -> Path:
-        """Generate a grid (.cub) file for a real space function.
+        """Generate a cube and export it to an explicit, unused destination.
 
         Args:
             descriptor: Descriptor to calculate on grid.
             grid_quality: Grid quality, one of 'low', 'medium', 'high' or custom commands.
-            grid_file_name: Optional name for output cube file.
+            output_path: Destination for the cube, retained after close().
+                Parent directories are created if needed; existing paths are rejected.
 
         Returns:
             Path to the generated cube file.
@@ -1271,7 +1274,13 @@ class Multiwfn:
         Raises:
             ValueError: If the descriptor is not supported.
             FileNotFoundError: If no cube file was generated.
+            FileExistsError: If the output destination already exists.
+            RuntimeError: If the generated cube is ambiguous.
+            BaseException: If export fails; the incomplete output is removed.
         """
+        output_path = Path(output_path).absolute()
+        if output_path.exists() or output_path.is_symlink():
+            raise FileExistsError(f"Output already exists: {output_path}")
         menu_cmd, menu_pattern, commands = self._get_descriptor_function(descriptor)
 
         if (
@@ -1290,11 +1299,6 @@ class Multiwfn:
                 f"Grid quality {grid_quality!r} not supported. Choose between {choices}."
             )
 
-        existing_cub_files: set[Path] = set()
-        grid_workdir = self._run_path / descriptor
-        if grid_workdir.exists():
-            existing_cub_files = set(grid_workdir.glob("*.cub"))
-
         grid_commands: list[CommandStep | WaitProgress] = [
             *commands,
             CommandStep(
@@ -1309,24 +1313,20 @@ class Multiwfn:
         ]
         result = self._run_commands(grid_commands, subdir=descriptor)
 
-        cub_candidates: list[Path] = list(result.workdir.glob("*.cub"))
-        if not cub_candidates:
+        cubes = list(result.workdir.glob("*.cub"))
+        if not cubes:
             raise FileNotFoundError("No .cub file was generated by Multiwfn.")
-        new_cub_candidates: list[Path] = [
-            path for path in cub_candidates if path not in existing_cub_files
-        ]
-        selection_pool: list[Path] = (
-            new_cub_candidates if new_cub_candidates else cub_candidates
-        )
-        cub_file_path: Path = max(
-            selection_pool, key=lambda path: path.stat().st_mtime_ns
-        )
-        if grid_file_name is not None:  # Rename the file
-            new_path: Path = result.workdir / grid_file_name
-            cub_file_path.rename(new_path)
-            return new_path
-
-        return cub_file_path
+        if len(cubes) != 1:
+            raise RuntimeError("Multiwfn produced more than one cube file.")
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        target = output_path.open("xb")
+        try:
+            with target, cubes[0].open("rb") as source:
+                shutil.copyfileobj(source, target)
+        except BaseException:
+            output_path.unlink()
+            raise
+        return output_path
 
     def get_fukui(self) -> dict[str, dict[int, float]]:
         """Calculate Fukui functions.

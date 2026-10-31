@@ -144,11 +144,21 @@ Cube files can directly be integrated per atom with ``grid_to_descriptors()``.
 .. code-block:: python
   :caption: Example
 
-  >>> mwfn = Multiwfn("molden.input", run_path="mwfn_run")
-  >>> cube_path = mwfn.get_grid("rho", "low", grid_file_name="rho.cub")
+  >>> with Multiwfn("molden.input", persistent=True) as mwfn:
+  ...     cube_path = mwfn.get_grid("rho", "low", output_path="results/rho.cub")
+  ...     integrated = mwfn.grid_to_descriptors(cube_path)
   >>> cube_path.name
   'rho.cub'
-  >>> integrated = mwfn.grid_to_descriptors(cube_path)
+
+An explicit ``output_path`` is required. Exported files survive ``close()``;
+existing destinations are never overwritten. The former ``grid_file_name``
+argument is replaced by ``output_path``.
+
+Ordinary calculations use temporary scratch storage, removed when the context
+exits. To retain intermediate outputs, supply ``run_path``: each instance gets
+a unique subdirectory there, and each uncached analysis gets a fresh result
+directory. This prevents collisions between instances and repeated calculations.
+Settings are copied only into the process working directory.
 
 
 **********

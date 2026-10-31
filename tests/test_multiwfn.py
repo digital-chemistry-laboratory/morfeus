@@ -364,24 +364,31 @@ def test_loading_settings_invalidates_cached_results(tmp_path):
 
 
 def test_rdg_is_available_for_grids_only(tmp_path, monkeypatch):
-    """Allow RDG cube export while rejecting direct atomic integration."""
+    """Export RDG without overwriting files or reusing an earlier run's cube."""
     grid = tmp_path / "input.cub"
     grid.touch()
-    mwfn = Multiwfn(grid, run_path=tmp_path)
-    sent = []
+    sent: list[object] = []
+    with Multiwfn(grid) as mwfn:
 
-    def run(commands, subdir=None):
-        sent.extend(commands)
-        workdir = tmp_path / subdir
-        workdir.mkdir()
-        (workdir / "RDG.cub").write_text("generated grid")
-        return MultiwfnRunResult("", workdir)
+        def run(commands, subdir=None):
+            workdir = mwfn._setup_workdir(subdir)
+            if not sent:
+                (workdir / "RDG.cub").write_text("generated grid")
+            sent.extend(commands)
+            return MultiwfnRunResult("", workdir)
 
-    monkeypatch.setattr(mwfn, "_run_commands", run)
-    assert mwfn.get_grid("rdg", "low").name == "RDG.cub"
-    assert CommandStep("13", expect="13 Reduced density gradient") in sent
-    with pytest.raises(ValueError, match="requires grid data"):
-        mwfn.get_descriptor("rdg")
+        monkeypatch.setattr(mwfn, "_run_commands", run)
+        output = tmp_path / "RDG.cub"
+        assert mwfn.get_grid("rdg", "low", output) == output
+        with pytest.raises(FileExistsError):
+            mwfn.get_grid("rdg", "low", output)
+        with pytest.raises(FileNotFoundError):
+            mwfn.get_grid("rdg", "low", tmp_path / "missing.cub")
+        assert CommandStep("13", expect="13 Reduced density gradient") in sent
+        with pytest.raises(ValueError, match="requires grid data"):
+            mwfn.get_descriptor("rdg")
+    assert output.read_text() == "generated grid"
+    assert not mwfn._run_path.exists()
 
 
 @pytest.mark.multiwfn
@@ -437,12 +444,15 @@ def test_persistent_reuse(tmp_path, monkeypatch, robust):
         assert m.get_charges("hirshfeld") == charges
         assert m.get_electric_moments() == moments
         assert m._session is session and session._child.isalive()
-        assert list((tmp_path / "hirshfeld").glob("*.chg"))
+        assert list((m._run_path / "hirshfeld").glob("run-*/*.chg"))
+        with Multiwfn(path, run_path=tmp_path, has_spin=False) as other:
+            assert m._run_path != other._run_path
         assert "Atomic space" not in session.stdout
         assert sent.count(str(path.resolve())) == 1
         assert "r" not in sent and "q" not in sent
     assert sent.count("q") == 1
     assert session._child.closed and session._child.exitstatus == 0
+    assert m._run_path.is_dir() and other._run_path.is_dir()
 
 
 @pytest.mark.multiwfn
@@ -634,3 +644,23 @@ def test_restricted_open_shell_gap(monkeypatch):
     )
     with pytest.raises(ValueError, match="Restricted open-shell"):
         mwfn.get_frontier_gaps()
+
+
+@pytest.mark.multiwfn
+@pytest.mark.parametrize("persistent", [False, True])
+def test_grid_export_survives_close(tmp_path, persistent):
+    """Export a retained cube from scratch and reuse it as input without collisions."""
+    path = EXAMPLE_MOLDEN_DIR / "xtb_singlet.molden"
+    output = tmp_path / "export" / "rho.cub"
+    with Multiwfn(path, persistent=persistent) as m:
+        moments = m.get_electric_moments()
+        scratch = m._run_path
+        assert m.get_grid("rho", "low", output_path=output) == output
+        with pytest.raises(FileExistsError):
+            m.get_grid("rho", "low", output_path=output)
+        integrated = m.grid_to_descriptors(output)
+        m._results.electric_moments = None
+        assert m.get_electric_moments() == moments
+    assert not scratch.exists() and output.is_file()
+    with Multiwfn(output) as fresh:
+        assert fresh.grid_to_descriptors(None) == integrated
