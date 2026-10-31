@@ -110,6 +110,47 @@ def test_descriptor_workflow(file_path, persistent):
 
 
 @pytest.mark.multiwfn
+@pytest.mark.parametrize("persistent", [False, True])
+def test_reactivity_and_surface_workflow(persistent):
+    """Check atomic tables and both surface formats against printed reference values."""
+    path = EXAMPLE_MOLDEN_DIR / "pyscf_dft_singlet_rks.molden"
+    with Multiwfn(path, persistent=persistent) as m:
+        fukui = m.get_fukui()
+        assert [
+            fukui[key][1] for key in ("f_plus", "f_minus", "f_zero", "dd")
+        ] == pytest.approx([0.00093, 0.00872, 0.00483, -0.00780], abs=1e-5)
+        superdeloc = m.get_superdelocalizabilities()
+        assert [
+            superdeloc[key][1] for key in ("d_n", "d_e", "d_n_0", "d_e_0")
+        ] == pytest.approx([-8.81097, -13.40253, -9.68954, -11.90341], abs=1e-5)
+        for model, reference in (
+            ("esp", {"area_total": 3.57765, "avg_all": 2.50293, "pi": 1.349486}),
+            (
+                "alie",
+                {"area_total": 3.58434, "avg_all": 10.881895, "var_all": 0.147203},
+            ),
+        ):
+            surface = m.get_surface(model)
+            assert len(surface["atomic"]) == 12
+            assert {
+                key: surface["atomic"][3][key] for key in reference
+            } == pytest.approx(reference, abs=1e-3)
+            assert surface["global"]["overall_surface_area"] > 0
+
+
+def test_two_column_superdelocalizabilities():
+    """Support older headers and absent optional columns; stop before later tables."""
+    stdout = "Atom index DN DE\n 1(Cl ) 1.2e-2 -3.4\nSum of DN\n 2(H ) 9 9"
+    m = object.__new__(Multiwfn)
+    assert m._parse_superdelocalizabilities(stdout) == {
+        "d_n": {1: 0.012},
+        "d_e": {1: -3.4},
+        "d_n_0": {},
+        "d_e_0": {},
+    }
+
+
+@pytest.mark.multiwfn
 @pytest.mark.parametrize("singlet_name,triplet_name", SINGLET_TRIPLET_EQUIVALENT_FILES)
 def test_bond_order_workflow(singlet_name, triplet_name):
     """Check bond patterns and spin-state changes across partitioning models."""

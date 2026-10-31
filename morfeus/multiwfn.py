@@ -1639,51 +1639,18 @@ class Multiwfn:
         self._results.localization = localization
         return localization
 
-    def _parse_atomic_table(
-        self,
-        stdout: str,
-        header_keywords: list[str],
-        keys: list[str],
-        stop_keyword: str | None = None,
-    ) -> dict[str, dict[int, float]]:
-        """Parse atomic table with 4 float columns from stdout.
-
-        Args:
-            stdout: Output to parse
-            header_keywords: List of strings that must all appear in the header line
-            keys: List of 4 keys for the output dictionary
-            stop_keyword: Optional keyword to stop parsing (e.g., "Sum of")
-
-        Returns:
-            Dictionary mapping key names to {atom_idx: value}
-        """
-        lines = stdout.replace("\r", "\n").splitlines()
-        result: dict[str, dict[int, float]] = {key: {} for key in keys}
-        row_pattern = re.compile(
-            (
-                rf"\s*(\d+)\([A-Za-z][a-z]?\s*\)?\s+({NUMBER_PATTERN})\s+"
-                rf"({NUMBER_PATTERN})\s+({NUMBER_PATTERN})\s+({NUMBER_PATTERN})"
-            )
-        )
-
-        for i, line in enumerate(lines):
-            if all(keyword in line for keyword in header_keywords):
-                # Found the header line
-                for j in range(i + 1, len(lines)):
-                    data_line = lines[j]
-                    if stop_keyword and stop_keyword in data_line:
-                        break
-                    if not data_line.strip():
-                        continue
-                    # Parse format: "     1(C        val1        val2        val3        val4"
-                    match = row_pattern.search(data_line)
-                    if match:
-                        atom_idx = int(match.group(1))
-                        for k, key in enumerate(keys, start=2):
-                            result[key][atom_idx] = self._parse_float(match.group(k))
+    def _table_lines(
+        self, stdout: str, headers: tuple[str, ...], end: str | None = None
+    ) -> Iterable[str]:
+        """Yield lines after a matching header and before an optional end marker."""
+        lines = iter(stdout.splitlines())
+        for line in lines:
+            if all(re.search(pattern, line) for pattern in headers):
                 break
-
-        return result
+        for line in lines:
+            if end is not None and re.search(end, line):
+                break
+            yield line
 
     def _raise_if_single_determinant_wavefunction_error(
         self, stdout: str, analysis: str
@@ -1696,70 +1663,40 @@ class Multiwfn:
 
     def _parse_fukui(self, stdout: str) -> dict[str, dict[int, float]]:
         """Parse Fukui function descriptors from stdout."""
-        return self._parse_atomic_table(
-            stdout,
-            header_keywords=["Atom index", "OW f+"],
-            keys=["f_plus", "f_minus", "f_zero", "dd"],
+        keys = ("f_plus", "f_minus", "f_zero", "dd")
+        result: dict[str, dict[int, float]] = {key: {} for key in keys}
+        pattern = (
+            rf"\s*(\d+)\([A-Za-z][a-z]?\s*\)?\s+({NUMBER_PATTERN})\s+"
+            rf"({NUMBER_PATTERN})\s+({NUMBER_PATTERN})\s+({NUMBER_PATTERN})"
         )
+        for line in self._table_lines(stdout, ("Atom index", r"OW f\+")):
+            match = re.search(pattern, line)
+            if match:
+                index = int(match.group(1))
+                for key, value in zip(keys, match.groups()[1:]):
+                    result[key][index] = float(value)
+        return result
 
     def _parse_superdelocalizabilities(
         self, stdout: str
     ) -> dict[str, dict[int, float]]:
-        """Parse superdelocalizability descriptors from stdout.
-
-        Multiwfn output differs across versions/builds:
-        - Header labels may be `D_N`/`D_E` or `DN`/`DE`
-        - Rows may contain either 2 columns (D_N, D_E) or 4 columns
-          (D_N, D_E, D_N_0, D_E_0)
-
-        Args:
-            stdout: Multiwfn output text containing the superdelocalizability table.
-
-        Returns:
-            Mapping with keys `d_n`, `d_e`, `d_n_0`, and `d_e_0`, each containing
-            atom-indexed values when available.
-        """
-        result: dict[str, dict[int, float]] = {
-            "d_n": {},
-            "d_e": {},
-            "d_n_0": {},
-            "d_e_0": {},
-        }
-        lines = stdout.replace("\r", "\n").splitlines()
-
-        atom_header_re = re.compile(r"\bAtom(?:\s+index)?\b", flags=re.IGNORECASE)
-        dn_header_re = re.compile(r"\bD[_\s]?N\b", flags=re.IGNORECASE)
-        de_header_re = re.compile(r"\bD[_\s]?E\b", flags=re.IGNORECASE)
-        row_re = re.compile(r"\s*(\d+)\([A-Za-z][a-z]?\s*\)?\s+(.*)$")
-
-        for i, line in enumerate(lines):
-            if (
-                atom_header_re.search(line)
-                and dn_header_re.search(line)
-                and de_header_re.search(line)
-            ):
-                for data_line in lines[i + 1 :]:
-                    if "sum of" in data_line.lower():
-                        break
-                    if not data_line.strip():
-                        continue
-
-                    row_match = row_re.search(data_line)
-                    if row_match is None:
-                        continue
-
-                    atom_idx = int(row_match.group(1))
-                    values = re.findall(NUMBER_PATTERN, row_match.group(2))
-                    if len(values) < 2:
-                        continue
-
-                    result["d_n"][atom_idx] = self._parse_float(values[0])
-                    result["d_e"][atom_idx] = self._parse_float(values[1])
-                    if len(values) >= 4:
-                        result["d_n_0"][atom_idx] = self._parse_float(values[2])
-                        result["d_e_0"][atom_idx] = self._parse_float(values[3])
-                break
-
+        """Parse two- or four-column tables with D_N/D_E or DN/DE headers."""
+        keys = ("d_n", "d_e", "d_n_0", "d_e_0")
+        result: dict[str, dict[int, float]] = {key: {} for key in keys}
+        headers = (
+            r"(?i)\bAtom(?:\s+index)?\b",
+            r"(?i)\bD[_\s]?N\b",
+            r"(?i)\bD[_\s]?E\b",
+        )
+        for line in self._table_lines(stdout, headers, r"(?i)sum of"):
+            match = re.search(r"\s*(\d+)\([A-Za-z][a-z]?\s*\)?\s+(.*)$", line)
+            if match:
+                index = int(match.group(1))
+                values = re.findall(NUMBER_PATTERN, match.group(2))
+                count = 4 if len(values) >= 4 else 2
+                if len(values) >= count:
+                    for key, value in zip(keys[:count], values):
+                        result[key][index] = float(value)
         return result
 
     def _parse_electric_moments(self, stdout: str) -> dict[str, float]:
@@ -1828,29 +1765,12 @@ class Multiwfn:
 
     def _parse_atomic_values(self, stdout: str) -> dict[int, float]:
         """Parse fuzzy atomic space integration values from stdout."""
-        lines = stdout.replace("\r", "\n").splitlines()
         atomic_values: dict[int, float] = {}
-        value_pattern = NUMBER_PATTERN
-
-        for i, line in enumerate(lines):
-            if "Atomic space" in line and "Value" in line:
-                for j in range(i + 1, len(lines)):
-                    data_line = lines[j]
-                    if "Summing up" in data_line:
-                        break
-                    if not data_line.strip():
-                        continue
-                    # Parse format: "    1(C )            0.00607663"
-                    match = re.search(
-                        rf"\s*(\d+)\([A-Z][a-z]?\s*\)\s+({value_pattern})",
-                        data_line,
-                    )
-                    if match:
-                        atom_idx = int(match.group(1))
-                        value = self._parse_float(match.group(2))
-                        atomic_values[atom_idx] = value
-                break
-
+        pattern = rf"\s*(\d+)\([A-Z][a-z]?\s*\)\s+({NUMBER_PATTERN})"
+        for line in self._table_lines(stdout, ("Atomic space", "Value"), "Summing up"):
+            match = re.search(pattern, line)
+            if match:
+                atomic_values[int(match.group(1))] = float(match.group(2))
         if not atomic_values:
             raise RuntimeError("Could not parse the Multiwfn atomic integration table.")
         return atomic_values
@@ -1922,149 +1842,78 @@ class Multiwfn:
 
         return bond_orders
 
-    def _parse_atomic_areas(
-        self, lines: list[str], start_idx: int
-    ) -> tuple[dict[int, dict[str, float]], int]:
-        """Parse atomic surface areas section from stdout."""
-        atomic_props: dict[int, dict[str, float]] = {}
-        for i in range(start_idx + 1, len(lines)):
-            line = lines[i]
-            if "Atom#   All/Positive/Negative average" in line:
-                return atomic_props, i
-            if not line.strip():
-                continue
-            parts = line.split()
-            if len(parts) >= 6 and parts[0].isdigit():
-                try:
-                    atom_idx = int(parts[0])
-                    atomic_props[atom_idx] = {
-                        "area_total": self._parse_float(parts[1]),
-                        "area_positive": self._parse_float(parts[2]),
-                        "area_negative": self._parse_float(parts[3]),
-                        "min_value": self._parse_float(parts[4]),
-                        "max_value": self._parse_float(parts[5]),
-                    }
-                except ValueError:
-                    continue
-        return atomic_props, len(lines)
-
-    def _parse_atomic_averages(
-        self,
-        lines: list[str],
-        atomic_props: dict[int, dict[str, float]],
-        start_idx: int,
-    ) -> dict[int, dict[str, float]]:
-        """Parse atomic surface averages section from stdout."""
-        for i in range(start_idx + 1, len(lines)):
-            line = lines[i]
-            if not line.strip():
-                break
-            parts = line.split()
-            if len(parts) >= 7 and parts[0].isdigit():
-                try:
-                    atom_idx = int(parts[0])
-                    if atom_idx in atomic_props:
-                        atomic_props[atom_idx].update(
-                            {
-                                "avg_all": self._parse_float(parts[1]),
-                                "avg_positive": self._parse_float(parts[2]),
-                                "avg_negative": self._parse_float(parts[3]),
-                                "var_all": self._parse_float(parts[4]),
-                                "var_positive": self._parse_float(parts[5]),
-                                "var_negative": self._parse_float(parts[6]),
-                            }
-                        )
-                except ValueError:
-                    continue
-        return atomic_props
-
-    def _parse_atomic_charge_separation(
-        self,
-        lines: list[str],
-        atomic_props: dict[int, dict[str, float]],
-        start_idx: int,
-    ) -> dict[int, dict[str, float]]:
-        """Parse atomic internal charge separation section from stdout."""
-        for i in range(start_idx + 1, len(lines)):
-            line = lines[i]
-            if not line.strip():
-                break
-            parts = line.split()
-            if len(parts) >= 4 and parts[0].isdigit():
-                atom_idx = int(parts[0])
-                if atom_idx in atomic_props:
-                    atomic_props[atom_idx].update(
-                        {
-                            "pi": self._parse_float(parts[1]),
-                            "nu": self._parse_float(parts[2]),
-                            "nu_sigma2": self._parse_float(parts[3]),
-                        }
-                    )
-        return atomic_props
-
     def _parse_atomic_surface_properties(
         self, stdout: str
     ) -> dict[int, dict[str, float]]:
-        """Parse atomic surface properties from stdout."""
-        lines = stdout.replace("\r", "\n").splitlines()
+        """Parse the separate ESP tables or the single atomic surface table."""
+        if "All/Positive/Negative area" in stdout:
+            sections = [
+                (
+                    "All/Positive/Negative area",
+                    (
+                        "area_total",
+                        "area_positive",
+                        "area_negative",
+                        "min_value",
+                        "max_value",
+                    ),
+                    "All/Positive/Negative average",
+                    True,
+                ),
+                (
+                    "All/Positive/Negative average",
+                    (
+                        "avg_all",
+                        "avg_positive",
+                        "avg_negative",
+                        "var_all",
+                        "var_positive",
+                        "var_negative",
+                    ),
+                    r"^\s*$",
+                    True,
+                ),
+                (r"Atom#\s+Pi", ("pi", "nu", "nu_sigma2"), r"^\s*$", False),
+            ]
+        else:
+            sections = [
+                (
+                    r"Atom#\s+Area\(Ang\^2\)",
+                    ("area_total", "min_value", "max_value", "avg_all", "var_all"),
+                    r"^\s*$",
+                    False,
+                )
+            ]
         atomic_props: dict[int, dict[str, float]] = {}
-
-        for i, line in enumerate(lines):
-            if "All/Positive/Negative area" in line:
-                atomic_props, avg_idx = self._parse_atomic_areas(lines, i)
-                self._parse_atomic_averages(lines, atomic_props, avg_idx)
-                for j in range(avg_idx + 1, len(lines)):
-                    if "Atom#           Pi" in lines[j]:
-                        self._parse_atomic_charge_separation(lines, atomic_props, j)
-                        break
-                break
-            if "Atom#      Area(Ang^2)" in line:
-                atomic_props = self._parse_atomic_simple_table(lines, i)
-                break
-
-        return atomic_props
-
-    def _parse_atomic_simple_table(
-        self, lines: list[str], start_idx: int
-    ) -> dict[int, dict[str, float]]:
-        """Parse atomic surface properties from single-table format."""
-        atomic_props: dict[int, dict[str, float]] = {}
-        for i in range(start_idx + 1, len(lines)):
-            line = lines[i]
-            if not line.strip():
-                break
-            parts = line.split()
-            if len(parts) >= 6 and parts[0].isdigit():
-                atom_idx = int(parts[0])
-                atomic_props[atom_idx] = {
-                    "area_total": self._parse_float(parts[1]),
-                    "min_value": self._parse_float(parts[2]),
-                    "max_value": self._parse_float(parts[3]),
-                    "avg_all": self._parse_float(parts[4]),
-                    "var_all": self._parse_float(parts[5]),
-                }
+        for header, keys, end, skip_invalid in sections:
+            for line in self._table_lines(stdout, (header,), end):
+                parts = line.split()
+                if len(parts) < len(keys) + 1 or not parts[0].isdigit():
+                    continue
+                index = int(parts[0])
+                if keys[0] != "area_total" and index not in atomic_props:
+                    continue
+                try:
+                    values = {key: float(value) for key, value in zip(keys, parts[1:])}
+                except ValueError:
+                    if skip_invalid:
+                        continue
+                    raise
+                atomic_props.setdefault(index, {}).update(values)
         return atomic_props
 
     def _parse_global_surface_properties(self, stdout: str) -> dict[str, float]:
         """Parse global surface properties from stdout."""
-        lines = stdout.replace("\r", "\n").splitlines()
         props: dict[str, float] = {}
-        in_summary = False
-        for line in lines:
-            if "================= Summary of surface analysis" in line:
-                in_summary = True
+        for line in self._table_lines(
+            stdout,
+            ("================= Summary of surface analysis",),
+            "Surface analysis finished!",
+        ):
+            if ":" not in line:
                 continue
-            if not in_summary:
-                continue
-            if "Surface analysis finished!" in line:
-                break
-            if not line.strip() or ":" not in line:
-                continue
-
-            handled = self._parse_summary_minmax(line, props)
-            if handled:
-                continue
-            self._parse_summary_key_value(line, props)
+            if not self._parse_summary_minmax(line, props):
+                self._parse_summary_key_value(line, props)
         return props
 
     def _parse_summary_minmax(self, line: str, props: dict[str, float]) -> bool:
