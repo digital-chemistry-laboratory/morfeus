@@ -528,3 +528,109 @@ def test_progress_wait_stops_and_preserves_output(monkeypatch, events, expected)
     session.wait_for_progress(max_wait=30)
     assert session.stdout == expected
     assert session._child.read_nonblocking.call_count == len(events)
+
+
+@pytest.mark.multiwfn
+@pytest.mark.parametrize(
+    "filename,count,reference",
+    [
+        ("pyscf_dft_singlet_rks.molden", 38, {"restricted": (23, 24, -2.1716, 0.2925)}),
+        (
+            "pyscf_dft_triplet_uks.molden",
+            76,
+            {"alpha": (24, 25, -0.2070, 3.6907), "beta": (60, 61, -3.9766, -3.0207)},
+        ),
+    ],
+)
+def test_orbitals_and_frontier_gaps(tmp_path, filename, count, reference):
+    """Check records and gaps against reference Multiwfn energies in eV."""
+    with Multiwfn(EXAMPLE_MOLDEN_DIR / filename, run_path=tmp_path) as mwfn:
+        orbitals = mwfn.get_orbitals()
+        gaps = mwfn.get_frontier_gaps()
+    assert len(orbitals) == count
+    assert set(gaps) == set(reference)
+    for spin, (homo, lumo, occupied_energy, empty_energy) in reference.items():
+        for index, occupation, energy in (
+            (homo, 2 if spin == "restricted" else 1, occupied_energy),
+            (lumo, 0, empty_energy),
+        ):
+            assert next(o for o in orbitals if o["index"] == index) == {
+                "index": index,
+                "spin": spin,
+                "occupation": occupation,
+                "energy_ev": pytest.approx(energy, abs=5e-5, rel=0),
+            }
+        assert gaps[spin] == {
+            "homo_indices": [homo],
+            "lumo_indices": [lumo],
+            "homo_energy_ev": pytest.approx(occupied_energy, abs=5e-5, rel=0),
+            "lumo_energy_ev": pytest.approx(empty_energy, abs=5e-5, rel=0),
+            "gap_ev": pytest.approx(empty_energy - occupied_energy, abs=1e-4, rel=0),
+        }
+
+
+@pytest.mark.multiwfn
+def test_fractional_orbitals(tmp_path):
+    """Expose fractional occupations without assigning an automatic gap."""
+    path = EXAMPLE_MOLDEN_DIR / "pyscf_casscf_singlet_rhf_natorb.molden"
+    with Multiwfn(path, run_path=tmp_path) as mwfn:
+        assert any(
+            abs(o["occupation"] - round(o["occupation"])) > 1e-6
+            for o in mwfn.get_orbitals()
+        )
+        with pytest.raises(ValueError, match="Fractional occupations"):
+            mwfn.get_frontier_gaps()
+
+
+def test_degenerate_frontiers(monkeypatch):
+    """Select energy extrema independently of index order and degeneracy grouping."""
+    mwfn = object.__new__(Multiwfn)
+    records = [
+        {
+            "index": index,
+            "spin": "restricted",
+            "occupation": occupation,
+            "energy_ev": energy,
+        }
+        for index, occupation, energy in [
+            (4, 2, -5.000001),
+            (3, 2, -5),
+            (7, 0, 2),
+            (6, 0, 2.000001),
+        ]
+    ]
+    monkeypatch.setattr(mwfn, "get_orbitals", lambda: records)
+    gap = mwfn.get_frontier_gaps()["restricted"]
+    exact = mwfn.get_frontier_gaps(energy_tolerance_ev=0)["restricted"]
+    assert gap["homo_indices"] == [3, 4] and gap["lumo_indices"] == [6, 7]
+    assert exact["homo_indices"] == [3] and exact["lumo_indices"] == [7]
+    assert gap["gap_ev"] == exact["gap_ev"] == 7
+
+
+def test_signed_frontier_gap(monkeypatch):
+    """Retain negative gaps for non-Aufbau occupations."""
+    mwfn = object.__new__(Multiwfn)
+    monkeypatch.setattr(
+        mwfn,
+        "get_orbitals",
+        lambda: [
+            {"index": 1, "spin": "restricted", "occupation": 2, "energy_ev": 1},
+            {"index": 2, "spin": "restricted", "occupation": 0, "energy_ev": 0},
+        ],
+    )
+    assert mwfn.get_frontier_gaps()["restricted"]["gap_ev"] == -1
+
+
+def test_restricted_open_shell_gap(monkeypatch):
+    """Require an explicit convention for restricted open-shell orbitals."""
+    mwfn = object.__new__(Multiwfn)
+    monkeypatch.setattr(
+        mwfn,
+        "get_orbitals",
+        lambda: [
+            {"index": i, "spin": "restricted", "occupation": occ, "energy_ev": i}
+            for i, occ in enumerate([2, 1, 0], 1)
+        ],
+    )
+    with pytest.raises(ValueError, match="Restricted open-shell"):
+        mwfn.get_frontier_gaps()

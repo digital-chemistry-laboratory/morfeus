@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import functools
+import math
 from pathlib import Path
 import re
 import shutil
@@ -30,13 +31,6 @@ RealFunctionSetting = int | tuple[int, str]
 VectorFunctionSetting = tuple[int, int, int] | tuple[tuple[int, int, int], str]
 
 NUMBER_PATTERN = r"[-+]?\d*\.?\d+(?:[Ee][-+]?\d+)?"
-HOMO_LINE_PATTERN = re.compile(
-    rf"Orbital\s+(\d+)\s+is\s+HOMO,.*?({NUMBER_PATTERN})\s+eV\b"
-)
-LUMO_LINE_PATTERN = re.compile(
-    rf"Orbital\s+(\d+)\s+is\s+LUMO,.*?({NUMBER_PATTERN})\s+eV\b"
-)
-HOMO_LUMO_GAP_PATTERN = re.compile(rf"HOMO-LUMO gap:.*?({NUMBER_PATTERN})\s+eV\b")
 ORBITAL_LINE_PATTERN = re.compile(
     rf"""
     ^\s*
@@ -47,7 +41,7 @@ ORBITAL_LINE_PATTERN = re.compile(
     (?:Ene|E)\(au/eV\):
     \s*{NUMBER_PATTERN}\s+(?P<energy_ev>{NUMBER_PATTERN})
     \s+Occ:\s*(?P<occupation>{NUMBER_PATTERN})
-    \s+Typ(?:e)?\s*:\s*(?P<orbital_type>A\+B|A|B)\b
+    \s+Typ(?:e)?\s*:\s*(?P<orbital_type>\S+)
     """,
     flags=re.MULTILINE | re.VERBOSE,
 )
@@ -324,7 +318,7 @@ class MultiwfnResults:
     atomic_descriptors: dict[str, dict[int, float]] | None = None
     grid_descriptors: dict[tuple[str, int], dict[int, float]] | None = None
     electric_moments: dict[str, float] | None = None
-    gap: dict[str, dict[str, Any]] | None = None
+    orbitals: list[dict[str, Any]] | None = None
     bond_orders: dict[str, dict[tuple[int, int], float]] | None = None
     fukui: dict[str, dict[int, float]] | None = None
     superdelocalizabilities: dict[str, dict[int, float]] | None = None
@@ -1627,120 +1621,134 @@ class Multiwfn:
 
         return moments
 
-    def get_gaps(
-        self,
-        n: int = 3,
-        occupation_thresholds: tuple[float, float] = (0.5, 1.5),
-    ) -> dict[str, Any]:
-        """Return orbital energies and HOMO-centered adjacent orbital gaps.
+    def get_orbitals(self) -> list[dict[str, Any]]:
+        """Return orbital records in their reported order.
 
-        Args:
-            n: Half-window size around HOMO. A window of `n=3` spans
-                `homo_index - 3` through `homo_index + 3`.
-            occupation_thresholds: `(lower, upper)` thresholds used to classify
-                unoccupied, partially occupied and occupied orbitals.
+        Energies are read directly from Multiwfn's eV column.
+        Spin labels A+B, A, and B map to restricted, alpha, and beta, respectively.
 
         Returns:
-            A dictionary with:
-            - `orbitals`: `{index: (energy_ev, occupation, orbital_type)}`
-            - `gaps`: HOMO index/energy and `sequence_ev`, where each entry is
-              `{(i, j): gap_ev}` for adjacent orbitals `i -> j`.
+            Records with original indices, spin labels, occupations and energies in eV.
+        """
+        if self._results.orbitals is None:
+            commands = [
+                CommandStep("6", expect="6 Check & modify wavefunction"),
+                CommandStep("3", expect="3 List all orbitals"),
+                CommandStep("-1", expect="-1 Return"),
+            ]
+            result = self._run_commands(commands, subdir="orbitals")
+            self._results.orbitals = self._parse_orbital_list(result.stdout)
+        return self._results.orbitals
+
+    def get_frontier_gaps(
+        self,
+        occupation_tolerance: float = 1e-6,
+        energy_tolerance_ev: float = 1e-5,
+    ) -> dict[str, dict[str, Any]]:
+        """Compute same-spin frontier orbital-energy differences.
+
+        Restricted occupations must be near 0 or 2; alpha/beta occupations near
+        0 or 1. Fractional and restricted open-shell occupations are unsupported.
+        Physical interpretation requires appropriate source orbital energies;
+        these differences are not excitation energies.
+
+        Args:
+            occupation_tolerance: Absolute occupation tolerance, in [0, 0.5).
+            energy_tolerance_ev: Nonnegative absolute tolerance for reporting
+                degenerate frontier indices. Does not change the frontier energies.
+
+        Returns:
+            Per-channel frontier energies, degenerate index lists and signed gap
+            in eV. Keys are 'restricted', or 'alpha' and 'beta'.
 
         Raises:
-            ValueError: If spin state is unknown, `n < 0`, or thresholds are invalid.
+            ValueError: If tolerances or orbital data are invalid, or occupations
+                and spin channels do not support automatic classification.
         """
-        if self._has_spin is None:
-            raise ValueError(
-                "Gap analysis requires known spin state. "
-                "Initialize Multiwfn with has_spin=True/False."
+        if (
+            not math.isfinite(occupation_tolerance)
+            or not 0 <= occupation_tolerance < 0.5
+        ):
+            raise ValueError("occupation_tolerance must be finite and in [0, 0.5).")
+        if not math.isfinite(energy_tolerance_ev) or energy_tolerance_ev < 0:
+            raise ValueError("energy_tolerance_ev must be finite and nonnegative.")
+        orbitals = self.get_orbitals()
+        spins = {orbital["spin"] for orbital in orbitals}
+        if spins not in ({"restricted"}, {"alpha", "beta"}):
+            raise ValueError("Orbital spin channels are empty, mixed, or incomplete.")
+        if any(
+            not math.isfinite(orbital[key])
+            for orbital in orbitals
+            for key in ("energy_ev", "occupation")
+        ):
+            raise ValueError("Orbital energies and occupations must be finite.")
+        identities = {(orbital["spin"], orbital["index"]) for orbital in orbitals}
+        if len(identities) != len(orbitals) or any(
+            orbital["index"] < 1 for orbital in orbitals
+        ):
+            raise ValueError("Invalid or duplicate orbital identity.")
+        return {
+            spin: self._frontier_gap(
+                [orbital for orbital in orbitals if orbital["spin"] == spin],
+                occupation_tolerance,
+                energy_tolerance_ev,
             )
-        if n < 0:
-            raise ValueError("Gap window n must be >= 0.")
-
-        lower, upper = self._validate_occupation_thresholds(occupation_thresholds)
-        cache_key = self._gap_cache_key(n=n, lower=lower, upper=upper)
-
-        cached = self._results.gap
-        if cached is not None and cache_key in cached:
-            return cached[cache_key]
-
-        orbitals = self._get_orbital_listing(subdir="orbital_gaps")
-        gap_result = self._build_homo_window_gaps(
-            orbitals,
-            n=n,
-            occupation_thresholds=(lower, upper),
-        )
-
-        if cached is None:
-            cached = {}
-            self._results.gap = cached
-        cached[cache_key] = gap_result
-        return gap_result
-
-    def _get_homo_lumo(self) -> dict[str, float | int]:
-        """Calculate eV-based HOMO/LUMO energies and HOMO-LUMO gap."""
-        commands = [
-            CommandStep("0", expect="0 Show molecular structure and view orbitals"),
-        ]
-        result = self._run_commands(commands, subdir="homo_lumo")
-        return self._parse_homo_lumo_gap(result.stdout)
-
-    def _get_somo_gaps(
-        self, occupation_thresholds: tuple[float, float] = (0.5, 1.5)
-    ) -> dict[str, Any]:
-        """Calculate eV-based SOMO gaps to overall HOMO and LUMO."""
-        orbitals = self._get_orbital_listing(subdir="somo_gaps")
-        return self._compute_somo_gaps(orbitals, occupation_thresholds)
+            for spin in sorted(spins)
+        }
 
     @staticmethod
-    def _orbital_listing_commands() -> list[CommandStep]:
-        """Build command sequence for the `List all orbitals` screen."""
-        return [
-            CommandStep("6", expect="6 Check & modify wavefunction"),
-            CommandStep("3", expect="3 List all orbitals"),
-            CommandStep("-1", expect="-1 Return"),
-        ]
-
-    def _get_orbital_listing(self, subdir: str) -> list[dict[str, Any]]:
-        """Run orbital listing and parse rows."""
-        result = self._run_commands(self._orbital_listing_commands(), subdir=subdir)
-        return self._parse_orbital_list(result.stdout)
-
-    def _gap_cache_key(self, n: int, lower: float, upper: float) -> str:
-        """Build deterministic cache key for gap requests."""
-        if self._has_spin is None:
-            raise ValueError(
-                "Gap analysis requires known spin state. "
-                "Initialize Multiwfn with has_spin=True/False."
-            )
-        spin_label = "open" if self._has_spin else "closed"
-        return f"{spin_label}:n:{n}:lower:{lower:.8g}:upper:{upper:.8g}"
-
-    @staticmethod
-    def _validate_occupation_thresholds(
-        occupation_thresholds: tuple[float, float],
-    ) -> tuple[float, float]:
-        """Validate and normalize occupation thresholds."""
-        lower, upper = occupation_thresholds
-        if lower < 0:
-            raise ValueError("Lower occupation threshold must be >= 0.")
-        if upper <= lower:
-            raise ValueError("Upper occupation threshold must be greater than lower.")
-        return lower, upper
-
-    @staticmethod
-    def _split_orbitals_by_occupation(
+    def _frontier_gap(
         orbitals: list[dict[str, Any]],
-        lower: float,
-        upper: float,
-    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
-        """Split orbitals into unoccupied, partially occupied and occupied groups."""
-        unoccupied = [orb for orb in orbitals if orb["occupation"] < lower]
-        partially_occupied = [
-            orb for orb in orbitals if lower <= orb["occupation"] < upper
-        ]
-        occupied = [orb for orb in orbitals if orb["occupation"] >= upper]
-        return unoccupied, partially_occupied, occupied
+        occupation_tolerance: float,
+        energy_tolerance_ev: float,
+    ) -> dict[str, Any]:
+        """Classify occupations and compute frontier extrema within one channel."""
+        spin = orbitals[0]["spin"]
+        full_occupation = 2 if spin == "restricted" else 1
+        occupied = []
+        unoccupied = []
+        for orbital in orbitals:
+            occupation = orbital["occupation"]
+            if (
+                occupation < -occupation_tolerance
+                or occupation > full_occupation + occupation_tolerance
+            ):
+                raise ValueError(
+                    f"Occupation outside the valid range for {spin} orbitals."
+                )
+            if abs(occupation) <= occupation_tolerance:
+                unoccupied.append(orbital)
+            elif abs(occupation - full_occupation) <= occupation_tolerance:
+                occupied.append(orbital)
+            elif spin == "restricted" and abs(occupation - 1) <= occupation_tolerance:
+                raise ValueError(
+                    "Restricted open-shell frontier classification is unsupported."
+                )
+            else:
+                raise ValueError(
+                    "Fractional occupations detected; use get_orbitals() for explicit analysis."
+                )
+        if not occupied or not unoccupied:
+            raise ValueError(
+                f"Missing occupied or unoccupied orbitals in the {spin} channel."
+            )
+        homo = max(orbital["energy_ev"] for orbital in occupied)
+        lumo = min(orbital["energy_ev"] for orbital in unoccupied)
+        return {
+            "homo_energy_ev": homo,
+            "homo_indices": sorted(
+                orbital["index"]
+                for orbital in occupied
+                if abs(orbital["energy_ev"] - homo) <= energy_tolerance_ev
+            ),
+            "lumo_energy_ev": lumo,
+            "lumo_indices": sorted(
+                orbital["index"]
+                for orbital in unoccupied
+                if abs(orbital["energy_ev"] - lumo) <= energy_tolerance_ev
+            ),
+            "gap_ev": lumo - homo,
+        }
 
     def get_localization(self) -> dict[int, float]:
         """Calculate localization index from integration in fuzzy atomic spaces."""
@@ -1911,145 +1919,26 @@ class Multiwfn:
 
         return moments
 
-    def _parse_homo_lumo_gap(self, stdout: str) -> dict[str, float | int]:
-        """Parse eV-based HOMO/LUMO energies and HOMO-LUMO gap from stdout."""
-        homo_match = HOMO_LINE_PATTERN.search(stdout)
-        lumo_match = LUMO_LINE_PATTERN.search(stdout)
-        gap_match = HOMO_LUMO_GAP_PATTERN.search(stdout)
-
-        if homo_match is None or lumo_match is None or gap_match is None:
-            raise RuntimeError("Could not parse HOMO/LUMO energies and HOMO-LUMO gap.")
-
-        return {
-            "homo_index": int(homo_match.group(1)),
-            "homo_energy_ev": self._parse_float(homo_match.group(2)),
-            "lumo_index": int(lumo_match.group(1)),
-            "lumo_energy_ev": self._parse_float(lumo_match.group(2)),
-            "homo_lumo_gap_ev": self._parse_float(gap_match.group(1)),
-        }
-
-    def _parse_somo_gaps(
-        self, stdout: str, occupation_thresholds: tuple[float, float] = (0.5, 1.5)
-    ) -> dict[str, Any]:
-        """Parse orbital list and compute eV-based SOMO gaps."""
-        orbitals = self._parse_orbital_list(stdout)
-        return self._compute_somo_gaps(orbitals, occupation_thresholds)
-
-    def _compute_somo_gaps(
-        self,
-        orbitals: list[dict[str, Any]],
-        occupation_thresholds: tuple[float, float] = (0.5, 1.5),
-    ) -> dict[str, Any]:
-        """Compute eV-based SOMO-related energy gaps from parsed orbital rows."""
-        lower, upper = self._validate_occupation_thresholds(occupation_thresholds)
-        unoccupied, somos, occupied = self._split_orbitals_by_occupation(
-            orbitals, lower, upper
-        )
-        if not occupied or not unoccupied:
-            raise RuntimeError(
-                "Could not identify doubly occupied and unoccupied orbitals."
-            )
-        if not somos:
-            raise RuntimeError("No partially occupied orbitals (SOMOs) were found.")
-
-        overall_homo = max(occupied, key=lambda orb: orb["energy_ev"])
-        overall_lumo = min(unoccupied, key=lambda orb: orb["energy_ev"])
-
-        sorted_somos = sorted(somos, key=lambda orb: orb["index"])
-        somo_indices = [somo["index"] for somo in sorted_somos]
-        somo_to_lumo_gap_ev: dict[int, float] = {}
-        somo_to_homo_gap_ev: dict[int, float] = {}
-
-        for somo in sorted_somos:
-            somo_idx = somo["index"]
-            somo_to_lumo_gap_ev[somo_idx] = (
-                overall_lumo["energy_ev"] - somo["energy_ev"]
-            )
-            somo_to_homo_gap_ev[somo_idx] = (
-                somo["energy_ev"] - overall_homo["energy_ev"]
-            )
-
-        return {
-            "overall_homo_index": int(overall_homo["index"]),
-            "overall_homo_energy_ev": overall_homo["energy_ev"],
-            "overall_lumo_index": int(overall_lumo["index"]),
-            "overall_lumo_energy_ev": overall_lumo["energy_ev"],
-            "somo_indices": somo_indices,
-            "somo_to_lumo_gap_ev": somo_to_lumo_gap_ev,
-            "somo_to_homo_gap_ev": somo_to_homo_gap_ev,
-            "occupation_thresholds": {"lower": lower, "upper": upper},
-        }
-
-    def _build_homo_window_gaps(
-        self,
-        orbitals: list[dict[str, Any]],
-        n: int = 3,
-        occupation_thresholds: tuple[float, float] = (0.5, 1.5),
-    ) -> dict[str, Any]:
-        """Build HOMO-centered gap sequence with a symmetric index window."""
-        lower, upper = self._validate_occupation_thresholds(occupation_thresholds)
-        if n < 0:
-            raise ValueError("Gap window n must be >= 0.")
-
-        if not orbitals:
-            raise RuntimeError("No orbitals available for gap analysis.")
-
-        _, partially_occupied, occupied = self._split_orbitals_by_occupation(
-            orbitals, lower, upper
-        )
-        # Unrestricted orbital listings may contain only 1/0 occupations.
-        # In that case, fall back to the partially occupied bucket.
-        occupied_candidates = occupied or partially_occupied
-        if not occupied_candidates:
-            raise RuntimeError("Could not identify occupied orbitals.")
-
-        homo = max(occupied_candidates, key=lambda orb: orb["energy_ev"])
-        homo_index = homo["index"]
-
-        orbital_table: dict[int, tuple[float, float, str]] = {}
-        for orb in orbitals:
-            idx = orb["index"]
-            orbital_table[idx] = (
-                orb["energy_ev"],
-                orb["occupation"],
-                orb["type"],
-            )
-
-        sorted_indices = sorted(orbital_table)
-        start_idx = max(sorted_indices[0], homo_index - n)
-        end_idx = min(sorted_indices[-1], homo_index + n)
-
-        sequence_ev: list[dict[tuple[int, int], float]] = []
-        for idx in range(start_idx, end_idx):
-            if idx not in orbital_table or (idx + 1) not in orbital_table:
-                continue
-            gap_ev = orbital_table[idx + 1][0] - orbital_table[idx][0]
-            sequence_ev.append({(idx, idx + 1): gap_ev})
-
-        return {
-            "orbitals": orbital_table,
-            "gaps": {
-                "homo_index": homo_index,
-                "homo_energy_ev": homo["energy_ev"],
-                "sequence_ev": sequence_ev,
-            },
-        }
-
     def _parse_orbital_list(self, stdout: str) -> list[dict[str, Any]]:
-        """Parse orbital listing from `List all orbitals` output."""
-        orbitals = [
-            {
-                "index": int(match["index"]),
-                "energy_ev": self._parse_float(match["energy_ev"]),
-                "occupation": self._parse_float(match["occupation"]),
-                "type": match["orbital_type"],
-            }
-            for match in ORBITAL_LINE_PATTERN.finditer(stdout)
-        ]
-
+        """Parse orbital rows without silently discarding malformed records."""
+        spins = {"A+B": "restricted", "A": "alpha", "B": "beta"}
+        orbitals = []
+        for line in stdout.splitlines():
+            if not re.search(r"(?:Ene|E)\(au/eV\):", line):
+                continue
+            match = ORBITAL_LINE_PATTERN.match(line)
+            if match is None or match["orbital_type"] not in spins:
+                raise RuntimeError(f"Could not parse orbital row: {line!r}.")
+            orbitals.append(
+                {
+                    "index": int(match["index"]),
+                    "spin": spins[match["orbital_type"]],
+                    "occupation": self._parse_float(match["occupation"]),
+                    "energy_ev": self._parse_float(match["energy_ev"]),
+                }
+            )
         if not orbitals:
             raise RuntimeError("Could not parse orbital listing from stdout.")
-
         return orbitals
 
     def _parse_chg_file(self, chg_path: Path) -> dict[int, float]:

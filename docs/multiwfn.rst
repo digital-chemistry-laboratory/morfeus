@@ -185,6 +185,28 @@ ESP-derived functions provide fuzzy-space atomic integrals.
 .. _molden2aim: https://github.com/zorkzou/Molden2AIM
 
 
+Orbital records and frontier gaps
+----------------------------------
+
+``get_orbitals()`` returns a list of dictionaries with ``index``, ``spin``,
+``occupation``, and ``energy_ev`` keys. Indices and
+ordering are preserved from Multiwfn. Energies are read directly from its eV
+column. Spin labels are ``restricted`` (A+B),``alpha`` (A) and ``beta`` (B). 
+
+``get_frontier_gaps()`` reports one ``restricted`` result for occupations near
+0/2, or independent ``alpha`` and ``beta`` results for occupations near 0/1.
+
+.. code-block:: python
+
+   orbitals = mwfn.get_orbitals()
+   frontiers = mwfn.get_frontier_gaps()
+   gap = frontiers["restricted"]["gap_ev"]
+
+Each result contains ``homo_energy_ev``, ``lumo_energy_ev``, ``gap_ev``,
+``homo_indices`` and ``lumo_indices``. Frontier energies are the maximum occupied
+and minimum unoccupied energies within the same channel.
+
+
 Persistent execution
 ---------------------------------
 
