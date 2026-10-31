@@ -339,7 +339,7 @@ def test_grid_cache_distinguishes_user_functions(tmp_path, monkeypatch):
             f"Atomic space Value\n 1(C ) {value}.0\nSumming up", tmp_path
         )
 
-    monkeypatch.setattr(mwfn, "run_commands", run)
+    monkeypatch.setattr(mwfn, "_run_commands", run)
     assert mwfn.grid_to_descriptors(None, userfunction=1) == {1: 1.0}
     assert mwfn.grid_to_descriptors(grid, userfunction=2) == {1: 2.0}
     assert mwfn.grid_to_descriptors(None, userfunction=1) == {1: 1.0}
@@ -377,7 +377,7 @@ def test_rdg_is_available_for_grids_only(tmp_path, monkeypatch):
         (workdir / "RDG.cub").write_text("generated grid")
         return MultiwfnRunResult("", workdir)
 
-    monkeypatch.setattr(mwfn, "run_commands", run)
+    monkeypatch.setattr(mwfn, "_run_commands", run)
     assert mwfn.get_grid("rdg", "low").name == "RDG.cub"
     assert CommandStep("13", expect="13 Reduced density gradient") in sent
     with pytest.raises(ValueError, match="requires grid data"):
@@ -386,7 +386,7 @@ def test_rdg_is_available_for_grids_only(tmp_path, monkeypatch):
 
 @pytest.mark.multiwfn
 def test_command_failure_closes_child(tmp_path, monkeypatch):
-    """A failed menu match releases the live process before propagating the error."""
+    """Command and initialization failures release the live process."""
     import morfeus.multiwfn as module
 
     sessions = []
@@ -405,10 +405,88 @@ def test_command_failure_closes_child(tmp_path, monkeypatch):
         expect_timeout=0.2,
     )
     with pytest.raises(RuntimeError, match="Expected pattern"):
-        mwfn.run_commands([CommandStep("q", expect="THIS_PROMPT_DOES_NOT_EXIST")])
+        mwfn.run_commands([CommandStep("300", expect="THIS_PROMPT_DOES_NOT_EXIST")])
     assert len(sessions) == 1
     assert not sessions[0]._child.isalive()
     assert sessions[0]._child.closed
+    xyz = MULTIWFN_DATA_DIR.parent / "xtb" / "1-penten-3-one.xyz"
+    with pytest.raises(RuntimeError, match="multiplicity"):
+        Multiwfn(xyz, run_path=tmp_path, persistent=True)
+    assert sessions[-1]._child.closed
+
+
+@pytest.mark.multiwfn
+@pytest.mark.parametrize("robust", [True, False])
+def test_persistent_reuse(tmp_path, monkeypatch, robust):
+    """Load once, isolate analysis output, and quit once for a descriptor sequence."""
+    path = EXAMPLE_MOLDEN_DIR / "xtb_singlet.molden"
+    with Multiwfn(path) as fresh:
+        charges = fresh.get_charges("hirshfeld")
+        moments = fresh.get_electric_moments()
+    sent = []
+    send = multiwfn._PexpectSession.send
+
+    def record(session, command):
+        sent.append(command)
+        send(session, command)
+
+    monkeypatch.setattr(multiwfn._PexpectSession, "send", record)
+    with Multiwfn(path, run_path=tmp_path, persistent=True, robust_mode=robust) as m:
+        session = m._session
+        assert session is not None
+        assert m.get_charges("hirshfeld") == charges
+        assert m.get_electric_moments() == moments
+        assert m._session is session and session._child.isalive()
+        assert list((tmp_path / "hirshfeld").glob("*.chg"))
+        assert "Atomic space" not in session.stdout
+        assert sent.count(str(path.resolve())) == 1
+        assert "r" not in sent and "q" not in sent
+    assert sent.count("q") == 1
+    assert session._child.closed and session._child.exitstatus == 0
+
+
+@pytest.mark.multiwfn
+def test_persistent_input_and_settings(tmp_path):
+    """Reload for a cube and back, and restart after settings change."""
+    path = EXAMPLE_MOLDEN_DIR / "xtb_singlet.molden"
+    cube = MULTIWFN_DATA_DIR / "example_xtb_cub" / "spindensity.cub"
+    with Multiwfn(path) as fresh:
+        density = fresh.get_descriptor("rho")
+        integrated = fresh.grid_to_descriptors(cube)
+        moments = fresh.get_electric_moments()
+    with Multiwfn(path, run_path=tmp_path / "run", persistent=True) as m:
+        session = m._session
+        assert session is not None
+        m.get_vector("coordinates")
+        assert m.get_descriptor("rho") == density
+        assert m.grid_to_descriptors(cube) == integrated
+        assert m.get_electric_moments() == moments
+        assert m._session is session
+        settings = tmp_path / "run" / "settings.ini"
+        settings.write_text("nthreads=1\n")
+        m.load_settingini(settings)
+        assert session._child.closed and m._results.electric_moments is None
+        assert m.get_electric_moments() == moments
+        assert m._session is not session
+
+
+@pytest.mark.multiwfn
+def test_persistent_custom_commands_and_failure(tmp_path):
+    """Invalidate custom state; discard a failed session and restart on the next call."""
+    path = EXAMPLE_MOLDEN_DIR / "xtb_singlet.molden"
+    with Multiwfn(path, run_path=tmp_path, persistent=True) as m:
+        moments = m.get_electric_moments()
+        result = m.run_commands(["300", "5", "0"])
+        assert m._parse_electric_moments(result.stdout) == moments
+        assert m._results.electric_moments is None and m._loaded_file is None
+        assert m.get_electric_moments() == moments
+        session = m._session
+        assert session is not None
+        session._expect_timeout = 0.2
+        with pytest.raises(RuntimeError, match="Expected pattern"):
+            m.run_commands([CommandStep("300", expect="THIS_PROMPT_DOES_NOT_EXIST")])
+        assert session._child.closed and m._session is None
+        assert m.get_electric_moments() == moments
 
 
 @pytest.mark.multiwfn

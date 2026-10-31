@@ -183,3 +183,21 @@ ESP-derived functions provide fuzzy-space atomic integrals.
 .. _Multiwfn manual: http://sobereva.com/multiwfn/Multiwfn_manual.html
 .. _Pexpect: https://pexpect.readthedocs.io/en/stable/
 .. _molden2aim: https://github.com/zorkzou/Molden2AIM
+
+
+Persistent execution
+---------------------------------
+
+By default, each calculation starts a fresh process. To opt into process reuse:
+
+.. code-block:: python
+
+   with Multiwfn("molden.input", persistent=True) as mwfn:
+       charges = mwfn.get_charges("hirshfeld")
+       moments = mwfn.get_electric_moments()
+
+The wavefunction is loaded once and reused across descriptor calls.
+Input and settings files should remain unchanged. Each analysis has a separate 
+transcript and output directory. Custom ``run_commands()`` sequences must return 
+to the main menu, without quitting. Use a context manager or call ``close()`` 
+to release the process.

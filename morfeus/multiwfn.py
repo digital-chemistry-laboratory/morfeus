@@ -501,9 +501,33 @@ class _PexpectSession:
                 print("[DEBUG] EOF while checking optional pattern")
             return re.search(pattern, f"{before}{after}") is not None
 
-    def close(self) -> None:
-        """Release the child process and its terminal, including after failures."""
-        self._child.close(force=True)
+    def load(self, file_path: Path, reset: bool = False) -> None:
+        """Load an input after optionally resetting an existing process."""
+        self._transcript.clear()
+        self._last_command_pos = 0
+        if reset:
+            self.send("r")
+        if not self.expect("Now input file path"):
+            raise RuntimeError("Multiwfn did not reach the input-file prompt.")
+        self.send(str(file_path))
+        self.wait_for_main_menu()
+
+    def wait_for_main_menu(self) -> None:
+        """Require the complete main menu before reusing the process."""
+        pattern = "300 Other functions"
+        if not self._has_pattern_in_buffered_output(pattern) and not self.expect(
+            pattern
+        ):
+            raise RuntimeError("Multiwfn did not return to the main menu.")
+
+    def close(self, graceful: bool = False) -> None:
+        """Release the child process, optionally quitting from the main menu."""
+        try:
+            if graceful:
+                self.send("q")
+                self.wait_for_exit()
+        finally:
+            self._child.close(force=True)
 
     def wait_for_exit(self) -> None:
         """Wait for process to exit."""
@@ -621,6 +645,9 @@ class Multiwfn:
             (True=open-shell, False=closed-shell). For .cub/.grd inputs, spin
             state is left undefined.
         expect_timeout: Time to wait for expect patterns in seconds.
+        persistent: Reuse the process and loaded wavefunction between analyses.
+            Use a context manager or close() to release the process.
+            Do not share an instance across concurrent tasks.
     """
 
     def __init__(
@@ -633,7 +660,12 @@ class Multiwfn:
         max_wait: int = 30,
         has_spin: bool | None = None,
         expect_timeout: float = 3.0,
+        persistent: bool = False,
     ) -> None:
+        self._persistent = persistent
+        self._session: _PexpectSession | None = None
+        self._loaded_file: Path | None = None
+        self._session_dir: tempfile.TemporaryDirectory[str] | None = None
         self._file_path = Path(file_path).resolve()
         if not self._file_path.exists():
             raise FileNotFoundError(f"File not found: {self._file_path}")
@@ -671,11 +703,12 @@ class Multiwfn:
 
     def _detect_spin_state(self) -> bool:
         """Load the molden file and parse the multiplicity."""
-        result = self.run_commands([CommandStep("q", expect="gracefully")])
+        result = self._run_commands([])
         mult_pattern = r"Expected multiplicity:\s*(\d+)"
 
         match = re.search(mult_pattern, result.stdout)
         if not match:
+            self._close_session()
             raise RuntimeError("Could not detect multiplicity from the file.")
 
         mult = int(match.group(1))
@@ -695,17 +728,34 @@ class Multiwfn:
             raise FileNotFoundError(f"Settings file not found: {settings_path}")
         self._settings_ini_path = settings_path
         self._copy_settings_ini(self._run_path)
+        self._close_session()
         self._results = MultiwfnResults(citations=set(self._results.citations))
 
     def load_settingsini(self, file_path: str | Path) -> None:
         """Backward-compatible alias for load_settingini()."""
         self.load_settingini(file_path)
 
+    def _close_session(self, graceful: bool = True) -> None:
+        """Discard a reusable process and its private output directory."""
+        session = self._session
+        self._session = None
+        self._loaded_file = None
+        try:
+            if session is not None:
+                session.close(graceful=graceful)
+        finally:
+            if self._session_dir is not None:
+                self._session_dir.cleanup()
+                self._session_dir = None
+
     def close(self) -> None:
-        """Clean up temporary working directory, if created."""
-        if self._temp_dir is not None:
-            self._temp_dir.cleanup()
-            self._temp_dir = None
+        """Release the process and clean up the temporary working directory."""
+        try:
+            self._close_session()
+        finally:
+            if self._temp_dir is not None:
+                self._temp_dir.cleanup()
+                self._temp_dir = None
 
     def __enter__(self) -> "Multiwfn":
         return self
@@ -733,7 +783,8 @@ class Multiwfn:
         target_dir = Path(workdir)
         target_dir.mkdir(parents=True, exist_ok=True)
         target = target_dir / "settings.ini"
-        shutil.copy2(self._settings_ini_path, target)
+        if target.resolve() != self._settings_ini_path:
+            shutil.copy2(self._settings_ini_path, target)
 
     def _commands_change_iuserfunc(self, function: int = -1) -> list[CommandStep]:
         """Adjust the iuserfunc setting.
@@ -801,7 +852,6 @@ class Multiwfn:
                 CommandStep(menu_cmd, expect=menu_pattern),
                 WaitProgress(self._max_wait),
                 CommandStep("0", expect="0 Return"),
-                CommandStep("q", expect="gracefully"),
             ]
         )
         return commands
@@ -852,42 +902,97 @@ class Multiwfn:
         """Get all collected citations for the current object."""
         return sorted(self._results.citations)
 
-    @requires_executable(["Multiwfn"])
     def run_commands(
         self,
         commands: Iterable[str | CommandStep | WaitProgress],
         subdir: str | None = None,
     ) -> MultiwfnRunResult:
-        """Run Multiwfn with a custom command sequence.
+        """Run custom commands that return to the main menu.
+
+        Custom commands invalidate cached results and the loaded input because
+        they may modify the wavefunction or analysis settings.
 
         Args:
-            commands: Sequence of commands (strings or CommandStep objects).
+            commands: Commands returning to the main menu, without a final quit.
             subdir: Subdirectory within run_path to store results.
 
         Returns:
-            MultiwfnRunResult with stdout, workdir
+            MultiwfnRunResult with this run's stdout and workdir.
         """
-        workdir = self._setup_workdir(subdir)
-
-        env = self._set_env()
-        session = _PexpectSession(
-            "Multiwfn",
-            workdir,
-            self._debug,
-            env=env,
-            expect_timeout=self._expect_timeout,
-        )
+        commands = list(commands)
+        if commands:
+            last = commands[-1]
+            if (last.cmd if isinstance(last, CommandStep) else last) == "q":
+                commands.pop()
+        self._loaded_file = None
         try:
-            session.send(str(self._file_path))
-            session.read_available()
+            result: MultiwfnRunResult = self._run_commands(commands, subdir)
+            return result
+        finally:
+            self._loaded_file = None
+            self._results = MultiwfnResults(citations=set(self._results.citations))
 
+    @requires_executable(["Multiwfn"])
+    def _run_commands(
+        self,
+        commands: Iterable[str | CommandStep | WaitProgress],
+        subdir: str | None = None,
+    ) -> MultiwfnRunResult:
+        """Run a descriptor from main menu to main menu, managing process lifetime."""
+        workdir = self._setup_workdir(subdir)
+        try:
+            new_session = self._session is None
+            if self._session is None:
+                session_path = workdir
+                if self._persistent:
+                    self._session_dir = tempfile.TemporaryDirectory(
+                        prefix=".multiwfn-session-", dir=self._run_path
+                    )
+                    session_path = Path(self._session_dir.name)
+                    self._copy_settings_ini(session_path)
+                self._session = _PexpectSession(
+                    "Multiwfn",
+                    session_path,
+                    self._debug,
+                    env=self._set_env(),
+                    expect_timeout=self._expect_timeout,
+                )
+            session = self._session
+            if self._loaded_file != self._file_path:
+                session.load(self._file_path, reset=not new_session)
+                self._loaded_file = self._file_path
+                start = 0
+            else:
+                # Retain the last menu for the first command's prompt check.
+                session._transcript = session._transcript[session._last_command_pos :]
+                session._last_command_pos = 0
+                start = len(session._transcript)
             for item in commands:
                 session._process_command(item, self._robust_mode)
-
-            session.wait_for_exit()
-            return MultiwfnRunResult(stdout=session.stdout, workdir=workdir)
+            session.wait_for_main_menu()
+            if self._persistent:
+                self._collect_session_files(workdir)
+            return MultiwfnRunResult(
+                stdout="".join(session._transcript[start:]), workdir=workdir
+            )
+        except BaseException:
+            self._close_session(graceful=False)
+            raise
         finally:
-            session.close()
+            if not self._persistent:
+                self._close_session()
+
+    def _collect_session_files(self, workdir: Path) -> None:
+        """Move this run's output files into its public result directory."""
+        if self._session_dir is None:
+            raise RuntimeError("Missing persistent session directory.")
+        for source in Path(self._session_dir.name).iterdir():
+            if source.name == "settings.ini":
+                continue
+            if not source.is_file():
+                raise RuntimeError(f"Unsupported Multiwfn output directory: {source}")
+            shutil.copy2(source, workdir / source.name)
+            source.unlink()
 
     def get_charges(self, model: str = "adch") -> dict[int, float]:
         """Calculate atomic charges.
@@ -942,16 +1047,13 @@ class Multiwfn:
         ]
         if normalized_model == "mulliken":
             commands += [CommandStep("0", expect="Mulliken population")]
-        commands += [
-            CommandStep("0", expect="0 Return"),
-            CommandStep("q", expect="gracefully"),
-        ]
+        commands.append(CommandStep("0", expect="0 Return"))
 
         citation = CHARGE_MODEL_CITATIONS.get(normalized_model, None)
         if citation is not None:
             self._results.citations.add(citation)
 
-        result = self.run_commands(commands, subdir=normalized_model)
+        result = self._run_commands(commands, subdir=normalized_model)
 
         chg_files = sorted(result.workdir.glob("*.chg"))
         if not chg_files:
@@ -1024,10 +1126,9 @@ class Multiwfn:
             CommandStep("n", expect="surface facets to locsurf"),
             CommandStep("-1", expect="-1 Return to upper level"),
             CommandStep("-1", expect="-1 Return to main menu"),
-            CommandStep("q", expect="Exit program gracefully"),
         ]
 
-        result = self.run_commands(commands, subdir=normalized_model)
+        result = self._run_commands(commands, subdir=normalized_model)
 
         atomic_props = self._parse_atomic_surface_properties(result.stdout)
         global_props = self._parse_global_surface_properties(result.stdout)
@@ -1084,10 +1185,9 @@ class Multiwfn:
             WaitProgress(self._max_wait),
             CommandStep("n", expect="current folder"),
             CommandStep("0", expect="0 Return"),
-            CommandStep("q", expect="gracefully"),
         ]
 
-        result = self.run_commands(commands, subdir=normalized_model)
+        result = self._run_commands(commands, subdir=normalized_model)
         bond_order_matrix = self._parse_bond_orders(result.stdout)
 
         if self._results.bond_orders is None:
@@ -1147,7 +1247,7 @@ class Multiwfn:
                 "100 User-defined function",
                 prefix_commands=self._commands_change_iuserfunc(function=userfunction),
             )
-            result = self.run_commands(commands, subdir="grid")
+            result = self._run_commands(commands, subdir="grid")
         finally:
             self._file_path = file_path
 
@@ -1212,9 +1312,8 @@ class Multiwfn:
             WaitProgress(self._max_wait),
             CommandStep("2", expect="2 Export data to a Gaussian-type cube file"),
             CommandStep("0", expect="0 Return to main menu"),
-            CommandStep("q", expect="gracefully"),
         ]
-        result = self.run_commands(grid_commands, subdir=descriptor)
+        result = self._run_commands(grid_commands, subdir=descriptor)
 
         cub_candidates: list[Path] = list(result.workdir.glob("*.cub"))
         if not cub_candidates:
@@ -1268,9 +1367,8 @@ class Multiwfn:
                 "0",
                 expect=r"(Fukui potential|0 Return)",
             ),
-            CommandStep("q", expect="gracefully"),
         ]
-        result = self.run_commands(commands, subdir="fukui")
+        result = self._run_commands(commands, subdir="fukui")
         self._raise_if_single_determinant_wavefunction_error(
             result.stdout, analysis="Fukui function analysis"
         )
@@ -1314,11 +1412,8 @@ class Multiwfn:
             # Prompt text after option 8 varies across Multiwfn builds; send "0"
             # unconditionally to return to the previous menu.
             CommandStep("0"),
-            # Do not gate quit on a specific prompt here; conceptual-DFT submenu
-            # prompts vary across Multiwfn builds.
-            CommandStep("q"),
         ]
-        result = self.run_commands(commands, subdir="superdeloc")
+        result = self._run_commands(commands, subdir="superdeloc")
         self._raise_if_single_determinant_wavefunction_error(
             result.stdout, analysis="Superdelocalizability analysis"
         )
@@ -1511,7 +1606,7 @@ class Multiwfn:
         subdir = (
             descriptor if partitioning == "becke" else f"{descriptor}_{partitioning}"
         )
-        result = self.run_commands(command_sequence, subdir=subdir)
+        result = self._run_commands(command_sequence, subdir=subdir)
         descriptor_result = self._parse_atomic_values(result.stdout)
         return descriptor_result
 
@@ -1524,9 +1619,8 @@ class Multiwfn:
             CommandStep("300", expect="300 Other functions"),
             CommandStep("5", expect="5 Calculate electric dipole/multipole moments"),
             CommandStep("0", expect="0 Return"),
-            CommandStep("q", expect="gracefully"),
         ]
-        result = self.run_commands(commands, subdir="electric_moments")
+        result = self._run_commands(commands, subdir="electric_moments")
         moments = self._parse_electric_moments(result.stdout)
 
         self._results.electric_moments = moments
@@ -1587,9 +1681,8 @@ class Multiwfn:
         """Calculate eV-based HOMO/LUMO energies and HOMO-LUMO gap."""
         commands = [
             CommandStep("0", expect="0 Show molecular structure and view orbitals"),
-            CommandStep("q", expect="gracefully"),
         ]
-        result = self.run_commands(commands, subdir="homo_lumo")
+        result = self._run_commands(commands, subdir="homo_lumo")
         return self._parse_homo_lumo_gap(result.stdout)
 
     def _get_somo_gaps(
@@ -1606,12 +1699,11 @@ class Multiwfn:
             CommandStep("6", expect="6 Check & modify wavefunction"),
             CommandStep("3", expect="3 List all orbitals"),
             CommandStep("-1", expect="-1 Return"),
-            CommandStep("q", expect="gracefully"),
         ]
 
     def _get_orbital_listing(self, subdir: str) -> list[dict[str, Any]]:
         """Run orbital listing and parse rows."""
-        result = self.run_commands(self._orbital_listing_commands(), subdir=subdir)
+        result = self._run_commands(self._orbital_listing_commands(), subdir=subdir)
         return self._parse_orbital_list(result.stdout)
 
     def _gap_cache_key(self, n: int, lower: float, upper: float) -> str:
@@ -1661,9 +1753,8 @@ class Multiwfn:
             WaitProgress(self._max_wait),
             CommandStep("n", expect="y/n"),
             CommandStep("0", expect="0 Return"),
-            CommandStep("q", expect="gracefully"),
         ]
-        result = self.run_commands(commands, subdir="localization")
+        result = self._run_commands(commands, subdir="localization")
         localization = self._parse_localization_values(result.stdout)
 
         self._results.localization = localization
