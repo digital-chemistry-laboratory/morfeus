@@ -32,8 +32,7 @@ files.
 Additionally, grid files (``.cub`` or ``.grd``) can be generated or integrated.
 
 Several descriptors are spin-dependent and are handled by
-``has_spin=<bool|None>``, detected automatically if not provided.
-
+``has_spin=<bool|None>``, inferred from the loaded wavefunction if not provided.
 All available options can be easily retrieved with the ``list_options()`` method.
 
 Citations used by the selected analyses can be collected directly:
@@ -92,7 +91,11 @@ The descriptors can be calculated with:
   >>> rho = mwfn.get_descriptor("rho")
 
 Caution: Some functions may not be available or meaningful for some
-wavefunction types or spin states.
+wavefunction types or spin states. Atomic integration supports Becke, Hirshfeld,
+and MBIS partitioning through ``get_descriptor(..., partitioning=...)``.
+Hirshfeld-I requires a separate atomic-reference preparation workflow and is not
+supported by this interface. Localization and fuzzy/Laplacian bond orders use
+Becke partitioning independently of previous calculations.
 
 ###################
 Surface descriptors
@@ -115,7 +118,7 @@ For example, the electrostatic potential (ESP) can be calculated with:
   -58.90822
   >>> atom_3 = esp_surface["atomic"][3]
   >>> atom_3.get("area_positive"), atom_3.get("area_negative")
-  (8.82908, -2.14958)
+  (3.28428, 0.29337)
 
 
 #######################
@@ -159,6 +162,12 @@ exits. To retain intermediate outputs, supply ``run_path``: each instance gets
 a unique subdirectory there, and each uncached analysis gets a fresh result
 directory. This prevents collisions between instances and repeated calculations.
 Settings are copied only into the process working directory.
+
+For quantitative total-density analysis from xTB, prefer the Molden wavefunction
+and ``Multiwfn.get_descriptor("rho")`` or ``get_grid("rho", ...)``. The xTB 6.7.1
+cube exporter can produce an incorrectly normalized density, also noted in the
+`critic2 documentation <https://aoterodelaroza.github.io/critic2/manual/fields/#molecular-molden-style-files-molden-and-moldeninput>`_.
+Check electron and spin integrals before using exported cubes quantitatively.
 
 
 **********

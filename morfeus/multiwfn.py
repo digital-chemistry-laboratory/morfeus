@@ -273,7 +273,6 @@ GRID_QUALITIES: dict[str, str] = {
 FUZZY_PARTITIONING_SCHEMES: dict[str, str] = {
     "becke": "1 Becke",
     "hirshfeld": "3 Hirshfeld",
-    "hirshfeld_i": "4 Hirshfeld-I",
     "mbis": "5 MBIS",
 }
 
@@ -732,6 +731,17 @@ class Multiwfn:
 
         return custom_commands
 
+    def _commands_fuzzy_partitioning(
+        self, partitioning: str = "becke"
+    ) -> list[CommandStep]:
+        """Enter fuzzy analysis and select its atomic partitioning scheme."""
+        partition_cmd = FUZZY_PARTITIONING_SCHEMES[partitioning].split(" ")[0]
+        return [
+            CommandStep("15", expect="15 Fuzzy atomic space analysis"),
+            CommandStep("-1", expect="-1 Select method for partitioning atomic spaces"),
+            CommandStep(partition_cmd, expect="Select atomic space partition method"),
+        ]
+
     def _build_fuzzy_integration_commands(
         self,
         menu_cmd: str,
@@ -740,18 +750,10 @@ class Multiwfn:
         partitioning: str = "becke",
     ) -> list[CommandStep | WaitProgress]:
         """Build command sequence for fuzzy atomic space integration."""
-        partition_pattern = FUZZY_PARTITIONING_SCHEMES[partitioning]
-        partition_cmd = partition_pattern.split(" ")[0]
         commands: list[CommandStep | WaitProgress] = list(prefix_commands or [])
         commands.extend(
             [
-                CommandStep("15", expect="15 Fuzzy atomic space analysis"),
-                CommandStep(
-                    "-1", expect="1 Perform integration in fuzzy atomic spaces"
-                ),
-                CommandStep(
-                    partition_cmd, expect="Select atomic space partition method"
-                ),
+                *self._commands_fuzzy_partitioning(partitioning),
                 CommandStep("1", expect="1 Perform integration in fuzzy atomic spaces"),
                 CommandStep(menu_cmd, expect=menu_pattern),
                 WaitProgress(self._max_wait),
@@ -1065,6 +1067,12 @@ class Multiwfn:
             CommandStep("0", expect="0 Return"),
         ]
 
+        if normalized_model in {"fuzzy", "laplacian"}:
+            commands = [
+                *self._commands_fuzzy_partitioning(),
+                CommandStep("0", expect="0 Return"),
+                *commands,
+            ]
         result = self._run_commands(commands, subdir=normalized_model)
         bond_order_matrix = self._parse_bond_orders(result.stdout)
 
@@ -1416,7 +1424,7 @@ class Multiwfn:
         Args:
             descriptor: Descriptor name.
             partitioning: Atomic space partitioning scheme to use. Supported values
-                are 'becke', 'hirshfeld', 'hirshfeld_i', and 'mbis'.
+                are 'becke', 'hirshfeld', and 'mbis'.
 
         Returns:
             Dictionary mapping atom index (1-based) to integrated density value.
@@ -1622,12 +1630,12 @@ class Multiwfn:
         }
 
     def get_localization(self) -> dict[int, float]:
-        """Calculate localization index from integration in fuzzy atomic spaces."""
+        """Calculate localization indices using Becke atomic spaces."""
         if self._results.localization is not None:
             return self._results.localization
 
         commands = [
-            CommandStep("15", expect="15 Fuzzy atomic space analysis"),
+            *self._commands_fuzzy_partitioning(),
             CommandStep("4", expect="4 Calculate localization"),
             WaitProgress(self._max_wait),
             CommandStep("n", expect="y/n"),

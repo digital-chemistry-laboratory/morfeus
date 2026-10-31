@@ -521,3 +521,22 @@ def test_grid_export_survives_close(tmp_path, persistent):
     assert not scratch.exists() and output.is_file()
     with Multiwfn(output) as fresh:
         assert fresh.grid_to_descriptors(None) == integrated
+
+
+@pytest.mark.multiwfn
+@pytest.mark.parametrize(
+    "method,args",
+    [
+        ("get_localization", ()),
+        ("get_bond_order", ("fuzzy",)),
+        ("get_bond_order", ("laplacian",)),
+    ],
+)
+def test_persistent_partitioning_does_not_leak(method, args):
+    """Keep default analyses independent of a preceding Hirshfeld integration."""
+    path = EXAMPLE_MOLDEN_DIR / "xtb_singlet.molden"
+    with Multiwfn(path) as fresh:
+        expected = getattr(fresh, method)(*args)
+    with Multiwfn(path, persistent=True) as m:
+        m.get_descriptor("rho", partitioning="hirshfeld")
+        assert getattr(m, method)(*args) == expected
