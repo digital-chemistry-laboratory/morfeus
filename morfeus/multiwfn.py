@@ -313,19 +313,21 @@ class MultiwfnRunResult:
 class MultiwfnResults:
     """Cached Multiwfn results."""
 
-    charges: dict[str, dict[int, float]] | None = None
-    surfaces: dict[str, dict[str, Any]] | None = None
-    atomic_descriptors: dict[str, dict[int, float]] | None = None
-    grid_descriptors: dict[tuple[str, int], dict[int, float]] | None = None
+    charges: dict[str, dict[int, float]] = field(default_factory=dict)
+    surfaces: dict[str, dict[str, Any]] = field(default_factory=dict)
+    atomic_descriptors: dict[str, dict[int, float]] = field(default_factory=dict)
+    grid_descriptors: dict[tuple[str, int], dict[int, float]] = field(
+        default_factory=dict
+    )
     electric_moments: dict[str, float] | None = None
     orbitals: list[dict[str, Any]] | None = None
-    bond_orders: dict[str, dict[tuple[int, int], float]] | None = None
+    bond_orders: dict[str, dict[tuple[int, int], float]] = field(default_factory=dict)
     fukui: dict[str, dict[int, float]] | None = None
     superdelocalizabilities: dict[str, dict[int, float]] | None = None
     localization: dict[int, float] | None = None
-    atomic_vector_descriptors: (
-        dict[str, dict[int, tuple[float, float, float]]] | None
-    ) = None
+    atomic_vector_descriptors: dict[str, dict[int, tuple[float, float, float]]] = field(
+        default_factory=dict
+    )
     citations: set[str] = field(default_factory=set)
 
 
@@ -353,14 +355,10 @@ class _PexpectSession:
         self._transcript: list[str] = []
         self._last_command_pos = 0
 
-    @staticmethod
-    def _coerce_output_chunk(chunk: Any) -> str:
-        """Normalize pexpect output chunks to text for transcript storage."""
-        return "" if chunk is None else str(chunk)
-
     def _append_transcript(self, chunk: Any) -> None:
-        """Append normalized output chunk to transcript."""
-        self._transcript.append(self._coerce_output_chunk(chunk))
+        """Append text emitted by the child process."""
+        if chunk is not None:
+            self._transcript.append(str(chunk))
 
     def read_available(self) -> None:
         """Read available output without blocking."""
@@ -434,66 +432,24 @@ class _PexpectSession:
                 return True, None
         return False, None
 
-    def expect(self, pattern: str) -> bool:
-        """Wait for pattern. Returns True on match, False on timeout."""
+    def expect(self, pattern: str, timeout: float | None = None) -> bool:
+        """Wait for a pattern, returning False on timeout or process exit."""
         if self._debug:
             print(f"[DEBUG] Expecting: {pattern!r}")
-
         try:
-            self._child.expect(pattern, timeout=self._expect_timeout)
+            self._child.expect(
+                pattern, timeout=self._expect_timeout if timeout is None else timeout
+            )
             self._append_transcript(self._child.before)
             self._append_transcript(self._child.after)
-            if self._debug:
-                print("[DEBUG] Got match")
             return True
         except pexpect.TIMEOUT:
             self.read_available()
-            recent_output = self.get_output_since_last_command()
-            if self._debug:
-                print(
-                    f"[WARN] Timeout ({self._expect_timeout}s) waiting for: {pattern!r}"
-                )
-                print(f"Recent output: {recent_output[-500:]}")
-            return False
         except pexpect.EOF:
             self._append_transcript(self._child.before)
-            self._append_transcript(self._child.after)
-            if self._debug:
-                print(f"[WARN] EOF while waiting for: {pattern!r}")
-            return False
-
-    def try_expect(self, pattern: str, timeout: float = 1.0) -> bool:
-        """Try to match a pattern with short timeout. Silent on timeout.
-
-        Args:
-            pattern: Regular expression to match.
-            timeout: Timeout in seconds.
-
-        Returns:
-            True if the pattern is matched.
-        """
         if self._debug:
-            print(f"[DEBUG] Try expecting: {pattern!r} (timeout={timeout}s)")
-        try:
-            self._child.expect(pattern, timeout=timeout)
-            self._append_transcript(self._child.before)
-            self._append_transcript(self._child.after)
-            if self._debug:
-                print("[DEBUG] Got match")
-            return True
-        except pexpect.TIMEOUT:
-            self.read_available()
-            if self._debug:
-                print("[DEBUG] Pattern not found (optional)")
-            return False
-        except pexpect.EOF:
-            before = self._coerce_output_chunk(self._child.before)
-            after = self._coerce_output_chunk(self._child.after)
-            self._append_transcript(before)
-            self._append_transcript(after)
-            if self._debug:
-                print("[DEBUG] EOF while checking optional pattern")
-            return re.search(pattern, f"{before}{after}") is not None
+            print(f"[DEBUG] Pattern not found: {pattern!r}")
+        return False
 
     def load(self, file_path: Path, reset: bool = False) -> None:
         """Load an input after optionally resetting an existing process."""
@@ -543,83 +499,35 @@ class _PexpectSession:
         """Full session transcript."""
         return "".join(self._transcript)
 
-    def _execute_command(self, cmd: str, expect: str | None, use_robust: bool) -> None:
-        """Execute command with optional expect."""
-        if use_robust and expect:
-            matched = self.expect(expect)
-            if not matched:
-                # Some Multiwfn builds emit the single-determinant warning
-                transcript = self.stdout
-                buffered = self.get_output_since_last_command()
-                if SINGLE_DETERMINANT_WFN_ERROR_RE.search(buffered) or (
-                    transcript and SINGLE_DETERMINANT_WFN_ERROR_RE.search(transcript)
-                ):
-                    raise RuntimeError(SINGLE_DETERMINANT_WFN_ERROR_TEXT)
-                raise RuntimeError(
-                    f"Expected pattern not found before command {cmd!r}: {expect!r}"
-                )
-        self.send(cmd)
-        if not use_robust:
-            self.read_available()
-
-    def _has_pattern_in_buffered_output(
-        self, pattern: str, debug_message: str | None = None
-    ) -> bool:
-        """Return True if pattern is present in buffered output."""
-        buffered_output = self.get_output_since_last_command()
-        pattern_found = re.search(pattern, buffered_output) is not None
-        if self._debug and pattern_found and debug_message:
-            print(debug_message)
-        return pattern_found
-
-    def _resolve_step_execution(
-        self, item: CommandStep, use_robust: bool
-    ) -> tuple[bool, str | None]:
-        """Resolve whether a command step should run and which expect to use."""
-        if not item.expect:
-            return True, None
-
-        if item.optional:
-            pattern_found = self.try_expect(item.expect, timeout=1.0)
-            if not pattern_found:
-                pattern_found = self._has_pattern_in_buffered_output(
-                    item.expect,
-                    "[DEBUG] Optional pattern found in buffered output",
-                )
-            if self._debug:
-                status = "found" if pattern_found else "not found"
-                print(f"[DEBUG] Optional pattern {status}: {item.expect!r}")
-            if not pattern_found:
-                return False, None
-            # Avoid matching the same already-consumed pattern twice.
-            return True, None
-
-        if use_robust and self._has_pattern_in_buffered_output(
-            item.expect, "[DEBUG] Required pattern found in buffered output"
-        ):
-            # Avoid expecting the same prompt again if it was already consumed.
-            return True, None
-        return True, item.expect
+    def _has_pattern_in_buffered_output(self, pattern: str) -> bool:
+        """Check output since the last command for an already consumed prompt."""
+        return re.search(pattern, self.get_output_since_last_command()) is not None
 
     def _process_command(
         self, item: str | CommandStep | WaitProgress, use_robust: bool
     ) -> None:
-        """Process command step."""
-        if isinstance(item, str):
-            self._execute_command(item, None, use_robust)
-            return
+        """Send a command after checking its required or optional prompt."""
         if isinstance(item, WaitProgress):
-            if self._debug:
-                print(f"[DEBUG] Executing WaitProgress (max_wait={item.max_wait}s)")
             self.wait_for_progress(max_wait=item.max_wait)
             return
-
-        should_execute, command_expect = self._resolve_step_execution(item, use_robust)
-        if not should_execute:
-            return
-
+        if isinstance(item, str):
+            item = CommandStep(item)
+        if item.expect and (item.optional or (use_robust and item.cmd is not None)):
+            matched = self._has_pattern_in_buffered_output(item.expect) or self.expect(
+                item.expect, timeout=1.0 if item.optional else None
+            )
+            if not matched:
+                if item.optional:
+                    return
+                if SINGLE_DETERMINANT_WFN_ERROR_RE.search(self.stdout):
+                    raise RuntimeError(SINGLE_DETERMINANT_WFN_ERROR_TEXT)
+                raise RuntimeError(
+                    f"Expected pattern not found before command {item.cmd!r}: {item.expect!r}"
+                )
         if item.cmd is not None:
-            self._execute_command(item.cmd, command_expect, use_robust)
+            self.send(item.cmd)
+            if not use_robust:
+                self.read_available()
 
 
 class Multiwfn:
@@ -852,15 +760,6 @@ class Multiwfn:
         )
         return commands
 
-    def _parse_vector_functions(self, descriptor: str) -> tuple[int, int, int]:
-        """Parse vector function settings and cache citation if present."""
-        vector_setting = VECTORS[descriptor]
-        if len(vector_setting) == 2 and isinstance(vector_setting[1], str):
-            functions = vector_setting[0]
-            self._results.citations.add(vector_setting[1])
-            return functions
-        return vector_setting
-
     def _setup_workdir(self, subdir: str | None) -> Path:
         """Create a fresh result directory for an uncached calculation."""
         label = Path(subdir) if subdir else Path("analysis")
@@ -869,10 +768,6 @@ class Multiwfn:
         parent = self._run_path / label
         parent.mkdir(parents=True, exist_ok=True)
         return Path(tempfile.mkdtemp(prefix="run-", dir=parent))
-
-    def _set_env(self) -> dict[str, str]:
-        """Set environment variables for Multiwfn execution."""
-        return build_execution_env(env_variables=self._env_variables)
 
     @staticmethod
     def _normalize_option(value: str) -> str:
@@ -950,7 +845,7 @@ class Multiwfn:
                     "Multiwfn",
                     session_path,
                     self._debug,
-                    env=self._set_env(),
+                    env=build_execution_env(env_variables=self._env_variables),
                     expect_timeout=self._expect_timeout,
                 )
             session = self._session
@@ -1010,10 +905,7 @@ class Multiwfn:
             Atomic charges indexed by atom number (1-indexed)
         """
         normalized_model = self._normalize_option(model)
-        if (
-            self._results.charges is not None
-            and normalized_model in self._results.charges
-        ):
+        if normalized_model in self._results.charges:
             return self._results.charges[normalized_model]
 
         if normalized_model not in CHARGE_MODELS:
@@ -1058,8 +950,6 @@ class Multiwfn:
         if not charges:
             raise RuntimeError(f"Could not parse atomic charges from {chg_files[0]}.")
 
-        if self._results.charges is None:
-            self._results.charges = {}
         self._results.charges[normalized_model] = charges
 
         return charges
@@ -1090,10 +980,7 @@ class Multiwfn:
                     - surface_area, volume, average, variance, minimum, maximum
         """
         normalized_model = self._normalize_option(model)
-        if (
-            self._results.surfaces is not None
-            and normalized_model in self._results.surfaces
-        ):
+        if normalized_model in self._results.surfaces:
             return self._results.surfaces[normalized_model]
 
         if normalized_model not in SURFACE_MODELS:
@@ -1130,8 +1017,6 @@ class Multiwfn:
         global_props = self._parse_global_surface_properties(result.stdout)
         surface_result = {"atomic": atomic_props, "global": global_props}
 
-        if self._results.surfaces is None:
-            self._results.surfaces = {}
         self._results.surfaces[normalized_model] = surface_result
 
         return surface_result
@@ -1149,10 +1034,7 @@ class Multiwfn:
             ValueError: If given bond order model is not available.
         """
         normalized_model = self._normalize_option(model)
-        if (
-            self._results.bond_orders is not None
-            and normalized_model in self._results.bond_orders
-        ):
+        if normalized_model in self._results.bond_orders:
             return self._results.bond_orders[normalized_model]
 
         if normalized_model not in BOND_ORDER_MODELS:
@@ -1186,8 +1068,6 @@ class Multiwfn:
         result = self._run_commands(commands, subdir=normalized_model)
         bond_order_matrix = self._parse_bond_orders(result.stdout)
 
-        if self._results.bond_orders is None:
-            self._results.bond_orders = {}
         self._results.bond_orders[normalized_model] = bond_order_matrix
 
         return bond_order_matrix
@@ -1227,10 +1107,7 @@ class Multiwfn:
             active_grid = self._file_path
 
         grid_key = (str(active_grid), userfunction)
-        if (
-            self._results.grid_descriptors is not None
-            and grid_key in self._results.grid_descriptors
-        ):
+        if grid_key in self._results.grid_descriptors:
             return self._results.grid_descriptors[grid_key]
 
         file_path = self._file_path
@@ -1249,8 +1126,6 @@ class Multiwfn:
 
         grid_descriptors = self._parse_atomic_values(result.stdout)
 
-        if self._results.grid_descriptors is None:
-            self._results.grid_descriptors = {}
         self._results.grid_descriptors[grid_key] = grid_descriptors
         return grid_descriptors
 
@@ -1445,14 +1320,15 @@ class Multiwfn:
         if descriptor not in VECTORS:
             raise ValueError(f"Vector descriptor {descriptor!r} not supported")
 
-        if self._results.atomic_vector_descriptors is None:
-            self._results.atomic_vector_descriptors = {}
-        elif descriptor in self._results.atomic_vector_descriptors:
+        if descriptor in self._results.atomic_vector_descriptors:
             return self._results.atomic_vector_descriptors[descriptor]
 
         menu_cmd = "100"
         menu_pattern = "100 User-defined function"
-        functions = self._parse_vector_functions(descriptor)
+        functions = VECTORS[descriptor]
+        if len(functions) == 2 and isinstance(functions[1], str):
+            functions, citation = functions
+            self._results.citations.add(citation)
 
         vectors: dict[int, list[float]] = {}
         for component_idx, (func, axis) in enumerate(zip(functions, ("x", "y", "z"))):
@@ -1564,10 +1440,7 @@ class Multiwfn:
             if normalized_partitioning == "becke"
             else f"{descriptor}:{normalized_partitioning}"
         )
-        if (
-            self._results.atomic_descriptors is not None
-            and cache_key in self._results.atomic_descriptors
-        ):
+        if cache_key in self._results.atomic_descriptors:
             return self._results.atomic_descriptors[cache_key]
 
         menu_cmd, menu_pattern, commands = self._get_descriptor_function(descriptor)
@@ -1578,8 +1451,6 @@ class Multiwfn:
             descriptor,
             normalized_partitioning,
         )
-        if self._results.atomic_descriptors is None:
-            self._results.atomic_descriptors = {}
         self._results.atomic_descriptors[cache_key] = descriptor_result
         return descriptor_result
 
