@@ -1009,7 +1009,7 @@ class Multiwfn:
             WaitProgress(self._max_wait),
             CommandStep("11", expect="11 Output surface properties"),
             CommandStep("n", expect="surface facets to locsurf"),
-            CommandStep("-1", expect="-1 Return to upper level"),
+            CommandStep("-1", expect="-1 Return to upper[- ]level"),
             CommandStep("-1", expect="-1 Return to main menu"),
         ]
 

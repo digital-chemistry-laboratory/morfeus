@@ -94,7 +94,9 @@ jobs:
           echo "$INSTALL_DIR" >> "$GITHUB_PATH"
         shell: bash
       - name: Run multiwfn tests
-        run: pytest --cov=morfeus --import-mode=importlib -s -m multiwfn
+        run: |
+          ulimit -s 65536
+          pytest --cov=morfeus --import-mode=importlib -s -m multiwfn
         shell: bash
   deptry:
     name: nox -s deptry

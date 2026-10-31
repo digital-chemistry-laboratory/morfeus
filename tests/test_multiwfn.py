@@ -110,6 +110,18 @@ def test_descriptor_workflow(file_path, persistent):
 
 
 @pytest.mark.multiwfn
+def test_wfn_charges():
+    """Preserve Hirshfeld charges after WFN export and reject Mulliken analysis."""
+    with Multiwfn(EXAMPLE_MOLDEN_DIR / "pyscf_dft_singlet_rks.molden") as molden:
+        expected = molden.get_charges("hirshfeld")
+        result = molden.run_commands(["100", "2", "5", "wavefunction.wfn", "0"])
+        with Multiwfn(result.workdir / "wavefunction.wfn") as wfn:
+            assert wfn.get_charges("hirshfeld") == pytest.approx(expected, abs=1e-6)
+            with pytest.raises(ValueError, match="basis function information"):
+                wfn.get_charges("mulliken")
+
+
+@pytest.mark.multiwfn
 @pytest.mark.parametrize("persistent", [False, True])
 def test_reactivity_and_surface_workflow(persistent):
     """Check atomic tables and both surface formats against printed reference values."""
