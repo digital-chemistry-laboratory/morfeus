@@ -969,7 +969,8 @@ class XTB:
 
             # The code below fixes an error in the json file outputed
             # when running PTB with xtb 6.7.1
-            # TODO: Remove/update when new xtb version is released
+            # TODO (issue #93): xtb 6.8.0 emits valid JSON for PTB, so this
+            # workaround can be removed once the pin is lifted
             lines_without_error = [line for line in f if line.strip() != ","]
             json_fixed = "".join(lines_without_error)
             data = json.loads(json_fixed)

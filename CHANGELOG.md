@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Vectorized the internal cone angle algorithm's search over atom triples, ~100x faster on large ligands than with previous implementation
 - Pinned `xtb` to conda-forge build `6.7.1=*_4` in `environment-opt.yml` and CI `test.yml` because with newer conda-forge builds, `xtb` is installed next to a new `multicharge` build it was not compiled against, which makes PTB calculations with `xtb` segfault
 
-    TODO: once conda-forge ships a rebuilt xtb which fixes the issue, remove the patch added in PR #89
+    TODO (issue #93): lift the pin and upgrade to xtb 6.8.0 once conda-forge ships xtb 6.8.0
 
 ### Fixed
 - Update to `pyvista` having renamed `UniformGrid` to `ImageData`

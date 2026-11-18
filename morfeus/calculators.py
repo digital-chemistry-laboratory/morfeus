@@ -59,6 +59,9 @@ class D4Grimme:
         # Do calculation
         calc = DispersionModel(elements, coordinates, charge=charge)
         properties = calc.get_properties()
+        # TODO (issue #93): dftd4 >= 4.0 fixed this key's spelling to
+        # "polarizabilities", but the xtb pin currently caps dftd4 at 3.7.x,
+        # which still uses the misspelling. Switch when that pin is lifted.
         polarizabilities = properties["polarizibilities"]
         charges = properties["partial charges"]
         coordination_numbers = properties["coordination numbers"]

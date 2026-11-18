@@ -18,6 +18,7 @@ dependencies:
   - vtk
   # xtb pinned to build 4 of 6.7.1 because build 5 is installed next to a new `multicharge`
   # build it was not compiled against, which makes PTB calculations with xtb segfault
+  # TODO (issue #93): unpin once conda-forge ships xtb 6.8.0
   - xtb=6.7.1=*_4
   - xtb-python
   - pip:
