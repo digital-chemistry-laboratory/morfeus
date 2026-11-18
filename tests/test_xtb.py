@@ -59,3 +59,20 @@ def test_charges():
                     ref_data[f"{name_method}_{name_solvent}_cm5"],
                     decimal=3,
                 )
+
+
+@pytest.mark.xtb
+def test_file_generation(tmp_path):
+    """Generate nonempty wavefunction/grid files and reject closed-shell spin density."""
+    elements, coordinates = read_xyz(DATA_DIR / "1-penten-3-one.xyz")
+    xtb = XTB(elements, coordinates, n_unpaired=2, run_path=tmp_path)
+    for generate in (
+        xtb.gen_molden_file,
+        xtb.gen_density_file,
+        xtb.gen_spin_density_file,
+    ):
+        path = generate()
+        assert path.is_file() and path.stat().st_size > 0
+    closed_shell = XTB(elements, coordinates, n_unpaired=0, run_path=tmp_path)
+    with pytest.raises(ValueError, match="requires unpaired electrons"):
+        closed_shell.gen_spin_density_file()

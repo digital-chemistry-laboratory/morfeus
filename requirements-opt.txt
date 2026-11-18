@@ -3,6 +3,7 @@ dftd4
 libconeangle
 matplotlib
 openbabel
+pexpect
 pymeshfix
 pyvista
 pyvistaqt

@@ -1,4 +1,4 @@
-"""Config for xtb parallelisation."""
+"""Config for parallelisation."""
 
 OMP_NUM_THREADS: int = 1
 OMP_STACKSIZE: str = "1G"
