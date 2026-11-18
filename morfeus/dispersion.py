@@ -218,7 +218,7 @@ class Dispersion:
         parser = CubeParser(file)
 
         # Generate grid and fill with values
-        grid = pv.UniformGrid()
+        grid = pv.ImageData()
         grid.dimensions = np.array(parser.X.shape)
         grid.origin = (parser.min_x, parser.min_y, parser.min_z)
         grid.spacing = (parser.step_x, parser.step_y, parser.step_z)

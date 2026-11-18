@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-08-06
+## [Unreleased] - 2026-11-18
 
 ### Added
 - GitHub Actions job that runs xtb-marked tests on every PR (including xtb binary installation)
@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     TODO: once conda-forge ships a rebuilt xtb which fixes the issue, remove the patch added in PR #89
 
 ### Fixed
+- Update to `pyvista` having renamed `UniformGrid` to `ImageData`
 - Internal cone angle algorithm no longer raises `math domain error` on numerically degenerate tangency roots; unphysical candidate cones are discarded and the search completes
 - Compatibility issue with Python 3.14 where command-line interface failed due to `fire` library's requirement for `__name__` attribute on `functools.partial` objects
 - Update type annotations which were throwing errors with newer versions of mypy
