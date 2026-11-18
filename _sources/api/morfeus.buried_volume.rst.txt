@@ -1,0 +1,6 @@
+morfeus.buried\_volume module
+=============================
+
+.. automodule:: morfeus.buried_volume
+   :members:
+   :show-inheritance:

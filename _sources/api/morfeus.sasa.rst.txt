@@ -1,0 +1,6 @@
+morfeus.sasa module
+===================
+
+.. automodule:: morfeus.sasa
+   :members:
+   :show-inheritance:
