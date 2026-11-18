@@ -71,6 +71,7 @@ Features
 * Pyramidalization
 * Solvent accessible surface area
 * Sterimol parameters
+* TBLite native xTB properties
 * XTB electronic descriptors
 
 *****
@@ -120,6 +121,7 @@ both academic and commercial use.
    sasa
    solid_angle
    sterimol
+   tblite
    xtb
 
 .. toctree::

@@ -15,6 +15,7 @@ dependencies:
   - qcengine
   - rdkit
   - spyrmsd
+  - tblite
   - vtk
   # xtb pinned to build 4 of 6.7.1 because build 5 is installed next to a new `multicharge`
   # build it was not compiled against, which makes PTB calculations with xtb segfault
@@ -22,3 +23,4 @@ dependencies:
   - xtb-python
   - pip:
       - pyberny
+      - tblite<0.5
